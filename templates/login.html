@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Iniciar Sesión</title>
+</head>
+<body>
+    <h2>Inicio de sesión</h2>
+
+    {% if form.errors %}
+        <p style="color:red;">Usuario o contraseña incorrectos</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Entrar</button>
+    </form>
+
+    <a href="{% url 'home' %}">Volver al inicio</a>
+</body>
+</html>

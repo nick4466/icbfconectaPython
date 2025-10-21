@@ -1,0 +1,19 @@
+<h2>{% if admin %}Editar{% else %}Crear{% endif %} Administrador</h2>
+<form method="post">
+  {% csrf_token %} <label>Nombre:</label>
+  <input
+    type="text"
+    name="nombre"
+    value="{{ admin.nombre|default:'' }}"
+    required
+  /><br />
+  <label>Correo:</label>
+  <input
+    type="email"
+    name="correo"
+    value="{{ admin.correo|default:'' }}"
+    required
+  /><br />
+  <label>Contraseña:</label> <input type="password" name="contraseña" /><br />
+  <button type="submit">Guardar</button>
+</form>

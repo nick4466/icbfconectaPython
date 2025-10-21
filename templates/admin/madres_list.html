@@ -1,0 +1,29 @@
+<h2>Madres Comunitarias</h2>
+<a href="{% url 'crear_madre' %}">Nueva Madre</a>
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Teléfono</th>
+        <th>Hogar</th>
+        <th>Acciones</th>
+    </tr>
+    {% for madre in madres %}
+    <tr>
+        <td>{{ madre.nombres }} {{ madre.apellidos }}</td>
+        <td>{{ madre.correo }}</td>
+        <td>{{ madre.telefono }}</td>
+        <td>
+            {% for h in madre.hogares_asignados.all %}
+                {{ h.nombre_hogar }}
+            {% empty %}
+                Sin hogar
+            {% endfor %}
+        </td>
+        <td>
+            <a href="{% url 'editar_madre' madre.id %}">Editar</a> |
+            <a href="{% url 'eliminar_madre' madre.id %}">Eliminar</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>

@@ -1,0 +1,19 @@
+<h2>Administradores</h2>
+<a href="{% url 'crear_administrador' %}">Crear nuevo administrador</a>
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Acciones</th>
+    </tr>
+    {% for admin in administradores %}
+    <tr>
+        <td>{{ admin.nombre }}</td>
+        <td>{{ admin.correo }}</td>
+        <td>
+            <a href="{% url 'editar_administrador' admin.id %}">Editar</a>
+            <a href="{% url 'eliminar_administrador' admin.id %}">Eliminar</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>

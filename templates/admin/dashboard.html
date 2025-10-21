@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel del Administrador</title>
+</head>
+<body>
+    <h1>Panel del Administrador</h1>
+    <p>Bienvenido, {{ user.username }}</p>
+
+
+    <ul>
+      <a href="{% url 'listar_madres' %}">Gestionar Madres Comunitarias</a>
+
+        <li><a href="#">Registrar Hogar Comunitario</a></li>
+        <li><a href="#">Ver Reportes</a></li>
+    </ul>
+    <div class="col-md-4 mb-3">
+    <div class="card shadow-sm">
+        <div class="card-body text-center">
+            <h5 class="card-title">Gestionar Administradores</h5>
+            <p class="card-text">Crear, editar o eliminar usuarios administradores del sistema.</p>
+            <a href="{% url 'listar_administradores' %}" class="btn btn-primary">Ir al CRUD</a>
+        </div>
+    </div>
+</div>
+
+
+    <a href="{% url 'logout' %}">Cerrar sesión</a>
+</body>
+</html>

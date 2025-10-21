@@ -1,0 +1,10 @@
+<h2>Formulario de Madre Comunitaria</h2>
+<form method="post">
+    {% csrf_token %}
+    <h3>Datos de la Madre</h3>
+    {{ madre_form.as_p }}
+    <h3>Datos del Hogar</h3>
+    {{ hogar_form.as_p }}
+    <button type="submit">Guardar</button>
+</form>
+<a href="{% url 'listar_madres' %}">Volver</a>
