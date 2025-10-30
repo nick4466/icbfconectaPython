@@ -26,6 +26,20 @@
 </div>
 
 
-    <a href="{% url 'logout' %}">Cerrar sesión</a>
+    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit" 
+            style="
+                /* Estiliza como un enlace o un botón según tu diseño */
+                background: none; 
+                color: #007bff; /* Color azul de enlace */
+                border: none; 
+                padding: 0; 
+                font: inherit; 
+                cursor: pointer;
+            ">
+        Cerrar sesión
+    </button>
+</form>
 </body>
 </html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Listado de Niños</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #007bff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .action-link { margin-right: 10px; color: #17a2b8; text-decoration: none; }
+        .empty-message { color: #777; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Niños de mi Hogar Comunitario</h1>
+    
+    <a href="{% url 'matricular_nino' %}" style="background-color: #28a745; color: white; padding: 8px 12px; border-radius: 5px; text-decoration: none;">+ Matricular Nuevo Niño</a>
+    
+    <p style="margin-top: 10px;">Solo se muestran los niños asociados a tu hogar.</p>
+
+    {% if ninos %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre Completo</th>
+                    <th>Documento del Niño</th>
+                    <th>Fecha de Nacimiento</th>
+                    <th>Género</th>
+                    <th>Padre/Tutor Asignado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nino in ninos %}
+                <tr>
+                    <td>{{ nino.nombres }} {{ nino.apellidos }}</td>
+                    <td>{{ nino.documento|default:"N/A" }}</td>
+                    <td>{{ nino.fecha_nacimiento|date:"Y-m-d" }}</td>
+                    <td>{{ nino.genero|capfirst }}</td>
+                    <td>{{ nino.padre.usuario.nombres }} {{ nino.padre.usuario.apellidos }}</td>
+                    <td>
+                        <a href="#" class="action-link">Ver Ficha</a>
+                        <a href="#" class="action-link">Editar</a>
+                        <a href="#" class="action-link" style="color: red;">Retirar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty-message">Aún no hay niños matriculados en tu hogar. ¡Usa el botón para matricular al primero!</p>
+    {% endif %}
+
+    <p style="margin-top: 30px;"><a href="{% url 'madre_dashboard' %}">← Volver al Panel</a></p>
+</body>
+</html>
