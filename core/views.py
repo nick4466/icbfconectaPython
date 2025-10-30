@@ -18,100 +18,83 @@ from django.utils import timezone
 def matricular_nino(request):
     # 1. Seguridad: Asegurar que solo las Madres Comunitarias accedan
     if request.user.rol.nombre_rol != 'madre_comunitaria':
-        return redirect('role_redirect') # Redirige a donde deba ir
+        return redirect('role_redirect')
 
     # Obtener el Hogar de la Madre logueada
-    # Asume que ya existe la relación: HogarComunitario.madre apunta a request.user
-    # Si una madre tiene varios hogares, esto debería ser más complejo (elegir uno).
-    # Por simplicidad, asumimos que tiene UNO o es el primero que encuentre.
     try:
         hogar_madre = HogarComunitario.objects.get(madre=request.user)
     except HogarComunitario.DoesNotExist:
-        # Manejar el caso si a la madre no se le ha asignado un hogar
-        return render(request, 'madre/error_hogar.html', {'mensaje': 'No tienes un hogar asignado.'})
+        return render(request, 'madre/nino_form.html', {'error': 'No tienes un hogar asignado. Contacta al administrador.'})
 
 
     # 2. Manejar la solicitud POST (Creación de Padre y Niño)
     if request.method == 'POST':
         # Datos del formulario
-        # Campos del Padre (Usuario)
         doc_padre = request.POST.get('doc_padre')
         nombres_padre = request.POST.get('nombres_padre')
         apellidos_padre = request.POST.get('apellidos_padre')
         correo_padre = request.POST.get('correo_padre')
-        
-        # Campos del Padre (Perfil Padre)
         ocupacion = request.POST.get('ocupacion')
-        
-        # Campos del Niño
         nombres_nino = request.POST.get('nombres_nino')
         apellidos_nino = request.POST.get('apellidos_nino')
         fecha_nacimiento = request.POST.get('fecha_nacimiento')
         doc_nino = request.POST.get('doc_nino')
         genero_nino = request.POST.get('genero_nino')
         
-        # Validación básica (deberías añadir más)
         if not all([doc_padre, nombres_padre, correo_padre, nombres_nino, fecha_nacimiento]):
-            # Vuelve a mostrar el formulario con mensaje de error
-            return render(request, 'madre/nino_form.html', {'error': 'Faltan campos obligatorios'})
+            return render(request, 'madre/nino_form.html', {'error': 'Faltan campos obligatorios', 'hogar_madre': hogar_madre})
 
 
         try:
             with transaction.atomic():
-                # --- PASO A: Crear el Usuario del Padre ---
-                rol_padre = Rol.objects.get(nombre_rol='padre')
+                # 💡 CORRECCIÓN DEL ERROR: Usar get_or_create para rol 'padre' 💡
+                rol_padre, created = Rol.objects.get_or_create(
+                    nombre_rol='padre', 
+                    defaults={'nombre_rol': 'padre'}
+                )
                 
-                # La contraseña y el username serán el DOCUMENTO del padre
+                # Crear Usuario del Padre
                 password_padre = make_password(doc_padre) 
                 
                 usuario_padre = Usuario.objects.create(
-                    username=doc_padre, # ID/Documento para login
-                    password=password_padre, # Contraseña (hash del documento)
+                    username=doc_padre, 
+                    password=password_padre, 
                     rol=rol_padre,
                     documento=doc_padre,
                     nombres=nombres_padre,
                     apellidos=apellidos_padre,
                     correo=correo_padre,
-                    # Campos de AbstractUser por compatibilidad
                     first_name=nombres_padre, 
                     last_name=apellidos_padre,
                 )
 
-                # --- PASO B: Crear el Perfil Padre ---
+                # Crear Perfil Padre
                 perfil_padre = Padre.objects.create(
                     usuario=usuario_padre,
                     ocupacion=ocupacion,
-                    # ... puedes añadir más campos aquí ...
                 )
                 
-                # --- PASO C: Crear el Niño ---
+                # Crear el Niño
                 Nino.objects.create(
                     nombres=nombres_nino,
                     apellidos=apellidos_nino,
                     fecha_nacimiento=fecha_nacimiento,
                     documento=doc_nino if doc_nino else None,
                     genero=genero_nino,
-                    # El niño se asigna al hogar de la madre logueada
                     hogar=hogar_madre, 
-                    # El niño se asigna al perfil de padre que acabamos de crear
                     padre=perfil_padre,
                     fecha_ingreso=timezone.now().date(),
                 )
             
-            # Si todo salió bien
-            return redirect('listar_ninos') # Debes crear esta URL/vista
+            return redirect('listar_ninos')
         
-        except Rol.DoesNotExist:
-            return render(request, 'madre/nino_form.html', {'error': 'El rol "padre" no existe en la base de datos.'})
         except Exception as e:
-            # Manejar cualquier otro error de la base de datos
-            return render(request, 'madre/nino_form.html', {'error': f'Error al matricular: {e}'})
+            # Maneja errores de unicidad (documento/correo duplicado) o DB
+            return render(request, 'madre/nino_form.html', {'error': f'Error al matricular: {e}', 'hogar_madre': hogar_madre})
 
 
     # 3. Manejar la solicitud GET (Mostrar el formulario)
     return render(request, 'madre/nino_form.html', {'hogar_madre': hogar_madre})
-
-
 def home(request):
     return render(request, 'home.html')
 @login_required
