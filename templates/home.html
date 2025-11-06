@@ -2,198 +2,291 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Página Principal - Software Madres Comunitarias</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Lobster&amp;family=Playwrite+HR+Lijeva:wght@100..400&amp;family=Sour+Gummy:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ICBF Conecta - Inicio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+  <style>
+    * { box-sizing: border-box; }
 
-        body {
-            margin: 0;
-            font-family: 'Roboto', sans-serif;
-            background-color: #f8f6fb;
-            /* La ruta del fondo debe adaptarse a los archivos estáticos de Django */
-            background-image: url('{% static "img/fondo.png" %}');
-            background-size: cover;
-            background-position: center;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      /* 🌈 Fondo más cálido y con profundidad */
+      background: linear-gradient(rgba(155, 89, 182, 0.25), rgba(255, 255, 255, 0.95)),
+          url('{% static "img/fondo2.png" %}') center/cover no-repeat;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-        header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: #ffffff;
-            padding: 15px 30px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #ffffff;
+      padding: 15px 30px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
 
-        header img {
-            height: 70px;
-        }
+    header img {
+      height: 70px;
+    }
 
-        header nav ul {
-            list-style: none;
-            display: flex;
-            padding: 0;
-            margin: 0;
-        }
+    header nav ul {
+      list-style: none;
+      display: flex;
+      padding: 0;
+      margin: 0;
+    }
 
-        header nav ul li {
-            margin-left: 20px;
-        }
+    header nav ul li {
+      margin-left: 20px;
+    }
 
-        header nav ul li a {
-            text-decoration: none;
-            color: #9B59B6;
-            font-weight: bold;
-            font-size: 16px;
-        }
+    header nav ul li a {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+    }
 
-        .content {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: auto;
-            padding: 20px;
-            margin-top: 40px;
-            margin-bottom: 40px;
-            flex-grow: 1;
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(8px);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            padding: 20px;
-        }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      text-align: center;
+      position: relative;
+    }
 
-        .welcome {
-            text-align: center;
-            font-size: 1.5rem;
-            color: #9B59B6;
-        }
+    h1 {
+      color: #8e44ad;
+      margin-bottom: 40px;
+      font-size: 2rem;
+    }
 
-        .welcome h1 {
-            font-size: 2.5rem;
-            color: #8e44ad;
-        }
+    /* Fondo translúcido detrás de las cards */
+    .card-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 90%;
+      max-width: 700px;
+      background: rgba(255, 255, 255, 0.88);
+      border-radius: 16px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+      padding: 30px;
+    }
 
-        .info {
-            margin-top: 20px;
-            text-align: center;
-        }
+    .card-container {
+      position: relative;
+      width: 100%;
+      padding: 50px 30px;
+      overflow: hidden;
+    }
 
-        .info img {
-            width: 250px;
-            border-radius: 8px;
-        }
-        
-        .sobre-nosotros {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(8px);
-            padding: 30px;
-            margin: 40px auto;
-            border-radius: 12px;
-            width: 80%;
-            max-width: 900px;
-            display: flex;
-            gap: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
+    .card {
+      opacity: 0;
+      transform: translateX(100%);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      transition: all 0.5s ease;
+    }
 
-        .sobre-nosotros .text {
-            flex: 1;
-        }
+    .card.active {
+      opacity: 1;
+      transform: translateX(0);
+      position: relative;
+    }
 
-        .sobre-nosotros h2 {
-            text-align: left;
-            color: #8e44ad;
-            font-size: 2rem;
-        }
+    .card.exit-left {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
 
-        .sobre-nosotros p {
-            font-size: 1rem;
-            color: #333;
-            line-height: 1.6;
-        }
+    .card img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
 
-        .sobre-nosotros img {
-            max-width: 300px;
-            border-radius: 8px;
-        }
+    .card h2 {
+      color: #9B59B6;
+      margin-bottom: 10px;
+    }
 
-        footer {
-            background-color: #9B59B6;
-            color: white;
-            text-align: center;
-            padding: 15px 0;
-            width: 100%;
-        }
+    .card p {
+      color: #555;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
 
-        footer a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            margin: 0 10px;
-        }
+    .card button {
+      background-color: #9B59B6;
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
 
-        footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-    
-    {% load static %}
+    .card button:hover {
+      background-color: #8e44ad;
+    }
+
+    /* Flechas laterales */
+    .control-btn {
+      background-color: rgba(155, 89, 182, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      font-size: 22px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+    }
+
+    .control-btn:hover {
+      background-color: #8e44ad;
+    }
+
+    #prev {
+      left: 10px;
+    }
+
+    #next {
+      right: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .card-container {
+        padding: 40px 20px;
+      }
+
+      .control-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
+      }
+
+      #prev {
+        left: -5px;
+      }
+
+      #next {
+        right: -5px;
+      }
+    }
+
+    footer {
+      background-color:#9B59B6;
+      text-align: center;
+      padding: 10px;
+      font-size: 14px;
+      color: hsl(0, 0%, 100%);
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
-
 <body>
 
-    <header>
+  <header>
         <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
         <nav>
             <ul>
-                <li><a href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> **Iniciar Sesión**</a></li>
+                <li><a href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a></li>
             </ul>
         </nav>
     </header>
 
-    <main>
-        <div class="content">
-            <div class="welcome">
-                <h1>¡Bienvenidos!</h1>
-                <p>Ingresa a ICBF-CONECTA y únete al sistema que facilita la conexión e información con el desarrollo de nuestros niños y niñas.</p>
-            </div>
-            <div class="info">
-                <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
-            </div>
+  <main>
+    <h1>Bienvenido a ICBF Conecta</h1>
+
+    <div class="card-wrapper">
+      <button class="control-btn" id="prev">&#9664;</button>
+
+      <div class="card-container">
+
+        <!-- Madre Comunitaria -->
+        <div class="card active">
+          <img src="{% static 'img/madresComunitarias.jpg' %} " alt="Madre Comunitaria">
+          <h2>Madres Comunitarias</h2>
+          <p>
+            Registra actividades, gestiona la asistencia de los niños y envía reportes al sistema de forma rápida y organizada.
+          </p>
+          <button onclick="location.href='login'">Ingresar</button>
         </div>
 
-        <div class="sobre-nosotros">
-            <div class="text">
-                <h2>Sobre Nosotros...</h2>
-                <p>Aquí te queremos contar sobre cuatro chicos que decidieron emprender el camino de la programación, pensando en la necesidad que presentan tanto los padres de familia, como las madres comunitarias del ICBF a la hora de la organización de documentos y la visibilidad del desarrollo de los niños y niñas en su primera etapa educativa.</p>
-                <p>Por lo que hemos decidido crear este software que permitirá mejorar la precisión de datos, la comunicación entre padres de familia y madres comunitarias. Por último, ofrecerá herramientas para planificar y evaluar actividades de manera más eficiente.</p>
-            </div>
-            <div>
-                <img src="{% static 'img/nosotros.png' %}" alt="Imagen sobre nosotros" />
-            </div>
+        <!-- Padre de Familia -->
+        <div class="card">
+          <img src="{% static 'img/padresFamilia.jpg' %} " alt="Padre de Familia">
+          <h2>Padres de Familia</h2>
+          <p>
+            Consulta información de tus hijos, comunícate con la madre comunitaria y revisa su progreso desde cualquier lugar.
+          </p>
+          <button onclick="location.href='login'">Ingresar</button>
         </div>
-    </main>
 
-    <footer>
-        <p>Contáctanos: 
-            <a href="mailto:contacto@icbf-conecta.com">contacto@icbf-conecta.com</a> | 
-        </p>
-        <p>Llamanos:
-            <a href="tel:+57333336565">+57 333336565</a> 
-        </p>
-    </footer>
+        <!-- Administrador -->
+        <div class="card">
+          <img src="{% static 'img/administrador.jpg' %}" alt="Administrador">
+          <h2>Administradores</h2>
+          <p>
+            Supervisa la información del sistema, administra usuarios y genera reportes globales con facilidad.
+          </p>
+          <button onclick="location.href='login'">Ingresar</button>
+        </div>
+
+      </div>
+
+      <button class="control-btn" id="next">&#9654;</button>
+    </div>
+  </main>
+
+  <footer>
+    Contáctanos: contacto@icbf-conecta.com <br>
+    Llámanos: +57 333336565
+  </footer>
+
+  <script>
+    const cards = document.querySelectorAll('.card');
+    let current = 0;
+
+    document.getElementById('next').addEventListener('click', () => {
+      cards[current].classList.remove('active');
+      cards[current].classList.add('exit-left');
+      current = (current + 1) % cards.length;
+      setTimeout(() => {
+        cards.forEach(c => c.classList.remove('exit-left'));
+        cards[current].classList.add('active');
+      }, 400);
+    });
+
+    document.getElementById('prev').addEventListener('click', () => {
+      cards[current].classList.remove('active');
+      current = (current - 1 + cards.length) % cards.length;
+      cards[current].classList.add('active');
+    });
+  </script>
 
 </body>
 </html>
