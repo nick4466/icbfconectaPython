@@ -14,10 +14,9 @@
     body {
       margin: 0;
       font-family: 'Roboto', sans-serif;
-      /* 🌈 Fondo más cálido y con profundidad */
-      background: linear-gradient(rgba(155, 89, 182, 0.25), rgba(255, 255, 255, 0.95)),
-          url('{% static "img/fondo2.png" %}') center/cover no-repeat;
+      background-image: url('{% static "img/fondo2.png" %}');
       min-height: 100vh;
+      background-size: cover;
       display: flex;
       flex-direction: column;
     }
@@ -26,9 +25,10 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background-color: #ffffff;
+      background-color: rgba(255, 255, 255, 0.85);
       padding: 15px 30px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(5px);
     }
 
     header img {
@@ -50,6 +50,7 @@
       text-decoration: none;
       color: #9B59B6;
       font-weight: bold;
+      transition: color 0.3s ease;
       font-size: 16px;
     }
 
@@ -66,10 +67,20 @@
 
     h1 {
       color: #8e44ad;
-      margin-bottom: 40px;
-      font-size: 2rem;
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+
     }
 
+    /* Párrafo introductorio */
+    .intro-text {
+      color: #666;
+      font-size: 1.1rem;
+      max-width: 700px;
+      margin: -15px auto 30px auto;
+    }
     /* Fondo translúcido detrás de las cards */
     .card-wrapper {
       position: relative;
@@ -77,48 +88,45 @@
       align-items: center;
       justify-content: center;
       width: 90%;
-      max-width: 700px;
-      background: rgba(255, 255, 255, 0.88);
+      max-width: 650px;
+      background: rgba(255, 255, 255, 0.9);
       border-radius: 16px;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+      backdrop-filter: blur(5px);
       padding: 30px;
     }
 
     .card-container {
       position: relative;
       width: 100%;
-      padding: 50px 30px;
-      overflow: hidden;
+      padding: 40px 30px;
     }
 
     .card {
       opacity: 0;
-      transform: translateX(100%);
+      transform: scale(0.95);
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      transition: all 0.5s ease;
+      transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
     }
 
     .card.active {
       opacity: 1;
-      transform: translateX(0);
+      transform: scale(1);
       position: relative;
     }
 
-    .card.exit-left {
-      transform: translateX(-100%);
-      opacity: 0;
-    }
+
 
     .card img {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
+      width: 100%;
+      height: 180px; /* Altura para la imagen rectangular */
+      border-radius: 10px; /* Esquinas redondeadas */
       object-fit: cover;
       margin-bottom: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
     .card h2 {
@@ -141,11 +149,12 @@
       padding: 10px 20px;
       border-radius: 6px;
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: background-color 0.3s, transform 0.2s;
     }
 
     .card button:hover {
       background-color: #8e44ad;
+      transform: translateY(-2px);
     }
 
     /* Flechas laterales */
@@ -162,6 +171,7 @@
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       z-index: 10;
     }
 
@@ -170,11 +180,11 @@
     }
 
     #prev {
-      left: 10px;
+      left: -22px;
     }
 
     #next {
-      right: 10px;
+      right: -22px;
     }
 
     @media (max-width: 768px) {
@@ -189,11 +199,11 @@
       }
 
       #prev {
-        left: -5px;
+        left: 0px;
       }
 
       #next {
-        right: -5px;
+        right: 0px;
       }
     }
 
@@ -221,29 +231,34 @@
   <main>
     <h1>Bienvenido a ICBF Conecta</h1>
 
+    <p class="intro-text">
+      La plataforma que conecta a madres comunitarias, padres de familia y administradores
+      para el bienestar y desarrollo de la primera infancia.
+    </p>
+
     <div class="card-wrapper">
-      <button class="control-btn" id="prev">&#9664;</button>
+      <button class="control-btn" id="prev"><i class="fas fa-chevron-left"></i></button>
 
       <div class="card-container">
 
         <!-- Madre Comunitaria -->
         <div class="card active">
-          <img src="{% static 'img/madresComunitarias.jpg' %} " alt="Madre Comunitaria">
+          <img src="{% static 'img/madresComunitarias.jpg' %}" alt="Madre Comunitaria">
           <h2>Madres Comunitarias</h2>
           <p>
             Registra actividades, gestiona la asistencia de los niños y envía reportes al sistema de forma rápida y organizada.
           </p>
-          <button onclick="location.href='login'">Ingresar</button>
+          <button onclick="location.href='{% url 'login' %}'">Ingresar</button>
         </div>
 
         <!-- Padre de Familia -->
         <div class="card">
-          <img src="{% static 'img/padresFamilia.jpg' %} " alt="Padre de Familia">
+          <img src="{% static 'img/padresFamilia.jpg' %}" alt="Padre de Familia">
           <h2>Padres de Familia</h2>
           <p>
             Consulta información de tus hijos, comunícate con la madre comunitaria y revisa su progreso desde cualquier lugar.
           </p>
-          <button onclick="location.href='login'">Ingresar</button>
+          <button onclick="location.href='{% url 'login' %}'">Ingresar</button>
         </div>
 
         <!-- Administrador -->
@@ -253,12 +268,12 @@
           <p>
             Supervisa la información del sistema, administra usuarios y genera reportes globales con facilidad.
           </p>
-          <button onclick="location.href='login'">Ingresar</button>
+          <button onclick="location.href='{% url 'login' %}'">Ingresar</button>
         </div>
 
       </div>
 
-      <button class="control-btn" id="next">&#9654;</button>
+      <button class="control-btn" id="next"><i class="fas fa-chevron-right"></i></button>
     </div>
   </main>
 
@@ -272,20 +287,23 @@
     let current = 0;
 
     document.getElementById('next').addEventListener('click', () => {
+      const outgoing = cards[current];
       cards[current].classList.remove('active');
-      cards[current].classList.add('exit-left');
       current = (current + 1) % cards.length;
-      setTimeout(() => {
-        cards.forEach(c => c.classList.remove('exit-left'));
-        cards[current].classList.add('active');
-      }, 400);
+      cards[current].classList.add('active');
     });
 
     document.getElementById('prev').addEventListener('click', () => {
+      const outgoing = cards[current];
       cards[current].classList.remove('active');
       current = (current - 1 + cards.length) % cards.length;
       cards[current].classList.add('active');
     });
+
+    // Inicializar el primer slide
+    if (cards.length > 0) {
+        cards[0].classList.add('active');
+    }
   </script>
 
 </body>
