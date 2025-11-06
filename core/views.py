@@ -274,19 +274,25 @@ def role_redirect(request):
     Redirige al dashboard apropiado según el rol del usuario.
     Esta será la URL de redirección principal después de un login exitoso.
     """
+    # 💡 CORRECCIÓN: Verificar si el usuario tiene un rol asignado
+    if not request.user.rol:
+        # Si no tiene rol (ej. superusuario sin rol asignado), redirigir a home
+        # o a una página de "acceso denegado".
+        return redirect('home')
+
     # El campo 'rol' es una ForeignKey, accedemos al nombre con '.nombre_rol'
-    role = request.user.rol.nombre_rol 
-    
+    role = request.user.rol.nombre_rol
+
     if role == 'administrador':
         # Redirige a la URL con name='admin_dashboard'
-        return redirect('admin_dashboard') 
-        
+        return redirect('admin_dashboard')
+
     elif role == 'madre_comunitaria':
         # Redirige a la URL que crearemos: name='madre_dashboard'
-        return redirect('madre_dashboard') 
-    
+        return redirect('madre_dashboard')
+
     # Si el rol es 'padre' o no está definido, puede redirigir al home
-    return redirect('home') 
+    return redirect('home')
 
 
 # ----------------------------------------------------
