@@ -5,9 +5,10 @@ The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -40,4 +41,8 @@ urlpatterns = [
     # --- CRUD Niños (Matrícula) ---
     path('ninos/matricular/', views.matricular_nino, name='matricular_nino'),
     path('ninos/', views.listar_ninos, name='listar_ninos'), # Para listar los niños del hogar
+
+    # --- CRUD Planeaciones ---
+    path('planeaciones/', include('planeaciones.urls')),
+
 ]
