@@ -309,6 +309,53 @@ def listar_ninos(request):
 # -----------------------------------------------------------------
 @login_required
 def registrar_desarrollo(request):
+    # Esta vista ahora solo maneja la creación
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
+
+    try:
+        hogar_madre = HogarComunitario.objects.get(madre=request.user)
+    except HogarComunitario.DoesNotExist:
+        return redirect('madre_dashboard')
+
+    ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
+
+    if request.method == 'POST':
+        nino_id = request.POST.get('nino')
+        fecha_registro = request.POST.get('fecha_registro')
+        cognitiva = request.POST.get('dimension_cognitiva')
+        comunicativa = request.POST.get('dimension_comunicativa')
+        socio_afectiva = request.POST.get('dimension_socio_afectiva')
+        corporal = request.POST.get('dimension_corporal')
+        
+        if not all([nino_id, fecha_registro, cognitiva, comunicativa, socio_afectiva, corporal]):
+            return render(request, 'madre/desarrollo_form.html', {
+                'ninos': ninos_del_hogar,
+                'error': 'Todos los campos son obligatorios.'
+            })
+
+        DesarrolloNino.objects.create(
+            nino_id=nino_id,
+            fecha_fin_mes=fecha_registro,
+            dimension_cognitiva=cognitiva,
+            dimension_comunicativa=comunicativa,
+            dimension_socio_afectiva=socio_afectiva,
+            dimension_corporal=corporal,
+        )
+        
+        return redirect('listar_desarrollos')
+
+    return render(request, 'madre/desarrollo_form.html', {
+        'ninos': ninos_del_hogar,
+        'form_action': reverse('registrar_desarrollo'),
+        'titulo_form': 'Registrar Desarrollo de Niño'
+    })
+
+# -----------------------------------------------------------------
+# 💡 NUEVA FUNCIÓN: Listar Registros de Desarrollo (CRUD Leer)
+# -----------------------------------------------------------------
+@login_required
+def listar_desarrollos(request):
     # 1. Seguridad y obtener el hogar de la madre
     if request.user.rol.nombre_rol != 'madre_comunitaria':
         return redirect('role_redirect')
@@ -316,44 +363,72 @@ def registrar_desarrollo(request):
     try:
         hogar_madre = HogarComunitario.objects.get(madre=request.user)
     except HogarComunitario.DoesNotExist:
-        # Si no tiene hogar, no puede registrar. Se puede mostrar un error.
-        return redirect('madre_dashboard') # O una página de error
+        return render(request, 'madre/desarrollo_list.html', {'error': 'No tienes un hogar asignado.'})
 
-    # Obtener los niños del hogar de la madre
+    # 2. Obtener la lista base de desarrollos y niños para los filtros
+    desarrollos = DesarrolloNino.objects.filter(nino__hogar=hogar_madre).select_related('nino', 'nino__padre__usuario').order_by('-fecha_fin_mes')
     ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
 
-    # 2. Manejar la solicitud POST
+    # 3. Aplicar filtros si existen
+    nino_id_filtro = request.GET.get('nino')
+    mes_filtro = request.GET.get('mes') # Formato YYYY-MM
+
+    if nino_id_filtro:
+        desarrollos = desarrollos.filter(nino__id=nino_id_filtro)
+    
+    if mes_filtro:
+        # Filtra por año y mes de la fecha de fin de mes
+        year, month = map(int, mes_filtro.split('-'))
+        desarrollos = desarrollos.filter(fecha_fin_mes__year=year, fecha_fin_mes__month=month)
+
+    # 4. Renderizar la plantilla con el contexto
+    return render(request, 'madre/desarrollo_list.html', {
+        'desarrollos': desarrollos,
+        'ninos': ninos_del_hogar,
+        'nino_id_filtro': nino_id_filtro, # Para mantener la selección del filtro
+        'mes_filtro': mes_filtro,
+    })
+
+# -----------------------------------------------------------------
+# 💡 NUEVA FUNCIÓN: Editar Registro de Desarrollo (CRUD Actualizar)
+# -----------------------------------------------------------------
+@login_required
+def editar_desarrollo(request, id):
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
+
+    desarrollo = get_object_or_404(DesarrolloNino, id=id)
+
+    if desarrollo.nino.hogar.madre != request.user:
+        return redirect('listar_desarrollos')
+
     if request.method == 'POST':
-        # Obtener datos del formulario
-        nino_id = request.POST.get('nino')
-        fecha_registro = request.POST.get('fecha_registro')
-        cognitiva = request.POST.get('dimension_cognitiva')
-        comunicativa = request.POST.get('dimension_comunicativa')
-        socio_afectiva = request.POST.get('dimension_socio_afectiva')
-        corporal = request.POST.get('dimension_corporal')
+        desarrollo.fecha_fin_mes = request.POST.get('fecha_registro')
+        desarrollo.dimension_cognitiva = request.POST.get('dimension_cognitiva')
+        desarrollo.dimension_comunicativa = request.POST.get('dimension_comunicativa')
+        desarrollo.dimension_socio_afectiva = request.POST.get('dimension_socio_afectiva')
+        desarrollo.dimension_corporal = request.POST.get('dimension_corporal')
+        desarrollo.save()
+        return redirect('listar_desarrollos')
 
-        # Validar que los datos esenciales están presentes
-        if not all([nino_id, fecha_registro, cognitiva, comunicativa, socio_afectiva, corporal]):
-            return render(request, 'madre/desarrollo_form.html', {
-                'ninos': ninos_del_hogar,
-                'error': 'Todos los campos son obligatorios.'
-            })
+    return render(request, 'madre/desarrollo_form.html', {
+        'desarrollo': desarrollo,
+        'form_action': reverse('editar_desarrollo', args=[id]),
+        'titulo_form': 'Editar Registro de Desarrollo'
+    })
 
-        # Usar update_or_create para evitar duplicados para el mismo niño y mes
-        # El modelo tiene `unique_together` en ('nino', 'fecha_fin_mes')
-        DesarrolloNino.objects.update_or_create(
-            nino_id=nino_id,
-            fecha_fin_mes=fecha_registro,
-            defaults={
-                'dimension_cognitiva': cognitiva,
-                'dimension_comunicativa': comunicativa,
-                'dimension_socio_afectiva': socio_afectiva,
-                'dimension_corporal': corporal,
-            }
-        )
-        
-        # Redirigir a la misma página con un mensaje de éxito
-        return redirect(f"{reverse('registrar_desarrollo')}?exito=1")
+# -----------------------------------------------------------------
+# 💡 NUEVA FUNCIÓN: Eliminar Registro de Desarrollo (CRUD Eliminar)
+# -----------------------------------------------------------------
+@login_required
+def eliminar_desarrollo(request, id):
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
 
-    # 3. Manejar la solicitud GET
-    return render(request, 'madre/desarrollo_form.html', {'ninos': ninos_del_hogar})
+    desarrollo = get_object_or_404(DesarrolloNino, id=id)
+
+    if desarrollo.nino.hogar.madre != request.user:
+        return redirect('listar_desarrollos')
+
+    desarrollo.delete()
+    return redirect('listar_desarrollos')

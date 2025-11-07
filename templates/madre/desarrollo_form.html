@@ -18,16 +18,6 @@
       background-attachment: fixed;
     }
 
-    .borde2 {
-      text-align: center;
-      background-color: rgba(155, 89, 182, 0.9);
-      color: white;
-      padding: 12px 0;
-      font-size: 26px;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
-
     header {
       display: flex;
       align-items: center;
@@ -66,7 +56,7 @@
     }
 
     nav ul li a:hover, nav ul li button:hover {
-      background-color: #f3c1e5;
+      background-color: #f3c1e5; 
     }
     .main-title {
       text-align: center;
@@ -186,7 +176,6 @@
   </style>
 </head>
 <body>
-  <div class="borde2"></div>
 
   <header>
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
@@ -195,7 +184,7 @@
         <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
         <li><a href="#"><i class="fas fa-book"></i> Planeaciones</a></li>
-        <li><a href="{% url 'registrar_desarrollo' %}"><i class="fas fa-child"></i> Desarrollo</a></li>
+        <li><a href="{% url 'listar_desarrollos' %}"><i class="fas fa-child"></i> Desarrollo</a></li>
         <li>
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}
@@ -206,7 +195,7 @@
     </nav>
   </header>
 
-  <div class="main-title">ICBF - CONECTA | Registro de Desarrollo de Niños</div>
+  <div class="main-title">ICBF - CONECTA | {{ titulo_form }}</div>
 
   <div class="contenedor">
     {% if request.GET.exito %}
@@ -217,44 +206,51 @@
     {% endif %}
 
     <div class="card">
-      <h2><i class="fas fa-file-alt"></i> Datos del Niño</h2>
+      <h2><i class="fas fa-file-alt"></i> {{ titulo_form }}</h2>
       <p style="text-align: center; color: #555; margin-top: -15px; margin-bottom: 25px;">Los campos con <span class="required-star">*</span> son obligatorios.</p>
 
-      <form method="post">
+      <form method="post" action="{{ form_action }}">
         {% csrf_token %}
         <h4>Nombres y Apellidos del niño<span class="required-star">*</span></h4>
-        <select name="nino" required>
-          <option value="">-- Seleccionar Nombre y Apellidos del niño --</option>
-          {% for nino in ninos %}
-          <option value="{{ nino.id }}">{{ nino.nombres }} {{ nino.apellidos }}</option>
-          {% endfor %}
-        </select>
+        {% if desarrollo %}
+          <input type="text" value="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}" disabled>
+        {% else %}
+          <select name="nino" required>
+            <option value="">-- Seleccionar Nombre y Apellidos del niño --</option>
+            {% for nino in ninos %}
+            <option value="{{ nino.id }}">{{ nino.nombres }} {{ nino.apellidos }}</option>
+            {% endfor %}
+          </select>
+        {% endif %}
         
         <h4>Fecha de Fin de Mes del Registro<span class="required-star">*</span></h4>
-        <input type="date" name="fecha_registro" required>
+        <input type="date" name="fecha_registro" value="{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}" required>
 
         <div class="tabla">
           <h2>Registro de Dimensión Cognitiva<span class="required-star">*</span></h2>
-          <textarea name="dimension_cognitiva" required placeholder="Detalles de la dimensión cognitiva del niño"></textarea>
+          <textarea name="dimension_cognitiva" required placeholder="Detalles de la dimensión cognitiva del niño">{{ desarrollo.dimension_cognitiva }}</textarea>
         </div>
 
         <div class="tabla">
           <h2>Registro de Dimensión Comunicativa<span class="required-star">*</span></h2>
-          <textarea name="dimension_comunicativa" required placeholder="Detalles de la dimensión comunicativa del niño"></textarea>
+          <textarea name="dimension_comunicativa" required placeholder="Detalles de la dimensión comunicativa del niño">{{ desarrollo.dimension_comunicativa }}</textarea>
         </div>
 
         <div class="tabla">
           <h2>Registro de Dimensión Socio-Afectiva<span class="required-star">*</span></h2>
-          <textarea name="dimension_socio_afectiva" required placeholder="Detalles de la dimensión socio afectiva del niño"></textarea>
+          <textarea name="dimension_socio_afectiva" required placeholder="Detalles de la dimensión socio afectiva del niño">{{ desarrollo.dimension_socio_afectiva }}</textarea>
         </div>
 
         <div class="tabla">
           <h2>Registro de Dimensión Corporal<span class="required-star">*</span></h2>
-          <textarea name="dimension_corporal" required placeholder="Detalles de la dimensión corporal del niño"></textarea>
+          <textarea name="dimension_corporal" required placeholder="Detalles de la dimensión corporal del niño">{{ desarrollo.dimension_corporal }}</textarea>
         </div>
 
         <button class="botones" type="submit">Guardar Registro</button>
       </form>
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="{% url 'listar_desarrollos' %}" style="color: #555; text-decoration: none;">← Volver al listado</a>
+      </div>
     </div>
   </div>
 

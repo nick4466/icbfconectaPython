@@ -43,5 +43,8 @@ urlpatterns = [
 
     # --- CRUD Niños (Desarrollo)
         path('madre/desarrollo/registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),
+        path('madre/desarrollo/', views.listar_desarrollos, name='listar_desarrollos'),
+        path('madre/desarrollo/editar/<int:id>/', views.editar_desarrollo, name='editar_desarrollo'),
+        path('madre/desarrollo/eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
         
     ]
