@@ -1,5 +1,34 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+
+# ------------------------
+# Gestor de usuarios personalizado
+# ------------------------
+class CustomUserManager(BaseUserManager):
+    def create_user(self, documento, password=None, **extra_fields):
+        if not documento:
+            raise ValueError('El campo Documento es obligatorio.')
+
+        extra_fields.setdefault('username', str(documento))
+        user = self.model(documento=documento, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, documento, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser debe tener is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser debe tener is_superuser=True.')
+
+        rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
+        extra_fields['rol'] = rol_admin
+        return self.create_user(documento, password, **extra_fields)
+
 
 # ------------------------
 # Roles del sistema
@@ -26,7 +55,15 @@ class Rol(models.Model):
 # Usuario personalizado
 # ------------------------
 class Usuario(AbstractUser):
-    documento = models.BigIntegerField(unique=True, null=True, blank=True)
+    TIPO_DOCUMENTO_CHOICES = [
+        ('CC', 'Cédula de ciudadanía'),
+        ('TI', 'Tarjeta de identidad'),
+        ('CE', 'Cédula de extranjería'),
+        ('PA', 'Pasaporte'),
+    ]
+
+    tipo_documento = models.CharField(max_length=5, choices=TIPO_DOCUMENTO_CHOICES, default='CC')
+    documento = models.BigIntegerField(unique=True)
     nombres = models.CharField(max_length=50)
     apellidos = models.CharField(max_length=50)
     correo = models.EmailField(max_length=100, unique=True)
@@ -35,16 +72,18 @@ class Usuario(AbstractUser):
     rol = models.ForeignKey(Rol, on_delete=models.PROTECT, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
+    username = models.CharField(max_length=150, unique=True, null=True, blank=True)
 
-    EMAIL_FIELD = 'correo'
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['correo']
+    USERNAME_FIELD = 'documento'
+    REQUIRED_FIELDS = ['nombres', 'apellidos', 'correo', 'tipo_documento']
+
+    objects = CustomUserManager()
 
     class Meta:
         db_table = 'usuarios'
 
     def __str__(self):
-        return f"{self.nombres} {self.apellidos} ({self.correo})"
+        return f"{self.nombres} {self.apellidos} ({self.documento})"
 
 
 # ------------------------
