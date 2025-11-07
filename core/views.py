@@ -1,14 +1,11 @@
-from django.shortcuts import render
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
 # core/views.py
-
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.contrib.auth.hashers import make_password
-from .models import Usuario, Rol, Padre, Nino, HogarComunitario # Asegúrate de que todas están aquí
+from .models import Usuario, Rol, Padre, Nino, HogarComunitario, DesarrolloNino
 from django.utils import timezone
+from django import forms
 
 # -----------------------------------------------------------------
 # 💡 NUEVA FUNCIÓN: Matricular Niño (CRUD Crear)
@@ -101,11 +98,6 @@ def home(request):
 def admin_dashboard(request):
     return render(request, 'admin/dashboard.html')
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from .models import Usuario, HogarComunitario, Rol
-from django import forms
-
 # ---------- Formularios simples ----------
 class MadreForm(forms.ModelForm):
     class Meta:
@@ -131,9 +123,6 @@ class AdministradorForm(forms.ModelForm):
 def listar_madres(request):
     madres = Usuario.objects.filter(rol__nombre_rol='madre_comunitaria')
     return render(request, 'admin/madres_list.html', {'madres': madres})
-
-from core.models import Rol
-from django.contrib.auth.decorators import login_required
 
 @login_required
 def crear_madre(request):
@@ -193,18 +182,12 @@ def eliminar_madre(request, id):
     madre.delete()
     return redirect('listar_madres')
 
-
-from django.contrib.auth.hashers import make_password
-from core.models import Usuario, Rol
-
 @login_required
 def listar_administradores(request):
     rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
     administradores = Usuario.objects.filter(rol=rol_admin)
     return render(request, 'admin/administradores_list.html', {'administradores': administradores})
 
-from django.contrib.auth.hashers import make_password
-from .models import Usuario, Rol # Asegúrate de que las importaciones sean correctas
 
 @login_required
 def crear_administrador(request):
@@ -258,11 +241,6 @@ def editar_administrador(request, id):
 def eliminar_administrador(request, id):
     Usuario.objects.filter(id=id).delete()
     return redirect('listar_administradores')
-# core/views.py
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-
 # ... Tus otras funciones (home, admin_dashboard, crear_madre, etc.) ...
 
 # ----------------------------------------------------
@@ -325,3 +303,57 @@ def listar_ninos(request):
     ninos = Nino.objects.filter(hogar__in=hogares_madre).order_by('apellidos')
 
     return render(request, 'madre/nino_list.html', {'ninos': ninos})
+
+# -----------------------------------------------------------------
+# 💡 NUEVA FUNCIÓN: Registrar Desarrollo del Niño (CRUD Crear/Actualizar)
+# -----------------------------------------------------------------
+@login_required
+def registrar_desarrollo(request):
+    # 1. Seguridad y obtener el hogar de la madre
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
+    
+    try:
+        hogar_madre = HogarComunitario.objects.get(madre=request.user)
+    except HogarComunitario.DoesNotExist:
+        # Si no tiene hogar, no puede registrar. Se puede mostrar un error.
+        return redirect('madre_dashboard') # O una página de error
+
+    # Obtener los niños del hogar de la madre
+    ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
+
+    # 2. Manejar la solicitud POST
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        nino_id = request.POST.get('nino')
+        fecha_registro = request.POST.get('fecha_registro')
+        cognitiva = request.POST.get('dimension_cognitiva')
+        comunicativa = request.POST.get('dimension_comunicativa')
+        socio_afectiva = request.POST.get('dimension_socio_afectiva')
+        corporal = request.POST.get('dimension_corporal')
+
+        # Validar que los datos esenciales están presentes
+        if not all([nino_id, fecha_registro, cognitiva, comunicativa, socio_afectiva, corporal]):
+            return render(request, 'madre/desarrollo_form.html', {
+                'ninos': ninos_del_hogar,
+                'error': 'Todos los campos son obligatorios.'
+            })
+
+        # Usar update_or_create para evitar duplicados para el mismo niño y mes
+        # El modelo tiene `unique_together` en ('nino', 'fecha_fin_mes')
+        DesarrolloNino.objects.update_or_create(
+            nino_id=nino_id,
+            fecha_fin_mes=fecha_registro,
+            defaults={
+                'dimension_cognitiva': cognitiva,
+                'dimension_comunicativa': comunicativa,
+                'dimension_socio_afectiva': socio_afectiva,
+                'dimension_corporal': corporal,
+            }
+        )
+        
+        # Redirigir a la misma página con un mensaje de éxito
+        return redirect(f"{reverse('registrar_desarrollo')}?exito=1")
+
+    # 3. Manejar la solicitud GET
+    return render(request, 'madre/desarrollo_form.html', {'ninos': ninos_del_hogar})
