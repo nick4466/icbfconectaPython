@@ -135,6 +135,25 @@
       background-color: #8e44ad;
     }
 
+    .btn-enviar {
+      background-color: #f3c1e5;
+      color: #5e3370;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-enviar:hover {
+      background-color: #e8a9d6;
+    }
+
     @media (max-width: 768px) {
       .main-title {
         font-size: 22px;
@@ -186,7 +205,7 @@
       <h2>Bienvenida, {{ user.nombres }}</h2>
       <p>Gracias por tu valiosa labor en el hogar <strong>{{ hogar_madre.nombre_hogar }}</strong>.</p>
       <a href="#" class="btn-asistencia">Llamar Asistencia</a>
-      <a href="{% url 'matricular_nino' %}" class="btn-asistencia" style="margin-top: 10px; background-color: #e8a9d6; color: #5e3370;">Matricular Nuevo Niño</a>
+      <a href="#" class="btn-enviar">Enviar Correos</a>
     </div>
 
     <!-- Tarjeta 3: DEBERES -->
