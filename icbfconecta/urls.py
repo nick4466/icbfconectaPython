@@ -41,15 +41,14 @@ urlpatterns = [
     # --- CRUD Niños (Matrícula) ---
     path('ninos/matricular/', views.matricular_nino, name='matricular_nino'),
     path('ninos/', views.listar_ninos, name='listar_ninos'), # Para listar los niños del hogar
-
-    # --- CRUD Planeaciones ---
-    path('planeaciones/', include('planeaciones.urls')),
-
-]
     path('ninos/<int:id>/ver/', views.ver_ficha_nino, name='ver_ficha_nino'),
     path('ninos/<int:id>/editar/', views.editar_nino, name='editar_nino'),
     path('ninos/<int:id>/eliminar/', views.eliminar_nino, name='eliminar_nino'),
     path('ninos/reporte/', views.generar_reporte_ninos, name='generar_reporte_ninos'),
+    
+    # --- CRUD Planeaciones ---
+    path('planeaciones/', include('planeaciones.urls')),
+
 
     # --- CRUD Niños (Desarrollo)
     path('madre/desarrollo/registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),
