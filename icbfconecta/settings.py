@@ -126,3 +126,12 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = 'role_redirect'
+LOGIN_URL = '/login/'
+# En settings.py
+
+# En settings.py
+
+AUTHENTICATION_BACKENDS = [
+    'core.backends.DocumentTypeBackend', # Tu nuevo backend
+    'django.contrib.auth.backends.ModelBackend', # Deja este por si acaso
+]

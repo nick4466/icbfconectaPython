@@ -1,29 +1,28 @@
-"""
-URL configuration for icbfconecta project.
+# icbfconecta/urls.py
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-"""
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
-
+from core.forms import CustomAuthForm # ¡IMPORTACIÓN CLAVE!
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     
-    # URL de Redirección por Rol (Nuevo Punto de Entrada después del Login)
+    path('login/', auth_views.LoginView.as_view(
+        template_name='login.html',
+        authentication_form=CustomAuthForm, # <-- ¡CLAVE! Usar el formulario custom
+        redirect_field_name='next',
+        redirect_authenticated_user=True
+    ), name='login'),
+    
+    # URL de Redirección por Rol 
     path('dashboard/', views.role_redirect, name='role_redirect'),
     
-    # Dashboards
+    # Dashboards (Logout ya usa 'home' por defecto si no lo especificas)
     path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
-    path('dashboard/madre/', views.madre_dashboard, name='madre_dashboard'), # Nuevo
-    
-    # Logout
-    # next_page='home' es correcto si 'home' es la URL de aterrizaje después de cerrar sesión
+    path('dashboard/madre/', views.madre_dashboard, name='madre_dashboard'),
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'), 
 
     # --- CRUD Madres ---
