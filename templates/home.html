@@ -224,6 +224,12 @@
         <nav>
             <ul>
                 <li><a href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a></li>
+            <ul>                
+                <li>
+                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                        {% csrf_token %}
+                    </form>
+                </li>
             </ul>
         </nav>
     </header>
