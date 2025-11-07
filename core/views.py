@@ -21,7 +21,7 @@ def matricular_nino(request):
     try:
         hogar_madre = HogarComunitario.objects.get(madre=request.user)
     except HogarComunitario.DoesNotExist:
-        return render(request, 'madre/nino_form.html', {'error': 'No tienes un hogar asignado. Contacta al administrador.'})
+        return render(request, 'madre/nino_form.html', {'error': 'No tienes un hogar asignado. Contacta al administrador.', 'form_action': reverse('matricular_nino')})
 
 
     # 2. Manejar la solicitud POST (Creación de Padre y Niño)
@@ -39,7 +39,7 @@ def matricular_nino(request):
         genero_nino = request.POST.get('genero_nino')
         
         if not all([doc_padre, nombres_padre, correo_padre, nombres_nino, fecha_nacimiento]):
-            return render(request, 'madre/nino_form.html', {'error': 'Faltan campos obligatorios', 'hogar_madre': hogar_madre})
+            return render(request, 'madre/nino_form.html', {'error': 'Faltan campos obligatorios', 'hogar_madre': hogar_madre, 'form_action': reverse('matricular_nino')})
 
 
         try:
@@ -87,11 +87,15 @@ def matricular_nino(request):
         
         except Exception as e:
             # Maneja errores de unicidad (documento/correo duplicado) o DB
-            return render(request, 'madre/nino_form.html', {'error': f'Error al matricular: {e}', 'hogar_madre': hogar_madre})
+            return render(request, 'madre/nino_form.html', {'error': f'Error al matricular: {e}', 'hogar_madre': hogar_madre, 'form_action': reverse('matricular_nino')})
 
 
     # 3. Manejar la solicitud GET (Mostrar el formulario)
-    return render(request, 'madre/nino_form.html', {'hogar_madre': hogar_madre})
+    return render(request, 'madre/nino_form.html', {
+        'hogar_madre': hogar_madre,
+        'form_action': reverse('matricular_nino'),
+        'titulo_form': 'Matricular Niño Nuevo'
+    })
 def home(request):
     return render(request, 'home.html')
 @login_required
@@ -432,3 +436,56 @@ def eliminar_desarrollo(request, id):
 
     desarrollo.delete()
     return redirect('listar_desarrollos')
+
+@login_required
+def ver_ficha_nino(request, id):
+    nino = get_object_or_404(Nino, id=id)
+    return render(request, 'madre/nino_ficha.html', {'nino': nino})
+
+@login_required
+def editar_nino(request, id):
+    nino = get_object_or_404(Nino, id=id)
+    # Seguridad: Asegurarse que la madre solo edita niños de su hogar
+    if nino.hogar.madre != request.user:
+        return redirect('listar_ninos')
+
+    if request.method == 'POST':
+        # Actualizar datos del padre
+        nino.padre.usuario.nombres = request.POST.get('nombres_padre', nino.padre.usuario.nombres)
+        nino.padre.usuario.apellidos = request.POST.get('apellidos_padre', nino.padre.usuario.apellidos)
+        nino.padre.usuario.correo = request.POST.get('correo_padre', nino.padre.usuario.correo)
+        nino.padre.usuario.telefono = request.POST.get('telefono_padre', nino.padre.usuario.telefono)
+        nino.padre.usuario.save()
+
+        nino.padre.ocupacion = request.POST.get('ocupacion', nino.padre.ocupacion)
+        nino.padre.save()
+
+        # Actualizar datos del niño
+        nino.nombres = request.POST.get('nombres_nino', nino.nombres)
+        nino.apellidos = request.POST.get('apellidos_nino', nino.apellidos)
+        nino.documento = request.POST.get('doc_nino', nino.documento)
+        nino.fecha_nacimiento = request.POST.get('fecha_nacimiento', nino.fecha_nacimiento)
+        nino.genero = request.POST.get('genero_nino', nino.genero)
+        nino.save()
+        return redirect('listar_ninos')
+
+    return render(request, 'madre/nino_form.html', {
+        'nino': nino,
+        'padre': nino.padre,
+        'hogar_madre': nino.hogar,
+        'modo_edicion': True,
+        'form_action': reverse('editar_nino', args=[id]),
+        'titulo_form': 'Editar Ficha del Niño',
+        'texto_boton': 'Guardar Cambios'
+    })
+
+@login_required
+def generar_reporte_ninos(request):
+    # Aquí puedes generar el PDF o mostrar un mensaje temporal
+    return render(request, 'madre/reporte_ninos.html')
+
+@login_required
+def eliminar_nino(request, id):
+    nino = get_object_or_404(Nino, id=id)
+    nino.delete()
+    return redirect('listar_ninos')

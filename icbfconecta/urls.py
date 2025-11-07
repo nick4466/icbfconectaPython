@@ -40,11 +40,15 @@ urlpatterns = [
     # --- CRUD Niños (Matrícula) ---
     path('ninos/matricular/', views.matricular_nino, name='matricular_nino'),
     path('ninos/', views.listar_ninos, name='listar_ninos'), # Para listar los niños del hogar
+    path('ninos/<int:id>/ver/', views.ver_ficha_nino, name='ver_ficha_nino'),
+    path('ninos/<int:id>/editar/', views.editar_nino, name='editar_nino'),
+    path('ninos/<int:id>/eliminar/', views.eliminar_nino, name='eliminar_nino'),
+    path('ninos/reporte/', views.generar_reporte_ninos, name='generar_reporte_ninos'),
 
     # --- CRUD Niños (Desarrollo)
-        path('madre/desarrollo/registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),
-        path('madre/desarrollo/', views.listar_desarrollos, name='listar_desarrollos'),
-        path('madre/desarrollo/editar/<int:id>/', views.editar_desarrollo, name='editar_desarrollo'),
-        path('madre/desarrollo/eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
+    path('madre/desarrollo/registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),
+    path('madre/desarrollo/', views.listar_desarrollos, name='listar_desarrollos'),
+    path('madre/desarrollo/editar/<int:id>/', views.editar_desarrollo, name='editar_desarrollo'),
+    path('madre/desarrollo/eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
         
     ]
