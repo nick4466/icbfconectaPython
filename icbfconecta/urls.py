@@ -9,7 +9,6 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
 
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
@@ -44,16 +43,16 @@ urlpatterns = [
     path('ninos/<int:id>/ver/', views.ver_ficha_nino, name='ver_ficha_nino'),
     path('ninos/<int:id>/editar/', views.editar_nino, name='editar_nino'),
     path('ninos/<int:id>/eliminar/', views.eliminar_nino, name='eliminar_nino'),
+    path('gestion-ninos/', views.gestion_ninos, name='gestion_ninos'),
     path('ninos/reporte/', views.generar_reporte_ninos, name='generar_reporte_ninos'),
-    
-    # --- CRUD Planeaciones ---
-    path('planeaciones/', include('planeaciones.urls')),
-
 
     # --- CRUD Niños (Desarrollo)
     path('madre/desarrollo/registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),
     path('madre/desarrollo/', views.listar_desarrollos, name='listar_desarrollos'),
     path('madre/desarrollo/editar/<int:id>/', views.editar_desarrollo, name='editar_desarrollo'),
     path('madre/desarrollo/eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
-        
-    ]
+
+    # --- URLs de Planeaciones ---
+    # Se incluye el archivo de URLs de la app 'planeaciones' y se le asigna un namespace.
+    path('planeaciones/', include(('planeaciones.urls', 'planeaciones'), namespace='planeaciones')),
+]

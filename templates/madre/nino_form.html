@@ -2,160 +2,87 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Matricular Nuevo Niño</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-image: url("{% static 'img/fondito.jpg' %}");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-    }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 15px 30px;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-      flex-wrap: wrap;
-    }
-    header img { height: 60px; }
-    nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      padding: 0;
-      margin: 0;
-    }
-    nav ul li a, nav ul li button {
-      text-decoration: none;
-      color: #9B59B6;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background-color 0.3s ease;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-family: 'Roboto', sans-serif;
-    }
-    nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
-    .main-title {
-      text-align: center;
-      margin-top: 20px;
-      padding: 20px;
-      font-size: 30px;
-      font-weight: bold;
-      color: #7a3eb1;
-      background-color: #f3c4ffb3;
-      margin: 20px auto;
-      width: 80%;
-      border-radius: 10px;
-    }
-    .contenedor {
-      max-width: 950px;
-      margin: 30px auto;
-      background-color: rgba(255, 255, 255, 0.95);
-      border-radius: 14px;
-      padding: 30px;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-    }
-    .card {
-      background-color: rgba(255, 255, 255, 0.9);
-      border-radius: 14px;
-      padding: 30px;
-      backdrop-filter: blur(3px);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
-      border-left: 8px solid #9B59B6;
-    }
-    .card h2 {
-      color: #9B59B6;
-      margin-bottom: 25px;
-      font-size: 27px;
-      text-align: center;
-    }
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px 32px;
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 10px;
-    }
-    label {
-      font-weight: bold;
-      margin-bottom: 6px;
-      color: #5e3370;
-    }
-    input[type="text"], input[type="email"], input[type="date"], input[type="number"], select {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background-color: #fff;
-      transition: border-color 0.3s ease;
-    }
-    input:focus, select:focus {
-      border-color: #9B59B6;
-      outline: none;
-      background-color: #f0f8ff;
-    }
-    .botones {
-      background-color: #9B59B6;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      font-size: 18px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      align-self: center;
-      margin-top: 20px;
-    }
-    .botones:hover { background-color: #8e44ad; }
-    .mensaje-exito {
-      background-color: #4CAF50;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    .required-star {
-      color: #e74c3c;
-      font-weight: bold;
-      margin-left: 5px;
-    }
-    .error {
-      color: #e74c3c;
-      font-weight: bold;
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    .alert-info {
-      background-color: #e0f7fa;
-      border-left: 5px solid #00bcd4;
-      padding: 10px;
-      margin-bottom: 20px;
-      color: #007b83;
-      font-size: 15px;
-    }
-    @media (max-width: 900px) {
-      .form-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Matricular Nuevo Niño</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        .form-section {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px 30px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .alert-info {
+            background-color: #e0f7fa;
+            border-left: 5px solid #00bcd4;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 12px 25px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        a.cancel-link {
+            margin-left: 15px;
+            color: #555;
+            text-decoration: none;
+        }
+        a.cancel-link:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
   <header>
@@ -164,8 +91,8 @@
       <ul>
         <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
-        <li><a href="#"><i class="fas fa-book"></i> Planeaciones</a></li>
-        <li><a href="{% url 'listar_desarrollos' %}"><i class="fas fa-child"></i> Desarrollo</a></li>
+        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
         <li>
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}
@@ -187,99 +114,66 @@
       <h2><i class="fas fa-child"></i> {{ titulo_form|default:"Matrícula de Niño" }} en Hogar: {{ hogar_madre.nombre_hogar }}</h2>
       <form method="POST" action="{{ form_action }}" onsubmit="return validarMatricula();">
         {% csrf_token %}
-        <div class="form-grid">
-          <!-- Columna 1: Padre/Madre/Tutor -->
-          <div>
-            <h4 style="color:#7a3eb1; margin-bottom:10px;">Datos del Padre, Madre o Tutor</h4>
-            <div class="form-group">
-              <label for="doc_padre">Documento de Identidad <span class="required-star">*</span></label> 
-              <input type="number" id="doc_padre" name="doc_padre" value="{{ padre.usuario.documento }}" required min="1" max="99999999999" {% if modo_edicion %}readonly{% endif %}>
+        
+        <div class="form-section">
+            <h2>1. Datos del Padre, Madre o Tutor</h2>
+            <div class="grid-form">
+                <div>
+                    <label for="doc_padre">Documento de Identidad:</label>
+                    <input type="number" id="doc_padre" name="doc_padre" required>
+                </div>
+                <div>
+                    <label for="nombres_padre">Nombres:</label>
+                    <input type="text" id="nombres_padre" name="nombres_padre" required>
+                </div>
+                <div>
+                    <label for="apellidos_padre">Apellidos:</label>
+                    <input type="text" id="apellidos_padre" name="apellidos_padre" required>
+                </div>
+                <div>
+                    <label for="correo_padre">Correo Electrónico:</label>
+                    <input type="email" id="correo_padre" name="correo_padre" required>
+                </div>
+                <div>
+                    <label for="ocupacion">Ocupación:</label>
+                    <input type="text" id="ocupacion" name="ocupacion">
+                </div>
             </div>
-            <div class="form-group">
-              <label for="nombres_padre">Nombres <span class="required-star">*</span></label>
-              <input type="text" id="nombres_padre" name="nombres_padre" value="{{ padre.usuario.nombres }}" required maxlength="50">
-            </div>
-            <div class="form-group">
-              <label for="apellidos_padre">Apellidos <span class="required-star">*</span></label>
-              <input type="text" id="apellidos_padre" name="apellidos_padre" value="{{ padre.usuario.apellidos }}" required maxlength="50">
-            </div>
-            <div class="form-group">
-              <label for="ocupacion">Ocupación <span class="required-star">*</span></label>
-              <input type="text" id="ocupacion" name="ocupacion" value="{{ padre.ocupacion }}" required maxlength="50">
-            </div>
-            <div class="form-group">
-              <label for="correo_padre">Correo Electrónico <span class="required-star">*</span></label>
-              <input type="email" id="correo_padre" name="correo_padre" value="{{ padre.usuario.correo }}" maxlength="100" required>
-            </div>
-            <div class="form-group">
-              <label for="telefono_padre">Teléfono</label>
-              <input type="text" id="telefono_padre" name="telefono_padre" value="{{ padre.usuario.telefono|default:'' }}" maxlength="20">
-            </div>
-          </div>
-          <!-- Columna 2: Niño -->
-          <div>
-            <h4 style="color:#7a3eb1; margin-bottom:10px;">Datos del Niño</h4>
-            <div class="form-group">
-              <label for="nombres_nino">Nombres <span class="required-star">*</span></label>
-              <input type="text" id="nombres_nino" name="nombres_nino" value="{{ nino.nombres }}" required maxlength="50">
-            </div>
-            <div class="form-group">
-              <label for="apellidos_nino">Apellidos <span class="required-star">*</span></label>
-              <input type="text" id="apellidos_nino" name="apellidos_nino" value="{{ nino.apellidos }}" required maxlength="50">
-            </div>
-            <div class="form-group">
-              <label for="fecha_nacimiento">Fecha de Nacimiento <span class="required-star">*</span></label>
-              <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" value="{{ nino.fecha_nacimiento|date:'Y-m-d' }}" required>
-            </div>
-            <div class="form-group">
-              <label for="doc_nino">Documento de Identidad</label>
-              <input type="number" id="doc_nino" name="doc_nino" value="{{ nino.documento|default:'' }}" min="1" max="99999999999">
-            </div>
-            <div class="form-group">
-              <label for="genero_nino">Género</label>
-              <select id="genero_nino" name="genero_nino">
-                <option value="masculino" {% if nino.genero == 'masculino' %}selected{% endif %}>Masculino</option>
-                <option value="femenino" {% if nino.genero == 'femenino' %}selected{% endif %}>Femenino</option>
-                <option value="otro" {% if nino.genero == 'otro' %}selected{% endif %}>Otro</option>
-                <option value="no_especificado" {% if nino.genero == 'no_especificado' %}selected{% endif %}>No especificado</option>
-              </select>
-            </div>
-          </div>
         </div>
-        <button class="botones" type="submit"><i class="fas fa-save"></i> {{ texto_boton|default:"Matricular Niño" }}</button>
-        <div style="text-align: center; margin-top: 20px;">
-          <a href="{% url 'madre_dashboard' %}" style="color: #555; text-decoration: none;">← Volver al panel</a>
-        </div>
-      </form>
-    </div>
-  </div>
-  <script>
-    function validarMatricula() {
-      // Validación básica de campos requeridos y formatos
-      const docPadre = document.getElementById('doc_padre').value.trim();
-      const nombresPadre = document.getElementById('nombres_padre').value.trim();
-      const apellidosPadre = document.getElementById('apellidos_padre').value.trim();
-      const ocupacion = document.getElementById('ocupacion').value.trim();
-      const nombresNino = document.getElementById('nombres_nino').value.trim();
-      const apellidosNino = document.getElementById('apellidos_nino').value.trim();
-      const fechaNacimiento = document.getElementById('fecha_nacimiento').value;
-      const docNino = document.getElementById('doc_nino').value.trim();
-      const modoEdicion = {{ modo_edicion|yesno:"true,false" }};
 
-      let errorMsg = '';
-      if (!docPadre || !nombresPadre || !apellidosPadre || !ocupacion || !nombresNino || !apellidosNino || !fechaNacimiento) {
-        errorMsg = 'Por favor, completa todos los campos obligatorios.';
-      } else if (!modoEdicion && !/^[0-9]{6,}$/.test(docPadre)) {
-        errorMsg = 'El documento del padre debe ser un número válido de al menos 6 dígitos.';
-      } else if (!/^[0-9]{6,}$/.test(docNino)) {
-        errorMsg = 'El documento del niño debe ser un número válido de al menos 6 dígitos.';
-      }
-      if (errorMsg) {
-        alert(errorMsg);
-        return false;
-      }
-      return true;
-    }
-  </script>
+        <div class="form-section">
+            <h2>2. Datos del Niño a Matricular</h2>
+            <div class="grid-form">
+                <div>
+                    <label for="nombres_nino">Nombres del Niño:</label>
+                    <input type="text" id="nombres_nino" name="nombres_nino" required>
+                </div>
+                <div>
+                    <label for="apellidos_nino">Apellidos del Niño:</label>
+                    <input type="text" id="apellidos_nino" name="apellidos_nino" required>
+                </div>
+                <div>
+                    <label for="fecha_nacimiento">Fecha de Nacimiento:</label>
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                </div>
+                <div>
+                    <label for="doc_nino">Documento del Niño:</label>
+                    <input type="number" id="doc_nino" name="doc_nino">
+                </div>
+                <div>
+                    <label for="genero_nino">Género:</label>
+                    <select id="genero_nino" name="genero_nino">
+                        <option value="masculino">Masculino</option>
+                        <option value="femenino">Femenino</option>
+                        <option value="otro">Otro</option>
+                        <option value="no_especificado">No especificado</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit">Matricular Niño</button>
+        <a href="{% url 'madre_dashboard' %}" class="cancel-link">Cancelar</a>
+    </form>
 </body>
 </html>

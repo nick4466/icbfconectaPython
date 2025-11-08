@@ -1,5 +1,8 @@
+# planeaciones/urls.py
 from django.urls import path
 from . import views
+
+app_name = 'planeaciones'
 
 urlpatterns = [
     path('', views.lista_planeaciones, name='lista_planeaciones'),
