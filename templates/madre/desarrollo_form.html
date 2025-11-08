@@ -183,9 +183,8 @@
       <ul>
         <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
-        <li><a href="#"><i class="fas fa-book"></i> Planeaciones</a></li>
-        <li><a href="{% url 'listar_desarrollos' %}"><i class="fas fa-child"></i> Desarrollo</a></li>
-        <li>
+        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}
                 <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
@@ -211,14 +210,23 @@
 
       <form method="post" action="{{ form_action }}">
         {% csrf_token %}
-        <h4>Nombres y Apellidos del niño<span class="required-star">*</span></h4>
-        {% if desarrollo %}
+        <h4>Nombres y Apellidos del niño<span class="required-star">*</span></h4>        
+        {% if nino_id_preseleccionado %}
+          {% for nino in ninos %}
+            {% if nino.id|stringformat:"s" == nino_id_preseleccionado %}
+              <input type="text" value="{{ nino.nombres }} {{ nino.apellidos }}" disabled>
+              <input type="hidden" name="nino" value="{{ nino.id }}">
+            {% endif %}
+          {% endfor %}
+        {% elif desarrollo %}
           <input type="text" value="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}" disabled>
         {% else %}
           <select name="nino" required>
             <option value="">-- Seleccionar Nombre y Apellidos del niño --</option>
             {% for nino in ninos %}
-            <option value="{{ nino.id }}">{{ nino.nombres }} {{ nino.apellidos }}</option>
+            <option value="{{ nino.id }}" {% if nino_id_preseleccionado == nino.id|stringformat:"s" %}selected{% endif %}>
+              {{ nino.nombres }} {{ nino.apellidos }}
+            </option>
             {% endfor %}
           </select>
         {% endif %}
@@ -249,7 +257,11 @@
         <button class="botones" type="submit">Guardar Registro</button>
       </form>
       <div style="text-align: center; margin-top: 20px;">
-        <a href="{% url 'listar_desarrollos' %}" style="color: #555; text-decoration: none;">← Volver al listado</a>
+        {% if nino_id_preseleccionado %}
+          <a href="{% url 'listar_desarrollos' %}?nino={{ nino_id_preseleccionado }}" style="color: #555; text-decoration: none;">← Volver al listado</a>
+        {% else %}
+          <a href="{% url 'listar_desarrollos' %}" style="color: #555; text-decoration: none;">← Volver al listado</a>
+        {% endif %}
       </div>
     </div>
   </div>

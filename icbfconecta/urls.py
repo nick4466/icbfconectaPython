@@ -1,28 +1,28 @@
-# icbfconecta/urls.py
+"""
+URL configuration for icbfconecta project.
 
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/5.2/topics/http/urls/
+"""
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
-from core.forms import CustomAuthForm # ¡IMPORTACIÓN CLAVE!
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
+    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     
-    path('login/', auth_views.LoginView.as_view(
-        template_name='login.html',
-        authentication_form=CustomAuthForm, # <-- ¡CLAVE! Usar el formulario custom
-        redirect_field_name='next',
-        redirect_authenticated_user=True
-    ), name='login'),
-    
-    # URL de Redirección por Rol 
+    # URL de Redirección por Rol (Nuevo Punto de Entrada después del Login)
     path('dashboard/', views.role_redirect, name='role_redirect'),
     
-    # Dashboards (Logout ya usa 'home' por defecto si no lo especificas)
+    # Dashboards
     path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
-    path('dashboard/madre/', views.madre_dashboard, name='madre_dashboard'),
+    path('dashboard/madre/', views.madre_dashboard, name='madre_dashboard'), # Nuevo
+    
+    # Logout
+    # next_page='home' es correcto si 'home' es la URL de aterrizaje después de cerrar sesión
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'), 
 
     # --- CRUD Madres ---
@@ -43,16 +43,16 @@ urlpatterns = [
     path('ninos/<int:id>/ver/', views.ver_ficha_nino, name='ver_ficha_nino'),
     path('ninos/<int:id>/editar/', views.editar_nino, name='editar_nino'),
     path('ninos/<int:id>/eliminar/', views.eliminar_nino, name='eliminar_nino'),
+    path('gestion-ninos/', views.gestion_ninos, name='gestion_ninos'),
     path('ninos/reporte/', views.generar_reporte_ninos, name='generar_reporte_ninos'),
-    
-    # --- CRUD Planeaciones ---
-    path('planeaciones/', include('planeaciones.urls')),
-
 
     # --- CRUD Niños (Desarrollo)
     path('madre/desarrollo/registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),
     path('madre/desarrollo/', views.listar_desarrollos, name='listar_desarrollos'),
     path('madre/desarrollo/editar/<int:id>/', views.editar_desarrollo, name='editar_desarrollo'),
     path('madre/desarrollo/eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
-        
-    ]
+
+    # --- URLs de Planeaciones ---
+    # Se incluye el archivo de URLs de la app 'planeaciones' y se le asigna un namespace.
+    path('planeaciones/', include(('planeaciones.urls', 'planeaciones'), namespace='planeaciones')),
+]

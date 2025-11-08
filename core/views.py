@@ -21,7 +21,7 @@ def matricular_nino(request):
     try:
         hogar_madre = HogarComunitario.objects.get(madre=request.user)
     except HogarComunitario.DoesNotExist:
-        return render(request, 'madre/nino_form.html', {'error': 'No tienes un hogar asignado. Contacta al administrador.', 'form_action': reverse('matricular_nino')})
+        return render(request, 'madre/nino_form.html', {'error': 'No tienes un hogar asignado. Contacta al administrador.'})
 
 
     # 2. Manejar la solicitud POST (Creación de Padre y Niño)
@@ -39,7 +39,7 @@ def matricular_nino(request):
         genero_nino = request.POST.get('genero_nino')
         
         if not all([doc_padre, nombres_padre, correo_padre, nombres_nino, fecha_nacimiento]):
-            return render(request, 'madre/nino_form.html', {'error': 'Faltan campos obligatorios', 'hogar_madre': hogar_madre, 'form_action': reverse('matricular_nino')})
+            return render(request, 'madre/nino_form.html', {'error': 'Faltan campos obligatorios', 'hogar_madre': hogar_madre})
 
 
         try:
@@ -87,15 +87,11 @@ def matricular_nino(request):
         
         except Exception as e:
             # Maneja errores de unicidad (documento/correo duplicado) o DB
-            return render(request, 'madre/nino_form.html', {'error': f'Error al matricular: {e}', 'hogar_madre': hogar_madre, 'form_action': reverse('matricular_nino')})
+            return render(request, 'madre/nino_form.html', {'error': f'Error al matricular: {e}', 'hogar_madre': hogar_madre})
 
 
     # 3. Manejar la solicitud GET (Mostrar el formulario)
-    return render(request, 'madre/nino_form.html', {
-        'hogar_madre': hogar_madre,
-        'form_action': reverse('matricular_nino'),
-        'titulo_form': 'Matricular Niño Nuevo'
-    })
+    return render(request, 'madre/nino_form.html', {'hogar_madre': hogar_madre})
 def home(request):
     return render(request, 'home.html')
 @login_required
@@ -445,38 +441,34 @@ def ver_ficha_nino(request, id):
 @login_required
 def editar_nino(request, id):
     nino = get_object_or_404(Nino, id=id)
-    # Seguridad: Asegurarse que la madre solo edita niños de su hogar
-    if nino.hogar.madre != request.user:
-        return redirect('listar_ninos')
-
+    padre = nino.padre
+    usuario_padre = padre.usuario
     if request.method == 'POST':
         # Actualizar datos del padre
-        nino.padre.usuario.nombres = request.POST.get('nombres_padre', nino.padre.usuario.nombres)
-        nino.padre.usuario.apellidos = request.POST.get('apellidos_padre', nino.padre.usuario.apellidos)
-        nino.padre.usuario.correo = request.POST.get('correo_padre', nino.padre.usuario.correo)
-        nino.padre.usuario.telefono = request.POST.get('telefono_padre', nino.padre.usuario.telefono)
-        nino.padre.usuario.save()
-
-        nino.padre.ocupacion = request.POST.get('ocupacion', nino.padre.ocupacion)
-        nino.padre.save()
-
+        usuario_padre.nombres = request.POST.get('nombres_padre', usuario_padre.nombres)
+        usuario_padre.apellidos = request.POST.get('apellidos_padre', usuario_padre.apellidos)
+        usuario_padre.telefono = request.POST.get('telefono_padre', usuario_padre.telefono)
+        usuario_padre.direccion = request.POST.get('direccion_padre', usuario_padre.direccion)
+        usuario_padre.save()
+        padre.ocupacion = request.POST.get('ocupacion', padre.ocupacion)
+        padre.estrato = request.POST.get('estrato', padre.estrato)
+        padre.save()
         # Actualizar datos del niño
         nino.nombres = request.POST.get('nombres_nino', nino.nombres)
         nino.apellidos = request.POST.get('apellidos_nino', nino.apellidos)
         nino.documento = request.POST.get('doc_nino', nino.documento)
         nino.fecha_nacimiento = request.POST.get('fecha_nacimiento', nino.fecha_nacimiento)
-        nino.genero = request.POST.get('genero_nino', nino.genero)
+        nino.genero = request.POST.get('genero', nino.genero)
+        nino.nacionalidad = request.POST.get('nacionalidad', nino.nacionalidad)
         nino.save()
         return redirect('listar_ninos')
-
+    # Renderizar el formulario con los datos actuales
     return render(request, 'madre/nino_form.html', {
         'nino': nino,
-        'padre': nino.padre,
+        'padre': padre,
+        'usuario_padre': usuario_padre,
         'hogar_madre': nino.hogar,
-        'modo_edicion': True,
-        'form_action': reverse('editar_nino', args=[id]),
-        'titulo_form': 'Editar Ficha del Niño',
-        'texto_boton': 'Guardar Cambios'
+        'modo_edicion': True
     })
 
 @login_required
@@ -489,3 +481,9 @@ def eliminar_nino(request, id):
     nino = get_object_or_404(Nino, id=id)
     nino.delete()
     return redirect('listar_ninos')
+
+@login_required
+def gestion_ninos(request):
+    # Ejemplo: obtener los niños del hogar de la madre logueada
+    ninos = Nino.objects.all()  # Ajusta el filtro según tu lógica de negocio
+    return render(request, 'madre/gestion_ninos_list.html', {'ninos': ninos})

@@ -1,0 +1,184 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestión de Niños Matriculados</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondito.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+
+    header img {
+      height: 60px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav ul li a, nav ul li button {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    nav ul li a:hover, nav ul li button:hover {
+      background-color: #f3c1e5;
+    }
+
+    .tabla-container {
+      max-width: 1100px;
+      margin: 40px auto;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 14px;
+      padding: 30px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 32px;
+      color: #7a3eb1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 16px;
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    thead {
+      background-color: #f3c1e5;
+      color: #5e3370;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+
+    tbody tr:hover {
+      background-color: #f9e6ff;
+    }
+
+    .acciones a {
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 4px;
+      transition: transform 0.2s, background-color 0.3s;
+    }
+
+    .acciones a:hover {
+      transform: scale(1.1);
+    }
+
+    .btn-novedad { background: #9B59B6; }
+    .btn-desarrollo { background: #007bff; }
+    .btn-reporte { background: #28a745; }
+
+    @media screen and (max-width: 768px) {
+      .tabla-container { width: 95%; }
+      table { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
+    <nav>
+      <ul>
+        <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
+        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
+        <li>
+          <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+          </form>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="tabla-container">
+    <h1>Gestión de Niños</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre</th>
+          <th>Documento</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for nino in ninos %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ nino.nombres }} {{ nino.apellidos }}</td>
+          <td>{{ nino.documento|default:"N/A" }}</td>
+          <td class="acciones">
+            <a href="#" class="btn-novedad"><i class="fas fa-plus-circle"></i> Novedad</a>
+            <a href="{% url 'listar_desarrollos' %}?nino={{ nino.id }}" class="btn-desarrollo"><i class="fas fa-child"></i> Desarrollo</a>
+            <a href="#" class="btn-reporte"><i class="fas fa-file-alt"></i> Reporte</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">No hay niños matriculados en tu hogar.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

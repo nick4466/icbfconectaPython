@@ -153,9 +153,10 @@
   <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF Conecta" />
   <nav>
     <ul>
+      <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
       <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
-      <li><a href="{% url 'lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
-      <li><a href="#"><i class="fas fa-child"></i> Desarrollo</a></li>
+      <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+      <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
       <li>
         <form method="post" action="{% url 'logout' %}" style="display:inline;">
           {% csrf_token %}
@@ -216,7 +217,7 @@
       </div>
     </div>
 
-    <a href="{% url 'lista_planeaciones' %}" class="btn-volver">Volver</a>
+    <a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-volver">Volver</a>
   </div>
 </div>
 

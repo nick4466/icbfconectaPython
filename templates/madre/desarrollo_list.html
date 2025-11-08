@@ -54,12 +54,19 @@
     .filtros-form select, .filtros-form input { padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
     .filtros-form button { background-color: #8e44ad; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
 
-    .btn-agregar {
+    .btn-agregar, .btn-volver {
       background-color: #9B59B6; color: white; border: none; padding: 10px 20px;
       font-size: 16px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease;
       text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
     }
     .btn-agregar:hover { background-color: #8e44ad; }
+
+    .btn-volver {
+      background-color: #6c757d;
+    }
+    .btn-volver:hover {
+      background-color: #5a6268;
+    }
 
     table { width: 100%; border-collapse: collapse; font-size: 16px; background-color: white; border-radius: 10px; overflow: hidden; }
     thead { background-color: #f3c1e5; color: #5e3370; }
@@ -113,6 +120,18 @@
     .modal-contenido h2 { margin-top: 0; color: #7a3eb1; }
     .modal-contenido p { margin: 12px 0; font-size: 16px; line-height: 1.5; }
   </style>
+  <style>
+    .mensaje-exito {
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      transition: opacity 0.5s ease;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -121,8 +140,8 @@
       <ul>
         <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
-        <li><a href="#"><i class="fas fa-book"></i> Planeaciones</a></li>
-        <li><a href="{% url 'listar_desarrollos' %}"><i class="fas fa-child"></i> Desarrollo</a></li>
+        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
         <li>
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}
@@ -136,10 +155,14 @@
   <div class="tabla-registros">
     <h1>Desarrollo Infantil</h1>
 
+    {% if request.GET.exito %}
+    <div class="mensaje-exito" id="mensajeExito">¡Registro guardado exitosamente!</div>
+    {% endif %}
+
     <div class="filtros-y-botones">
       <form method="get" class="filtros-form">
         <select name="nino">
-          <option value="">Todos los niños</option>
+          <option value="">Todos</option>
           {% for nino in ninos %}
             <option value="{{ nino.id }}" {% if nino_id_filtro == nino.id|stringformat:"s" %}selected{% endif %}>
               {{ nino.nombres }} {{ nino.apellidos }}
@@ -151,9 +174,16 @@
         <a href="{% url 'listar_desarrollos' %}" style="margin-left: 5px;">Limpiar</a>
       </form>
 
-      <a href="{% url 'registrar_desarrollo' %}" class="btn-agregar">
-        <i class="fas fa-plus"></i> Agregar Registro
-      </a>
+      <div>
+        <a href="{% url 'gestion_ninos' %}" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a Gestión</a>
+        {% if nino_id_filtro %}
+        <a href="{% url 'registrar_desarrollo' %}?nino={{ nino_id_filtro }}" class="btn-agregar">
+        {% else %}
+        <a href="{% url 'registrar_desarrollo' %}" class="btn-agregar">
+        {% endif %}
+          <i class="fas fa-plus"></i> Agregar Registro
+        </a>
+      </div>
     </div>
 
     <table>
@@ -214,6 +244,16 @@
     </div>
   </div>
 
+  <script>
+    // Ocultar el mensaje de éxito después de 5 segundos
+    const mensajeExito = document.getElementById('mensajeExito');
+    if (mensajeExito) {
+      setTimeout(() => {
+        mensajeExito.style.opacity = '0';
+        setTimeout(() => { mensajeExito.style.display = 'none'; }, 500);
+      }, 5000);
+    }
+  </script>
   <script>
     const modal = document.getElementById('modalDetalles');
     const cerrarBoton = document.querySelector('.cerrar-modal');
