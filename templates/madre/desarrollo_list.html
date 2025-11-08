@@ -171,7 +171,11 @@
         </select>
         <input type="month" name="mes" value="{{ mes_filtro }}">
         <button type="submit"><i class="fas fa-filter"></i> Filtrar</button>
-        <a href="{% url 'listar_desarrollos' %}" style="margin-left: 5px;">Limpiar</a>
+        {% if nino_id_filtro %}
+          <a href="{% url 'listar_desarrollos' %}?nino={{ nino_id_filtro }}" style="margin-left: 5px;">Limpiar</a>
+        {% else %}
+          <a href="{% url 'listar_desarrollos' %}" style="margin-left: 5px;">Limpiar</a>
+        {% endif %}
       </form>
 
       <div>
