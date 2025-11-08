@@ -82,24 +82,74 @@
       margin-bottom: 30px;
     }
 
+    /* --- ✨ NUEVO DISEÑO DE CUADRÍCULA Y TARJETAS --- */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* Cuadrícula responsive */
+      gap: 25px;
+    }
+
     .card {
-      background-color: #e9f5ff;
-      border-left: 6px solid #007bff;
+      background-color: #fff;
       border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex; /* Flexbox para alinear foto e info */
+      overflow: hidden; /* Para que el borde redondeado afecte a la imagen */
+      padding: 0; /* Quitamos el padding general */
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.12);
+    }
+    
+    .card-imagen {
+      flex-shrink: 0;
+      width: 130px; /* Ancho fijo para la foto */
+    }
+
+    .card-imagen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* La imagen cubre el espacio sin deformarse */
+    }
+
+    .card-contenido {
       padding: 20px;
-      font-size: 16px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
     }
 
     .card h3 {
       margin-top: 0;
-      color: #7a3eb1;
-      font-size: 20px;
+      margin-bottom: 8px;
+      color: #5e3370; /* Morado oscuro para el título */
+      font-size: 19px;
     }
 
     .card p {
-      margin: 8px 0;
-      color: #333;
+      margin: 4px 0;
+      color: #555; /* Gris oscuro para el texto */
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .card .resumen-desarrollo {
+      font-style: italic;
+      color: #666;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .card .btn-ver-desarrollo {
+      text-decoration: none; background-color: #9B59B6; color: white; 
+      padding: 8px 16px; border-radius: 8px; display: inline-block; 
+      margin-top: auto; /* Empuja el botón hacia abajo */
+      align-self: flex-start; /* Alinea el botón a la izquierda */
+      font-weight: bold;
+      transition: background-color 0.2s;
     }
   </style>
 </head>
@@ -108,7 +158,7 @@
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
     <nav>
       <ul>
-        <li><a href="{% url 'padre_ver_desarrollo' %}"><i class="fas fa-child"></i> Desarrollo Infantil</a></li>
+        <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="#"><i class="fas fa-calendar"></i> Calendario</a></li>
         <li>
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
@@ -122,18 +172,37 @@
 
   <div class="dashboard-container">
     <div class="bienvenida">
-      <h1>¡Bienvenid@, <strong>{{ user.nombres }}!</strong></h1>
-      <p>Aquí puedes ver el desarrollo y la actividad diaria de tu hijo(a) <strong>{{ nino.nombres }}</strong>.</p>
+      <h1>¡Bienvenido, <strong>{{ user.nombres }}!</strong></h1>
+      <p>Aquí puedes ver el desarrollo y la actividad diaria de tus hijos.</p>
     </div>
 
-    <div class="card">
-      <h3>📝 Último desarrollo registrado:</h3>
-      {% if ultimo_desarrollo %}
-        <p><strong>Fecha:</strong> {{ ultimo_desarrollo.fecha_fin_mes|date:"d \d\e F \d\e Y" }}</p>
-        <p><strong>Observación Cognitiva:</strong> “{{ ultimo_desarrollo.dimension_cognitiva|truncatewords:25 }}”</p>
-      {% else %}
-        <p>Aún no hay registros de desarrollo para tu hijo(a).</p>
-      {% endif %}
+    <div class="grid-container">
+      {% for data in ninos_data %}
+        <div class="card">
+          <div class="card-imagen">
+            <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto de {{ data.nino.nombres }}">
+          </div>
+          <div class="card-contenido">
+            <h3>{{ data.nino.nombres }} {{ data.nino.apellidos }}</h3>
+            
+            {% if data.ultimo_desarrollo %}
+              <p>Último registro: <strong>{{ data.ultimo_desarrollo.fecha_fin_mes|date:"d \d\e F" }}</strong>.</p>
+              <p class="resumen-desarrollo">"{{ data.ultimo_desarrollo.dimension_cognitiva|truncatewords:15 }}"</p>
+            {% else %}
+              <p>Aún no hay registros de desarrollo para {{ data.nino.nombres }}.</p>
+            {% endif %}
+            
+            <a href="{% url 'padre_ver_desarrollo' data.nino.id %}" class="btn-ver-desarrollo">
+              Ver Desarrollo
+            </a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="card" style="display: block; padding: 25px;"> <!-- Estilo para la tarjeta de "sin niños" -->
+          <h3>No hay niños asignados</h3>
+          <p>Actualmente no tienes ningún niño(a) asociado a tu cuenta. Si crees que esto es un error, por favor contacta a la madre comunitaria.</p>
+        </div>
+      {% endfor %}
     </div>
   </div>
 

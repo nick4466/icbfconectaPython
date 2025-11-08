@@ -127,7 +127,7 @@
         <div class="columna1">
             {% if nino %}
             <div class="card">
-                <h1>{{ nino.nombres }} {{ nino.apellidos }}</h1>
+                <h1>{{ nino.nombres }}<br>{{ nino.apellidos }}</h1>
                 <h2>{{ nino.get_edad_str }}</h2>
                 <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto del niño">
             </div>
