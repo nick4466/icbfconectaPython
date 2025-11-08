@@ -1,45 +1,195 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Panel del Administrador</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ICBF Conecta - Panel del Administrador</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'images/fondoAdmin.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    header {
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+
+    header img {
+      height: 60px;
+    }
+
+    .user-info {
+      font-weight: bold;
+      color: #004080;
+      margin-right: auto;
+      margin-left: 20px;
+    }
+
+    .btn-cerrar {
+      background: none;
+      color: #007BFF;
+      border: none;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 8px 12px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-cerrar:hover {
+      background-color: #0056b3;
+      color: #fff;
+      border-radius: 6px;
+    }
+
+    .main-title {
+      text-align: center;
+      margin-top: 20px;
+      padding: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      color: #004080;
+      background-color: rgba(204, 228, 231, 0.75);
+      width: 80%;
+      margin: 30px auto;
+      border-radius: 10px;
+    }
+
+    .contenedor {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .card {
+      background-color: rgba(255, 255, 255, 0.95);
+      border-left: 6px solid #007BFF;
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+
+    .card:hover {
+      background-color: #e6f2ff;
+      transform: translateY(-5px);
+    }
+
+    .card i {
+      font-size: 30px;
+      color: #004080;
+      margin-bottom: 10px;
+    }
+
+    .card div {
+      font-size: 16px;
+      font-weight: bold;
+      color: #003366;
+    }
+
+    .card a {
+      display: block;
+      margin-top: 10px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #007BFF;
+      transition: color 0.3s ease;
+    }
+
+    .card a:hover {
+      color: #0056b3;
+    }
+
+    @media screen and (max-width: 900px) {
+      .contenedor {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      header { flex-direction: column; align-items: flex-start; }
+    }
+
+    @media screen and (max-width: 600px) {
+      .contenedor { grid-template-columns: 1fr; }
+      .main-title { font-size: 22px; width: 90%; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Panel del Administrador</h1>
-    <p>Bienvenido, {{ user.username }}</p>
 
+  <!-- ENCABEZADO -->
+  <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
+    <span class="user-info">Bienvenido, {{ user.username }}</span>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-cerrar">
+        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+      </button>
+    </form>
+  </header>
 
-    <ul>
-      <a href="{% url 'listar_madres' %}">Gestionar Madres Comunitarias</a>
+  <!-- TÍTULO -->
+  <div class="main-title">ICBF - CONECTA | Panel del Administrador</div>
 
-        <li><a href="#">Registrar Hogar Comunitario</a></li>
-        <li><a href="#">Ver Reportes</a></li>
-    </ul>
-    <div class="col-md-4 mb-3">
-    <div class="card shadow-sm">
-        <div class="card-body text-center">
-            <h5 class="card-title">Gestionar Administradores</h5>
-            <p class="card-text">Crear, editar o eliminar usuarios administradores del sistema.</p>
-            <a href="{% url 'listar_administradores' %}" class="btn btn-primary">Ir al CRUD</a>
-        </div>
+  <!-- CONTENIDO -->
+  <div class="contenedor">
+
+    <div class="card">
+      <i class="fas fa-home"></i>
+      <div>Registrar Hogar Comunitario</div>
+      <a href="#">Ir a sección</a>
     </div>
-</div>
 
+    <div class="card">
+      <i class="fas fa-list"></i>
+      <div>Gestionar Hogares Comunitarios</div>
+      <a href="#">Ir a sección</a>
+    </div>
 
-    <form method="post" action="{% url 'logout' %}" style="display: inline;">
-    {% csrf_token %}
-    <button type="submit" 
-            style="
-                /* Estiliza como un enlace o un botón según tu diseño */
-                background: none; 
-                color: #007bff; /* Color azul de enlace */
-                border: none; 
-                padding: 0; 
-                font: inherit; 
-                cursor: pointer;
-            ">
-        Cerrar sesión
-    </button>
-</form>
+    <div class="card">
+      <i class="fas fa-user-plus"></i>
+      <div>Registrar Madre Comunitaria</div>
+      <a href="#">Ir a sección</a>
+    </div>
+
+    <div class="card">
+      <i class="fas fa-users"></i>
+      <div>Gestionar Madres Comunitarias</div>
+      <a href="{% url 'listar_madres' %}">Ir a sección</a>
+    </div>
+
+    <div class="card">
+      <i class="fas fa-user-shield"></i>
+      <div>Gestionar Administradores</div>
+      <a href="{% url 'listar_administradores' %}">Ir a sección</a>
+    </div>
+
+    <div class="card">
+      <i class="fas fa-chart-bar"></i>
+      <div>Ver Reportes</div>
+      <a href="#">Ir a sección</a>
+    </div>
+
+  </div>
+
 </body>
 </html>
