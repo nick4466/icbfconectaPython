@@ -310,6 +310,8 @@ def listar_ninos(request):
 @login_required
 def registrar_desarrollo(request):
     # Esta vista ahora solo maneja la creación
+    nino_id_preseleccionado = request.GET.get('nino')
+
     if request.user.rol.nombre_rol != 'madre_comunitaria':
         return redirect('role_redirect')
 
@@ -343,12 +345,15 @@ def registrar_desarrollo(request):
             dimension_corporal=corporal,
         )
         
-        return redirect('listar_desarrollos')
+        # Redirigir con el filtro del niño y un mensaje de éxito
+        redirect_url = reverse('listar_desarrollos')
+        return redirect(f'{redirect_url}?nino={nino_id}&exito=1')
 
     return render(request, 'madre/desarrollo_form.html', {
         'ninos': ninos_del_hogar,
         'form_action': reverse('registrar_desarrollo'),
-        'titulo_form': 'Registrar Desarrollo de Niño'
+        'titulo_form': 'Registrar Desarrollo de Niño',
+        'nino_id_preseleccionado': nino_id_preseleccionado,
     })
 
 # -----------------------------------------------------------------
@@ -409,12 +414,16 @@ def editar_desarrollo(request, id):
         desarrollo.dimension_socio_afectiva = request.POST.get('dimension_socio_afectiva')
         desarrollo.dimension_corporal = request.POST.get('dimension_corporal')
         desarrollo.save()
-        return redirect('listar_desarrollos')
+        
+        # Redirigir con el filtro del niño y un mensaje de éxito
+        redirect_url = reverse('listar_desarrollos')
+        return redirect(f'{redirect_url}?nino={desarrollo.nino.id}&exito=1')
 
     return render(request, 'madre/desarrollo_form.html', {
         'desarrollo': desarrollo,
         'form_action': reverse('editar_desarrollo', args=[id]),
-        'titulo_form': 'Editar Registro de Desarrollo'
+        'titulo_form': 'Editar Registro de Desarrollo',
+        'nino_id_preseleccionado': desarrollo.nino.id,
     })
 
 # -----------------------------------------------------------------
@@ -430,8 +439,11 @@ def eliminar_desarrollo(request, id):
     if desarrollo.nino.hogar.madre != request.user:
         return redirect('listar_desarrollos')
 
+    nino_id = desarrollo.nino.id
     desarrollo.delete()
-    return redirect('listar_desarrollos')
+    
+    redirect_url = reverse('listar_desarrollos')
+    return redirect(f'{redirect_url}?nino={nino_id}')
 
 @login_required
 def ver_ficha_nino(request, id):

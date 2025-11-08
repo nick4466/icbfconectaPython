@@ -249,16 +249,6 @@
   </div>
 
   <script>
-    // Ocultar el mensaje de éxito después de 5 segundos
-    const mensajeExito = document.getElementById('mensajeExito');
-    if (mensajeExito) {
-      setTimeout(() => {
-        mensajeExito.style.opacity = '0';
-        setTimeout(() => { mensajeExito.style.display = 'none'; }, 500);
-      }, 5000);
-    }
-  </script>
-  <script>
     const modal = document.getElementById('modalDetalles');
     const cerrarBoton = document.querySelector('.cerrar-modal');
 
@@ -289,6 +279,15 @@
         modal.style.display = 'flex';
       });
     });
+
+    // Ocultar el mensaje de éxito después de 5 segundos
+    const mensajeExito = document.getElementById('mensajeExito');
+    if (mensajeExito) {
+      setTimeout(() => {
+        mensajeExito.style.opacity = '0';
+        setTimeout(() => { mensajeExito.style.display = 'none'; }, 500);
+      }, 5000);
+    }
   </script>
 
 </body>
