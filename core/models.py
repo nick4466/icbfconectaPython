@@ -110,9 +110,9 @@ class Padre(models.Model):
 # ------------------------
 class HogarComunitario(models.Model):
     nombre_hogar = models.CharField(max_length=100)
-    direccion = models.CharField(max_length=150)
+    direccion = models.CharField(max_length=150, unique=True)
     localidad = models.CharField(max_length=50)
-    capacidad_maxima = models.IntegerField()
+    capacidad_maxima = models.IntegerField(default=14)
     estado = models.CharField(
         max_length=20,
         choices=[

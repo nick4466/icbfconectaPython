@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
-from django.db import transaction
+from django.db import transaction, models
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
 from .models import Usuario, Rol, Padre, Nino, HogarComunitario, DesarrolloNino
@@ -113,7 +113,7 @@ class MadreForm(forms.ModelForm):
 class HogarForm(forms.ModelForm):
     class Meta:
         model = HogarComunitario
-        fields = ['nombre_hogar', 'direccion', 'localidad', 'capacidad_maxima', 'estado']
+        fields = ['nombre_hogar', 'direccion', 'localidad', 'estado']
 # En la sección de formularios simples en views.py
 class AdministradorForm(forms.ModelForm):
     # Añadir el campo de contraseña, ya que no se incluye automáticamente
@@ -133,7 +133,8 @@ def listar_madres(request):
 @login_required
 def listar_hogares(request):
     # Selecciona los hogares y la madre asociada para optimizar la consulta
-    hogares = HogarComunitario.objects.select_related('madre').all()
+    # 💡 MEJORA: Anotar cada hogar con el número de niños matriculados
+    hogares = HogarComunitario.objects.select_related('madre').annotate(num_ninos=models.Count('ninos')).all()
     return render(request, 'admin/hogares_list.html', {'hogares': hogares})
 
 @login_required
@@ -147,10 +148,17 @@ def crear_madre(request):
         if madre_form.is_valid() and hogar_form.is_valid():
             # Validación para hogar duplicado
             nombre_hogar = hogar_form.cleaned_data['nombre_hogar']
+            direccion_hogar = hogar_form.cleaned_data['direccion']
             localidad = hogar_form.cleaned_data['localidad']
+
             if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar, localidad__iexact=localidad).exists():
                 messages.error(request, f"Ya existe un hogar llamado '{nombre_hogar}' en la localidad de '{localidad}'.")
-                return render(request, 'admin/madres_form.html', {
+            elif HogarComunitario.objects.filter(direccion__iexact=direccion_hogar).exists():
+                messages.error(request, f"La dirección '{direccion_hogar}' ya está registrada para otro hogar.")
+            
+            # Si hay mensajes de error, renderizar de nuevo el formulario
+            if messages.get_messages(request):
+                 return render(request, 'admin/madres_form.html', {
                     'madre_form': madre_form,
                     'hogar_form': hogar_form
                 })
@@ -187,10 +195,17 @@ def editar_madre(request, id):
         if madre_form.is_valid() and hogar_form.is_valid():
             # Validación para hogar duplicado, excluyendo el hogar actual
             nombre_hogar = hogar_form.cleaned_data['nombre_hogar']
+            direccion_hogar = hogar_form.cleaned_data['direccion']
             localidad = hogar_form.cleaned_data['localidad']
+
             if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar, localidad__iexact=localidad).exclude(id=hogar.id).exists():
                 messages.error(request, f"Ya existe otro hogar llamado '{nombre_hogar}' en la localidad de '{localidad}'.")
-                return render(request, 'admin/madres_form.html', {
+            elif HogarComunitario.objects.filter(direccion__iexact=direccion_hogar).exclude(id=hogar.id).exists():
+                messages.error(request, f"La dirección '{direccion_hogar}' ya está registrada para otro hogar.")
+
+            # Si hay mensajes de error, renderizar de nuevo el formulario
+            if messages.get_messages(request):
+                 return render(request, 'admin/madres_form.html', {
                     'madre_form': madre_form,
                     'hogar_form': hogar_form
                 })
