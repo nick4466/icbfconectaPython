@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Planeacion
 from .forms import PlaneacionForm
-from django.contrib.auth.decorators import login_required
 
 @login_required
 def lista_planeaciones(request):
@@ -29,6 +28,7 @@ def lista_planeaciones(request):
 
     return render(request, 'planeaciones/lista_planeaciones.html', context)
 
+
 @login_required
 def registrar_planeacion(request):
     if request.method == 'POST':
@@ -37,10 +37,11 @@ def registrar_planeacion(request):
             planeacion = form.save(commit=False)
             planeacion.madre = request.user
             planeacion.save()
-            return redirect('lista_planeaciones')
+            return redirect('planeaciones:lista_planeaciones')
     else:
         form = PlaneacionForm()
     return render(request, 'planeaciones/registrar_planeacion.html', {'form': form})
+
 
 @login_required
 def editar_planeacion(request, id):
@@ -49,18 +50,20 @@ def editar_planeacion(request, id):
         form = PlaneacionForm(request.POST, instance=planeacion)
         if form.is_valid():
             form.save()
-            return redirect('lista_planeaciones')
+            return redirect('planeaciones:lista_planeaciones')
     else:
         form = PlaneacionForm(instance=planeacion)
     return render(request, 'planeaciones/editar_planeacion.html', {'form': form})
+
 
 @login_required
 def eliminar_planeacion(request, id):
     planeacion = get_object_or_404(Planeacion, id=id, madre=request.user)
     if request.method == 'POST':
         planeacion.delete()
-        return redirect('lista_planeaciones')
+        return redirect('planeaciones:lista_planeaciones')
     return render(request, 'planeaciones/eliminar_planeacion.html', {'planeacion': planeacion})
+
 
 @login_required
 def detalle_planeacion(request, id):
