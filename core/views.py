@@ -1,8 +1,11 @@
 # core/views.py
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
 from django.db import transaction
 from django.contrib.auth.hashers import make_password
+from django.db.models import Q
 from .models import Usuario, Rol, Padre, Nino, HogarComunitario, DesarrolloNino
 from django.utils import timezone
 from django import forms
@@ -124,7 +127,7 @@ class AdministradorForm(forms.ModelForm):
 # ---------- CRUD MADRES ----------
 @login_required
 def listar_madres(request):
-    madres = Usuario.objects.filter(rol__nombre_rol='madre_comunitaria')
+    madres = Usuario.objects.filter(rol__nombre_rol='madre_comunitaria').prefetch_related('hogares_asignados')
     return render(request, 'admin/madres_list.html', {'madres': madres})
 
 @login_required
@@ -142,6 +145,15 @@ def crear_madre(request):
         hogar_form = HogarForm(request.POST, prefix='hogar')
 
         if madre_form.is_valid() and hogar_form.is_valid():
+            # Validación para hogar duplicado
+            nombre_hogar = hogar_form.cleaned_data['nombre_hogar']
+            localidad = hogar_form.cleaned_data['localidad']
+            if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar, localidad__iexact=localidad).exists():
+                messages.error(request, f"Ya existe un hogar llamado '{nombre_hogar}' en la localidad de '{localidad}'.")
+                return render(request, 'admin/madres_form.html', {
+                    'madre_form': madre_form,
+                    'hogar_form': hogar_form
+                })
             madre = madre_form.save(commit=False)
             madre.rol = rol_madre
             madre.username = madre.correo  # obligatorio por AbstractUser
@@ -151,7 +163,8 @@ def crear_madre(request):
             hogar = hogar_form.save(commit=False)
             hogar.madre = madre
             hogar.save()
-
+            
+            messages.success(request, '¡Madre comunitaria y hogar creados exitosamente!')
             return redirect('listar_madres')
     else:
         madre_form = MadreForm(prefix='madre')
@@ -172,8 +185,19 @@ def editar_madre(request, id):
         madre_form = MadreForm(request.POST, instance=madre, prefix='madre')
         hogar_form = HogarForm(request.POST, instance=hogar, prefix='hogar')
         if madre_form.is_valid() and hogar_form.is_valid():
+            # Validación para hogar duplicado, excluyendo el hogar actual
+            nombre_hogar = hogar_form.cleaned_data['nombre_hogar']
+            localidad = hogar_form.cleaned_data['localidad']
+            if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar, localidad__iexact=localidad).exclude(id=hogar.id).exists():
+                messages.error(request, f"Ya existe otro hogar llamado '{nombre_hogar}' en la localidad de '{localidad}'.")
+                return render(request, 'admin/madres_form.html', {
+                    'madre_form': madre_form,
+                    'hogar_form': hogar_form
+                })
+
             madre_form.save()
             hogar_form.save()
+            messages.success(request, '¡Madre comunitaria actualizada exitosamente!')
             return redirect('listar_madres')
     else:
         madre_form = MadreForm(instance=madre, prefix='madre')
@@ -189,12 +213,14 @@ def editar_madre(request, id):
 def eliminar_madre(request, id):
     madre = get_object_or_404(Usuario, id=id, rol__nombre_rol='madre_comunitaria')
     madre.delete()
+    messages.success(request, '¡Madre comunitaria eliminada exitosamente!')
     return redirect('listar_madres')
 
 @login_required
 def listar_administradores(request):
     rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
-    administradores = Usuario.objects.filter(rol=rol_admin)
+    # Ordenar por nombre para una mejor visualización
+    administradores = Usuario.objects.filter(rol=rol_admin).order_by('nombres')
     return render(request, 'admin/administradores_list.html', {'administradores': administradores})
 
 
@@ -205,46 +231,86 @@ def crear_administrador(request):
     if request.method == 'POST':
         # 1. Obtener los datos del formulario (usando .get() es más seguro)
         nombre = request.POST.get('nombre')
+        documento = request.POST.get('documento')
         correo = request.POST.get('correo')
         contraseña_plana = request.POST.get('contraseña')
         
         # 2. **CORRECCIÓN CLAVE: Mapear y crear el objeto**
         
-        # OBLIGATORIO: AbstractUser requiere el campo 'username'.
-        # Lo más lógico es usar el 'correo' como valor para 'username' si es único.
-        username_val = correo # Usamos el correo como username
+        # OBLIGATORIO: AbstractUser requiere 'username'. Usamos el documento.
+        username_val = documento
         
-        if nombre and correo and contraseña_plana:
-            # Usamos los nombres de campos EXACTOS de tu modelo Usuario:
+        # 💡 CORRECCIÓN: Validar que el documento y el correo no existan
+        if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exists():
+            # Si ya existe, enviar un mensaje de error y renderizar el formulario de nuevo
+            # con los datos que el usuario ya había ingresado.
+            messages.error(request, 'Ya existe un usuario con ese documento o correo electrónico.')
+            return render(request, 'admin/administradores_form.html', {
+                'admin': request.POST, # Pasamos los datos del POST para rellenar el form
+                'error': True # Una bandera para el template si se necesita
+            })
+
+
+        if nombre and documento and correo and contraseña_plana:
             Usuario.objects.create(
                 # Campo obligatorio de AbstractUser
                 username=username_val, 
-                # Campo de tu modelo (que coincide con el formulario)
+                documento=documento,
                 correo=correo,
-                # Campo de tu modelo
                 nombres=nombre,
-                # Campo de tu modelo
                 apellidos="", # Lo dejas vacío ya que el form no lo pide
                 # Campo de AbstractUser (donde se guarda el hash)
                 password=make_password(contraseña_plana),
                 rol=rol_admin
             )
             
-            # 3. Redirección
+            # 💡 CORRECCIÓN: Añadir mensaje de éxito y redirigir a la lista.
+            messages.success(request, '¡Administrador creado exitosamente!')
             return redirect('listar_administradores')
             
     return render(request, 'admin/administradores_form.html', {'admin': None})
 @login_required
 def editar_administrador(request, id):
-    admin = Usuario.objects.get(id=id)
+    # Usar get_object_or_404 es una mejor práctica para obtener objetos.
+    admin = get_object_or_404(Usuario, id=id, rol__nombre_rol='administrador')
+    
     if request.method == 'POST':
-        admin.nombre = request.POST['nombre']
-        admin.correo = request.POST['correo']
-        if request.POST.get('contraseña'):
-            admin.contraseña = make_password(request.POST['contraseña'])
+        documento = request.POST.get('documento')
+        correo = request.POST.get('correo')
+
+        # 💡 CORRECCIÓN: Validar duplicados, excluyendo al usuario actual.
+        if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exclude(id=id).exists():
+            messages.error(request, 'Ya existe otro usuario con ese documento o correo electrónico.')
+            # Para no perder los datos, creamos un objeto temporal con los datos del POST
+            # y lo pasamos a la plantilla.
+            admin_post_data = admin # Mantenemos los datos originales
+            admin_post_data.nombres = request.POST.get('nombre')
+            admin_post_data.documento = documento
+            admin_post_data.correo = correo
+            return render(request, 'admin/administradores_form.html', {'admin': admin_post_data})
+
+        # Actualizar los campos del modelo a partir de los datos del POST.
+        admin.nombres = request.POST.get('nombre', admin.nombres)
+        admin.documento = documento
+        admin.correo = correo
+        admin.username = documento # Sincronizar username con documento
+        
+        # Solo actualizar la contraseña si se proporciona una nueva.
+        nueva_contraseña = request.POST.get('contraseña')
+        if nueva_contraseña:
+            admin.password = make_password(nueva_contraseña)
+            # 💡 CORRECCIÓN: Si el admin edita su propia cuenta, actualiza la sesión para no desloguearlo.
+            if request.user.id == admin.id:
+                update_session_auth_hash(request, admin)
+
+            
         admin.save()
+        # 💡 CORRECCIÓN: Añadir mensaje de éxito y redirigir a la lista.
+        messages.success(request, '¡Administrador actualizado exitosamente!')
         return redirect('listar_administradores')
-    return render(request, 'administradores_form.html', {'admin': admin})
+        
+    # **LA CORRECCIÓN CLAVE:** Apuntar a la ruta correcta de la plantilla.
+    return render(request, 'admin/administradores_form.html', {'admin': admin})
 
 @login_required
 def eliminar_administrador(request, id):

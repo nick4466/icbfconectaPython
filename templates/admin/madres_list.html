@@ -64,6 +64,50 @@
     }
     .btn-editar { background: linear-gradient(90deg, #007bff, #0056b3); }
     .btn-eliminar { background: linear-gradient(90deg, #dc3545, #c82333); }
+    .btn-ver { background: linear-gradient(90deg, #17a2b8, #117a8b); }
+    .messages { list-style: none; padding: 0; margin: 0 0 20px 0; }
+    .messages li {
+      padding: 15px; border-radius: 8px; color: white;
+      font-weight: 500; display: flex; justify-content: space-between;
+      align-items: center;
+    }
+    .messages li.success { background-color: #28a745; }
+    .messages li.error { background-color: #dc3545; }
+    .close-message { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+
+
+    /* Modal Styles */
+    .modal {
+      display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+      width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);
+      justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background-color: #fff; margin: auto; padding: 30px; border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; max-width: 600px;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(-20px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid #e9ecef; padding-bottom: 15px; margin-bottom: 20px;
+    }
+    .modal-header h2 {
+      margin: 0; font-size: 22px; color: #004080;
+    }
+    .close-button {
+      color: #aaa; float: right; font-size: 28px; font-weight: bold;
+      cursor: pointer; border: none; background: none;
+    }
+    .modal-body p {
+      font-size: 16px; color: #555; line-height: 1.6;
+      margin-bottom: 12px; border-bottom: 1px solid #f1f3f5; padding-bottom: 8px;
+    }
+    .modal-body p strong { color: #003366; }
+    .modal-body p:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
@@ -92,6 +136,17 @@
       <h1>Gestión de Madres Comunitarias</h1>
     </header>
 
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li class="{{ message.tags }}">
+            {{ message }}
+            <button class="close-message" onclick="this.parentElement.style.display='none';">&times;</button>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
     <div class="content-container">
       <div class="top-actions">
         <a href="{% url 'crear_madre' %}" class="btn-crear">
@@ -111,22 +166,32 @@
         </thead>
         <tbody>
           {% for madre in madres %}
-          <tr>
+          {% with hogar=madre.hogares_asignados.first %}
+          <tr 
+            data-nombre="{{ madre.nombres }} {{ madre.apellidos }}"
+            data-correo="{{ madre.correo }}"
+            data-telefono="{{ madre.telefono|default:'No registrado' }}"
+            data-documento="{{ madre.documento|default:'No registrado' }}"
+            data-direccion="{{ madre.direccion|default:'No registrada' }}"
+            data-hogar-nombre="{{ hogar.nombre_hogar|default:'Sin hogar asignado' }}"
+            data-hogar-direccion="{{ hogar.direccion|default:'N/A' }}"
+            data-hogar-localidad="{{ hogar.localidad|default:'N/A' }}"
+            data-hogar-capacidad="{{ hogar.capacidad_maxima|default:'N/A' }}"
+            data-hogar-estado="{{ hogar.estado|default:'N/A' }}"
+          >
             <td>{{ madre.nombres }} {{ madre.apellidos }}</td>
             <td>{{ madre.correo }}</td>
             <td>{{ madre.telefono|default:"N/A" }}</td>
             <td>
-              {% for h in madre.hogares_asignados.all %}
-                {{ h.nombre_hogar }}{% if not forloop.last %}, {% endif %}
-              {% empty %}
-                <em>Sin hogar</em>
-              {% endfor %}
+              {{ hogar.nombre_hogar|default:"Sin hogar" }}
             </td>
             <td class="acciones">
+              <button class="btn-ver ver-detalles">Ver</button>
               <a href="{% url 'editar_madre' madre.id %}" class="btn-editar">Editar</a>
               <a href="{% url 'eliminar_madre' madre.id %}" class="btn-eliminar" onclick="return confirm('¿Eliminar esta madre comunitaria?');">Eliminar</a>
             </td>
           </tr>
+          {% endwith %}
           {% empty %}
           <tr>
             <td colspan="5" style="text-align:center; color:#888;">No hay madres comunitarias registradas.</td>
@@ -136,5 +201,71 @@
       </table>
     </div>
   </div>
+
+  <!-- The Modal -->
+  <div id="detalleModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-nombre"></h2>
+        <span class="close-button">&times;</span>
+      </div>
+      <div class="modal-body">
+        <h3>Datos Personales</h3>
+        <p><strong>Correo:</strong> <span id="modal-correo"></span></p>
+        <p><strong>Documento:</strong> <span id="modal-documento"></span></p>
+        <p><strong>Teléfono:</strong> <span id="modal-telefono"></span></p>
+        <p><strong>Dirección:</strong> <span id="modal-direccion"></span></p>
+        <hr>
+        <h3>Hogar Comunitario Asignado</h3>
+        <p><strong>Nombre del Hogar:</strong> <span id="modal-hogar-nombre"></span></p>
+        <p><strong>Dirección del Hogar:</strong> <span id="modal-hogar-direccion"></span></p>
+        <p><strong>Localidad:</strong> <span id="modal-hogar-localidad"></span></p>
+        <p><strong>Capacidad:</strong> <span id="modal-hogar-capacidad"></span></p>
+        <p><strong>Estado:</strong> <span id="modal-hogar-estado"></span></p>
+      </div>
+    </div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('detalleModal');
+  const closeButton = document.querySelector('.close-button');
+  const detailButtons = document.querySelectorAll('.ver-detalles');
+
+  detailButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const row = this.closest('tr');
+      
+      // Populate modal
+      document.getElementById('modal-nombre').textContent = row.dataset.nombre;
+      document.getElementById('modal-correo').textContent = row.dataset.correo;
+      document.getElementById('modal-documento').textContent = row.dataset.documento;
+      document.getElementById('modal-telefono').textContent = row.dataset.telefono;
+      document.getElementById('modal-direccion').textContent = row.dataset.direccion;
+      
+      document.getElementById('modal-hogar-nombre').textContent = row.dataset.hogarNombre;
+      document.getElementById('modal-hogar-direccion').textContent = row.dataset.hogarDireccion;
+      document.getElementById('modal-hogar-localidad').textContent = row.dataset.hogarLocalidad;
+      document.getElementById('modal-hogar-capacidad').textContent = row.dataset.hogarCapacidad;
+      document.getElementById('modal-hogar-estado').textContent = row.dataset.hogarEstado;
+
+      modal.style.display = 'flex';
+    });
+  });
+
+  function closeModal() {
+    modal.style.display = 'none';
+  }
+
+  closeButton.addEventListener('click', closeModal);
+
+  window.addEventListener('click', function(event) {
+    if (event.target == modal) {
+      closeModal();
+    }
+  });
+});
+</script>
+
 </body>
 </html>

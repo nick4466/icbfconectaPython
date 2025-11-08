@@ -37,6 +37,16 @@
     }
     .btn-guardar { background: linear-gradient(90deg, #28a745, #218838); }
     .btn-volver { background: linear-gradient(90deg, #6c757d, #5a6268); text-align: center; }
+
+    /* Message Styles */
+    .messages { list-style: none; padding: 0; margin-bottom: 20px; }
+    .messages li {
+      padding: 15px; border-radius: 8px; color: white; font-weight: 500;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .messages li.success { background-color: #28a745; }
+    .messages li.error { background-color: #dc3545; }
+    .close-message { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -65,12 +75,27 @@
       <h1>{% if admin %}Editar{% else %}Crear{% endif %} Administrador</h1>
     </header>
 
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li class="{{ message.tags }}">
+            {{ message }}
+            <button class="close-message" onclick="this.parentElement.style.display='none';">&times;</button>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
     <div class="content-container">
       <form method="post">
         {% csrf_token %}
         <div class="form-group">
           <label for="nombre">Nombre:<span class="required-star">*</span></label>
           <input type="text" id="nombre" name="nombre" value="{{ admin.nombres|default:'' }}" required />
+        </div>
+        <div class="form-group">
+          <label for="documento">Documento:<span class="required-star">*</span></label>
+          <input type="text" id="documento" name="documento" value="{{ admin.documento|default:'' }}" required />
         </div>
         <div class="form-group">
           <label for="correo">Correo:<span class="required-star">*</span></label>

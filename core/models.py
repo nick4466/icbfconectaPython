@@ -67,7 +67,6 @@ class Usuario(AbstractUser):
     nombres = models.CharField(max_length=50)
     apellidos = models.CharField(max_length=50)
     correo = models.EmailField(max_length=100, unique=True)
-    direccion = models.CharField(max_length=100, null=True, blank=True)
     direccion = models.CharField(max_length=100)
     telefono = models.CharField(max_length=20, null=True, blank=True)
     rol = models.ForeignKey(Rol, on_delete=models.PROTECT, null=True)
@@ -123,7 +122,7 @@ class HogarComunitario(models.Model):
         ],
         default='activo'
     )
-    madre = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='hogares_asignados')
+    madre = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='hogares_asignados')
 
     class Meta:
         db_table = 'hogares_comunitarios'

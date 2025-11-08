@@ -64,6 +64,16 @@
     }
     .btn-editar { background: linear-gradient(90deg, #007bff, #0056b3); }
     .btn-eliminar { background: linear-gradient(90deg, #dc3545, #c82333); }
+    .messages { list-style: none; padding: 0; margin: 0 0 20px 0; }
+    .messages li {
+      padding: 15px; border-radius: 8px; color: white;
+      font-weight: 500; display: flex; justify-content: space-between;
+      align-items: center;
+    }
+    .messages li.success { background-color: #28a745; }
+    .messages li.error { background-color: #dc3545; }
+    .close-message { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+
   </style>
 </head>
 <body>
@@ -92,6 +102,17 @@
       <h1>Gestión de Administradores</h1>
     </header>
 
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li class="{{ message.tags }}">
+            {{ message }}
+            <button class="close-message" onclick="this.parentElement.style.display='none';">&times;</button>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
     <div class="content-container">
       <div class="top-actions">
         <a href="{% url 'crear_administrador' %}" class="btn-crear">
@@ -103,6 +124,7 @@
         <thead>
           <tr>
             <th>Nombre</th>
+            <th>Documento</th>
             <th>Correo</th>
             <th>Acciones</th>
           </tr>
@@ -111,6 +133,7 @@
           {% for admin in administradores %}
           <tr>
             <td>{{ admin.nombres }}</td>
+            <td>{{ admin.documento }}</td>
             <td>{{ admin.correo }}</td>
             <td class="acciones">
               <a href="{% url 'editar_administrador' admin.id %}" class="btn-editar">Editar</a>
@@ -119,7 +142,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="3" style="text-align:center; color:#888;">No hay administradores registrados.</td>
+            <td colspan="4" style="text-align:center; color:#888;">No hay administradores registrados.</td>
           </tr>
           {% endfor %}
         </tbody>
