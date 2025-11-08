@@ -268,6 +268,10 @@ def role_redirect(request):
     elif role == 'madre_comunitaria':
         # Redirige a la URL que crearemos: name='madre_dashboard'
         return redirect('madre_dashboard')
+    
+    elif role == 'padre':
+        # Redirige al dashboard del padre
+        return redirect('padre_dashboard')
 
     # Si el rol es 'padre' o no está definido, puede redirigir al home
     return redirect('home')
@@ -283,8 +287,56 @@ def madre_dashboard(request):
         return redirect('role_redirect') # O a una página de acceso denegado
 
     # Aquí cargarías datos específicos de la madre (niños asignados, asistencia, etc.)
-    return render(request, 'madre/dashboard.html') # Necesitas crear este template
+    hogar_madre = HogarComunitario.objects.filter(madre=request.user).first()
+    return render(request, 'madre/dashboard.html', {'hogar_madre': hogar_madre})
 
+
+# ----------------------------------------------------
+# 💡 NUEVA FUNCIÓN: Dashboard del Padre de Familia
+# ----------------------------------------------------
+@login_required
+def padre_dashboard(request):
+    if request.user.rol.nombre_rol != 'padre':
+        return redirect('role_redirect')
+
+    try:
+        # Encontrar el perfil del padre y luego a su hijo
+        padre = Padre.objects.get(usuario=request.user)
+        nino = Nino.objects.filter(padre=padre).first()
+        
+        ultimo_desarrollo = None
+        if nino:
+            # Obtener el último registro de desarrollo para mostrarlo en el dashboard
+            ultimo_desarrollo = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes').first()
+
+        return render(request, 'padre/dashboard.html', {
+            'nino': nino,
+            'ultimo_desarrollo': ultimo_desarrollo
+        })
+    except (Padre.DoesNotExist, Nino.DoesNotExist):
+        # Manejar el caso donde el padre no tiene un hijo asignado
+        return render(request, 'padre/dashboard.html', {'error': 'No tienes un niño asignado.'})
+
+
+# ----------------------------------------------------
+# 💡 NUEVA FUNCIÓN: Ver Desarrollo (Vista del Padre)
+# ----------------------------------------------------
+@login_required
+def padre_ver_desarrollo(request):
+    if request.user.rol.nombre_rol != 'padre':
+        return redirect('role_redirect')
+
+    try:
+        padre = Padre.objects.get(usuario=request.user)
+        nino = Nino.objects.filter(padre=padre).first()
+        
+        desarrollos = []
+        if nino:
+            desarrollos = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes')
+
+        return render(request, 'padre/desarrollo_list.html', {'nino': nino, 'desarrollos': desarrollos})
+    except (Padre.DoesNotExist, Nino.DoesNotExist):
+        return render(request, 'padre/desarrollo_list.html', {'error': 'No tienes un niño asignado.'})
 
 # core/views.py
 

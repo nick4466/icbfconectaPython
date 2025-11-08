@@ -1,0 +1,158 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desarrollo de {{ nino.nombres }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-image: url("{% static 'img/fondito.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 15px 30px;
+            border-bottom: 2px solid #e5d5f5;
+            backdrop-filter: blur(4px);
+            flex-wrap: wrap;
+        }
+
+        header img {
+            height: 60px;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            padding: 0;
+            margin: 0;
+        }
+
+        nav ul li a, nav ul li button {
+            text-decoration: none;
+            color: #9B59B6;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        nav ul li a:hover, nav ul li button:hover {
+            background-color: #f3c1e5;
+        }
+
+        .contenedor {
+            display: grid;
+            grid-template-columns: 30% 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .columna1, .columna2 {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-left: 5px solid #9B59B6;
+        }
+
+        .card h1, .card h2, .card h3 {
+            color: #7a3eb1;
+            margin-top: 0;
+        }
+
+        .card p {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .card img {
+            width: 100%;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        @media (max-width: 768px) {
+            .contenedor {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
+        <nav>
+            <ul>
+                <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+                <li><a href="#"><i class="fas fa-calendar"></i> Calendario</a></li>
+
+                <li>
+                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    
+    <div class="contenedor">
+        <div class="columna1">
+            {% if nino %}
+            <div class="card">
+                <h1>{{ nino.nombres }} {{ nino.apellidos }}</h1>
+                <h2>{{ nino.get_edad_str }}</h2>
+                <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto del niño">
+            </div>
+            {% endif %}
+        </div>
+        <div class="columna2">
+            {% for desarrollo in desarrollos %}
+            <div class="card">
+                <h2>Fecha: {{ desarrollo.fecha_fin_mes|date:"d \d\e F \d\e Y" }}</h2>
+                <h3><i class="fas fa-brain"></i> Dimensión Cognitiva</h3>
+                <p>{{ desarrollo.dimension_cognitiva }}</p>
+                <h3><i class="fas fa-comments"></i> Dimensión Comunicativa</h3>
+                <p>{{ desarrollo.dimension_comunicativa }}</p>
+                <h3><i class="fas fa-heart"></i> Dimensión Socio-Afectiva</h3>
+                <p>{{ desarrollo.dimension_socio_afectiva }}</p>
+                <h3><i class="fas fa-running"></i> Dimensión Corporal</h3>
+                <p>{{ desarrollo.dimension_corporal }}</p>
+            </div>
+            {% empty %}
+            <div class="card">
+                <h2>Sin Registros</h2>
+                <p>Aún no hay registros de desarrollo para mostrar.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
