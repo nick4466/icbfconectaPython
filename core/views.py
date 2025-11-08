@@ -128,12 +128,18 @@ def listar_madres(request):
     return render(request, 'admin/madres_list.html', {'madres': madres})
 
 @login_required
+def listar_hogares(request):
+    # Selecciona los hogares y la madre asociada para optimizar la consulta
+    hogares = HogarComunitario.objects.select_related('madre').all()
+    return render(request, 'admin/hogares_list.html', {'hogares': hogares})
+
+@login_required
 def crear_madre(request):
     rol_madre, _ = Rol.objects.get_or_create(nombre_rol='madre_comunitaria')
     
     if request.method == 'POST':
-        madre_form = MadreForm(request.POST)
-        hogar_form = HogarForm(request.POST)
+        madre_form = MadreForm(request.POST, prefix='madre')
+        hogar_form = HogarForm(request.POST, prefix='hogar')
 
         if madre_form.is_valid() and hogar_form.is_valid():
             madre = madre_form.save(commit=False)
@@ -148,8 +154,8 @@ def crear_madre(request):
 
             return redirect('listar_madres')
     else:
-        madre_form = MadreForm()
-        hogar_form = HogarForm()
+        madre_form = MadreForm(prefix='madre')
+        hogar_form = HogarForm(prefix='hogar')
 
     return render(request, 'admin/madres_form.html', {
         'madre_form': madre_form,
@@ -163,15 +169,15 @@ def editar_madre(request, id):
     hogar = HogarComunitario.objects.filter(madre=madre).first()
 
     if request.method == 'POST':
-        madre_form = MadreForm(request.POST, instance=madre)
-        hogar_form = HogarForm(request.POST, instance=hogar)
+        madre_form = MadreForm(request.POST, instance=madre, prefix='madre')
+        hogar_form = HogarForm(request.POST, instance=hogar, prefix='hogar')
         if madre_form.is_valid() and hogar_form.is_valid():
             madre_form.save()
             hogar_form.save()
             return redirect('listar_madres')
     else:
-        madre_form = MadreForm(instance=madre)
-        hogar_form = HogarForm(instance=hogar)
+        madre_form = MadreForm(instance=madre, prefix='madre')
+        hogar_form = HogarForm(instance=hogar, prefix='hogar')
 
     return render(request, 'admin/madres_form.html', {
         'madre_form': madre_form,

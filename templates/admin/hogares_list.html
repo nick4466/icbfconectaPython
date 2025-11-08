@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lista de Administradores</title>
+  <title>Lista de Hogares Comunitarios</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
@@ -47,7 +47,7 @@
       padding: 30px;
       box-shadow: 0 6px 16px rgba(0,0,0,0.08);
     }
-    .top-actions { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; }
+    .top-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .btn-crear {
       background: linear-gradient(90deg, #28a745, #218838); color: white; padding: 10px 20px;
       border-radius: 8px; text-decoration: none; font-weight: 600;
@@ -57,10 +57,9 @@
     th { background-color: #f8f9fa; color: #003366; font-weight: 600; }
     td { color: #555; }
     tbody tr:hover { background-color: #f1f3f5; }
-    .acciones a, .acciones button {
+    .acciones a {
       text-decoration: none; color: white; padding: 6px 12px;
       border-radius: 6px; font-weight: 500; margin-right: 5px;
-      border: none; cursor: pointer; font-family: "Poppins", sans-serif; font-size: 14px;
     }
     .btn-editar { background: linear-gradient(90deg, #007bff, #0056b3); }
     .btn-eliminar { background: linear-gradient(90deg, #dc3545, #c82333); }
@@ -72,9 +71,9 @@
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
     <h2>ICBF Conecta</h2>
     <a href="{% url 'admin_dashboard' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
-    <a href="{% url 'listar_hogares' %}"><i class="fa-solid fa-house"></i> Hogares</a>
+    <a href="{% url 'listar_hogares' %}" class="active"><i class="fa-solid fa-house"></i> Hogares</a>
     <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Madres</a>
-    <a href="{% url 'listar_administradores' %}" class="active"><i class="fa-solid fa-user-shield"></i> Administradores</a>
+    <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
     <a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a>
     <div class="logout">
         <form method="post" action="{% url 'logout' %}" style="display: inline;">
@@ -89,37 +88,42 @@
   <!-- MAIN -->
   <div class="main">
     <header>
-      <h1>Gestión de Administradores</h1>
+      <h1>Gestión de Hogares Comunitarios</h1>
     </header>
 
     <div class="content-container">
       <div class="top-actions">
-        <a href="{% url 'crear_administrador' %}" class="btn-crear">
-          <i class="fas fa-plus" style="margin-right: 8px;"></i> Crear Nuevo Administrador
-        </a>
+        <p>Para crear un nuevo hogar, debes <a href="{% url 'crear_madre' %}">registrar una nueva madre comunitaria</a>.</p>
       </div>
 
       <table>
         <thead>
           <tr>
-            <th>Nombre</th>
-            <th>Correo</th>
+            <th>Nombre del Hogar</th>
+            <th>Dirección</th>
+            <th>Localidad</th>
+            <th>Madre a Cargo</th>
+            <th>Capacidad</th>
+            <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {% for admin in administradores %}
+          {% for hogar in hogares %}
           <tr>
-            <td>{{ admin.nombres }}</td>
-            <td>{{ admin.correo }}</td>
+            <td>{{ hogar.nombre_hogar }}</td>
+            <td>{{ hogar.direccion }}</td>
+            <td>{{ hogar.localidad }}</td>
+            <td>{{ hogar.madre.nombres }} {{ hogar.madre.apellidos }}</td>
+            <td>{{ hogar.capacidad_maxima }}</td>
+            <td>{{ hogar.estado }}</td>
             <td class="acciones">
-              <a href="{% url 'editar_administrador' admin.id %}" class="btn-editar">Editar</a>
-              <a href="{% url 'eliminar_administrador' admin.id %}" class="btn-eliminar" onclick="return confirm('¿Eliminar este administrador?');">Eliminar</a>
+              <a href="{% url 'editar_madre' hogar.madre.id %}" class="btn-editar">Editar</a>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="3" style="text-align:center; color:#888;">No hay administradores registrados.</td>
+            <td colspan="7" style="text-align:center; color:#888;">No hay hogares comunitarios registrados.</td>
           </tr>
           {% endfor %}
         </tbody>

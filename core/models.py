@@ -68,6 +68,7 @@ class Usuario(AbstractUser):
     apellidos = models.CharField(max_length=50)
     correo = models.EmailField(max_length=100, unique=True)
     direccion = models.CharField(max_length=100, null=True, blank=True)
+    direccion = models.CharField(max_length=100)
     telefono = models.CharField(max_length=20, null=True, blank=True)
     rol = models.ForeignKey(Rol, on_delete=models.PROTECT, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -111,7 +112,7 @@ class Padre(models.Model):
 class HogarComunitario(models.Model):
     nombre_hogar = models.CharField(max_length=100)
     direccion = models.CharField(max_length=150)
-    localidad = models.CharField(max_length=50, null=True, blank=True)
+    localidad = models.CharField(max_length=50)
     capacidad_maxima = models.IntegerField()
     estado = models.CharField(
         max_length=20,

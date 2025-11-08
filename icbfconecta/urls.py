@@ -31,6 +31,7 @@ urlpatterns = [
 
     # --- CRUD Madres ---
     path('madres/', views.listar_madres, name='listar_madres'),
+    path('hogares/', views.listar_hogares, name='listar_hogares'), # <-- NUEVA RUTA
     path('madres/crear/', views.crear_madre, name='crear_madre'),
     path('madres/editar/<int:id>/', views.editar_madre, name='editar_madre'),
     path('madres/eliminar/<int:id>/', views.eliminar_madre, name='eliminar_madre'),

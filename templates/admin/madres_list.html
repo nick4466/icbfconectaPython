@@ -5,262 +5,136 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lista de Madres Comunitarias</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
-    * { box-sizing: border-box; }
-
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-image: url("{% static '' %}");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-    }
-
-    header {
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 15px 30px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-      flex-wrap: wrap;
-    }
-
-    header img { height: 60px; }
-
-    nav {
-      flex-grow: 1;
-      margin-left: 40px;
-    }
-
-    nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
       padding: 0;
-      margin: 0;
-      flex-wrap: wrap;
     }
-
-    nav ul li a {
-      text-decoration: none;
-      font-weight: bold;
-      color: #007BFF;
-      transition: color 0.3s ease;
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #f3f6fa;
+      color: #333;
       display: flex;
-      align-items: center;
-      gap: 6px;
+      min-height: 100vh;
     }
-
-    nav ul li a:hover { color: #0056b3; }
-
-    .btn-cerrar {
-      background: none;
-      border: none;
-      color: #007BFF;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .btn-cerrar:hover {
-      background-color: #0056b3;
+    .sidebar {
+      width: 250px;
+      background: linear-gradient(180deg, #004080, #007bff);
       color: white;
-      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      padding: 25px 0;
     }
-
-    .main-title {
-      text-align: center;
-      margin-top: 20px;
-      padding: 20px;
-      font-size: 28px;
-      font-weight: bold;
-      color: #004080;
-      background-color: rgba(204, 228, 231, 0.75);
-      width: 80%;
-      margin: 30px auto;
-      border-radius: 10px;
+    .sidebar img { height: 70px; margin: 0 auto 20px; }
+    .sidebar h2 { text-align: center; font-weight: 700; margin-bottom: 25px; font-size: 18px; }
+    .sidebar a {
+      color: white; text-decoration: none; padding: 14px 25px; display: flex;
+      align-items: center; gap: 10px; font-weight: 500; transition: background 0.3s ease;
     }
-
+    .sidebar a:hover, .sidebar a.active {
+      background: rgba(255, 255, 255, 0.15); border-left: 4px solid #ffffff;
+    }
+    .sidebar .logout { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
+    .main { flex: 1; padding: 40px; }
+    .main header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+    .main header h1 { font-size: 28px; color: #004080; font-weight: 700; }
     .content-container {
-      background-color: rgba(255, 255, 255, 0.95);
-      max-width: 1100px;
-      margin: 0 auto 50px;
+      background-color: white;
+      border-radius: 16px;
       padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      border-left: 6px solid #007BFF;
-      max-height: 70vh;
-      overflow-y: auto;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
     }
-
-    .top-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 20px;
+    .top-actions { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; }
+    .btn-crear {
+      background: linear-gradient(90deg, #28a745, #218838); color: white; padding: 10px 20px;
+      border-radius: 8px; text-decoration: none; font-weight: 600;
     }
-
-    .btn-nueva {
-      background-color: #28a745;
-      color: white;
-      font-weight: bold;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background-color 0.3s ease;
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 14px; text-align: left; border-bottom: 1px solid #e9ecef; }
+    th { background-color: #f8f9fa; color: #003366; font-weight: 600; }
+    td { color: #555; }
+    tbody tr:hover { background-color: #f1f3f5; }
+    .acciones a, .acciones button {
+      text-decoration: none; color: white; padding: 6px 12px;
+      border-radius: 6px; font-weight: 500; margin-right: 5px;
+      border: none; cursor: pointer; font-family: "Poppins", sans-serif; font-size: 14px;
     }
-
-    .btn-nueva:hover { background-color: #218838; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-
-    th {
-      background-color: #e6f2ff;
-      color: #004080;
-      text-transform: uppercase;
-    }
-
-    td { color: #333; }
-
-    .btn-editar, .btn-eliminar {
-      padding: 6px 12px;
-      font-size: 14px;
-      font-weight: bold;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      text-decoration: none;
-      margin-right: 5px;
-    }
-
-    .btn-editar {
-      background-color: #007BFF;
-      color: white;
-    }
-
-    .btn-editar:hover { background-color: #0056b3; }
-
-    .btn-eliminar {
-      background-color: #dc3545;
-      color: white;
-    }
-
-    .btn-eliminar:hover { background-color: #c82333; }
-
-    .btn-volver {
-      display: inline-block;
-      margin-top: 30px;
-      text-decoration: none;
-      font-weight: bold;
-      color: #007BFF;
-      transition: color 0.3s ease;
-    }
-
-    .btn-volver:hover { color: #0056b3; }
-
-    @media screen and (max-width: 700px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-
-      th {
-        position: sticky;
-        top: 0;
-        background-color: #e6f2ff;
-      }
-
-      td { margin-bottom: 10px; }
-    }
+    .btn-editar { background: linear-gradient(90deg, #007bff, #0056b3); }
+    .btn-eliminar { background: linear-gradient(90deg, #dc3545, #c82333); }
   </style>
 </head>
 <body>
-
-  <!-- ENCABEZADO -->
-  <header>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
-    <nav>
-      <ul>
-        <li><a href="#"><i class="fas fa-list"></i> Gestionar Hogares</a></li>
-        <li><a href="{% url 'listar_madres' %}"><i class="fas fa-users"></i> Gestionar Madres</a></li>
-        <li><a href="#"><i class="fas fa-chart-bar"></i> Ver Reportes</a></li>
-      </ul>
-    </nav>
-    <form method="post" action="{% url 'logout' %}">
-      {% csrf_token %}
-      <button type="submit" class="btn-cerrar">
-        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-      </button>
-    </form>
-  </header>
-
-  <!-- TÍTULO -->
-  <div class="main-title">ICBF - CONECTA | Lista de Madres Comunitarias</div>
-
-  <!-- CONTENIDO -->
-  <div class="content-container">
-
-    <div class="top-actions">
-      <a href="{% url 'crear_madre' %}" class="btn-nueva">
-        <i class="fas fa-user-plus"></i> Registrar Nueva Madre
-      </a>
+    <h2>ICBF Conecta</h2>
+    <a href="{% url 'admin_dashboard' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
+    <a href="{% url 'listar_hogares' %}"><i class="fa-solid fa-house"></i> Hogares</a>
+    <a href="{% url 'listar_madres' %}" class="active"><i class="fa-solid fa-user-group"></i> Madres</a>
+    <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
+    <a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a>
+    <div class="logout">
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" style="background: none; border: none; color: white; cursor: pointer; padding: 14px 25px; display: flex; align-items: center; gap: 10px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 500; width: 100%; text-align: left;">
+                <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+            </button>
+        </form>
     </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Correo</th>
-          <th>Teléfono</th>
-          <th>Hogar Asignado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for madre in madres %}
-        <tr>
-          <td>{{ madre.nombres }} {{ madre.apellidos }}</td>
-          <td>{{ madre.correo }}</td>
-          <td>{{ madre.telefono }}</td>
-          <td>
-            {% for h in madre.hogares_asignados.all %}
-              {{ h.nombre_hogar }}{% if not forloop.last %}, {% endif %}
-            {% empty %}
-              <em>Sin hogar</em>
-            {% endfor %}
-          </td>
-          <td>
-            <a href="{% url 'editar_madre' madre.id %}" class="btn-editar">Editar</a>
-            <a href="{% url 'eliminar_madre' madre.id %}" class="btn-eliminar" onclick="return confirm('¿Eliminar esta madre comunitaria?');">Eliminar</a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" style="text-align:center; color:#888;">No hay madres comunitarias registradas.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-   
   </div>
 
+  <!-- MAIN -->
+  <div class="main">
+    <header>
+      <h1>Gestión de Madres Comunitarias</h1>
+    </header>
+
+    <div class="content-container">
+      <div class="top-actions">
+        <a href="{% url 'crear_madre' %}" class="btn-crear">
+          <i class="fas fa-plus" style="margin-right: 8px;"></i> Registrar Nueva Madre
+        </a>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Teléfono</th>
+            <th>Hogar Asignado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for madre in madres %}
+          <tr>
+            <td>{{ madre.nombres }} {{ madre.apellidos }}</td>
+            <td>{{ madre.correo }}</td>
+            <td>{{ madre.telefono|default:"N/A" }}</td>
+            <td>
+              {% for h in madre.hogares_asignados.all %}
+                {{ h.nombre_hogar }}{% if not forloop.last %}, {% endif %}
+              {% empty %}
+                <em>Sin hogar</em>
+              {% endfor %}
+            </td>
+            <td class="acciones">
+              <a href="{% url 'editar_madre' madre.id %}" class="btn-editar">Editar</a>
+              <a href="{% url 'eliminar_madre' madre.id %}" class="btn-eliminar" onclick="return confirm('¿Eliminar esta madre comunitaria?');">Eliminar</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" style="text-align:center; color:#888;">No hay madres comunitarias registradas.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </body>
 </html>
