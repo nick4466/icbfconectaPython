@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Página Principal - Padres de Familia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondito.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+
+    header img {
+      height: 60px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav ul li a, nav ul li button {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    nav ul li a:hover, nav ul li button:hover {
+      background-color: #f3c1e5;
+    }
+
+    .dashboard-container {
+      max-width: 1000px;
+      margin: 40px auto;
+      background-color: rgba(255, 255, 255, 0.95);
+      border-radius: 14px;
+      padding: 30px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      color: #7a3eb1;
+      margin-bottom: 10px;
+    }
+
+    .bienvenida p {
+      text-align: center;
+      font-size: 18px;
+      color: #5e3370;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background-color: #e9f5ff;
+      border-left: 6px solid #007bff;
+      border-radius: 12px;
+      padding: 20px;
+      font-size: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #7a3eb1;
+      font-size: 20px;
+    }
+
+    .card p {
+      margin: 8px 0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
+    <nav>
+      <ul>
+        <li><a href="{% url 'padre_ver_desarrollo' %}"><i class="fas fa-child"></i> Desarrollo Infantil</a></li>
+        <li><a href="#"><i class="fas fa-calendar"></i> Calendario</a></li>
+        <li>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+            </form>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="dashboard-container">
+    <div class="bienvenida">
+      <h1>¡Bienvenid@, <strong>{{ user.nombres }}!</strong></h1>
+      <p>Aquí puedes ver el desarrollo y la actividad diaria de tu hijo(a) <strong>{{ nino.nombres }}</strong>.</p>
+    </div>
+
+    <div class="card">
+      <h3>📝 Último desarrollo registrado:</h3>
+      {% if ultimo_desarrollo %}
+        <p><strong>Fecha:</strong> {{ ultimo_desarrollo.fecha_fin_mes|date:"d \d\e F \d\e Y" }}</p>
+        <p><strong>Observación Cognitiva:</strong> “{{ ultimo_desarrollo.dimension_cognitiva|truncatewords:25 }}”</p>
+      {% else %}
+        <p>Aún no hay registros de desarrollo para tu hijo(a).</p>
+      {% endif %}
+    </div>
+  </div>
+
+</body>
+</html>
