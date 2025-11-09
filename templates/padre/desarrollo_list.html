@@ -112,7 +112,7 @@
             <ul>
                 <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
                 <li><a href="#"><i class="fas fa-calendar"></i> Calendario</a></li>
-
+                <li><a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a></li>
                 <li>
                     <form method="post" action="{% url 'logout' %}" style="display: inline;">
                         {% csrf_token %}
