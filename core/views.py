@@ -9,6 +9,7 @@ from django.db.models import Q
 from .models import Usuario, Rol, Padre, Nino, HogarComunitario, DesarrolloNino
 from django.utils import timezone
 from django import forms
+from django.contrib.auth.forms import SetPasswordForm
 
 # -----------------------------------------------------------------
 # 💡 NUEVA FUNCIÓN: Matricular Niño (CRUD Crear)
@@ -646,3 +647,24 @@ def gestion_ninos(request):
     # Ejemplo: obtener los niños del hogar de la madre logueada
     ninos = Nino.objects.all()  # Ajusta el filtro según tu lógica de negocio
     return render(request, 'madre/gestion_ninos_list.html', {'ninos': ninos})
+
+# ----------------------------------------------------
+# 💡 NUEVA FUNCIÓN: Cambiar Contraseña del Usuario
+# ----------------------------------------------------
+@login_required
+def cambiar_contrasena(request):
+    if request.method == 'POST':
+        form = SetPasswordForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Actualizar la sesión para que el usuario no sea deslogueado
+            update_session_auth_hash(request, user)
+            messages.success(request, '¡Tu contraseña ha sido actualizada exitosamente!')
+            # Redirigir al dashboard correspondiente según el rol
+            return redirect('role_redirect')
+        else:
+            messages.error(request, 'Por favor corrige los errores a continuación.')
+    else:
+        form = SetPasswordForm(request.user)
+    
+    return render(request, 'perfil/cambiar_contrasena.html', {'form': form})

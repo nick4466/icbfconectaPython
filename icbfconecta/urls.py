@@ -25,6 +25,9 @@ urlpatterns = [
     # --- Vistas para Padres (Ahora con ID de niño) ---
     path('padre/desarrollo/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
     
+    # --- Gestión de Perfil de Usuario ---
+    path('perfil/cambiar-contrasena/', views.cambiar_contrasena, name='cambiar_contrasena'),
+
     # Logout
     # next_page='home' es correcto si 'home' es la URL de aterrizaje después de cerrar sesión
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'), 
