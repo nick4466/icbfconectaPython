@@ -8,29 +8,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
-from core.custom_password_reset_form import CustomPasswordResetForm
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
-
-    # --- URLs para Restablecimiento de Contraseña ---
-    path('reset_password/', 
-         auth_views.PasswordResetView.as_view(
-             template_name="password_reset/password_reset_form.html",
-             form_class=CustomPasswordResetForm
-         ), 
-         name="password_reset"),
-    path('reset_password_sent/', 
-         auth_views.PasswordResetDoneView.as_view(template_name="password_reset/password_reset_done.html"), 
-         name="password_reset_done"),
-    path('reset/<uidb64>/<token>/', 
-         auth_views.PasswordResetConfirmView.as_view(template_name="password_reset/password_reset_confirm.html"), 
-         name="password_reset_confirm"),
-    path('reset_password_complete/', 
-         auth_views.PasswordResetCompleteView.as_view(template_name="password_reset/password_reset_complete.html"), 
-         name="password_reset_complete"),
     
     # URL de Redirección por Rol (Nuevo Punto de Entrada después del Login)
     path('dashboard/', views.role_redirect, name='role_redirect'),
@@ -45,7 +27,7 @@ urlpatterns = [
     
     # --- Gestión de Perfil de Usuario ---
     path('perfil/cambiar-contrasena/', views.cambiar_contrasena, name='cambiar_contrasena'),
-    path('perfil/editar/', views.editar_perfil, name='editar_perfil'),
+    path('perfil/editar/', views.editar_perfil, name='editar_perfil'), # <-- NUEVA RUTA
 
     # Logout
     # next_page='home' es correcto si 'home' es la URL de aterrizaje después de cerrar sesión

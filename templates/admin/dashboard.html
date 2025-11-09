@@ -64,6 +64,25 @@
       border-left: 4px solid #ffffff;
     }
 
+    /* Estilos para el menú desplegable */
+    .sidebar .dropdown { position: relative; }
+    .sidebar .dropdown .dropdown-menu {
+      display: none;
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background-color: #004080;
+      min-width: 200px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 0 8px 8px 0;
+    }
+    .sidebar .dropdown:hover .dropdown-menu { display: block; }
+    .sidebar .dropdown-menu a {
+      padding: 12px 16px;
+      border-left: none !important; /* Quitar borde del estado :hover o .active */
+    }
+
     .sidebar .logout {
       margin-top: auto;
       border-top: 1px solid rgba(255,255,255,0.2);
@@ -174,8 +193,14 @@
     <a href="{% url 'listar_hogares' %}" class="active"><i class="fa-solid fa-house"></i> Hogares</a>
     <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Madres</a>
     <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
-    <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
     <a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a>
+    <div class="dropdown">
+      <a href="#"><i class="fa-solid fa-cog"></i> Ajustes</a>
+      <div class="dropdown-menu">
+        <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+        <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+      </div>
+    </div>
 
     <div class="logout">
         <form method="post" action="{% url 'logout' %}" style="display: inline;">

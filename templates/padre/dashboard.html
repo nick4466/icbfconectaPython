@@ -59,6 +59,22 @@
       background-color: #f3c1e5;
     }
 
+    /* Estilos para el menú desplegable */
+    nav ul .dropdown { position: relative; }
+    nav ul .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.98);
+      min-width: 180px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 8px;
+      padding: 8px 0;
+    }
+    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
+    nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
+    nav ul .dropdown:hover .dropdown-content { display: block; }
+
     .dashboard-container {
       max-width: 1000px;
       margin: 40px auto;
@@ -160,7 +176,13 @@
       <ul>
         <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="#"><i class="fas fa-calendar"></i> Calendario</a></li>
-        <li><a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a></li>
+        <li class="dropdown">
+          <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
+          <div class="dropdown-content">
+            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+          </div>
+        </li>
         <li>
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}

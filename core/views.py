@@ -10,6 +10,7 @@ from .models import Usuario, Rol, Padre, Nino, HogarComunitario, DesarrolloNino
 from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
+from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm
 
 # -----------------------------------------------------------------
 # 💡 NUEVA FUNCIÓN: Matricular Niño (CRUD Crear)
@@ -17,88 +18,67 @@ from django.contrib.auth.forms import SetPasswordForm
 
 @login_required
 def matricular_nino(request):
-    # 1. Seguridad: Asegurar que solo las Madres Comunitarias accedan
-    if request.user.rol.nombre_rol != 'madre_comunitaria':
-        return redirect('role_redirect')
+    # Solo madres comunitarias pueden acceder
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, 'Solo las madres comunitarias pueden matricular niños.')
+        return redirect('home')
 
-    # Obtener el Hogar de la Madre logueada
+    # Obtener el hogar de la madre logueada
     try:
         hogar_madre = HogarComunitario.objects.get(madre=request.user)
     except HogarComunitario.DoesNotExist:
-        return render(request, 'madre/nino_form.html', {'error': 'No tienes un hogar asignado. Contacta al administrador.'})
+        messages.error(request, 'No tienes un hogar comunitario asignado.')
+        return redirect('madre_dashboard')
 
-
-    # 2. Manejar la solicitud POST (Creación de Padre y Niño)
     if request.method == 'POST':
-        # Datos del formulario
-        doc_padre = request.POST.get('doc_padre')
-        nombres_padre = request.POST.get('nombres_padre')
-        apellidos_padre = request.POST.get('apellidos_padre')
-        correo_padre = request.POST.get('correo_padre')
-        ocupacion = request.POST.get('ocupacion')
-        nombres_nino = request.POST.get('nombres_nino')
-        apellidos_nino = request.POST.get('apellidos_nino')
-        fecha_nacimiento = request.POST.get('fecha_nacimiento')
-        doc_nino = request.POST.get('doc_nino')
-        genero_nino = request.POST.get('genero_nino')
-        
-        if not all([doc_padre, nombres_padre, correo_padre, nombres_nino, fecha_nacimiento]):
-            return render(request, 'madre/nino_form.html', {'error': 'Faltan campos obligatorios', 'hogar_madre': hogar_madre})
-
-
-        try:
+        padre_form = PadreForm(request.POST, prefix='padre')
+        nino_form = NinoForm(request.POST, prefix='nino')
+        if padre_form.is_valid() and nino_form.is_valid():
             with transaction.atomic():
-                # 💡 CORRECCIÓN DEL ERROR: Usar get_or_create para rol 'padre' 💡
-                rol_padre, created = Rol.objects.get_or_create(
-                    nombre_rol='padre', 
-                    defaults={'nombre_rol': 'padre'}
-                )
-                
-                # 💡 CAMBIO: Usar get_or_create para el Usuario del padre
-                # Si el usuario ya existe por su 'username' (documento), lo obtiene.
-                # Si no, lo crea con los valores en 'defaults'.
-                usuario_padre, usuario_creado = Usuario.objects.get_or_create(
-                    username=doc_padre,
-                    defaults={
-                        'password': make_password(doc_padre), 
-                        'rol': rol_padre,
-                        'documento': doc_padre,
-                        'nombres': nombres_padre,
-                        'apellidos': apellidos_padre,
-                        'correo': correo_padre,
-                        'first_name': nombres_padre, 
-                        'last_name': apellidos_padre,
-                    }
-                )
+                # Buscar el rol padre
+                rol_padre = Rol.objects.get(nombre_rol='padre')
+                doc_padre = padre_form.cleaned_data['documento']
+                email_padre = padre_form.cleaned_data['email']
+                # Buscar usuario padre existente por documento y rol=padre
+                usuario_padre = Usuario.objects.filter(documento=doc_padre, rol=rol_padre).first()
+                if not usuario_padre:
+                    # Si no existe, crear usuario padre
+                    usuario_padre = Usuario.objects.create(
+                        documento=doc_padre,
+                        nombres=padre_form.cleaned_data['nombres'],
+                        apellidos=padre_form.cleaned_data['apellidos'],
+                        email=email_padre,
+                        telefono=padre_form.cleaned_data['telefono'],
+                        direccion=padre_form.cleaned_data['direccion'],
+                        rol=rol_padre,
+                        username=str(doc_padre),
+                    )
+                    # Contraseña inicial igual al documento
+                    usuario_padre.set_password(str(doc_padre))
+                    usuario_padre.save()
+                # Crear perfil de padre si no existe
+                padre_obj, created = Padre.objects.get_or_create(usuario=usuario_padre)
+                padre_obj.ocupacion = padre_form.cleaned_data.get('ocupacion', '')
+                padre_obj.save()
+                # Crear el niño y asociar
+                nino = nino_form.save(commit=False)
+                nino.hogar = hogar_madre
+                nino.padre = padre_obj
+                nino.save()
+                messages.success(request, 'Niño matriculado correctamente.')
+                return redirect('listar_ninos')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        padre_form = PadreForm(prefix='padre')
+        nino_form = NinoForm(prefix='nino')
 
-                # 💡 CAMBIO: Usar get_or_create para el Perfil del padre
-                # Esto asegura que cada usuario padre tenga solo un perfil de padre.
-                perfil_padre, perfil_creado = Padre.objects.get_or_create(
-                    usuario=usuario_padre,
-                    defaults={'ocupacion': ocupacion}
-                )
-                
-                # Crear el Niño
-                Nino.objects.create(
-                    nombres=nombres_nino,
-                    apellidos=apellidos_nino,
-                    fecha_nacimiento=fecha_nacimiento,
-                    documento=doc_nino if doc_nino else None,
-                    genero=genero_nino,
-                    hogar=hogar_madre, 
-                    padre=perfil_padre,
-                    fecha_ingreso=timezone.now().date(),
-                )
-            
-            return redirect('listar_ninos')
-        
-        except Exception as e:
-            # Maneja errores de unicidad (documento/correo duplicado) o DB
-            return render(request, 'madre/nino_form.html', {'error': f'Error al matricular: {e}', 'hogar_madre': hogar_madre})
-
-
-    # 3. Manejar la solicitud GET (Mostrar el formulario)
-    return render(request, 'madre/nino_form.html', {'hogar_madre': hogar_madre})
+    return render(request, 'madre/nino_form.html', {
+        'hogar_madre': hogar_madre,
+        'nino_form': nino_form,
+        'padre_form': padre_form,
+        'modo_edicion': False
+    })
 def home(request):
     return render(request, 'home.html')
 @login_required
@@ -109,7 +89,8 @@ def admin_dashboard(request):
 class MadreForm(forms.ModelForm):
     class Meta:
         model = Usuario
-        fields = ['nombres', 'apellidos', 'documento', 'correo', 'telefono', 'direccion']
+        fields = ['nombres', 'apellidos', 'documento', 'email', 'telefono', 'direccion']
+
 
 class HogarForm(forms.ModelForm):
     class Meta:
@@ -165,7 +146,7 @@ def crear_madre(request):
                 })
             madre = madre_form.save(commit=False)
             madre.rol = rol_madre
-            madre.username = madre.correo  # obligatorio por AbstractUser
+            madre.username = madre.email  # obligatorio por AbstractUser
             madre.set_password('123456')   # contraseña por defecto
             madre.save()
 
@@ -248,7 +229,7 @@ def crear_administrador(request):
         # 1. Obtener los datos del formulario (usando .get() es más seguro)
         nombre = request.POST.get('nombre')
         documento = request.POST.get('documento')
-        correo = request.POST.get('correo')
+        email = request.POST.get('correo') # El input del form se llama 'correo'
         contraseña_plana = request.POST.get('contraseña')
         
         # 2. **CORRECCIÓN CLAVE: Mapear y crear el objeto**
@@ -257,7 +238,7 @@ def crear_administrador(request):
         username_val = documento
         
         # 💡 CORRECCIÓN: Validar que el documento y el correo no existan
-        if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exists():
+        if Usuario.objects.filter(Q(documento=documento) | Q(email=email)).exists():
             # Si ya existe, enviar un mensaje de error y renderizar el formulario de nuevo
             # con los datos que el usuario ya había ingresado.
             messages.error(request, 'Ya existe un usuario con ese documento o correo electrónico.')
@@ -267,12 +248,12 @@ def crear_administrador(request):
             })
 
 
-        if nombre and documento and correo and contraseña_plana:
+        if nombre and documento and email and contraseña_plana:
             Usuario.objects.create(
                 # Campo obligatorio de AbstractUser
                 username=username_val, 
                 documento=documento,
-                correo=correo,
+                email=email,
                 nombres=nombre,
                 apellidos="", # Lo dejas vacío ya que el form no lo pide
                 # Campo de AbstractUser (donde se guarda el hash)
@@ -292,23 +273,23 @@ def editar_administrador(request, id):
     
     if request.method == 'POST':
         documento = request.POST.get('documento')
-        correo = request.POST.get('correo')
+        email = request.POST.get('correo')
 
         # 💡 CORRECCIÓN: Validar duplicados, excluyendo al usuario actual.
-        if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exclude(id=id).exists():
+        if Usuario.objects.filter(Q(documento=documento) | Q(email=email)).exclude(id=id).exists():
             messages.error(request, 'Ya existe otro usuario con ese documento o correo electrónico.')
             # Para no perder los datos, creamos un objeto temporal con los datos del POST
             # y lo pasamos a la plantilla.
             admin_post_data = admin # Mantenemos los datos originales
             admin_post_data.nombres = request.POST.get('nombre')
             admin_post_data.documento = documento
-            admin_post_data.correo = correo
+            admin_post_data.email = email
             return render(request, 'admin/administradores_form.html', {'admin': admin_post_data})
 
         # Actualizar los campos del modelo a partir de los datos del POST.
         admin.nombres = request.POST.get('nombre', admin.nombres)
         admin.documento = documento
-        admin.correo = correo
+        admin.email = email
         admin.username = documento # Sincronizar username con documento
         
         # Solo actualizar la contraseña si se proporciona una nueva.
@@ -440,16 +421,16 @@ def padre_ver_desarrollo(request, nino_id):
 
 @login_required
 def listar_ninos(request):
-    if request.user.rol.nombre_rol != 'madre_comunitaria':
-        return redirect('role_redirect')
-
-    # Filtra los hogares que son gestionados por la madre logueada
-    # Esto asume que HogarComunitario.madre es el usuario logueado
-    hogares_madre = HogarComunitario.objects.filter(madre=request.user)
-    
-    # Filtra los niños que pertenecen a esos hogares
-    ninos = Nino.objects.filter(hogar__in=hogares_madre).order_by('apellidos')
-
+    # Solo madres comunitarias pueden ver su listado
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, 'Acceso denegado.')
+        return redirect('home')
+    try:
+        hogar = HogarComunitario.objects.get(madre=request.user)
+    except HogarComunitario.DoesNotExist:
+        messages.error(request, 'No tienes un hogar comunitario asignado.')
+        return redirect('madre_dashboard')
+    ninos = Nino.objects.filter(hogar=hogar)
     return render(request, 'madre/nino_list.html', {'ninos': ninos})
 
 # -----------------------------------------------------------------
@@ -601,35 +582,100 @@ def ver_ficha_nino(request, id):
 @login_required
 def editar_nino(request, id):
     nino = get_object_or_404(Nino, id=id)
-    padre = nino.padre
-    usuario_padre = padre.usuario
+    # Asegurarse de que el padre y su usuario existan
+    usuario_padre = nino.padre.usuario if nino.padre else None
+    perfil_padre = nino.padre if nino.padre else None
     if request.method == 'POST':
-        # Actualizar datos del padre
-        usuario_padre.nombres = request.POST.get('nombres_padre', usuario_padre.nombres)
-        usuario_padre.apellidos = request.POST.get('apellidos_padre', usuario_padre.apellidos)
-        usuario_padre.telefono = request.POST.get('telefono_padre', usuario_padre.telefono)
-        usuario_padre.direccion = request.POST.get('direccion_padre', usuario_padre.direccion)
-        usuario_padre.save()
-        padre.ocupacion = request.POST.get('ocupacion', padre.ocupacion)
-        padre.estrato = request.POST.get('estrato', padre.estrato)
-        padre.save()
-        # Actualizar datos del niño
-        nino.nombres = request.POST.get('nombres_nino', nino.nombres)
-        nino.apellidos = request.POST.get('apellidos_nino', nino.apellidos)
-        nino.documento = request.POST.get('doc_nino', nino.documento)
-        nino.fecha_nacimiento = request.POST.get('fecha_nacimiento', nino.fecha_nacimiento)
-        nino.genero = request.POST.get('genero', nino.genero)
-        nino.nacionalidad = request.POST.get('nacionalidad', nino.nacionalidad)
-        nino.save()
-        return redirect('listar_ninos')
-    # Renderizar el formulario con los datos actuales
+        # Se instancian los formularios con los datos del POST y las instancias de los modelos
+        nino_form = NinoForm(request.POST, instance=nino, prefix='nino')
+        padre_form = PadreForm(request.POST, instance=usuario_padre, prefix='padre')
+
+        if nino_form.is_valid() and padre_form.is_valid():
+            # 💡 VALIDACIÓN: Verificar si el nuevo documento o correo ya existen en otro usuario.
+            documento = padre_form.cleaned_data.get('documento')
+            email = padre_form.cleaned_data.get('email')
+            
+            if Usuario.objects.filter(Q(documento=documento) | Q(email=email)).exclude(id=usuario_padre.id).exists():
+                messages.error(request, 'El documento o correo electrónico ingresado ya pertenece a otro usuario.')
+            else:
+                # Si no hay duplicados, proceder a guardar.
+                nino_form.save()
+                # Guardar datos del Usuario y del perfil Padre
+                usuario_actualizado = padre_form.save(commit=False)
+                usuario_actualizado.save()
+
+                if perfil_padre:
+                    perfil_padre.ocupacion = padre_form.cleaned_data['ocupacion']
+                    perfil_padre.save()
+
+                messages.success(request, '¡La información del niño y su tutor ha sido actualizada!')
+                return redirect('listar_ninos')
+
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+
+    else:
+        # Se instancian los formularios con los datos existentes para el método GET.
+        nino_form = NinoForm(instance=nino, prefix='nino')
+
+        # 💡 CORRECCIÓN: Pre-llenar el formulario del padre con los datos del usuario y del perfil.
+        # Los datos del modelo Usuario se cargan con 'instance'.
+        # Los datos del modelo Padre (como 'ocupacion') se cargan con 'initial'.
+        initial_data_padre = {
+            'documento': usuario_padre.documento if usuario_padre else ''
+        }
+        if perfil_padre:
+            initial_data_padre['ocupacion'] = perfil_padre.ocupacion
+        
+        padre_form = PadreForm(instance=usuario_padre, prefix='padre', initial=initial_data_padre)
+
     return render(request, 'madre/nino_form.html', {
-        'nino': nino,
-        'padre': padre,
-        'usuario_padre': usuario_padre,
-        'hogar_madre': nino.hogar,
-        'modo_edicion': True
+        'nino_form': nino_form,
+        'padre_form': padre_form,
+        'nino': nino, # Se pasa el objeto nino para acceder a datos no editables en la plantilla
+        'modo_edicion': True,
+        'titulo_form': 'Editar Información del Niño'
     })
+
+
+@login_required
+def editar_perfil(request):
+    user = request.user
+    rol = user.rol.nombre_rol
+
+    # 1. Seleccionar el formulario y la instancia adecuados según el rol
+    if rol == 'padre':
+        # Para el padre, necesitamos la instancia de su perfil de Padre
+        padre_profile, _ = Padre.objects.get_or_create(usuario=user)
+        FormClass = PadrePerfilForm
+        initial_data = {'ocupacion': padre_profile.ocupacion, 'estrato': padre_profile.estrato}
+    elif rol == 'madre_comunitaria':
+        FormClass = MadrePerfilForm
+        initial_data = None
+    else: # administrador
+        FormClass = AdminPerfilForm
+        initial_data = None
+
+    if request.method == 'POST':
+        form = FormClass(request.POST, instance=user, initial=initial_data)
+        if form.is_valid():
+            # Guardar los datos del modelo Usuario
+            user_instance = form.save(commit=False)
+            # Si es un padre, guardar los campos adicionales en el modelo Padre
+            if rol == 'padre':
+                padre_profile.ocupacion = form.cleaned_data.get('ocupacion')
+                padre_profile.estrato = form.cleaned_data.get('estrato')
+                padre_profile.save()
+            user_instance.save()
+            messages.success(request, '¡Tu información ha sido actualizada exitosamente!')
+            return redirect('editar_perfil')
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        # Al cargar la página, inicializar el formulario con los datos existentes
+        form = FormClass(instance=user, initial=initial_data)
+
+    return render(request, 'perfil/editar_perfil.html', {'form': form})
 
 @login_required
 def generar_reporte_ninos(request):
@@ -660,8 +706,8 @@ def cambiar_contrasena(request):
             # Actualizar la sesión para que el usuario no sea deslogueado
             update_session_auth_hash(request, user)
             messages.success(request, '¡Tu contraseña ha sido actualizada exitosamente!')
-            # Redirigir al dashboard correspondiente según el rol
-            return redirect('role_redirect')
+            # Redirigir a la misma página para que el usuario vea el mensaje de éxito.
+            return redirect('cambiar_contrasena')
         else:
             messages.error(request, 'Por favor corrige los errores a continuación.')
     else:

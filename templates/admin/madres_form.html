@@ -15,42 +15,44 @@
     .sidebar h2 { text-align: center; font-weight: 700; margin-bottom: 25px; font-size: 18px; }
     .sidebar a { color: white; text-decoration: none; padding: 14px 25px; display: flex; align-items: center; gap: 10px; font-weight: 500; transition: background 0.3s ease; }
     .sidebar a:hover, .sidebar a.active { background: rgba(255, 255, 255, 0.15); border-left: 4px solid #ffffff; }
-    .sidebar .logout { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
+    /* Estilos para el menú desplegable */
+    .sidebar .dropdown { position: relative; }
+    .sidebar .dropdown .dropdown-menu {
+      display: none;
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background-color: #004080;
+      min-width: 200px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 0 8px 8px 0;
+    }
+    .sidebar .dropdown:hover .dropdown-menu { display: block; }
+    .sidebar .dropdown-menu a {
+      padding: 12px 16px;
+      border-left: none !important; /* Quitar borde del estado :hover o .active */
+    }
     .main { flex: 1; padding: 40px; }
     .main header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
     .main header h1 { font-size: 28px; color: #004080; font-weight: 700; }
     .content-container { background-color: white; border-radius: 16px; padding: 30px; box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
     .required-star { color: #dc3545; margin-left: 4px; font-weight: bold; }
-
-    /* Message Styles */
+    .form-group { margin-bottom: 20px; }
+    form label { font-weight: 600; color: #555; margin-bottom: 8px; font-size: 14px; display: block; }
+    form input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; font-size: 15px; }
+    form input:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); outline: none; }
+    .form-actions { margin-top: 30px; display: flex; gap: 15px; justify-content: flex-end; }
+    .btn-guardar, .btn-volver { padding: 10px 28px; border: none; border-radius: 6px; color: white; font-weight: 600; font-size: 16px; cursor: pointer; transition: background 0.2s; }
+    .btn-guardar { background: linear-gradient(90deg, #28a745, #218838); }
+    .btn-volver { background: #6c757d; }
+    .btn-volver:hover { background: #495057; }
+    .btn-guardar:hover { background: #218838; }
     .messages { list-style: none; padding: 0; margin: 0 0 20px 0; }
-    .messages li {
-      padding: 15px; border-radius: 8px; color: white;
-      font-weight: 500; display: flex; justify-content: space-between;
-      align-items: center;
-    }
+    .messages li { padding: 12px; border-radius: 6px; margin-bottom: 8px; color: white; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
     .messages li.success { background-color: #28a745; }
     .messages li.error { background-color: #dc3545; }
     .close-message { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
-
-    /* Form Styles */
-    form h3 { font-size: 20px; color: #003366; margin-top: 25px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e9ecef; }
-    form h3:first-of-type { margin-top: 0; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-    .form-grid p { display: flex; flex-direction: column; }
-    form label { font-weight: 600; color: #555; margin-bottom: 6px; font-size: 14px; }
-    form input, form select {
-      width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px;
-      font-family: "Poppins", sans-serif; font-size: 15px; transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    form input:focus, form select:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); outline: none; }
-    .form-actions { margin-top: 30px; display: flex; gap: 15px; justify-content: flex-end; }
-    .btn-guardar, .btn-volver {
-      text-decoration: none; color: white; padding: 12px 25px; border-radius: 8px;
-      font-weight: 600; border: none; cursor: pointer; font-size: 15px;
-    }
-    .btn-guardar { background: linear-gradient(90deg, #28a745, #218838); }
-    .btn-volver { background: linear-gradient(90deg, #6c757d, #5a6268); text-align: center; }
   </style>
 </head>
 <body>
@@ -60,10 +62,16 @@
     <h2>ICBF Conecta</h2>
     <a href="{% url 'admin_dashboard' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
     <a href="{% url 'listar_hogares' %}"><i class="fa-solid fa-house"></i> Hogares</a>
-    <a href="{% url 'listar_madres' %}" class="active"><i class="fa-solid fa-user-group"></i> Madres</a>
-    <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
+    <a href="{% url 'listar_madres' %}" class="active"><i class="fa-solid fa-users"></i> Madres</a>
+    <a href="{% url 'listar_administradores' %}" ><i class="fa-solid fa-user-shield"></i> Administradores</a>
     <a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a>
-    <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>  
+    <div class="dropdown">
+      <a href="#"><i class="fa-solid fa-cog"></i> Ajustes</a>
+      <div class="dropdown-menu">
+        <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+        <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+      </div>
+    </div>
     <div class="logout">
         <form method="post" action="{% url 'logout' %}" style="display: inline;">
             {% csrf_token %}
@@ -77,59 +85,49 @@
   <!-- MAIN -->
   <div class="main">
     <header>
-      <h1>{% if madre_form.instance.id %}Editar{% else %}Crear{% endif %} Madre y Hogar</h1>
+      <h1>{% if madre_form.instance.id %}Editar{% else %}Crear{% endif %} Madre Comunitaria</h1>
     </header>
-
-    {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-        <li class="{{ message.tags }}">
-            {{ message }}
-            <button class="close-message" onclick="this.parentElement.style.display='none';">&times;</button>
-        </li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-
     <div class="content-container">
+      {% if messages %}
+        <ul class="messages">
+          {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }} <button class="close-message" onclick="this.parentElement.style.display='none';">&times;</button></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
       <form method="post">
-          {% csrf_token %}
-          
-          <h3>Datos de la Madre Comunitaria</h3>
-          <div class="form-grid">
-              {{ madre_form.as_p }}
-          </div>
-
-          <h3>Datos del Hogar Comunitario</h3>
-          <div class="form-grid">
-              {{ hogar_form.as_p }}
-          </div>
-          
-          <div class="form-actions">
-            <a href="{% url 'listar_madres' %}" class="btn-volver">Volver</a>
-            <button type="submit" class="btn-guardar">Guardar Cambios</button>
-          </div>
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="id_nombres">Nombres <span class="required-star">*</span></label>
+          {{ madre_form.nombres }}
+          {% for error in madre_form.nombres.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label for="id_apellidos">Apellidos <span class="required-star">*</span></label>
+          {{ madre_form.apellidos }}
+          {% for error in madre_form.apellidos.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label for="id_email">Correo electrónico <span class="required-star">*</span></label>
+          {{ madre_form.email }}
+          {% for error in madre_form.email.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label for="id_telefono">Teléfono</label>
+          {{ madre_form.telefono }}
+          {% for error in madre_form.telefono.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label for="id_direccion">Dirección</label>
+          {{ madre_form.direccion }}
+          {% for error in madre_form.direccion.errors %}<span class="error">{{ error }}</span>{% endfor %}
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-guardar">Guardar</button>
+          <a href="{% url 'listar_madres' %}" class="btn-volver">Volver</a>
+        </div>
       </form>
     </div>
   </div>
-
-<script>
-  // Añade un asterisco a los campos obligatorios del formulario
-  document.addEventListener('DOMContentLoaded', function() {
-    const formFields = document.querySelectorAll('input, select, textarea');
-    formFields.forEach(field => {
-      if (field.hasAttribute('required')) {
-        const label = document.querySelector(`label[for="${field.id}"]`);
-        if (label) {
-          const star = document.createElement('span');
-          star.className = 'required-star';
-          star.textContent = '*';
-          label.appendChild(star);
-        }
-      }
-    });
-  });
-</script>
-
 </body>
 </html>

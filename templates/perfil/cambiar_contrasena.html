@@ -33,6 +33,24 @@
     .sidebar a:hover, .sidebar a.active {
       background: rgba(255, 255, 255, 0.15); border-left: 4px solid #ffffff;
     }
+    /* Estilos para el menú desplegable */
+    .sidebar .dropdown { position: relative; }
+    .sidebar .dropdown .dropdown-menu {
+      display: none;
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background-color: #004080;
+      min-width: 200px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 0 8px 8px 0;
+    }
+    .sidebar .dropdown:hover .dropdown-menu { display: block; }
+    .sidebar .dropdown-menu a {
+      padding: 12px 16px;
+      border-left: none !important; /* Quitar borde del estado :hover o .active */
+    }
     .sidebar .logout { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
     .main { flex: 1; padding: 40px; }
     .main header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }

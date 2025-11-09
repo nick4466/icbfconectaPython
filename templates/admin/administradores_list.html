@@ -37,6 +37,24 @@
     .sidebar a:hover, .sidebar a.active {
       background: rgba(255, 255, 255, 0.15); border-left: 4px solid #ffffff;
     }
+    /* Estilos para el menú desplegable */
+    .sidebar .dropdown { position: relative; }
+    .sidebar .dropdown .dropdown-menu {
+      display: none;
+      position: absolute;
+      left: 100%;
+      top: 0;
+      background-color: #004080;
+      min-width: 200px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 0 8px 8px 0;
+    }
+    .sidebar .dropdown:hover .dropdown-menu { display: block; }
+    .sidebar .dropdown-menu a {
+      padding: 12px 16px;
+      border-left: none !important; /* Quitar borde del estado :hover o .active */
+    }
     .sidebar .logout { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
     .main { flex: 1; padding: 40px; }
     .main header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
@@ -86,7 +104,13 @@
     <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Madres</a>
     <a href="{% url 'listar_administradores' %}" class="active"><i class="fa-solid fa-user-shield"></i> Administradores</a>
     <a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a>
-    <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+    <div class="dropdown">
+      <a href="#"><i class="fa-solid fa-cog"></i> Ajustes</a>
+      <div class="dropdown-menu">
+        <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+        <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+      </div>
+    </div>
     <div class="logout">
         <form method="post" action="{% url 'logout' %}" style="display: inline;">
             {% csrf_token %}
@@ -135,7 +159,7 @@
           <tr>
             <td>{{ admin.nombres }}</td>
             <td>{{ admin.documento }}</td>
-            <td>{{ admin.correo }}</td>
+            <td>{{ admin.email }}</td>
             <td class="acciones">
               <a href="{% url 'editar_administrador' admin.id %}" class="btn-editar">Editar</a>
               <a href="{% url 'eliminar_administrador' admin.id %}" class="btn-eliminar" onclick="return confirm('¿Eliminar este administrador?');">Eliminar</a>

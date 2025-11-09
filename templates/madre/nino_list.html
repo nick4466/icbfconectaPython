@@ -35,6 +35,22 @@
       background: none; border: none; cursor: pointer; font-family: 'Roboto', sans-serif;
     }
     nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
+
+    /* Estilos para el menú desplegable */
+    nav ul .dropdown { position: relative; }
+    nav ul .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.98);
+      min-width: 200px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 8px;
+      padding: 8px 0;
+    }
+    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
+    nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
+    nav ul .dropdown:hover .dropdown-content { display: block; }
     .tabla-registros {
       max-width: 1100px; margin: 40px auto; background-color: rgba(255, 255, 255, 0.9);
       border-radius: 14px; padding: 30px; box-shadow: 0 6px 12px rgba(0,0,0,0.1);
@@ -123,8 +139,13 @@
         <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
         <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
         <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
-        <li><a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a></li>
-
+        <li class="dropdown">
+          <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
+          <div class="dropdown-content">
+            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+          </div>
+        </li>
         <li>
           <form method="post" action="{% url 'logout' %}" style="display: inline;">
             {% csrf_token %}
@@ -165,8 +186,9 @@
             data-fecha-ingreso="{{ nino.fecha_ingreso|date:'Y-m-d'|default:'N/A' }}"
             data-tutor="{{ nino.padre.usuario.nombres }} {{ nino.padre.usuario.apellidos }}"
             data-tutor-doc="{{ nino.padre.usuario.documento }}"
-            data-tutor-correo="{{ nino.padre.usuario.correo|default:'N/A' }}"
+            data-tutor-email="{{ nino.padre.usuario.email|default:'N/A' }}"
             data-tutor-telefono="{{ nino.padre.usuario.telefono|default:'N/A' }}"
+            data-tutor-direccion="{{ nino.padre.usuario.direccion|default:'N/A' }}"
             data-tutor-ocupacion="{{ nino.padre.ocupacion|default:'N/A' }}"
           >
             <td>{{ nino.nombres }} {{ nino.apellidos }}</td>
@@ -186,6 +208,19 @@
     {% else %}
       <p class="empty-message">Aún no hay niños matriculados en tu hogar. ¡Usa el botón para matricular al primero!</p>
     {% endif %}
+    {% if messages %}
+      <div id="mensaje-exito">
+        {% for message in messages %}
+          <div class="error-message" style="background-color:#e0ffe0;color:#218838;">{{ message }}</div>
+        {% endfor %}
+      </div>
+      <script>
+        setTimeout(function() {
+          var msg = document.getElementById('mensaje-exito');
+          if (msg) { msg.style.display = 'none'; }
+        }, 3000);
+      </script>
+    {% endif %}
   </div>
 
   <!-- Modal Detalles del Niño -->
@@ -202,8 +237,9 @@
       <h3 style="color: #5e3370;">Datos del Tutor</h3>
       <p><strong>Nombre del Tutor:</strong> <span id="modal-tutor"></span></p>
       <p><strong>Documento del Tutor:</strong> <span id="modal-tutor-doc"></span></p>
-      <p><strong>Correo del Tutor:</strong> <span id="modal-tutor-correo"></span></p>
+      <p><strong>Correo del Tutor:</strong> <span id="modal-tutor-email"></span></p>
       <p><strong>Teléfono del Tutor:</strong> <span id="modal-tutor-telefono"></span></p>
+      <p><strong>Dirección del Tutor:</strong> <span id="modal-tutor-direccion"></span></p>
       <p><strong>Ocupación del Tutor:</strong> <span id="modal-tutor-ocupacion"></span></p>
     </div>
   </div>
@@ -238,8 +274,9 @@
         // Poblar datos del tutor
         document.getElementById('modal-tutor').textContent = fila.dataset.tutor;
         document.getElementById('modal-tutor-doc').textContent = fila.dataset.tutorDoc;
-        document.getElementById('modal-tutor-correo').textContent = fila.dataset.tutorCorreo;
+        document.getElementById('modal-tutor-email').textContent = fila.dataset.tutorEmail;
         document.getElementById('modal-tutor-telefono').textContent = fila.dataset.tutorTelefono;
+        document.getElementById('modal-tutor-direccion').textContent = fila.dataset.tutorDireccion;
         document.getElementById('modal-tutor-ocupacion').textContent = fila.dataset.tutorOcupacion;
 
         modal.style.display = 'flex';
