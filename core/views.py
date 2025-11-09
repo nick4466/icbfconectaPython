@@ -50,25 +50,28 @@ def matricular_nino(request):
                     defaults={'nombre_rol': 'padre'}
                 )
                 
-                # Crear Usuario del Padre
-                password_padre = make_password(doc_padre) 
-                
-                usuario_padre = Usuario.objects.create(
-                    username=doc_padre, 
-                    password=password_padre, 
-                    rol=rol_padre,
-                    documento=doc_padre,
-                    nombres=nombres_padre,
-                    apellidos=apellidos_padre,
-                    correo=correo_padre,
-                    first_name=nombres_padre, 
-                    last_name=apellidos_padre,
+                # 💡 CAMBIO: Usar get_or_create para el Usuario del padre
+                # Si el usuario ya existe por su 'username' (documento), lo obtiene.
+                # Si no, lo crea con los valores en 'defaults'.
+                usuario_padre, usuario_creado = Usuario.objects.get_or_create(
+                    username=doc_padre,
+                    defaults={
+                        'password': make_password(doc_padre), 
+                        'rol': rol_padre,
+                        'documento': doc_padre,
+                        'nombres': nombres_padre,
+                        'apellidos': apellidos_padre,
+                        'correo': correo_padre,
+                        'first_name': nombres_padre, 
+                        'last_name': apellidos_padre,
+                    }
                 )
 
-                # Crear Perfil Padre
-                perfil_padre = Padre.objects.create(
+                # 💡 CAMBIO: Usar get_or_create para el Perfil del padre
+                # Esto asegura que cada usuario padre tenga solo un perfil de padre.
+                perfil_padre, perfil_creado = Padre.objects.get_or_create(
                     usuario=usuario_padre,
-                    ocupacion=ocupacion,
+                    defaults={'ocupacion': ocupacion}
                 )
                 
                 # Crear el Niño
@@ -302,18 +305,22 @@ def padre_dashboard(request):
     try:
         # Encontrar el perfil del padre y luego a su hijo
         padre = Padre.objects.get(usuario=request.user)
-        nino = Nino.objects.filter(padre=padre).first()
-        
-        ultimo_desarrollo = None
-        if nino:
-            # Obtener el último registro de desarrollo para mostrarlo en el dashboard
+        # 💡 CAMBIO: Obtener TODOS los niños asociados al padre
+        ninos_qs = Nino.objects.filter(padre=padre).order_by('nombres')
+
+        # 💡 MEJORA: Añadir el último desarrollo a cada niño para mostrarlo en el dashboard
+        ninos_con_desarrollo = []
+        for nino in ninos_qs:
             ultimo_desarrollo = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes').first()
+            ninos_con_desarrollo.append({
+                'nino': nino,
+                'ultimo_desarrollo': ultimo_desarrollo
+            })
 
         return render(request, 'padre/dashboard.html', {
-            'nino': nino,
-            'ultimo_desarrollo': ultimo_desarrollo
+            'ninos_data': ninos_con_desarrollo,
         })
-    except (Padre.DoesNotExist, Nino.DoesNotExist):
+    except Padre.DoesNotExist:
         # Manejar el caso donde el padre no tiene un hijo asignado
         return render(request, 'padre/dashboard.html', {'error': 'No tienes un niño asignado.'})
 
@@ -322,13 +329,14 @@ def padre_dashboard(request):
 # 💡 NUEVA FUNCIÓN: Ver Desarrollo (Vista del Padre)
 # ----------------------------------------------------
 @login_required
-def padre_ver_desarrollo(request):
+def padre_ver_desarrollo(request, nino_id):
     if request.user.rol.nombre_rol != 'padre':
         return redirect('role_redirect')
 
     try:
         padre = Padre.objects.get(usuario=request.user)
-        nino = Nino.objects.filter(padre=padre).first()
+        # 💡 CAMBIO: Obtener el niño específico y verificar que pertenece al padre
+        nino = get_object_or_404(Nino, id=nino_id, padre=padre)
         
         desarrollos = []
         if nino:
@@ -336,7 +344,7 @@ def padre_ver_desarrollo(request):
 
         return render(request, 'padre/desarrollo_list.html', {'nino': nino, 'desarrollos': desarrollos})
     except (Padre.DoesNotExist, Nino.DoesNotExist):
-        return render(request, 'padre/desarrollo_list.html', {'error': 'No tienes un niño asignado.'})
+        return redirect('padre_dashboard')
 
 # core/views.py
 

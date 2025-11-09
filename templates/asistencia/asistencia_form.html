@@ -1,0 +1,238 @@
+    
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ICBF Conecta - Llamado de Asistencia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+  <style>
+    * { box-sizing: border-box; }
+    .btn-mini-historial {
+  background-color: #7a3eb1;
+  color: white;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+.btn-mini-historial:hover {
+  background-color: #9B59B6;
+}
+
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondito.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    header {
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+    }
+    header img { height: 60px; }
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+    nav ul li a {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+    }
+    nav ul li a:hover { background-color: #f3c1e5; }
+    .main-title {
+      text-align: center;
+      margin-top: 20px;
+      padding: 20px;
+      font-size: 26px;
+      font-weight: bold;
+      color: #7a3eb1;
+      background-color: rgba(255, 255, 255, 0.7);
+      margin: 20px auto;
+      width: 80%;
+      border-radius: 10px;
+    }
+    .card {
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(3px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      max-width: 1000px;
+      margin: 0 auto 40px;
+    }
+    .card h1 {
+      color: #9B59B6;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .fecha-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .fecha-container label {
+      font-size: 18px;
+      margin-right: 10px;
+      color: #7a3eb1;
+    }
+    .fecha-container input {
+      padding: 8px;
+      font-size: 16px;
+      border: 1px solid #9B59B6;
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 15px;
+      text-align: center;
+      border: 1px solid #d5b4f3;
+      font-size: 15px;
+    }
+    th {
+      background-color: #f3c1e5;
+      color: #5e3370;
+    }
+    tr:nth-child(even) { background-color: #fdf6ff; }
+    tr:hover { background-color: #f3e9ff; }
+    .radio-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    input[type="radio"] {
+      transform: scale(1.1);
+      cursor: pointer;
+    }
+    label {
+      padding: 6px 10px;
+      border: 1px solid #9B59B6;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    input[type="radio"]:checked + label {
+      background-color: #e8d4f8;
+      border-color: #7a3eb1;
+      color: #000;
+    }
+    label:hover { background-color: #f8f9fa; }
+    .btn-guardar {
+      background-color: #9B59B6;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+      transition: background-color 0.3s ease;
+    }
+    .btn-guardar:hover { background-color: #8e44ad; }
+    .mensaje-exito {
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      border-radius: 8px;
+    }
+    @media (max-width: 768px) {
+      .main-title { font-size: 22px; width: 90%; }
+      .card { padding: 15px; }
+      th, td { font-size: 14px; padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
+    <nav>
+      <ul>
+        <li><a href="#"><i class="fas fa-arrow-left"></i> Volver</a></li>
+        <li><a href="#">Reportar Novedad</a></li>
+        <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+        
+      </ul>
+    </nav>
+  </header>
+
+  <div class="main-title">ICBF - CONECTA | Llamado de Asistencia</div>
+
+  <div class="card">
+    {% if mensaje %}
+      <div class="mensaje-exito">{{ mensaje }}</div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <div class="fecha-container">
+        <label for="fecha">Fecha:</label>
+        <input type="date" id="fecha" name="fecha" value="{{ fecha_hoy }}" required>
+      </div>
+
+      <table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Nombre Completo</th>
+      <th>Asistencia</th>
+      <th>Historial Asistencia</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for nino in ninos %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ nino.nombres }} {{ nino.apellidos }}</td>
+      <td>
+        <div class="radio-group">
+          <input type="radio" id="presente-{{ nino.id }}" name="nino_{{ nino.id }}" value="Presente" required>
+          <label for="presente-{{ nino.id }}">Presente</label>
+          <input type="radio" id="ausente-{{ nino.id }}" name="nino_{{ nino.id }}" value="Ausente">
+          <label for="ausente-{{ nino.id }}">Ausente</label>
+          <input type="radio" id="justificado-{{ nino.id }}" name="nino_{{ nino.id }}" value="Justificado">
+          <label for="justificado-{{ nino.id }}">Justificado</label>
+        </div>
+      </td>
+      <td>
+        <a href="{% url 'historial_asistencia' nino.id %}" class="btn-mini-historial">
+          <i class="fas fa-history"></i> Ver
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+      <button type="submit" class="btn-guardar">Guardar Registro</button>
+    </form>
+  </div>
+
+</body>
+</html>

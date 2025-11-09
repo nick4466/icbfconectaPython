@@ -22,8 +22,8 @@ urlpatterns = [
     path('dashboard/madre/', views.madre_dashboard, name='madre_dashboard'), # Nuevo
     path('dashboard/padre/', views.padre_dashboard, name='padre_dashboard'), # Nuevo para padres
 
-    # --- Vistas para Padres ---
-    path('padre/desarrollo/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
+    # --- Vistas para Padres (Ahora con ID de niño) ---
+    path('padre/desarrollo/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
     
     # Logout
     # next_page='home' es correcto si 'home' es la URL de aterrizaje después de cerrar sesión
@@ -59,4 +59,8 @@ urlpatterns = [
     # --- URLs de Planeaciones ---
     # Se incluye el archivo de URLs de la app 'planeaciones' y se le asigna un namespace.
     path('planeaciones/', include(('planeaciones.urls', 'planeaciones'), namespace='planeaciones')),
+
+    #-----------------------------------------------juanito---------------------------------------------#
+    # --- URLs de Asistencias no borrar please ultra importarte ;D #---
+    path('asistencia/', include('asistencia.urls')),
 ]
