@@ -25,12 +25,16 @@ urlpatterns = [
     # --- Vistas para Padres (Ahora con ID de niño) ---
     path('padre/desarrollo/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
     
+    # --- Gestión de Perfil de Usuario ---
+    path('perfil/cambiar-contrasena/', views.cambiar_contrasena, name='cambiar_contrasena'),
+
     # Logout
     # next_page='home' es correcto si 'home' es la URL de aterrizaje después de cerrar sesión
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'), 
 
     # --- CRUD Madres ---
     path('madres/', views.listar_madres, name='listar_madres'),
+    path('hogares/', views.listar_hogares, name='listar_hogares'), # <-- NUEVA RUTA
     path('madres/crear/', views.crear_madre, name='crear_madre'),
     path('madres/editar/<int:id>/', views.editar_madre, name='editar_madre'),
     path('madres/eliminar/<int:id>/', views.eliminar_madre, name='eliminar_madre'),
