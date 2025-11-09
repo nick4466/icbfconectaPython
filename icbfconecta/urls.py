@@ -82,4 +82,8 @@ urlpatterns = [
     # --- URLs de Planeaciones ---
     # Se incluye el archivo de URLs de la app 'planeaciones' y se le asigna un namespace.
     path('planeaciones/', include(('planeaciones.urls', 'planeaciones'), namespace='planeaciones')),
+
+    #-----------------------------------------------juanito---------------------------------------------#
+    # --- URLs de Asistencias no borrar please ultra importarte ;D #---
+    path('asistencia/', include('asistencia.urls')),
 ]

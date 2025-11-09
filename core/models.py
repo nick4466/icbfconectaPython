@@ -230,3 +230,21 @@ class Planeacion(models.Model):
 
     def __str__(self):
         return f"{self.nombre_actividad} - {self.fecha}"
+        return f"{self.nombre_actividad} - {self.fecha}"
+    
+    
+    
+# ------------------------ JUANITO ------------------------
+# Novedades
+class Novedad(models.Model):
+    fecha = models.DateField()
+    realizada = models.BooleanField(default=False)
+    observaciones = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'novedades'
+        ordering = ['-fecha']
+
+    def __str__(self):
+        estado = "Realizada" if self.realizada else "Pendiente"
+        return f"{self.fecha} - {estado}"
