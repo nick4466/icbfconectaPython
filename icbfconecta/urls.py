@@ -86,4 +86,6 @@ urlpatterns = [
     #-----------------------------------------------juanito---------------------------------------------#
     # --- URLs de Asistencias no borrar please ultra importarte ;D #---
     path('asistencia/', include('asistencia.urls')),
+    path('novedades/', include('novedades.urls')),
+
 ]

@@ -5,18 +5,17 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 # Gestor de usuarios personalizado
 # ------------------------
 class CustomUserManager(BaseUserManager):
-    def create_user(self, documento, email, password=None, **extra_fields):
+    def create_user(self, documento, password=None, **extra_fields):
         if not documento:
             raise ValueError('El campo Documento es obligatorio.')
-        if not email:
-            raise ValueError('El campo Email es obligatorio.')
-        email = self.normalize_email(email)
-        user = self.model(documento=documento, email=email, **extra_fields)
+
+        extra_fields.setdefault('username', str(documento))
+        user = self.model(documento=documento, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, documento, email, password=None, **extra_fields):
+    def create_superuser(self, documento, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
@@ -28,7 +27,7 @@ class CustomUserManager(BaseUserManager):
 
         rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
         extra_fields['rol'] = rol_admin
-        return self.create_user(documento, email, password, **extra_fields)
+        return self.create_user(documento, password, **extra_fields)
 
 
 # ------------------------
@@ -64,11 +63,11 @@ class Usuario(AbstractUser):
     ]
 
     tipo_documento = models.CharField(max_length=5, choices=TIPO_DOCUMENTO_CHOICES, default='CC')
-    documento = models.BigIntegerField()
+    documento = models.BigIntegerField(unique=True)
     nombres = models.CharField(max_length=50)
     apellidos = models.CharField(max_length=50)
-    email = models.EmailField(max_length=100)  # <--- Quitar unique=True
-    direccion = models.CharField(max_length=100)
+    correo = models.EmailField(max_length=100, unique=True, default='juanito@porelmomento')
+    direccion = models.CharField(max_length=100, null=True, blank=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
     rol = models.ForeignKey(Rol, on_delete=models.PROTECT, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -76,7 +75,7 @@ class Usuario(AbstractUser):
     username = models.CharField(max_length=150, unique=True, null=True, blank=True)
 
     USERNAME_FIELD = 'documento'
-    REQUIRED_FIELDS = ['nombres', 'apellidos', 'email', 'tipo_documento']
+    REQUIRED_FIELDS = ['nombres', 'apellidos', 'correo', 'tipo_documento']
 
     objects = CustomUserManager()
 
@@ -111,9 +110,9 @@ class Padre(models.Model):
 # ------------------------
 class HogarComunitario(models.Model):
     nombre_hogar = models.CharField(max_length=100)
-    direccion = models.CharField(max_length=150, unique=True)
-    localidad = models.CharField(max_length=50)
-    capacidad_maxima = models.IntegerField(default=14)
+    direccion = models.CharField(max_length=150)
+    localidad = models.CharField(max_length=50, null=True, blank=True)
+    capacidad_maxima = models.IntegerField()
     estado = models.CharField(
         max_length=20,
         choices=[
@@ -123,7 +122,7 @@ class HogarComunitario(models.Model):
         ],
         default='activo'
     )
-    madre = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='hogares_asignados')
+    madre = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name='hogares_asignados')
 
     class Meta:
         db_table = 'hogares_comunitarios'
@@ -145,10 +144,10 @@ class Nino(models.Model):
         null=True,
         blank=True,
         choices=[
-            ('masculino', 'Masculino'),
-            ('femenino', 'Femenino'),
-            ('otro', 'Otro'),
-            ('no_especificado', 'No especificado')
+            ('masculino', 'masculino'),
+            ('femenino', 'femenino'),
+            ('otro', 'otro'),
+            ('no_especificado', 'no_especificado')
         ]
     )
     nacionalidad = models.CharField(max_length=50, null=True, blank=True)
@@ -230,21 +229,11 @@ class Planeacion(models.Model):
 
     def __str__(self):
         return f"{self.nombre_actividad} - {self.fecha}"
-        return f"{self.nombre_actividad} - {self.fecha}"
     
     
     
 # ------------------------ JUANITO ------------------------
 # Novedades
-class Novedad(models.Model):
-    fecha = models.DateField()
-    realizada = models.BooleanField(default=False)
-    observaciones = models.TextField(blank=True, null=True)
+# Ajusta si el modelo Niño está en otra app
 
-    class Meta:
-        db_table = 'novedades'
-        ordering = ['-fecha']
 
-    def __str__(self):
-        estado = "Realizada" if self.realizada else "Pendiente"
-        return f"{self.fecha} - {estado}"
