@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Planeacion
 from .forms import PlaneacionForm
 
+#Holaaaaa amiguitos de youtu :D
 @login_required
 def lista_planeaciones(request):
     madre = request.user
