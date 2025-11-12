@@ -11,6 +11,12 @@ from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
 from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm
+from django.contrib import messages
+
+
+from .models import Rol, Usuario, MadreComunitaria, HogarComunitario
+from .forms import UsuarioMadreForm, MadreProfileForm, HogarForm 
+# Asegúrate de importar todos los formularios y modelos necesarios
 
 # -----------------------------------------------------------------
 # 💡 NUEVA FUNCIÓN: Matricular Niño (CRUD Crear)
@@ -108,10 +114,19 @@ class AdministradorForm(forms.ModelForm):
 
 # ---------- CRUD MADRES ----------
 @login_required
-def listar_madres(request):
-    madres = Usuario.objects.filter(rol__nombre_rol='madre_comunitaria').prefetch_related('hogares_asignados')
-    return render(request, 'admin/madres_list.html', {'madres': madres})
+# En core/views.py
 
+def listar_madres(request):
+    # 1. Obtenemos los perfiles de MadreComunitaria.
+    #    - select_related('usuario'): Trae los datos del Usuario base en la misma consulta.
+    #    - prefetch_related('hogares_asignados'): Trae los Hogares asignados en una segunda consulta optimizada.
+    madres_perfiles = MadreComunitaria.objects.select_related('usuario').prefetch_related('hogares_asignados').all()
+    
+    context = {
+        # ¡IMPORTANTE! Enviamos la lista de perfiles de la madre, no la lista de Usuarios
+        'madres': madres_perfiles 
+    }
+    return render(request, 'admin/madres_list.html', context)
 @login_required
 def listar_hogares(request):
     # Selecciona los hogares y la madre asociada para optimizar la consulta
@@ -119,53 +134,123 @@ def listar_hogares(request):
     hogares = HogarComunitario.objects.select_related('madre').annotate(num_ninos=models.Count('ninos')).all()
     return render(request, 'admin/hogares_list.html', {'hogares': hogares})
 
+# Importa los formularios correctos al inicio de tu views.py
+# from .forms import UsuarioMadreForm, MadreProfileForm, HogarForm 
+# ...
+
+@login_required
+# En core/views.py (con la lógica de importaciones y Rol.objects.get_or_create)
+
+
 @login_required
 def crear_madre(request):
-    rol_madre, _ = Rol.objects.get_or_create(nombre_rol='madre_comunitaria')
-    
+    # Obtener el rol de Madre Comunitaria
+    rol_madre, created = Rol.objects.get_or_create(nombre_rol='madre_comunitaria')
+
     if request.method == 'POST':
-        madre_form = MadreForm(request.POST, prefix='madre')
-        hogar_form = HogarForm(request.POST, prefix='hogar')
+        # Instanciar los tres formularios con los datos POST y FILES (para archivos)
+        usuario_form = UsuarioMadreForm(request.POST)
+        madre_profile_form = MadreProfileForm(request.POST, request.FILES)
+        hogar_form = HogarForm(request.POST, request.FILES) # HogarComunitario también tiene FileFields!
 
-        if madre_form.is_valid() and hogar_form.is_valid():
-            # Validación para hogar duplicado
-            nombre_hogar = hogar_form.cleaned_data['nombre_hogar']
-            direccion_hogar = hogar_form.cleaned_data['direccion']
-            localidad = hogar_form.cleaned_data['localidad']
+        # Definir el paso inicial de error (por defecto, 1)
+        error_step = 1 
 
+        # 1. Validar todos los formularios
+        if usuario_form.is_valid() and madre_profile_form.is_valid() and hogar_form.is_valid():
+            
+            # --- VALIDACIONES DE REGLA DE NEGOCIO ---
+            
+            documento = usuario_form.cleaned_data.get('documento')
+            nombre_hogar = hogar_form.cleaned_data.get('nombre_hogar')
+            direccion_hogar = hogar_form.cleaned_data.get('direccion')
+            localidad = hogar_form.cleaned_data.get('localidad')
+
+            # Validación de Documento duplicado
+            if Usuario.objects.filter(documento=documento).exists():
+                messages.error(request, f"Ya existe un usuario con el documento {documento} registrado.")
+                error_step = 1
+                return render(request, 'admin/madres_form.html', {
+                    'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
+                    'initial_step': error_step 
+                })
+            
+            # Validación de Hogar duplicado
             if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar, localidad__iexact=localidad).exists():
                 messages.error(request, f"Ya existe un hogar llamado '{nombre_hogar}' en la localidad de '{localidad}'.")
+                error_step = 3
             elif HogarComunitario.objects.filter(direccion__iexact=direccion_hogar).exists():
                 messages.error(request, f"La dirección '{direccion_hogar}' ya está registrada para otro hogar.")
+                error_step = 3
             
-            # Si hay mensajes de error, renderizar de nuevo el formulario
+            # Si hay errores de Regla de Negocio (Documento o Hogar), regresamos al formulario
             if messages.get_messages(request):
                  return render(request, 'admin/madres_form.html', {
-                    'madre_form': madre_form,
-                    'hogar_form': hogar_form
+                    'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
+                    'initial_step': error_step
                 })
-            madre = madre_form.save(commit=False)
-            madre.rol = rol_madre
-            madre.username = madre.email  # obligatorio por AbstractUser
-            madre.set_password('123456')   # contraseña por defecto
-            madre.save()
 
-            hogar = hogar_form.save(commit=False)
-            hogar.madre = madre
-            hogar.save()
-            
-            messages.success(request, '¡Madre comunitaria y hogar creados exitosamente!')
-            return redirect('listar_madres')
+            # --- CREACIÓN SECUENCIAL (Todo validado) ---
+
+            try:
+                # 1. Crear el objeto Usuario (Paso 1)
+                usuario = usuario_form.save(commit=False)
+                usuario.rol = rol_madre
+                # Usamos el documento como base para el username
+                usuario.username = usuario.documento 
+                usuario.set_password('123456') 
+                usuario.save()
+
+                # 2. Crear el objeto MadreComunitaria (Paso 2)
+                madre_profile = madre_profile_form.save(commit=False)
+                madre_profile.usuario = usuario # Enlace OneToOne
+                madre_profile.save()
+
+                # 3. Crear el objeto HogarComunitario (Paso 3)
+                hogar = hogar_form.save(commit=False)
+                hogar.madre = madre_profile # Enlace ForeignKey
+                hogar.save()
+                
+                messages.success(request, '¡Madre comunitaria y hogar creados exitosamente! Contraseña por defecto: 123456')
+                return redirect('listar_madres')
+
+            except Exception as e:
+                # Manejo de error de base de datos inesperado
+                messages.error(request, f"Ocurrió un error inesperado al guardar los datos: {e}")
+                
+        else:
+            # --- MANEJO DE ERRORES DE VALIDACIÓN DE FORMULARIO ---
+            # Identificar en qué paso ocurrió el primer error para mostrarlo al usuario
+            if usuario_form.errors:
+                error_step = 1
+            elif madre_profile_form.errors:
+                error_step = 2
+            elif hogar_form.errors:
+                error_step = 3
+
+            messages.error(request, 'Error en los datos suministrados. Revise el paso marcado en azul.')
+        
+        # Si la validación falla (POST), regresamos al formulario en el paso de error.
+        return render(request, 'admin/madres_form.html', {
+            'usuario_form': usuario_form,
+            'madre_profile_form': madre_profile_form,
+            'hogar_form': hogar_form,
+            'initial_step': error_step
+        })
+
     else:
-        madre_form = MadreForm(prefix='madre')
-        hogar_form = HogarForm(prefix='hogar')
+        # Petición GET (Inicio del proceso)
+        usuario_form = UsuarioMadreForm()
+        madre_profile_form = MadreProfileForm()
+        hogar_form = HogarForm()
+        initial_step = 1
 
     return render(request, 'admin/madres_form.html', {
-        'madre_form': madre_form,
-        'hogar_form': hogar_form
+        'usuario_form': usuario_form,
+        'madre_profile_form': madre_profile_form,
+        'hogar_form': hogar_form,
+        'initial_step': initial_step
     })
-
-
 @login_required
 def editar_madre(request, id):
     madre = get_object_or_404(Usuario, id=id, rol__nombre_rol='madre_comunitaria')
@@ -324,30 +409,19 @@ def role_redirect(request):
     Redirige al dashboard apropiado según el rol del usuario.
     Esta será la URL de redirección principal después de un login exitoso.
     """
-    # 💡 CORRECCIÓN: Verificar si el usuario tiene un rol asignado
     if not request.user.rol:
-        # Si no tiene rol (ej. superusuario sin rol asignado), redirigir a home
-        # o a una página de "acceso denegado".
         return redirect('home')
 
-    # El campo 'rol' es una ForeignKey, accedemos al nombre con '.nombre_rol'
-    role = request.user.rol.nombre_rol
+    role = request.user.rol.nombre_rol.lower()
 
     if role == 'administrador':
-        # Redirige a la URL con name='admin_dashboard'
         return redirect('admin_dashboard')
-
     elif role == 'madre_comunitaria':
-        # Redirige a la URL que crearemos: name='madre_dashboard'
         return redirect('madre_dashboard')
-    
     elif role == 'padre':
-        # Redirige al dashboard del padre
         return redirect('padre_dashboard')
 
-    # Si el rol es 'padre' o no está definido, puede redirigir al home
     return redirect('home')
-
 
 # ----------------------------------------------------
 # 💡 NUEVA FUNCIÓN: Dashboard de la Madre Comunitaria
@@ -359,7 +433,8 @@ def madre_dashboard(request):
         return redirect('role_redirect') # O a una página de acceso denegado
 
     # Aquí cargarías datos específicos de la madre (niños asignados, asistencia, etc.)
-    hogar_madre = HogarComunitario.objects.filter(madre=request.user).first()
+    hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+
     return render(request, 'madre/dashboard.html', {'hogar_madre': hogar_madre})
 
 
@@ -714,3 +789,18 @@ def cambiar_contrasena(request):
         form = SetPasswordForm(request.user)
     
     return render(request, 'perfil/cambiar_contrasena.html', {'form': form})
+
+from functools import wraps
+from django.shortcuts import redirect
+from django.contrib import messages
+
+def rol_requerido(nombre_rol):
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != nombre_rol:
+                messages.error(request, 'Acceso denegado.')
+                return redirect('home')
+            return view_func(request, *args, **kwargs)
+        return _wrapped_view
+    return decorator

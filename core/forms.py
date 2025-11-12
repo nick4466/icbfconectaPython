@@ -1,62 +1,122 @@
 # core/forms.py
-
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from .models import Usuario, Nino
 
-class CustomAuthForm(AuthenticationForm):
-    # Definir el campo extra que agregaste en el HTML
-    tipo_documento = forms.CharField(
-        label='Tipo de Documento', 
-        widget=forms.Select(choices=[
-            ('', 'Seleccione...'),
-            ('CC', 'Cédula de Ciudadanía (CC)'),
-            ('TI', 'Tarjeta de Identidad (TI)'),
-            ('RC', 'Registro Civil (RC)'),
-            # Coincidir con las opciones de tu HTML
-        ])
-    )
-
-    # El campo 'username' es el Número de Documento en tu lógica.
-    # Podemos redefinir la etiqueta si es necesario.
-    username = forms.CharField(label='Número de Documento', max_length=254)
-
 
 # ----------------------------------------------------
-# 💡 NUEVOS FORMULARIOS PARA EDICIÓN
+# 🟩 FORMULARIO DE LOGIN PERSONALIZADO
 # ----------------------------------------------------
+from django import forms
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate
 
-class AdminPerfilForm(forms.ModelForm):
-    """Formulario para que el Administrador edite su perfil."""
+
+from django import forms
+from django.contrib.auth.forms import AuthenticationForm
+from .models import Usuario, Nino, MadreComunitaria, HogarComunitario # Asegúrate de importar estos modelos
+# ... (resto de tus imports)
+
+# --- Formulario de Usuario para la Madre Comunitaria ---
+class UsuarioMadreForm(forms.ModelForm):
+    # Campos requeridos para la autenticación y base del Usuario
+    documento = forms.IntegerField(label='Número de Documento', required=True)
+    correo = forms.EmailField(label="Correo electrónico", required=True)
+    nombres = forms.CharField(label="Nombres", max_length=50, required=True)
+    apellidos = forms.CharField(label="Apellidos", max_length=50, required=True)
+    
     class Meta:
         model = Usuario
-        fields = ['nombres', 'apellidos', 'email']
+        # Incluye todos los campos de Usuario que necesitas para el registro
+        fields = ['documento', 'tipo_documento', 'nombres', 'apellidos', 'correo', 'telefono', 'direccion']
+
+# --- Formulario del Perfil MadreComunitaria ---
+# --- Formulario del Perfil MadreComunitaria ---
+class MadreProfileForm(forms.ModelForm):
+    class Meta:
+        model = MadreComunitaria
+        # Incluye todos los campos del perfil de la madre
+        exclude = ['usuario', 'fecha_registro'] 
+        widgets = {
+             # Es crucial listar todos los FileField aquí
+             'firma_digital': forms.FileInput(),
+             'documento_identidad_pdf': forms.FileInput(),
+             'certificado_escolaridad_pdf': forms.FileInput(),
+             'certificado_antecedentes_pdf': forms.FileInput(),
+             'certificado_medico_pdf': forms.FileInput(),
+             'certificado_residencia_pdf': forms.FileInput(),
+             'cartas_recomendacion_pdf': forms.FileInput(),
+        }
+        # --- Formulario de Hogar Comunitario ---
+class HogarForm(forms.ModelForm):
+    class Meta:
+        model = HogarComunitario
+        # Excluye el campo 'madre' ya que lo asignaremos en la vista
+        exclude = ['madre', 'fecha_registro']
+
+class CustomAuthForm(AuthenticationForm):
+    username = forms.CharField(
+        label='Número de Documento',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingrese su número de documento',
+            'autofocus': True
+        })
+    )
+
+    password = forms.CharField(
+        label='Contraseña',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ingrese su contraseña'
+        })
+    )
+
+
+
+# ----------------------------------------------------
+# 💡 FORMULARIOS DE PERFIL
+# ----------------------------------------------------
+class AdminPerfilForm(forms.ModelForm):
+    """Formulario para que el Administrador edite su perfil."""
+    correo = forms.EmailField(label="Correo electrónico", required=True)
+
+    class Meta:
+        model = Usuario
+        fields = ['nombres', 'apellidos', 'correo']
+
 
 class MadrePerfilForm(forms.ModelForm):
     """Formulario para que la Madre Comunitaria edite su perfil."""
+    correo = forms.EmailField(label="Correo electrónico", required=True)
+
     class Meta:
         model = Usuario
-        fields = ['nombres', 'apellidos', 'email', 'telefono', 'direccion']
+        fields = ['nombres', 'apellidos', 'correo', 'telefono', 'direccion']
         widgets = {
             'nombres': forms.TextInput(attrs={'required': True}),
             'apellidos': forms.TextInput(attrs={'required': True}),
-            'email': forms.EmailInput(attrs={'required': True}),
-            'telefono': forms.TextInput(attrs={'required': False}),
-            'direccion': forms.TextInput(attrs={'required': False}),
+            'telefono': forms.TextInput(attrs={'placeholder': 'Ej. 3001234567'}),
+            'direccion': forms.TextInput(attrs={'placeholder': 'Ej. Calle 10 #5-25'}),
         }
 
+
 class PadrePerfilForm(forms.ModelForm):
-    """Formulario para que el Padre de Familia edite su perfil y datos asociados."""
+    """Formulario para que el Padre de Familia edite su perfil."""
+    correo = forms.EmailField(label="Correo electrónico", required=True)
     ocupacion = forms.CharField(max_length=50, required=False)
 
     class Meta:
         model = Usuario
-        fields = ['nombres', 'apellidos', 'email', 'telefono', 'direccion']
+        fields = ['nombres', 'apellidos', 'correo', 'telefono', 'direccion']
         widgets = {
-            'nombres': forms.TextInput(attrs={'required': True}),
-            'apellidos': forms.TextInput(attrs={'required': True}),
-            'email': forms.EmailInput(attrs={'required': True}),
+            'telefono': forms.TextInput(attrs={'placeholder': 'Ej. 3112223344'}),
         }
+
+
+# ----------------------------------------------------
+# 👶 FORMULARIO DE NIÑOS
+# ----------------------------------------------------
 class NinoForm(forms.ModelForm):
     class Meta:
         model = Nino
@@ -65,20 +125,31 @@ class NinoForm(forms.ModelForm):
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'})
         }
 
+
+# ----------------------------------------------------
+# 👨 FORMULARIO DE REGISTRO DE PADRES
+# ----------------------------------------------------
 class PadreForm(forms.ModelForm):
     ocupacion = forms.CharField(max_length=50, required=True, label="Ocupación")
 
     class Meta:
         model = Usuario
-        fields = ['documento', 'nombres', 'apellidos', 'email', 'telefono', 'direccion']
+        fields = ['documento', 'nombres', 'apellidos', 'correo', 'telefono', 'direccion']
         widgets = {
             'telefono': forms.TextInput(attrs={'required': True}),
         }
 
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
+    def clean_correo(self):
+        correo = self.cleaned_data.get('correo')
         documento = self.cleaned_data.get('documento')
-        # Permitir emails repetidos solo para padres
-        if Usuario.objects.filter(email=email, rol__nombre_rol__in=['madre_comunitaria', 'administrador']).exclude(documento=documento).exists():
+
+        if Usuario.objects.filter(correo=correo, rol__nombre_rol__in=['madre_comunitaria', 'administrador']).exclude(documento=documento).exists():
             raise forms.ValidationError('Este correo ya está registrado para otro usuario que no es padre.')
-        return email
+        return correo
+
+    def clean(self):
+        cleaned_data = super().clean()
+        documento = cleaned_data.get('documento')
+        if not documento or not str(documento).isdigit():
+            self.add_error('documento', 'El documento debe ser un número válido.')
+        return cleaned_data

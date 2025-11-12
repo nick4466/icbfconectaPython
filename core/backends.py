@@ -3,6 +3,20 @@
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.hashers import check_password
 from .models import Usuario # Asumo que tu modelo se llama Usuario
+from django.contrib.auth.backends import ModelBackend
+from core.models import Usuario
+
+
+class DocumentoBackend(ModelBackend):
+    def authenticate(self, request, tipo_documento=None, documento=None, password=None, **kwargs):
+        try:
+            user = Usuario.objects.get(tipo_documento=tipo_documento, documento=documento)
+        except Usuario.DoesNotExist:
+            return None
+
+        if user.check_password(password):
+            return user
+        return None
 
 class DocumentTypeBackend(ModelBackend):
     """
