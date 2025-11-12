@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ICBF Conecta - Inicio</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
 
   <style>
     * { box-sizing: border-box; }
@@ -21,37 +21,45 @@
       flex-direction: column;
     }
 
+    /* --- BARRA DE NAVEGACIÓN --- */
     header {
+      position: fixed;
+      top: 0;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
       background-color: rgba(255, 255, 255, 0.85);
-      padding: 15px 30px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(5px);
+      padding: 10px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
     }
 
     header img {
-      height: 70px;
+      height: 65px;
     }
 
-    header nav ul {
+    nav ul {
       list-style: none;
       display: flex;
-      padding: 0;
+      align-items: center;
+      gap: 25px;
       margin: 0;
+      padding: 0;
     }
 
-    header nav ul li {
-      margin-left: 20px;
-    }
-
-    header nav ul li a {
+    nav ul li a {
       text-decoration: none;
-      color: #9B59B6;
-      font-weight: bold;
-      transition: color 0.3s ease;
+      color: #8e44ad;
+      font-weight: 600;
       font-size: 16px;
+      transition: color 0.3s ease, transform 0.2s ease;
+    }
+
+    nav ul li a:hover {
+      color: #6c3483;
+      transform: scale(1.05);
     }
 
     main {
@@ -60,28 +68,27 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 40px 20px;
+      padding: 120px 20px 40px 20px; /* se bajó para no tapar la barra */
       text-align: center;
       position: relative;
     }
 
     h1 {
       color: #8e44ad;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
       font-size: 2.5rem;
       font-weight: 700;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-
     }
 
-    /* Párrafo introductorio */
     .intro-text {
       color: #666;
       font-size: 1.1rem;
       max-width: 700px;
-      margin: -15px auto 30px auto;
+      margin: -10px auto 35px auto;
     }
-    /* Fondo translúcido detrás de las cards */
+
+    /* --- TARJETAS --- */
     .card-wrapper {
       position: relative;
       display: flex;
@@ -89,11 +96,11 @@
       justify-content: center;
       width: 90%;
       max-width: 650px;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 16px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
-      backdrop-filter: blur(5px);
-      padding: 30px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      backdrop-filter: blur(8px);
+      padding: 40px;
     }
 
     .card-container {
@@ -118,46 +125,50 @@
       position: relative;
     }
 
-
-
     .card img {
       width: 100%;
-      height: 180px; /* Altura para la imagen rectangular */
-      border-radius: 10px; /* Esquinas redondeadas */
+      height: 200px;
+      border-radius: 12px;
       object-fit: cover;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
     .card h2 {
-      color: #9B59B6;
-      margin-bottom: 10px;
+      color: #8e44ad;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
     }
 
     .card p {
       color: #555;
       font-size: 1rem;
       line-height: 1.6;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
 
     .card button {
       background-color: #9B59B6;
       border: none;
       color: white;
-      font-weight: bold;
-      padding: 10px 20px;
-      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 10px 25px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s, transform 0.2s;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
     }
 
     .card button:hover {
       background-color: #8e44ad;
       transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
 
-    /* Flechas laterales */
+    /* --- BOTONES DE CONTROL --- */
     .control-btn {
       background-color: rgba(155, 89, 182, 0.9);
       color: white;
@@ -179,40 +190,22 @@
       background-color: #8e44ad;
     }
 
-    #prev {
-      left: -22px;
-    }
-
-    #next {
-      right: -22px;
-    }
+    #prev { left: -22px; }
+    #next { right: -22px; }
 
     @media (max-width: 768px) {
-      .card-container {
-        padding: 40px 20px;
-      }
-
-      .control-btn {
-        width: 38px;
-        height: 38px;
-        font-size: 18px;
-      }
-
-      #prev {
-        left: 0px;
-      }
-
-      #next {
-        right: 0px;
-      }
+      header { padding: 10px 20px; flex-direction: column; gap: 10px; }
+      .card-container { padding: 30px 20px; }
+      .control-btn { width: 38px; height: 38px; font-size: 18px; }
+      #prev { left: 0; } #next { right: 0; }
     }
 
     footer {
-      background-color:#9B59B6;
+      background-color: #9B59B6;
       text-align: center;
       padding: 10px;
       font-size: 14px;
-      color: hsl(0, 0%, 100%);
+      color: #fff;
       box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
     }
   </style>
@@ -220,19 +213,13 @@
 <body>
 
   <header>
-        <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
-        <nav>
-            <ul>
-                <li><a href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a></li>
-            <ul>                
-                <li>
-                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                        {% csrf_token %}
-                    </form>
-                </li>
-            </ul>
-        </nav>
-    </header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
+    <nav>
+      <ul>
+        <li><a href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a></li>
+      </ul>
+    </nav>
+  </header>
 
   <main>
     <h1>Bienvenido a ICBF Conecta</h1>
@@ -246,37 +233,26 @@
       <button class="control-btn" id="prev"><i class="fas fa-chevron-left"></i></button>
 
       <div class="card-container">
-
-        <!-- Madre Comunitaria -->
         <div class="card active">
           <img src="{% static 'img/madresComunitarias.jpg' %}" alt="Madre Comunitaria">
           <h2>Madres Comunitarias</h2>
-          <p>
-            Registra actividades, gestiona la asistencia de los niños y envía reportes al sistema de forma rápida y organizada.
-          </p>
+          <p>Registra actividades, gestiona la asistencia de los niños y envía reportes al sistema de forma rápida y organizada.</p>
           <button onclick="location.href='{% url 'login' %}'">Ingresar</button>
         </div>
 
-        <!-- Padre de Familia -->
         <div class="card">
           <img src="{% static 'img/padres.jpg' %}" alt="Padre de Familia">
           <h2>Padres de Familia</h2>
-          <p>
-            Consulta información de tus hijos, comunícate con la madre comunitaria y revisa su progreso desde cualquier lugar.
-          </p>
+          <p>Consulta información de tus hijos, comunícate con la madre comunitaria y revisa su progreso desde cualquier lugar.</p>
           <button onclick="location.href='{% url 'login' %}'">Ingresar</button>
         </div>
 
-        <!-- Administrador -->
         <div class="card">
           <img src="{% static 'img/administradores.jpg' %}" alt="Administrador">
           <h2>Administradores</h2>
-          <p>
-            Supervisa la información del sistema, administra usuarios y genera reportes globales con facilidad.
-          </p>
+          <p>Supervisa la información del sistema, administra usuarios y genera reportes globales con facilidad.</p>
           <button onclick="location.href='{% url 'login' %}'">Ingresar</button>
         </div>
-
       </div>
 
       <button class="control-btn" id="next"><i class="fas fa-chevron-right"></i></button>
@@ -293,23 +269,18 @@
     let current = 0;
 
     document.getElementById('next').addEventListener('click', () => {
-      const outgoing = cards[current];
       cards[current].classList.remove('active');
       current = (current + 1) % cards.length;
       cards[current].classList.add('active');
     });
 
     document.getElementById('prev').addEventListener('click', () => {
-      const outgoing = cards[current];
       cards[current].classList.remove('active');
       current = (current - 1 + cards.length) % cards.length;
       cards[current].classList.add('active');
     });
 
-    // Inicializar el primer slide
-    if (cards.length > 0) {
-        cards[0].classList.add('active');
-    }
+    if (cards.length > 0) cards[0].classList.add('active');
   </script>
 
 </body>
