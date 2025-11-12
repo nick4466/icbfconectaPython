@@ -174,42 +174,16 @@
       {% endif %}
 
       <form method="post">
-        {% csrf_token %}
-        
-                <div class="form-group">
-          <label for="{{ form.tipo_documento.id_for_label }}">Tipo de Documento</label>
-          {{ form.tipo_documento }}
-                    {% for error in form.tipo_documento.errors %}
-            <p class="error">{{ error }}</p>
-          {% endfor %}
-        </div>
+  {% csrf_token %}
+  {{ form.username.label_tag }}
+  {{ form.username }}
+  
+  {{ form.password.label_tag }}
+  {{ form.password }}
+  
+  <button type="submit">Ingresar</button>
+</form>
 
-                <div class="form-group">
-          <label for="{{ form.username.id_for_label }}">Número de Documento</label>
-          {{ form.username }}
-          {% for error in form.username.errors %}
-            <p class="error">{{ error }}</p>
-          {% endfor %}
-        </div>
-        
-
-                <div class="form-group">
-          <label for="{{ form.password.id_for_label }}">Contraseña</label>
-          <div class="password-wrapper">
-             {{ form.password }}
-             <i class="fas fa-eye" id="togglePassword"></i>
-          </div>
-          {% for error in form.password.errors %}
-            <p class="error">{{ error }}</p>
-          {% endfor %}
-       </div>
-
-        <button class="btn-submit" type="submit">Ingresar</button>
-
-        <div class="form-footer">
-          <p><a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a></p>
-        </div>
-      </form>
     </div>
   </main>
 </body>

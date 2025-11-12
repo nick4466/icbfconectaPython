@@ -137,10 +137,7 @@ LOGIN_REDIRECT_URL = 'role_redirect'
 
 # En settings.py
 
-AUTHENTICATION_BACKENDS = [
-    'core.backends.DocumentTypeBackend', # Tu nuevo backend
-    'django.contrib.auth.backends.ModelBackend', # Deja este por si acaso
-]
+AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
 
 # Configuración de Email para recuperación de contraseña
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

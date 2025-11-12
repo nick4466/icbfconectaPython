@@ -9,11 +9,16 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
 from core.custom_password_reset_form import CustomPasswordResetForm
+from core.forms import CustomAuthForm
+
+
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('login/',
+    auth_views.LoginView.as_view(template_name='login.html',authentication_form=CustomAuthForm),name='login'),
 
     # --- URLs para Restablecimiento de Contraseña ---
     path('reset_password/', 
