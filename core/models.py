@@ -79,6 +79,10 @@ class Usuario(AbstractUser):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
    
+    # 💡 CORRECCIÓN CLAVE: Indicarle a Django cuál es el campo de email.
+    # Esto es fundamental para que funciones como "olvidé mi contraseña" funcionen
+    # sin necesidad de código extra complejo.
+    EMAIL_FIELD = 'correo'
 
     USERNAME_FIELD = 'documento'
     REQUIRED_FIELDS = ['nombres', 'apellidos', 'correo', 'tipo_documento']
@@ -330,5 +334,3 @@ class Planeacion(models.Model):
 # ------------------------ JUANITO ------------------------
 # Novedades
 # Ajusta si el modelo Niño está en otra app
-
-

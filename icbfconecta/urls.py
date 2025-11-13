@@ -4,12 +4,12 @@ URL configuration for icbfconecta project.
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
 """
+from django.urls import reverse_lazy
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
-from core.custom_password_reset_form import CustomPasswordResetForm
-from core.forms import CustomAuthForm
+from core.forms import CustomAuthForm, CustomPasswordResetForm
 
 
 
@@ -17,24 +17,31 @@ from core.forms import CustomAuthForm
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('login/',
-    auth_views.LoginView.as_view(template_name='login.html',authentication_form=CustomAuthForm),name='login'),
+    path('login/', auth_views.LoginView.as_view(
+        template_name='login.html',
+        authentication_form=CustomAuthForm), name='login'),
 
-    # --- URLs para Restablecimiento de Contraseña ---
-    path('reset_password/', 
+    # --- URLs para Restablecimiento de Contraseña (FLUJO CORREGIDO) ---
+    path('password_reset/',
          auth_views.PasswordResetView.as_view(
              template_name="password_reset/password_reset_form.html",
-             form_class=CustomPasswordResetForm
-         ), 
+             form_class=CustomPasswordResetForm,
+             email_template_name="password_reset/password_reset_email.html",
+             subject_template_name="password_reset/password_reset_subject.txt",
+             success_url=reverse_lazy('password_reset_done')
+         ),
          name="password_reset"),
-    path('reset_password_sent/', 
-         auth_views.PasswordResetDoneView.as_view(template_name="password_reset/password_reset_done.html"), 
+    path('password_reset/done/',
+         auth_views.PasswordResetDoneView.as_view(template_name="password_reset/password_reset_done.html"),
          name="password_reset_done"),
-    path('reset/<uidb64>/<token>/', 
-         auth_views.PasswordResetConfirmView.as_view(template_name="password_reset/password_reset_confirm.html"), 
+    path('reset/<uidb64>/<token>/',
+         auth_views.PasswordResetConfirmView.as_view(
+             template_name="password_reset/password_reset_confirm.html",
+             success_url=reverse_lazy('password_reset_complete')
+         ),
          name="password_reset_confirm"),
-    path('reset_password_complete/', 
-         auth_views.PasswordResetCompleteView.as_view(template_name="password_reset/password_reset_complete.html"), 
+    path('reset/done/',
+         auth_views.PasswordResetCompleteView.as_view(template_name="password_reset/password_reset_complete.html"),
          name="password_reset_complete"),
     
     # URL de Redirección por Rol (Nuevo Punto de Entrada después del Login)
@@ -92,5 +99,4 @@ urlpatterns = [
     # --- URLs de Asistencias no borrar please ultra importarte ;D #---
     path('asistencia/', include('asistencia.urls')),
     path('novedades/', include('novedades.urls')),
-
 ]

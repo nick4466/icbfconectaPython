@@ -1,6 +1,6 @@
 # core/forms.py
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from .models import Usuario, Nino
 
 
@@ -72,6 +72,34 @@ class CustomAuthForm(AuthenticationForm):
         })
     )
 
+
+# ----------------------------------------------------
+# 🟩 FORMULARIO DE RESETEO DE CONTRASEÑA
+# ----------------------------------------------------
+class CustomPasswordResetForm(PasswordResetForm):
+    email = forms.EmailField(
+        label="Correo electrónico",
+        max_length=254,
+        widget=forms.EmailInput(attrs={'autocomplete': 'email'})
+    )
+
+    def clean_email(self):
+        """
+        Valida que el correo electrónico exista en la base de datos para un usuario activo.
+        """
+        email = self.cleaned_data.get("email")
+        # Usamos list() para ejecutar la consulta y ver si hay resultados.
+        if not list(self.get_users(email)):
+            raise forms.ValidationError("No existe un usuario activo registrado con ese correo electrónico.")
+        return email
+
+    def get_users(self, email):
+        """
+        Sobrescribimos este método porque nuestro modelo Usuario usa 'correo' en lugar de 'email'.
+        Busca usuarios activos que coincidan con el correo proporcionado.
+        """
+        active_users = Usuario._default_manager.filter(correo__iexact=email, is_active=True)
+        return (u for u in active_users if u.has_usable_password())
 
 
 # ----------------------------------------------------

@@ -12,10 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-from dotenv import load_dotenv
-
-# Cargar variables de entorno desde .env
-load_dotenv(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
+# 💡 NOTA: La carga de .env se ha movido a manage.py para mayor consistencia.
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -128,18 +125,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-LOGIN_REDIRECT_URL = 'role_redirect'
-
-# En settings.py
-
-AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
-
-# Configuración de Email para recuperación de contraseña
+# Configuración de correo para envío real (Gmail SMTP)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -147,3 +133,19 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_REDIRECT_URL = 'role_redirect'
+
+# 💡 CORRECCIÓN: Especificar el backend de autenticación personalizado.
+# Esto le dice a Django que use tu lógica de login (por documento) en todo el sitio.
+AUTHENTICATION_BACKENDS = [
+    'core.backends.DocumentTypeBackend',
+    'django.contrib.auth.backends.ModelBackend', # Se mantiene como respaldo.
+]
+
+
