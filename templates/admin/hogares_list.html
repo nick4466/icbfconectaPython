@@ -127,33 +127,33 @@
       <table>
         <thead>
           <tr>
+            <th>Regional</th>
             <th>Nombre del Hogar</th>
             <th>Madre Comunitaria</th>
             <th>Localidad</th>
+            <th>Dirección</th>
             <th>Niños Matriculados</th>
             <th>Estado</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for hogar in hogares %}
           <tr>
+            <td>{{ hogar.regional.nombre|default:"N/A" }}</td>
             <td>{{ hogar.nombre_hogar }}</td>
-            <td>{{ hogar.madre.nombres }} {{ hogar.madre.apellidos }}</td>
+            <td>{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}</td>
             <td>{{ hogar.localidad }}</td>
+            <td>{{ hogar.direccion }}</td>
             <td>
               <strong>{{ hogar.num_ninos }}</strong> / {{ hogar.capacidad_maxima }}
             </td>
             <td>
               <span class="estado {{ hogar.estado }}">{{ hogar.get_estado_display }}</span>
             </td>
-            <td class="acciones">
-              <a href="{% url 'editar_madre' hogar.madre.id %}" class="btn-editar">Editar Información</a>
-            </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="6" style="text-align: center; padding: 20px;">No hay hogares registrados.</td>
+            <td colspan="7" style="text-align: center; padding: 20px;">No hay hogares registrados.</td>
           </tr>
           {% endfor %}
         </tbody>

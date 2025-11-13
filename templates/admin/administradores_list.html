@@ -75,10 +75,15 @@
     th { background-color: #f8f9fa; color: #003366; font-weight: 600; }
     td { color: #555; }
     tbody tr:hover { background-color: #f1f3f5; }
+    .acciones {
+      display: flex; /* 💡 CORRECCIÓN: Usar flexbox para alinear los botones */
+      align-items: center; /* Centrar verticalmente los botones en la celda */
+      gap: 5px; /* Espacio entre botones */
+    }
     .acciones a, .acciones button {
       text-decoration: none; color: white; padding: 6px 12px;
       border-radius: 6px; font-weight: 500; margin-right: 5px;
-      border: none; cursor: pointer; font-family: "Poppins", sans-serif; font-size: 14px;
+      border: 1px solid transparent; cursor: pointer; font-family: "Poppins", sans-serif; font-size: 14px;
     }
     .btn-editar { background: linear-gradient(90deg, #007bff, #0056b3); }
     .btn-eliminar { background: linear-gradient(90deg, #dc3545, #c82333); }
@@ -149,6 +154,7 @@
         <thead>
           <tr>
             <th>Nombre</th>
+            <th>Apellidos</th>
             <th>Documento</th>
             <th>Correo</th>
             <th>Acciones</th>
@@ -157,9 +163,10 @@
         <tbody>
           {% for admin in administradores %}
           <tr>
-            <td>{{ admin.nombres }}</td>
+            <td>{{ admin.nombres|default:"N/A" }}</td>
+            <td>{{ admin.apellidos|default:"N/A" }}</td>
             <td>{{ admin.documento }}</td>
-            <td>{{ admin.email }}</td>
+            <td>{{ admin.correo }}</td>
             <td class="acciones">
               <a href="{% url 'editar_administrador' admin.id %}" class="btn-editar">Editar</a>
               <a href="{% url 'eliminar_administrador' admin.id %}" class="btn-eliminar" onclick="return confirm('¿Eliminar este administrador?');">Eliminar</a>
@@ -167,7 +174,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="4" style="text-align:center; color:#888;">No hay administradores registrados.</td>
+            <td colspan="5" style="text-align:center; color:#888;">No hay administradores registrados.</td>
           </tr>
           {% endfor %}
         </tbody>

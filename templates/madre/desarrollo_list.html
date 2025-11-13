@@ -195,18 +195,18 @@
         <input type="month" name="mes" value="{{ mes_filtro }}">
         <button type="submit"><i class="fas fa-filter"></i> Filtrar</button>
         {% if nino_id_filtro %}
-          <a href="{% url 'listar_desarrollos' %}?nino={{ nino_id_filtro }}" style="margin-left: 5px;">Limpiar</a>
+          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino_id_filtro }}" style="margin-left: 5px;">Limpiar</a>
         {% else %}
-          <a href="{% url 'listar_desarrollos' %}" style="margin-left: 5px;">Limpiar</a>
+          <a href="{% url 'desarrollo:listar_desarrollos' %}" style="margin-left: 5px;">Limpiar</a>
         {% endif %}
       </form>
 
       <div>
         <a href="{% url 'gestion_ninos' %}" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a Gestión</a>
         {% if nino_id_filtro %}
-        <a href="{% url 'registrar_desarrollo' %}?nino={{ nino_id_filtro }}" class="btn-agregar">
+        <a href="{% url 'desarrollo:registrar_desarrollo' %}?nino={{ nino_id_filtro }}" class="btn-agregar">
         {% else %}
-        <a href="{% url 'registrar_desarrollo' %}" class="btn-agregar">
+        <a href="{% url 'desarrollo:registrar_desarrollo' %}" class="btn-agregar">
         {% endif %}
           <i class="fas fa-plus"></i> Agregar Registro
         </a>
@@ -238,8 +238,8 @@
           <td>{{ desarrollo.fecha_fin_mes|date:"Y-m-d" }}</td>
           <td class="acciones">
             <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-            <a href="{% url 'editar_desarrollo' desarrollo.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
-            <a href="{% url 'eliminar_desarrollo' desarrollo.id %}" 
+            <a href="{% url 'desarrollo:editar_desarrollo' desarrollo.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
+            <a href="{% url 'desarrollo:eliminar_desarrollo' desarrollo.id %}" 
                class="btn-accion btn-rojo" 
                title="Eliminar"
                onclick="return confirm('¿Estás segura de que deseas eliminar este registro? Esta acción no se puede deshacer.');"

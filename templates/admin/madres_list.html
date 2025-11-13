@@ -149,10 +149,15 @@
       tbody tr:hover {
         background-color: #f1f3f5;
       }
+      .acciones {
+        display: flex; /* 💡 CORRECCIÓN: Usar flexbox para alinear los botones */
+        align-items: center; /* Centrar verticalmente los botones en la celda */
+        gap: 8px; /* Espacio entre botones */
+      }
       .acciones a,
       .acciones button {
         margin-right: 8px;
-        border: none;
+        border: 1px solid transparent; /* 💡 CORRECCIÓN: Añadir borde transparente para evitar saltos */
         border-radius: 5px;
         padding: 7px 16px;
         color: white;
@@ -361,36 +366,37 @@
               <th>Nombres</th>
               <th>Apellidos</th>
               <th>Correo electrónico</th>
-              <th>Teléfono</th>
-              <th>Dirección</th>
+              <th>Hogar Asignado</th>
               <th>Acciones</th>
             </tr>
     </thead>
     <tbody>
         {% for madre_perfil in madres %} 
             <tr>
-                <td>{{ madre_perfil.usuario.nombres }}</td>
-                <td>{{ madre_perfil.usuario.apellidos }}</td>
-                <td>{{ madre_perfil.usuario.correo }}</td>
-                <td>{{ madre_perfil.usuario.telefono }}</td>
-                <td>{{ madre_perfil.usuario.direccion }}</td>
-                
-                <td>
+                <td>{{ madre_perfil.usuario.nombres|default:"N/A" }}</td>
+                <td>{{ madre_perfil.usuario.apellidos|default:"N/A" }}</td>
+                <td>{{ madre_perfil.usuario.correo|default:"N/A" }}</td>
+                <td style="max-width: 200px; white-space: normal;">
                     {% for hogar in madre_perfil.hogares_asignados.all %}
                         {{ hogar.nombre_hogar }} 
                         {% if not forloop.last %}, {% endif %}
                     {% empty %}
-                        Sin Hogar Asignado
+                        <span style="color: #888;">Sin Hogar Asignado</span>
                     {% endfor %}
                 </td>
-                
-                <td>
-                    </td>
+                <td class="acciones">
+                    <button class="btn-ver ver-detalles" data-madre-id="{{ madre_perfil.id }}">Ver</button>
+                    <a href="{% url 'editar_madre' madre_perfil.usuario.id %}" class="btn-editar">Editar</a>
+                    <a href="{% url 'eliminar_madre' madre_perfil.usuario.id %}" class="btn-eliminar" onclick="return confirm('¿Estás seguro de que deseas eliminar a esta madre comunitaria? Esta acción no se puede deshacer.');">Eliminar</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 20px; color: #888;">No hay madres comunitarias registradas.</td>
             </tr>
         {% endfor %}
     </tbody>
 </table>
-        </table>
       </div>
     </div>
 
@@ -402,69 +408,63 @@
           <span class="close-button">&times;</span>
         </div>
         <div class="modal-body">
-          <h3>Datos Personales</h3>
-          <p><strong>Correo:</strong> <span id="modal-correo"></span></p>
-          <p><strong>Documento:</strong> <span id="modal-documento"></span></p>
-          <p><strong>Teléfono:</strong> <span id="modal-telefono"></span></p>
-          <p><strong>Dirección:</strong> <span id="modal-direccion"></span></p>
-          <hr />
-          <h3>Hogar Comunitario Asignado</h3>
-          <p>
-            <strong>Nombre del Hogar:</strong>
-            <span id="modal-hogar-nombre"></span>
-          </p>
-          <p>
-            <strong>Dirección del Hogar:</strong>
-            <span id="modal-hogar-direccion"></span>
-          </p>
-          <p>
-            <strong>Localidad:</strong> <span id="modal-hogar-localidad"></span>
-          </p>
-          <p>
-            <strong>Capacidad:</strong> <span id="modal-hogar-capacidad"></span>
-          </p>
-          <p><strong>Estado:</strong> <span id="modal-hogar-estado"></span></p>
+          <!-- El contenido se cargará aquí dinámicamente -->
         </div>
       </div>
     </div>
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        const modal = document.getElementById("detalleModal");
-        const closeButton = document.querySelector(".close-button");
-        const detailButtons = document.querySelectorAll(".ver-detalles");
+        const modal = document.getElementById('detalleModal');
+        const modalBody = modal.querySelector('.modal-body');
+        const modalTitle = modal.querySelector('#modal-nombre');
+        const closeButton = modal.querySelector('.close-button');
 
-        detailButtons.forEach((button) => {
-          button.addEventListener("click", function () {
-            const row = this.closest("tr");
+        document.querySelectorAll('.ver-detalles').forEach(button => {
+            button.addEventListener('click', async function() {
+                const madrePerfilId = this.dataset.madreId;
+                const url = `/madres/detalles/${madrePerfilId}/`;
 
-            // Populate modal
-            document.getElementById("modal-nombre").textContent =
-              row.dataset.nombre;
-            document.getElementById("modal-correo").textContent =
-              row.dataset.correo;
-            document.getElementById("modal-documento").textContent =
-              row.dataset.documento;
-            document.getElementById("modal-telefono").textContent =
-              row.dataset.telefono;
-            document.getElementById("modal-direccion").textContent =
-              row.dataset.direccion;
+                modalTitle.textContent = 'Cargando detalles...';
+                modalBody.innerHTML = '<p>Por favor, espere.</p>';
+                modal.style.display = 'flex';
 
-            document.getElementById("modal-hogar-nombre").textContent =
-              row.dataset.hogarNombre;
-            document.getElementById("modal-hogar-direccion").textContent =
-              row.dataset.hogarDireccion;
-            document.getElementById("modal-hogar-localidad").textContent =
-              row.dataset.hogarLocalidad;
-            document.getElementById("modal-hogar-capacidad").textContent =
-              row.dataset.hogarCapacidad;
-            document.getElementById("modal-hogar-estado").textContent =
-              row.dataset.hogarEstado;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error('No se pudo cargar la información.');
+                    }
+                    const data = await response.json();
 
-            modal.style.display = "flex";
-          });
+                    modalTitle.textContent = `Detalles de ${data.usuario.nombres} ${data.usuario.apellidos}`;
+                    
+                    modalBody.innerHTML = `
+                        <h4>Datos de Usuario</h4>
+                        <p><strong>Documento:</strong> ${data.usuario.tipo_documento} ${data.usuario.documento}</p>
+                        <p><strong>Correo:</strong> ${data.usuario.correo}</p>
+                        <p><strong>Teléfono:</strong> ${data.usuario.telefono || 'No especificado'}</p>
+                        <p><strong>Dirección:</strong> ${data.usuario.direccion || 'No especificada'}</p>
+                        <hr>
+                        <h4>Perfil Profesional</h4>
+                        <p><strong>Nivel de Escolaridad:</strong> ${data.perfil.nivel_escolaridad}</p>
+                        <p><strong>Título Obtenido:</strong> ${data.perfil.titulo_obtenido}</p>
+                        <p><strong>Experiencia Previa:</strong> ${data.perfil.experiencia_previa}</p>
+                        <hr>
+                        <h4>Hogar Comunitario Asignado</h4>
+                        <p><strong>Nombre:</strong> ${data.hogar.nombre_hogar}</p>
+                        <p><strong>Dirección:</strong> ${data.hogar.direccion}</p>
+                        <p><strong>Localidad:</strong> ${data.hogar.localidad}</p>
+                        <p><strong>Capacidad:</strong> ${data.hogar.capacidad_maxima} niños</p>
+                    `;
+
+                } catch (error) {
+                    modalTitle.textContent = 'Error';
+                    modalBody.innerHTML = `<p style="color: red;">${error.message}</p>`;
+                }
+
+            });
         });
-
+        
         function closeModal() {
           modal.style.display = "none";
         }

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'planeaciones',
     'asistencia',
     'novedades',
+    'desarrollo',
 ]
 AUTH_USER_MODEL = 'core.Usuario'
 

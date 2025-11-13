@@ -14,7 +14,7 @@ from django.contrib.auth import authenticate
 
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
-from .models import Usuario, Nino, MadreComunitaria, HogarComunitario # Asegúrate de importar estos modelos
+from .models import Usuario, Nino, MadreComunitaria, HogarComunitario, Regional # Asegúrate de importar estos modelos
 # ... (resto de tus imports)
 
 # --- Formulario de Usuario para la Madre Comunitaria ---
@@ -54,7 +54,7 @@ class HogarForm(forms.ModelForm):
         # Excluye el campo 'madre' ya que lo asignaremos en la vista
         exclude = ['madre', 'fecha_registro']
         fields = [
-            'nombre_hogar', 'direccion', 'localidad', 'ciudad', 'barrio', 'estrato',
+            'regional', 'nombre_hogar', 'direccion', 'localidad', 'ciudad', 'barrio', 'estrato',
             'num_habitaciones', 'num_banos', 'material_construccion', 'riesgos_cercanos',
             'fotos_interior', 'fotos_exterior', 'geolocalizacion_lat', 'geolocalizacion_lon',
             'tipo_tenencia', 'documento_tenencia_pdf', 'capacidad_maxima', 'estado'
@@ -76,9 +76,20 @@ class HogarForm(forms.ModelForm):
             'geolocalizacion_lon': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': 'Longitud'}),
             'tipo_tenencia': forms.Select(),
             'documento_tenencia_pdf': forms.FileInput(),
-            'capacidad_maxima': forms.NumberInput(attrs={'value': 20, 'min': 1}),
+            'capacidad_maxima': forms.NumberInput(attrs={'value': 15, 'min': 1}),
             'estado': forms.Select(),
         }
+
+# ----------------------------------------------------
+# 💡 NUEVO: Formulario para Administradores
+# ----------------------------------------------------
+class AdminForm(forms.ModelForm):
+    contraseña = forms.CharField(widget=forms.PasswordInput, required=False, label="Nueva Contraseña")
+
+    class Meta:
+        model = Usuario
+        fields = ['nombres', 'apellidos', 'documento', 'correo', 'contraseña']
+
 
 class CustomAuthForm(AuthenticationForm):
     username = forms.CharField(

@@ -281,9 +281,9 @@
       </form>
       <div style="text-align: center; margin-top: 20px;">
         {% if nino_id_preseleccionado %}
-          <a href="{% url 'listar_desarrollos' %}?nino={{ nino_id_preseleccionado|stringformat:'s' }}" style="color: #555; text-decoration: none;">← Volver al listado</a>
+          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino_id_preseleccionado|stringformat:'s' }}" style="color: #555; text-decoration: none;">← Volver al listado</a>
         {% else %}
-          <a href="{% url 'listar_desarrollos' %}" style="color: #555; text-decoration: none;">← Volver al listado</a>
+          <a href="{% url 'desarrollo:listar_desarrollos' %}" style="color: #555; text-decoration: none;">← Volver al listado</a>
         {% endif %}
       </div>
     </div>

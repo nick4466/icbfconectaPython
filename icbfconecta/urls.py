@@ -64,6 +64,7 @@ urlpatterns = [
     path('madres/crear/', views.crear_madre, name='crear_madre'),
     path('madres/editar/<int:id>/', views.editar_madre, name='editar_madre'),
     path('madres/eliminar/<int:id>/', views.eliminar_madre, name='eliminar_madre'),
+    path('madres/detalles/<int:id>/', views.detalles_madre_json, name='detalles_madre_json'),
 
     # --- CRUD Administradores ---
     path('administradores/', views.listar_administradores, name='listar_administradores'),
@@ -80,11 +81,8 @@ urlpatterns = [
     path('gestion-ninos/', views.gestion_ninos, name='gestion_ninos'),
     path('ninos/reporte/', views.generar_reporte_ninos, name='generar_reporte_ninos'),
 
-    # --- CRUD Niños (Desarrollo)
-    path('madre/desarrollo/registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),
-    path('madre/desarrollo/', views.listar_desarrollos, name='listar_desarrollos'),
-    path('madre/desarrollo/editar/<int:id>/', views.editar_desarrollo, name='editar_desarrollo'),
-    path('madre/desarrollo/eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
+    # --- URLs de Desarrollo (Ahora en su propia app) ---
+    path('desarrollo/', include('desarrollo.urls')),
 
     # --- URLs de Planeaciones ---
     # Se incluye el archivo de URLs de la app 'planeaciones'<--- tener encuenta para los botones dirigidos a planeaciones

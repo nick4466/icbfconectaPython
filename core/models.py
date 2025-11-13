@@ -22,6 +22,20 @@ class Rol(models.Model):
     def __str__(self):
         return self.nombre_rol
 
+# ------------------------
+# 💡 NUEVO: Regionales
+# ------------------------
+class Regional(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        db_table = 'regionales'
+        verbose_name = 'Regional'
+        verbose_name_plural = 'Regionales'
+
+    def __str__(self):
+        return self.nombre
+
 def madre_upload_path(instance, filename):
     return f"madres_documentos/{instance.usuario.documento}/{filename}"
 
@@ -166,6 +180,10 @@ class MadreComunitaria(models.Model):
 # Hogares Comunitarios (actualizado)
 # ------------------------
 class HogarComunitario(models.Model):
+    # 💡 NUEVO: Relación con la regional. Es obligatorio para cada hogar.
+    # Usamos PROTECT para evitar que se borre una regional si tiene hogares asociados.
+    regional = models.ForeignKey(Regional, on_delete=models.PROTECT, related_name='hogares', null=True)
+
     nombre_hogar = models.CharField(max_length=100)
     direccion = models.CharField(max_length=150)
     localidad = models.CharField(max_length=50, null=True, blank=True)
@@ -194,7 +212,7 @@ class HogarComunitario(models.Model):
     documento_tenencia_pdf = models.FileField(upload_to='hogares/documentos_tenencia/', null=True, blank=True)
 
     # Estado y relación
-    capacidad_maxima = models.IntegerField(default=20)
+    capacidad_maxima = models.IntegerField(default=15)
     estado = models.CharField(
         max_length=20,
         choices=[
@@ -285,27 +303,6 @@ class Asistencia(models.Model):
 
     def __str__(self):
         return f"Asistencia {self.nino} - {self.fecha} : {self.estado}"
-
-
-# ------------------------
-# Desarrollo del Niño
-# ------------------------
-class DesarrolloNino(models.Model):
-    nino = models.ForeignKey(Nino, on_delete=models.CASCADE, related_name='desarrollos')
-    fecha_fin_mes = models.DateField()
-    dimension_cognitiva = models.TextField(null=True, blank=True)
-    dimension_comunicativa = models.TextField(null=True, blank=True)
-    dimension_socio_afectiva = models.TextField(null=True, blank=True)
-    dimension_corporal = models.TextField(null=True, blank=True)
-    fecha_registro = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'desarrollo_nino'
-        unique_together = (('nino', 'fecha_fin_mes'),)
-
-    def __str__(self):
-        return f"Desarrollo {self.nino} - {self.fecha_fin_mes}"
-
 
 # ------------------------
 # Planeación

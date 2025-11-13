@@ -5,18 +5,36 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 from django.db import transaction, models
 from django.contrib.auth.hashers import make_password
-from django.db.models import Q
-from .models import Usuario, Rol, Padre, Nino, HogarComunitario, DesarrolloNino
+from django.db.models import Q, Count
+from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional
 from django.utils import timezone
+from django.http import JsonResponse
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
-from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm
+from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm, AdminForm
 from django.contrib import messages
-
-
+from desarrollo.models import DesarrolloNino
 from .models import Rol, Usuario, MadreComunitaria, HogarComunitario
 from .forms import UsuarioMadreForm, MadreProfileForm, HogarForm 
 # Asegúrate de importar todos los formularios y modelos necesarios
+
+# ----------------------------------------------------
+# 💡 DECORADOR: Restringir acceso por Rol
+# ----------------------------------------------------
+from functools import wraps
+
+def rol_requerido(nombre_rol):
+    """Decorador que verifica si el usuario tiene un rol específico."""
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            # Asegurarse de que el usuario esté autenticado y tenga el rol correcto
+            if not request.user.is_authenticated or not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != nombre_rol:
+                messages.error(request, 'Acceso denegado. No tienes los permisos necesarios.')
+                return redirect('home')  # Redirigir a una página de inicio o de error
+            return view_func(request, *args, **kwargs)
+        return _wrapped_view
+    return decorator
 
 # -----------------------------------------------------------------
 # 💡 NUEVA FUNCIÓN: Matricular Niño (CRUD Crear)
@@ -116,22 +134,28 @@ class AdministradorForm(forms.ModelForm):
 @login_required
 # En core/views.py
 
+@rol_requerido('administrador')
 def listar_madres(request):
-    # 1. Obtenemos los perfiles de MadreComunitaria.
-    #    - select_related('usuario'): Trae los datos del Usuario base en la misma consulta.
-    #    - prefetch_related('hogares_asignados'): Trae los Hogares asignados en una segunda consulta optimizada.
-    madres_perfiles = MadreComunitaria.objects.select_related('usuario').prefetch_related('hogares_asignados').all()
+    # Obtener todos los perfiles de madre con sus datos relacionados
+    madres_query = MadreComunitaria.objects.select_related('usuario').prefetch_related('hogares_asignados').all()
+
     
     context = {
-        # ¡IMPORTANTE! Enviamos la lista de perfiles de la madre, no la lista de Usuarios
-        'madres': madres_perfiles 
+        'madres': madres_query
     }
     return render(request, 'admin/madres_list.html', context)
+
 @login_required
+@rol_requerido('administrador')
 def listar_hogares(request):
-    # Selecciona los hogares y la madre asociada para optimizar la consulta
-    # 💡 MEJORA: Anotar cada hogar con el número de niños matriculados
-    hogares = HogarComunitario.objects.select_related('madre').annotate(num_ninos=models.Count('ninos')).all()
+    # Consulta base
+    hogares = HogarComunitario.objects.select_related(
+        'madre__usuario', 'regional'
+    ).annotate(
+        num_ninos=Count('ninos')
+    ).order_by('regional__nombre', 'nombre_hogar')
+
+
     return render(request, 'admin/hogares_list.html', {'hogares': hogares})
 
 # Importa los formularios correctos al inicio de tu views.py
@@ -143,6 +167,7 @@ def listar_hogares(request):
 
 
 @login_required
+@rol_requerido('administrador')
 def crear_madre(request):
     rol_madre, _ = Rol.objects.get_or_create(nombre_rol='madre_comunitaria')
 
@@ -223,10 +248,13 @@ def crear_madre(request):
         })
 
     # GET
+    # 💡 MEJORA: Si el admin tiene una regional, la pre-seleccionamos en el formulario del hogar.
+    initial_hogar = {} # Revertido a estado original
     return render(request, 'admin/madres_form.html', {
         'usuario_form': UsuarioMadreForm(),
         'madre_profile_form': MadreProfileForm(),
-        'hogar_form': HogarForm(),
+        # Pasamos los datos iniciales al formulario del hogar
+        'hogar_form': HogarForm(initial=initial_hogar),
         'initial_step': 1
     })
 @login_required
@@ -301,92 +329,78 @@ def eliminar_madre(request, id):
     return redirect('listar_madres')
 
 @login_required
+@rol_requerido('administrador')
 def listar_administradores(request):
     rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
-    # Ordenar por nombre para una mejor visualización
+    # Incluimos la regional en la consulta para optimizar
     administradores = Usuario.objects.filter(rol=rol_admin).order_by('nombres')
     return render(request, 'admin/administradores_list.html', {'administradores': administradores})
 
 
 @login_required
+@rol_requerido('administrador')
 def crear_administrador(request):
     rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
     
     if request.method == 'POST':
-        # 1. Obtener los datos del formulario (usando .get() es más seguro)
-        nombre = request.POST.get('nombre')
-        documento = request.POST.get('documento')
-        correo = request.POST.get('correo')  # El input del form se llama 'correo'
-        contraseña_plana = request.POST.get('contraseña')
-        
-        # 💡 CORRECCIÓN: Validar que el documento y el correo no existan
-        if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exists():
-            # Si ya existe, enviar un mensaje de error y renderizar el formulario de nuevo
-            # con los datos que el usuario ya había ingresado.
-            messages.error(request, 'Ya existe un usuario con ese documento o correo electrónico.')
-            return render(request, 'admin/administradores_form.html', {
-                'admin': request.POST, # Pasamos los datos del POST para rellenar el form
-                'error': True # Una bandera para el template si se necesita
-            })
+        form = AdminForm(request.POST)
+        if form.is_valid():
+            documento = form.cleaned_data['documento']
+            correo = form.cleaned_data['correo']
+            contraseña = form.cleaned_data['contraseña']
 
-        if nombre and documento and correo and contraseña_plana:
-            Usuario.objects.create(
-                # Campo obligatorio de AbstractUser (usamos documento como identificador)
-                documento=documento,
-                correo=correo,
-                nombres=nombre,
-                apellidos="", # Lo dejas vacío ya que el form no lo pide
-                # Campo de AbstractUser (donde se guarda el hash)
-                password=make_password(contraseña_plana),
-                rol=rol_admin
-            )
-            
-            # 💡 CORRECCIÓN: Añadir mensaje de éxito y redirigir a la lista.
+            if not contraseña:
+                messages.error(request, 'El campo contraseña es obligatorio para crear un nuevo administrador.')
+                return render(request, 'admin/administradores_form.html', {'form': form})
+
+            if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exists():
+                messages.error(request, 'Ya existe un usuario con ese documento o correo electrónico.')
+                return render(request, 'admin/administradores_form.html', {'form': form})
+
+            usuario = form.save(commit=False)
+            usuario.rol = rol_admin
+            usuario.set_password(contraseña)
+            usuario.save()
+
             messages.success(request, '¡Administrador creado exitosamente!')
             return redirect('listar_administradores')
-            
-    return render(request, 'admin/administradores_form.html', {'admin': None})
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = AdminForm()
+
+    return render(request, 'admin/administradores_form.html', {'form': form})
+
 @login_required
+@rol_requerido('administrador')
 def editar_administrador(request, id):
-    # Usar get_object_or_404 es una mejor práctica para obtener objetos.
     admin = get_object_or_404(Usuario, id=id, rol__nombre_rol='administrador')
     
     if request.method == 'POST':
-        documento = request.POST.get('documento')
-        correo = request.POST.get('correo')
+        form = AdminForm(request.POST, instance=admin)
+        if form.is_valid():
+            documento = form.cleaned_data['documento']
+            correo = form.cleaned_data['correo']
 
-        # 💡 CORRECCIÓN: Validar duplicados, excluyendo al usuario actual.
-        if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exclude(id=id).exists():
-            messages.error(request, 'Ya existe otro usuario con ese documento o correo electrónico.')
-            # Para no perder los datos, creamos un objeto temporal con los datos del POST
-            # y lo pasamos a la plantilla.
-            admin_post_data = admin # Mantenemos los datos originales
-            admin_post_data.nombres = request.POST.get('nombre')
-            admin_post_data.documento = documento
-            admin_post_data.correo = correo
-            return render(request, 'admin/administradores_form.html', {'admin': admin_post_data})
+            if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exclude(id=id).exists():
+                messages.error(request, 'Ya existe otro usuario con ese documento o correo electrónico.')
+                return render(request, 'admin/administradores_form.html', {'form': form, 'admin': admin})
 
-        # Actualizar los campos del modelo a partir de los datos del POST.
-        admin.nombres = request.POST.get('nombre', admin.nombres)
-        admin.documento = documento
-        admin.correo = correo
-        
-        # Solo actualizar la contraseña si se proporciona una nueva.
-        nueva_contraseña = request.POST.get('contraseña')
-        if nueva_contraseña:
-            admin.password = make_password(nueva_contraseña)
-            # 💡 CORRECCIÓN: Si el admin edita su propia cuenta, actualiza la sesión para no desloguearlo.
-            if request.user.id == admin.id:
-                update_session_auth_hash(request, admin)
-
+            usuario = form.save(commit=False)
             
-        admin.save()
-        # 💡 CORRECCIÓN: Añadir mensaje de éxito y redirigir a la lista.
-        messages.success(request, '¡Administrador actualizado exitosamente!')
-        return redirect('listar_administradores')
-        
-    # **LA CORRECCIÓN CLAVE:** Apuntar a la ruta correcta de la plantilla.
-    return render(request, 'admin/administradores_form.html', {'admin': admin})
+            nueva_contraseña = form.cleaned_data.get('contraseña')
+            if nueva_contraseña:
+                usuario.set_password(nueva_contraseña)
+                if request.user.id == admin.id:
+                    update_session_auth_hash(request, usuario)
+            
+            usuario.save()
+            messages.success(request, '¡Administrador actualizado exitosamente!')
+            return redirect('listar_administradores')
+    else:
+        form = AdminForm(instance=admin)
+
+    return render(request, 'admin/administradores_form.html', {'form': form, 'admin': admin})
 
 @login_required
 def eliminar_administrador(request, id):
@@ -495,158 +509,12 @@ def listar_ninos(request):
         messages.error(request, 'Acceso denegado.')
         return redirect('home')
     try:
-        # 1️⃣ Obtener el perfil de MadreComunitaria asociado al usuario
-        madre_profile = request.user.madre_profile
-        # 2️⃣ Obtener el hogar usando el perfil de madre
-        hogar = HogarComunitario.objects.get(madre=madre_profile)
-    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
+        hogar = HogarComunitaria.objects.get(madre=request.user.madre_profile)
+    except HogarComunitario.DoesNotExist:
         messages.error(request, 'No tienes un hogar comunitario asignado.')
         return redirect('madre_dashboard')
     ninos = Nino.objects.filter(hogar=hogar)
     return render(request, 'madre/nino_list.html', {'ninos': ninos})
-
-# -----------------------------------------------------------------
-# 💡 NUEVA FUNCIÓN: Registrar Desarrollo del Niño (CRUD Crear/Actualizar)
-# -----------------------------------------------------------------
-@login_required
-def registrar_desarrollo(request):
-    # Esta vista ahora solo maneja la creación
-    nino_id_preseleccionado = request.GET.get('nino')
-
-    if request.user.rol.nombre_rol != 'madre_comunitaria':
-        return redirect('role_redirect')
-
-    try:
-        madre_profile = request.user.madre_profile
-        hogar_madre = HogarComunitario.objects.get(madre=madre_profile)
-    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
-        return redirect('madre_dashboard')
-
-    ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
-
-    if request.method == 'POST':
-        nino_id = request.POST.get('nino')
-        fecha_registro = request.POST.get('fecha_registro')
-        cognitiva = request.POST.get('dimension_cognitiva')
-        comunicativa = request.POST.get('dimension_comunicativa')
-        socio_afectiva = request.POST.get('dimension_socio_afectiva')
-        corporal = request.POST.get('dimension_corporal')
-        
-        if not all([nino_id, fecha_registro, cognitiva, comunicativa, socio_afectiva, corporal]):
-            return render(request, 'madre/desarrollo_form.html', {
-                'ninos': ninos_del_hogar,
-                'error': 'Todos los campos son obligatorios.'
-            })
-
-        DesarrolloNino.objects.create(
-            nino_id=nino_id,
-            fecha_fin_mes=fecha_registro,
-            dimension_cognitiva=cognitiva,
-            dimension_comunicativa=comunicativa,
-            dimension_socio_afectiva=socio_afectiva,
-            dimension_corporal=corporal,
-        )
-        
-        # Redirigir con el filtro del niño y un mensaje de éxito
-        redirect_url = reverse('listar_desarrollos')
-        return redirect(f'{redirect_url}?nino={nino_id}&exito=1')
-
-    return render(request, 'madre/desarrollo_form.html', {
-        'ninos': ninos_del_hogar,
-        'form_action': reverse('registrar_desarrollo'),
-        'titulo_form': 'Registrar Desarrollo de Niño',
-        'nino_id_preseleccionado': nino_id_preseleccionado,
-    })
-
-# -----------------------------------------------------------------
-# 💡 NUEVA FUNCIÓN: Listar Registros de Desarrollo (CRUD Leer)
-# -----------------------------------------------------------------
-@login_required
-def listar_desarrollos(request):
-    # 1. Seguridad y obtener el hogar de la madre
-    if request.user.rol.nombre_rol != 'madre_comunitaria':
-        return redirect('role_redirect')
-    
-    try:
-        madre_profile = request.user.madre_profile
-        hogar_madre = HogarComunitario.objects.get(madre=madre_profile)
-    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
-        return render(request, 'madre/desarrollo_list.html', {'error': 'No tienes un hogar asignado.'})
-
-    # 2. Obtener la lista base de desarrollos y niños para los filtros
-    desarrollos = DesarrolloNino.objects.filter(nino__hogar=hogar_madre).select_related('nino', 'nino__padre__usuario').order_by('-fecha_fin_mes')
-    ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
-
-    # 3. Aplicar filtros si existen
-    nino_id_filtro = request.GET.get('nino')
-    mes_filtro = request.GET.get('mes') # Formato YYYY-MM
-
-    if nino_id_filtro:
-        desarrollos = desarrollos.filter(nino__id=nino_id_filtro)
-    
-    if mes_filtro:
-        # Filtra por año y mes de la fecha de fin de mes
-        year, month = map(int, mes_filtro.split('-'))
-        desarrollos = desarrollos.filter(fecha_fin_mes__year=year, fecha_fin_mes__month=month)
-
-    # 4. Renderizar la plantilla con el contexto
-    return render(request, 'madre/desarrollo_list.html', {
-        'desarrollos': desarrollos,
-        'ninos': ninos_del_hogar,
-        'nino_id_filtro': nino_id_filtro, # Para mantener la selección del filtro
-        'mes_filtro': mes_filtro,
-    })
-
-# -----------------------------------------------------------------
-# 💡 NUEVA FUNCIÓN: Editar Registro de Desarrollo (CRUD Actualizar)
-# -----------------------------------------------------------------
-@login_required
-def editar_desarrollo(request, id):
-    if request.user.rol.nombre_rol != 'madre_comunitaria':
-        return redirect('role_redirect')
-
-    desarrollo = get_object_or_404(DesarrolloNino, id=id)
-
-    if desarrollo.nino.hogar.madre != request.user:
-        return redirect('listar_desarrollos')
-
-    if request.method == 'POST':
-        desarrollo.fecha_fin_mes = request.POST.get('fecha_registro')
-        desarrollo.dimension_cognitiva = request.POST.get('dimension_cognitiva')
-        desarrollo.dimension_comunicativa = request.POST.get('dimension_comunicativa')
-        desarrollo.dimension_socio_afectiva = request.POST.get('dimension_socio_afectiva')
-        desarrollo.dimension_corporal = request.POST.get('dimension_corporal')
-        desarrollo.save()
-        
-        # Redirigir con el filtro del niño y un mensaje de éxito
-        redirect_url = reverse('listar_desarrollos')
-        return redirect(f'{redirect_url}?nino={desarrollo.nino.id}&exito=1')
-
-    return render(request, 'madre/desarrollo_form.html', {
-        'desarrollo': desarrollo,
-        'form_action': reverse('editar_desarrollo', args=[id]),
-        'titulo_form': 'Editar Registro de Desarrollo',
-        'nino_id_preseleccionado': desarrollo.nino.id,
-    })
-
-# -----------------------------------------------------------------
-# 💡 NUEVA FUNCIÓN: Eliminar Registro de Desarrollo (CRUD Eliminar)
-# -----------------------------------------------------------------
-@login_required
-def eliminar_desarrollo(request, id):
-    if request.user.rol.nombre_rol != 'madre_comunitaria':
-        return redirect('role_redirect')
-
-    desarrollo = get_object_or_404(DesarrolloNino, id=id)
-
-    if desarrollo.nino.hogar.madre != request.user:
-        return redirect('listar_desarrollos')
-
-    nino_id = desarrollo.nino.id
-    desarrollo.delete()
-    
-    redirect_url = reverse('listar_desarrollos')
-    return redirect(f'{redirect_url}?nino={nino_id}')
 
 @login_required
 def ver_ficha_nino(request, id):
@@ -667,9 +535,9 @@ def editar_nino(request, id):
         if nino_form.is_valid() and padre_form.is_valid():
             # 💡 VALIDACIÓN: Verificar si el nuevo documento o correo ya existen en otro usuario.
             documento = padre_form.cleaned_data.get('documento')
-            correo = padre_form.cleaned_data.get('correo')
+            email = padre_form.cleaned_data.get('email')
             
-            if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exclude(id=usuario_padre.id).exists():
+            if Usuario.objects.filter(Q(documento=documento) | Q(email=email)).exclude(id=usuario_padre.id).exists():
                 messages.error(request, 'El documento o correo electrónico ingresado ya pertenece a otro usuario.')
             else:
                 # Si no hay duplicados, proceder a guardar.
@@ -764,8 +632,17 @@ def eliminar_nino(request, id):
 
 @login_required
 def gestion_ninos(request):
-    # Ejemplo: obtener los niños del hogar de la madre logueada
-    ninos = Nino.objects.all()  # Ajusta el filtro según tu lógica de negocio
+    # 1. Verificar rol y obtener el hogar de la madre
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, 'Acceso denegado.')
+        return redirect('home')
+    try:
+        hogar = HogarComunitario.objects.get(madre=request.user.madre_profile)
+    except HogarComunitario.DoesNotExist:
+        messages.error(request, 'No tienes un hogar comunitario asignado.')
+        return redirect('madre_dashboard')
+    # 2. Filtrar los niños que pertenecen a ese hogar
+    ninos = Nino.objects.filter(hogar=hogar).order_by('nombres', 'apellidos')
     return render(request, 'madre/gestion_ninos_list.html', {'ninos': ninos})
 
 # ----------------------------------------------------
@@ -789,17 +666,36 @@ def cambiar_contrasena(request):
     
     return render(request, 'perfil/cambiar_contrasena.html', {'form': form})
 
-from functools import wraps
-from django.shortcuts import redirect
-from django.contrib import messages
+@login_required
+def detalles_madre_json(request, id):
+    try:
+        madre_perfil = get_object_or_404(MadreComunitaria, id=id)
+        usuario = madre_perfil.usuario
+        hogar = HogarComunitario.objects.filter(madre=madre_perfil).first()
 
-def rol_requerido(nombre_rol):
-    def decorator(view_func):
-        @wraps(view_func)
-        def _wrapped_view(request, *args, **kwargs):
-            if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != nombre_rol:
-                messages.error(request, 'Acceso denegado.')
-                return redirect('home')
-            return view_func(request, *args, **kwargs)
-        return _wrapped_view
-    return decorator
+        data = {
+            'usuario': {
+                'nombres': usuario.nombres,
+                'apellidos': usuario.apellidos,
+                'tipo_documento': usuario.get_tipo_documento_display(),
+                'documento': usuario.documento,
+                'correo': usuario.correo,
+                'telefono': usuario.telefono,
+                'direccion': usuario.direccion,
+            },
+            'perfil': {
+                'nivel_escolaridad': madre_perfil.nivel_escolaridad,
+                'titulo_obtenido': madre_perfil.titulo_obtenido or "No especificado",
+                'experiencia_previa': madre_perfil.experiencia_previa or "No especificada",
+            },
+            'hogar': {
+                'nombre_hogar': hogar.nombre_hogar if hogar else "Sin hogar asignado",
+                'direccion': hogar.direccion if hogar else "N/A",
+                'localidad': hogar.localidad if hogar else "N/A",
+                'barrio': hogar.barrio if hogar else "N/A",
+                'capacidad_maxima': hogar.capacidad_maxima if hogar else "N/A",
+            }
+        }
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
