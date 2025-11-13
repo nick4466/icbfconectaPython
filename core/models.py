@@ -194,7 +194,7 @@ class HogarComunitario(models.Model):
     documento_tenencia_pdf = models.FileField(upload_to='hogares/documentos_tenencia/', null=True, blank=True)
 
     # Estado y relación
-    capacidad_maxima = models.IntegerField()
+    capacidad_maxima = models.IntegerField(default=20)
     estado = models.CharField(
         max_length=20,
         choices=[

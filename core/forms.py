@@ -53,6 +53,32 @@ class HogarForm(forms.ModelForm):
         model = HogarComunitario
         # Excluye el campo 'madre' ya que lo asignaremos en la vista
         exclude = ['madre', 'fecha_registro']
+        fields = [
+            'nombre_hogar', 'direccion', 'localidad', 'ciudad', 'barrio', 'estrato',
+            'num_habitaciones', 'num_banos', 'material_construccion', 'riesgos_cercanos',
+            'fotos_interior', 'fotos_exterior', 'geolocalizacion_lat', 'geolocalizacion_lon',
+            'tipo_tenencia', 'documento_tenencia_pdf', 'capacidad_maxima', 'estado'
+        ]
+        widgets = {
+            'nombre_hogar': forms.TextInput(attrs={'required': True, 'placeholder': 'Nombre del hogar'}),
+            'direccion': forms.TextInput(attrs={'required': True, 'placeholder': 'Dirección completa'}),
+            'localidad': forms.TextInput(attrs={'placeholder': 'Localidad'}),
+            'ciudad': forms.TextInput(attrs={'placeholder': 'Ciudad'}),
+            'barrio': forms.TextInput(attrs={'placeholder': 'Barrio'}),
+            'estrato': forms.NumberInput(attrs={'min': 1, 'max': 6}),
+            'num_habitaciones': forms.NumberInput(attrs={'min': 0}),
+            'num_banos': forms.NumberInput(attrs={'min': 0}),
+            'material_construccion': forms.TextInput(attrs={'placeholder': 'Material de construcción'}),
+            'riesgos_cercanos': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Describa riesgos cercanos al hogar'}),
+            'fotos_interior': forms.FileInput(),
+            'fotos_exterior': forms.FileInput(),
+            'geolocalizacion_lat': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': 'Latitud'}),
+            'geolocalizacion_lon': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': 'Longitud'}),
+            'tipo_tenencia': forms.Select(),
+            'documento_tenencia_pdf': forms.FileInput(),
+            'capacidad_maxima': forms.NumberInput(attrs={'value': 20, 'min': 1}),
+            'estado': forms.Select(),
+        }
 
 class CustomAuthForm(AuthenticationForm):
     username = forms.CharField(

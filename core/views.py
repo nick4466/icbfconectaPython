@@ -31,8 +31,9 @@ def matricular_nino(request):
 
     # Obtener el hogar de la madre logueada
     try:
-        hogar_madre = HogarComunitario.objects.get(madre=request.user)
-    except HogarComunitario.DoesNotExist:
+        madre_profile = request.user.madre_profile
+        hogar_madre = HogarComunitario.objects.get(madre=madre_profile)
+    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
         messages.error(request, 'No tienes un hogar comunitario asignado.')
         return redirect('madre_dashboard')
 
@@ -44,7 +45,7 @@ def matricular_nino(request):
                 # Buscar el rol padre
                 rol_padre = Rol.objects.get(nombre_rol='padre')
                 doc_padre = padre_form.cleaned_data['documento']
-                email_padre = padre_form.cleaned_data['email']
+                correo_padre = padre_form.cleaned_data['correo']
                 # Buscar usuario padre existente por documento y rol=padre
                 usuario_padre = Usuario.objects.filter(documento=doc_padre, rol=rol_padre).first()
                 if not usuario_padre:
@@ -53,11 +54,10 @@ def matricular_nino(request):
                         documento=doc_padre,
                         nombres=padre_form.cleaned_data['nombres'],
                         apellidos=padre_form.cleaned_data['apellidos'],
-                        email=email_padre,
+                        correo=correo_padre,
                         telefono=padre_form.cleaned_data['telefono'],
                         direccion=padre_form.cleaned_data['direccion'],
                         rol=rol_padre,
-                        username=str(doc_padre),
                     )
                     # Contraseña inicial igual al documento
                     usuario_padre.set_password(str(doc_padre))
@@ -144,93 +144,77 @@ def listar_hogares(request):
 
 @login_required
 def crear_madre(request):
-    # Obtener el rol de Madre Comunitaria
-    rol_madre, created = Rol.objects.get_or_create(nombre_rol='madre_comunitaria')
+    rol_madre, _ = Rol.objects.get_or_create(nombre_rol='madre_comunitaria')
 
     if request.method == 'POST':
-        # Instanciar los tres formularios con los datos POST y FILES (para archivos)
         usuario_form = UsuarioMadreForm(request.POST)
         madre_profile_form = MadreProfileForm(request.POST, request.FILES)
-        hogar_form = HogarForm(request.POST, request.FILES) # HogarComunitario también tiene FileFields!
+        hogar_form = HogarForm(request.POST, request.FILES)
+        error_step = 1
 
-        # Definir el paso inicial de error (por defecto, 1)
-        error_step = 1 
-
-        # 1. Validar todos los formularios
         if usuario_form.is_valid() and madre_profile_form.is_valid() and hogar_form.is_valid():
-            
-            # --- VALIDACIONES DE REGLA DE NEGOCIO ---
-            
             documento = usuario_form.cleaned_data.get('documento')
             nombre_hogar = hogar_form.cleaned_data.get('nombre_hogar')
             direccion_hogar = hogar_form.cleaned_data.get('direccion')
             localidad = hogar_form.cleaned_data.get('localidad')
 
-            # Validación de Documento duplicado
+            # Validación de documento duplicado
             if Usuario.objects.filter(documento=documento).exists():
                 messages.error(request, f"Ya existe un usuario con el documento {documento} registrado.")
-                error_step = 1
                 return render(request, 'admin/madres_form.html', {
                     'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
-                    'initial_step': error_step 
+                    'initial_step': 1
                 })
-            
-            # Validación de Hogar duplicado
+
+            # Validación de hogar duplicado
             if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar, localidad__iexact=localidad).exists():
-                messages.error(request, f"Ya existe un hogar llamado '{nombre_hogar}' en la localidad de '{localidad}'.")
+                messages.error(request, f"Ya existe un hogar llamado '{nombre_hogar}' en la localidad '{localidad}'.")
                 error_step = 3
             elif HogarComunitario.objects.filter(direccion__iexact=direccion_hogar).exists():
                 messages.error(request, f"La dirección '{direccion_hogar}' ya está registrada para otro hogar.")
                 error_step = 3
-            
-            # Si hay errores de Regla de Negocio (Documento o Hogar), regresamos al formulario
+
             if messages.get_messages(request):
-                 return render(request, 'admin/madres_form.html', {
+                return render(request, 'admin/madres_form.html', {
                     'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
                     'initial_step': error_step
                 })
 
-            # --- CREACIÓN SECUENCIAL (Todo validado) ---
-
             try:
-                # 1. Crear el objeto Usuario (Paso 1)
-                usuario = usuario_form.save(commit=False)
-                usuario.rol = rol_madre
-                # Usamos el documento como base para el username
-                usuario.username = usuario.documento 
-                usuario.set_password('123456') 
-                usuario.save()
+                # Usar transacción atómica para asegurar que todo se crea o nada
+                with transaction.atomic():
+                    # 1️⃣ Crear usuario
+                    usuario = usuario_form.save(commit=False)
+                    usuario.rol = rol_madre
+                    usuario.set_password('123456')
+                    usuario.is_active = True
+                    usuario.save()
 
-                # 2. Crear el objeto MadreComunitaria (Paso 2)
-                madre_profile = madre_profile_form.save(commit=False)
-                madre_profile.usuario = usuario # Enlace OneToOne
-                madre_profile.save()
+                    # 2️⃣ Crear perfil madre
+                    madre_profile = madre_profile_form.save(commit=False)
+                    madre_profile.usuario = usuario
+                    madre_profile.save()
 
-                # 3. Crear el objeto HogarComunitario (Paso 3)
-                hogar = hogar_form.save(commit=False)
-                hogar.madre = madre_profile # Enlace ForeignKey
-                hogar.save()
-                
+                    # 3️⃣ Crear hogar comunitario asociado a la madre
+                    hogar = hogar_form.save(commit=False)
+                    hogar.madre = madre_profile
+                    hogar.save()
+
                 messages.success(request, '¡Madre comunitaria y hogar creados exitosamente! Contraseña por defecto: 123456')
                 return redirect('listar_madres')
 
             except Exception as e:
-                # Manejo de error de base de datos inesperado
-                messages.error(request, f"Ocurrió un error inesperado al guardar los datos: {e}")
-                
+                messages.error(request, f"Ocurrió un error al guardar los datos: {str(e)}")
+
         else:
-            # --- MANEJO DE ERRORES DE VALIDACIÓN DE FORMULARIO ---
-            # Identificar en qué paso ocurrió el primer error para mostrarlo al usuario
             if usuario_form.errors:
                 error_step = 1
             elif madre_profile_form.errors:
                 error_step = 2
             elif hogar_form.errors:
                 error_step = 3
-
             messages.error(request, 'Error en los datos suministrados. Revise el paso marcado en azul.')
-        
-        # Si la validación falla (POST), regresamos al formulario en el paso de error.
+
         return render(request, 'admin/madres_form.html', {
             'usuario_form': usuario_form,
             'madre_profile_form': madre_profile_form,
@@ -238,32 +222,38 @@ def crear_madre(request):
             'initial_step': error_step
         })
 
-    else:
-        # Petición GET (Inicio del proceso)
-        usuario_form = UsuarioMadreForm()
-        madre_profile_form = MadreProfileForm()
-        hogar_form = HogarForm()
-        initial_step = 1
-
+    # GET
     return render(request, 'admin/madres_form.html', {
-        'usuario_form': usuario_form,
-        'madre_profile_form': madre_profile_form,
-        'hogar_form': hogar_form,
-        'initial_step': initial_step
+        'usuario_form': UsuarioMadreForm(),
+        'madre_profile_form': MadreProfileForm(),
+        'hogar_form': HogarForm(),
+        'initial_step': 1
     })
 @login_required
 def editar_madre(request, id):
-    madre = get_object_or_404(Usuario, id=id, rol__nombre_rol='madre_comunitaria')
-    hogar = HogarComunitario.objects.filter(madre=madre).first()
+    # Obtener el usuario que es madre comunitaria
+    usuario_madre = get_object_or_404(Usuario, id=id, rol__nombre_rol='madre_comunitaria')
+    
+    # Obtener el perfil de madre comunitaria
+    madre_profile = usuario_madre.madre_profile
+    
+    # Obtener el hogar comunitario asociado
+    hogar = HogarComunitario.objects.filter(madre=madre_profile).first()
+    
+    if not hogar:
+        messages.error(request, 'Esta madre no tiene un hogar comunitario asignado.')
+        return redirect('listar_madres')
 
     if request.method == 'POST':
-        madre_form = MadreForm(request.POST, instance=madre, prefix='madre')
-        hogar_form = HogarForm(request.POST, instance=hogar, prefix='hogar')
-        if madre_form.is_valid() and hogar_form.is_valid():
+        usuario_form = UsuarioMadreForm(request.POST, instance=usuario_madre)
+        madre_profile_form = MadreProfileForm(request.POST, request.FILES, instance=madre_profile)
+        hogar_form = HogarForm(request.POST, request.FILES, instance=hogar)
+        
+        if usuario_form.is_valid() and madre_profile_form.is_valid() and hogar_form.is_valid():
             # Validación para hogar duplicado, excluyendo el hogar actual
             nombre_hogar = hogar_form.cleaned_data['nombre_hogar']
             direccion_hogar = hogar_form.cleaned_data['direccion']
-            localidad = hogar_form.cleaned_data['localidad']
+            localidad = hogar_form.cleaned_data.get('localidad')
 
             if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar, localidad__iexact=localidad).exclude(id=hogar.id).exists():
                 messages.error(request, f"Ya existe otro hogar llamado '{nombre_hogar}' en la localidad de '{localidad}'.")
@@ -272,22 +262,34 @@ def editar_madre(request, id):
 
             # Si hay mensajes de error, renderizar de nuevo el formulario
             if messages.get_messages(request):
-                 return render(request, 'admin/madres_form.html', {
-                    'madre_form': madre_form,
-                    'hogar_form': hogar_form
+                return render(request, 'admin/madres_form.html', {
+                    'usuario_form': usuario_form,
+                    'madre_profile_form': madre_profile_form,
+                    'hogar_form': hogar_form,
+                    'modo_edicion': True
                 })
 
-            madre_form.save()
-            hogar_form.save()
-            messages.success(request, '¡Madre comunitaria actualizada exitosamente!')
-            return redirect('listar_madres')
+            try:
+                with transaction.atomic():
+                    usuario_form.save()
+                    madre_profile_form.save()
+                    hogar_form.save()
+                
+                messages.success(request, '¡Madre comunitaria y hogar actualizados exitosamente!')
+                return redirect('listar_madres')
+            
+            except Exception as e:
+                messages.error(request, f'Error al guardar los cambios: {str(e)}')
     else:
-        madre_form = MadreForm(instance=madre, prefix='madre')
-        hogar_form = HogarForm(instance=hogar, prefix='hogar')
+        usuario_form = UsuarioMadreForm(instance=usuario_madre)
+        madre_profile_form = MadreProfileForm(instance=madre_profile)
+        hogar_form = HogarForm(instance=hogar)
 
     return render(request, 'admin/madres_form.html', {
-        'madre_form': madre_form,
-        'hogar_form': hogar_form
+        'usuario_form': usuario_form,
+        'madre_profile_form': madre_profile_form,
+        'hogar_form': hogar_form,
+        'modo_edicion': True
     })
 
 
@@ -314,16 +316,11 @@ def crear_administrador(request):
         # 1. Obtener los datos del formulario (usando .get() es más seguro)
         nombre = request.POST.get('nombre')
         documento = request.POST.get('documento')
-        email = request.POST.get('correo') # El input del form se llama 'correo'
+        correo = request.POST.get('correo')  # El input del form se llama 'correo'
         contraseña_plana = request.POST.get('contraseña')
         
-        # 2. **CORRECCIÓN CLAVE: Mapear y crear el objeto**
-        
-        # OBLIGATORIO: AbstractUser requiere 'username'. Usamos el documento.
-        username_val = documento
-        
         # 💡 CORRECCIÓN: Validar que el documento y el correo no existan
-        if Usuario.objects.filter(Q(documento=documento) | Q(email=email)).exists():
+        if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exists():
             # Si ya existe, enviar un mensaje de error y renderizar el formulario de nuevo
             # con los datos que el usuario ya había ingresado.
             messages.error(request, 'Ya existe un usuario con ese documento o correo electrónico.')
@@ -332,13 +329,11 @@ def crear_administrador(request):
                 'error': True # Una bandera para el template si se necesita
             })
 
-
-        if nombre and documento and email and contraseña_plana:
+        if nombre and documento and correo and contraseña_plana:
             Usuario.objects.create(
-                # Campo obligatorio de AbstractUser
-                username=username_val, 
+                # Campo obligatorio de AbstractUser (usamos documento como identificador)
                 documento=documento,
-                email=email,
+                correo=correo,
                 nombres=nombre,
                 apellidos="", # Lo dejas vacío ya que el form no lo pide
                 # Campo de AbstractUser (donde se guarda el hash)
@@ -358,24 +353,23 @@ def editar_administrador(request, id):
     
     if request.method == 'POST':
         documento = request.POST.get('documento')
-        email = request.POST.get('correo')
+        correo = request.POST.get('correo')
 
         # 💡 CORRECCIÓN: Validar duplicados, excluyendo al usuario actual.
-        if Usuario.objects.filter(Q(documento=documento) | Q(email=email)).exclude(id=id).exists():
+        if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exclude(id=id).exists():
             messages.error(request, 'Ya existe otro usuario con ese documento o correo electrónico.')
             # Para no perder los datos, creamos un objeto temporal con los datos del POST
             # y lo pasamos a la plantilla.
             admin_post_data = admin # Mantenemos los datos originales
             admin_post_data.nombres = request.POST.get('nombre')
             admin_post_data.documento = documento
-            admin_post_data.email = email
+            admin_post_data.correo = correo
             return render(request, 'admin/administradores_form.html', {'admin': admin_post_data})
 
         # Actualizar los campos del modelo a partir de los datos del POST.
         admin.nombres = request.POST.get('nombre', admin.nombres)
         admin.documento = documento
-        admin.email = email
-        admin.username = documento # Sincronizar username con documento
+        admin.correo = correo
         
         # Solo actualizar la contraseña si se proporciona una nueva.
         nueva_contraseña = request.POST.get('contraseña')
@@ -501,8 +495,11 @@ def listar_ninos(request):
         messages.error(request, 'Acceso denegado.')
         return redirect('home')
     try:
-        hogar = HogarComunitario.objects.get(madre=request.user)
-    except HogarComunitario.DoesNotExist:
+        # 1️⃣ Obtener el perfil de MadreComunitaria asociado al usuario
+        madre_profile = request.user.madre_profile
+        # 2️⃣ Obtener el hogar usando el perfil de madre
+        hogar = HogarComunitario.objects.get(madre=madre_profile)
+    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
         messages.error(request, 'No tienes un hogar comunitario asignado.')
         return redirect('madre_dashboard')
     ninos = Nino.objects.filter(hogar=hogar)
@@ -520,8 +517,9 @@ def registrar_desarrollo(request):
         return redirect('role_redirect')
 
     try:
-        hogar_madre = HogarComunitario.objects.get(madre=request.user)
-    except HogarComunitario.DoesNotExist:
+        madre_profile = request.user.madre_profile
+        hogar_madre = HogarComunitario.objects.get(madre=madre_profile)
+    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
         return redirect('madre_dashboard')
 
     ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
@@ -570,8 +568,9 @@ def listar_desarrollos(request):
         return redirect('role_redirect')
     
     try:
-        hogar_madre = HogarComunitario.objects.get(madre=request.user)
-    except HogarComunitario.DoesNotExist:
+        madre_profile = request.user.madre_profile
+        hogar_madre = HogarComunitario.objects.get(madre=madre_profile)
+    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
         return render(request, 'madre/desarrollo_list.html', {'error': 'No tienes un hogar asignado.'})
 
     # 2. Obtener la lista base de desarrollos y niños para los filtros
@@ -668,9 +667,9 @@ def editar_nino(request, id):
         if nino_form.is_valid() and padre_form.is_valid():
             # 💡 VALIDACIÓN: Verificar si el nuevo documento o correo ya existen en otro usuario.
             documento = padre_form.cleaned_data.get('documento')
-            email = padre_form.cleaned_data.get('email')
+            correo = padre_form.cleaned_data.get('correo')
             
-            if Usuario.objects.filter(Q(documento=documento) | Q(email=email)).exclude(id=usuario_padre.id).exists():
+            if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exclude(id=usuario_padre.id).exists():
                 messages.error(request, 'El documento o correo electrónico ingresado ya pertenece a otro usuario.')
             else:
                 # Si no hay duplicados, proceder a guardar.
