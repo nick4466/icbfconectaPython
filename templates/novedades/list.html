@@ -170,6 +170,43 @@ nav ul {
       .card { padding: 15px; }
       th, td { font-size: 14px; padding: 10px; }
     }
+
+    
+
+    .prioridad-1 { color: green; }
+.prioridad-3 { color: orange; font-weight: bold; }
+.prioridad-5 { color: red; font-weight: bold; }
+
+
+
+
+.busqueda-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.busqueda-input {
+  padding: 6px 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 250px;
+}
+
+.btn-purple {
+  background-color: #7c4dff;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.btn-purple:hover {
+  background-color: #5e35b1;
+}
+
   </style>
 </head>
 <body>
@@ -189,6 +226,13 @@ nav ul {
   <!-- contenido aquí -->
 
 
+  <form method="get" class="busqueda-form" style="margin-bottom: 20px;">
+  <input type="text" name="q" placeholder="Buscar novedad..." value="{{ query }}" class="busqueda-input">
+  <button type="submit" class="btn btn-sm btn-purple">Buscar</button>
+</form>
+
+
+
 
   <h2 class="main-title">Listado de Novedades</h2>
 
@@ -205,7 +249,8 @@ nav ul {
           <th>Niño</th>
           <th>Clase</th>
           <th>Tipo</th>
-          <th>Docente</th>
+          <th>Prioridad</th>
+          
           <th>Descripción</th>
           <th>Acciones</th>
         </tr>
@@ -217,7 +262,8 @@ nav ul {
           <td>{{ novedad.nino }}</td>
           <td>{{ novedad.clase }}</td>
           <td>{{ novedad.get_tipo_display }}</td>
-          <td>{{ novedad.docente }}</td>
+          <td>Prioridad: {{ novedad.get_prioridad }}</td>
+          <!-- TEMA DE PRIORIDAD -->
           <td>{{ novedad.descripcion|truncatechars:50 }}</td>
           <td>
             <div class="menu-container">
@@ -237,6 +283,12 @@ nav ul {
         {% endfor %}
       </tbody>
     </table>
+    {% if novedades|length == 0 %}
+  <p>No se encontraron novedades que coincidan con "{{ query }}".</p>
+{% endif %}
+
+
+
   </div>
 
   <footer style="text-align: center; padding: 20px; color: #7a3eb1; font-size: 14px;">

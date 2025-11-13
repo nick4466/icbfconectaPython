@@ -8,6 +8,7 @@ from django.contrib import messages
 
 
 
+#Holaaaaa amiguitos de youtu :D
 @login_required
 def lista_planeaciones(request):
     madre = request.user

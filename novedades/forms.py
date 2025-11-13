@@ -4,7 +4,21 @@ from .models import Novedad
 class NovedadForm(forms.ModelForm):
     class Meta:
         model = Novedad
-        fields = ['nino', 'fecha', 'tipo', 'descripcion', 'docente', 'observaciones']
+        exclude = ['docente']
+        fields = [
+            'nino',
+            'fecha',
+            'clase',
+            'tipo',
+            'docente',
+            'descripcion',
+            'causa',
+            'disposicion',
+            'acuerdos',
+            'observaciones',
+        ]
         widgets = {
-            'tipo': forms.Select, 
+            'tipo': forms.Select(),
+            'fecha': forms.DateInput(attrs={'type': 'date'}),
         }
+
