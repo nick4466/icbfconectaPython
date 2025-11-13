@@ -27,5 +27,23 @@ class Novedad(models.Model):
 
     tipo = models.CharField(max_length=1, choices=TIPOS_NOVEDAD, verbose_name="Tipo de novedad")
 
+    def get_prioridad(self):
+        prioridades = {
+            'a': 5,
+            'b': 4,
+            'c': 3,
+            'd': 2,
+            'e': 4,
+            'f': 3,
+            'g': 2,
+            'h': 3,
+            'i': 4,
+            'j': 1,
+        }
+        return prioridades.get(self.tipo, 1)
+
     def __str__(self):
         return f"Novedad de {self.nino.nombre} - {self.fecha}"
+    
+    
+    

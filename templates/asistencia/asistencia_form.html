@@ -202,6 +202,7 @@
       <th>#</th>
       <th>Nombre Completo</th>
       <th>Asistencia</th>
+      <th>Calificar</th>
       <th>Historial Asistencia</th>
     </tr>
   </thead>
@@ -224,6 +225,10 @@
         <a href="{% url 'historial_asistencia' nino.id %}" class="btn-mini-historial">
           <i class="fas fa-history"></i> Ver
         </a>
+      </td>
+      <td>
+        <a href="{% url 'historial_asistencia' nino.id %}" class="btn-mini-historial">
+          <i class="fas fa-history"></i> Ver
       </td>
     </tr>
     {% endfor %}
