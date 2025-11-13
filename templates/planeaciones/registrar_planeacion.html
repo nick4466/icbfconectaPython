@@ -75,11 +75,23 @@
             text-align: center;
             margin-top: 20px;
             padding: 20px;
-            font-size: 26px;
+            font-size: 20px;
             font-weight: bold;
             color: #7a3eb1;
             background-color: rgba(255, 255, 255, 0.7);
-            margin: 20px auto;
+            margin: 15px auto;
+            width: 80%;
+            border-radius: 10px;
+        }
+         .main-title1 {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            font-size: 25px;
+            font-weight: bold;
+            color: #7a3eb1;
+            background-color: rgba(255, 255, 255, 0.7);
+            margin: 25px auto;
             width: 80%;
             border-radius: 10px;
         }
@@ -176,6 +188,19 @@
         }
 
         .btn-volver:hover { background-color: #e8a9d6; }
+
+                .alert {
+            background-color: rgba(245, 220, 255, 0.9);
+            color: #5e3370;
+            border: 1px solid #d6a7f1;
+            padding: 10px;
+            border-radius: 8px;
+            width: 80%;
+            margin: 15px auto;
+            text-align: center;
+            font-weight: bold;
+        }
+
     </style>
 </head>
 <body>
@@ -203,11 +228,11 @@
     </nav>
 </header>
 
-<div class="main-title">Registrar Planeación</div>
+<div class="main-title1">Registrar Planeación </div>
+<div class="main-title">
 
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-
     <!-- Tres campos principales arriba -->
     <div class="form-top">
         <div>
@@ -224,35 +249,60 @@
         </div>
     </div>
 
-    <!-- Tabla de campos adicionales -->
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Materiales a Utilizar</th>
-                    <th>Ambiente Educativo</th>
-                    <th>Actividad de Inicio</th>
-                    <th>Desarrollo de la Actividad</th>
-                    <th>Cierre de la Actividad</th>
-                    <th>Observaciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ form.materiales_utilizar }}</td>
-                    <td>{{ form.ambiente_educativo }}</td>
-                    <td>{{ form.experiencia_inicio }}</td>
-                    <td>{{ form.experiencia_pedagogica }}</td>
-                    <td>{{ form.cierre_experiencia }}</td>
-                    <td>{{ form.situaciones_presentadas }}</td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Tabla de planeación -->
+    <div style="flex: 1 1 600px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Materiales a Utilizar</th>
+            <th>Ambiente Educativo</th>
+            <th>Actividad de Inicio</th>
+            <th>Desarrollo de la Actividad</th>
+            <th>Cierre de la Actividad</th>
+            <th>Observaciones</th>
+            <th>Documentación (Evidencia)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ form.materiales_utilizar }}</td>
+            <td>{{ form.ambiente_educativo }}</td>
+            <td>{{ form.experiencia_inicio }}</td>
+            <td>{{ form.experiencia_pedagogica }}</td>
+            <td>{{ form.cierre_experiencia }}</td>
+            <td>{{ form.situaciones_presentadas }}</td>
+            <td>
+                <!-- Input para múltiples archivos -->
+                <input type="file" name="imagenes" multiple>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mensajes y carga de imágenes -->
+    <div style="flex: 1 1 300px;">
+        {% if success %}
+     <div class="alert">{{ success }}</div>
+        {% endif %}
+
+
+        {% if documentos %}
+          <div>
+            {% for doc in documentos %}
+              <img src="{{ doc.imagen.url }}" alt="Evidencia" style="max-width: 100%; margin-bottom: 10px; border-radius: 8px;">
+            {% endfor %}
+          </div>
+        {% endif %}
     </div>
 
     <button type="submit" class="btn-guardar">Guardar Planeación</button>
-    
+    <a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-volver">
+    <i class="fas fa-arrow-left"></i> Volver al listado
+</a>
+
 </form>
+</div>
 
 </body>
 </html>

@@ -13,6 +13,15 @@ class Planeacion(models.Model):
     experiencia_pedagogica = models.TextField()
     cierre_experiencia = models.TextField()
     situaciones_presentadas = models.TextField()
+    
 
     def __str__(self):
         return f"{self.nombre_experiencia} - {self.fecha}"
+
+
+class Documentacion(models.Model):
+    planeacion = models.ForeignKey(Planeacion, on_delete=models.CASCADE, related_name='documentos')
+    imagen = models.ImageField(upload_to='documentacion/')
+
+    def __str__(self):
+        return f"Documento de {self.planeacion.nombre_experiencia}"

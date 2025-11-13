@@ -10,6 +10,8 @@ from django.contrib.auth import views as auth_views
 from core import views
 from core.custom_password_reset_form import CustomPasswordResetForm
 from core.forms import CustomAuthForm
+from django.conf import settings   
+from django.conf.urls.static import static
 
 
 
@@ -85,7 +87,7 @@ urlpatterns = [
     path('madre/desarrollo/eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
 
     # --- URLs de Planeaciones ---
-    # Se incluye el archivo de URLs de la app 'planeaciones' y se le asigna un namespace.
+    # Se incluye el archivo de URLs de la app 'planeaciones'<--- tener encuenta para los botones dirigidos a planeaciones
     path('planeaciones/', include(('planeaciones.urls', 'planeaciones'), namespace='planeaciones')),
 
     #-----------------------------------------------juanito---------------------------------------------#
@@ -94,3 +96,5 @@ urlpatterns = [
     path('novedades/', include('novedades.urls')),
 
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,10 +1,11 @@
 from django import forms
-from .models import Planeacion
+from .models import Planeacion, Documentacion
 
+# Form para Planeacion
 class PlaneacionForm(forms.ModelForm):
     class Meta:
         model = Planeacion
-        exclude = ['madre']
+        exclude = ['madre']  # El usuario se asigna en la vista
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date'}),
             'intencionalidad_pedagogica': forms.Textarea(attrs={'rows': 2}),
@@ -24,4 +25,10 @@ class PlaneacionForm(forms.ModelForm):
             'experiencia_pedagogica': 'Desarrollo de la experiencia pedagógica',
             'cierre_experiencia': 'Cierre de la experiencia',
             'situaciones_presentadas': 'Situaciones presentadas para el seguimiento de los niños y niñas',
-        }   
+        }
+
+# Form para Documentacion (solo sirve para validar en la vista, no para subir múltiples directamente)
+class DocumentacionForm(forms.ModelForm):
+    class Meta:
+        model = Documentacion
+        fields = ['imagen']

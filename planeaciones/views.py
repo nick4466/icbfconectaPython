@@ -1,7 +1,12 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from pyexpat.errors import messages
 from django.contrib.auth.decorators import login_required
-from .models import Planeacion
-from .forms import PlaneacionForm
+from .models import Documentacion, Planeacion
+from .forms import DocumentacionForm, PlaneacionForm
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+
+
+
 
 @login_required
 def lista_planeaciones(request):
@@ -29,31 +34,78 @@ def lista_planeaciones(request):
     return render(request, 'planeaciones/lista_planeaciones.html', context)
 
 
+
+ 
+
 @login_required
 def registrar_planeacion(request):
     if request.method == 'POST':
-        form = PlaneacionForm(request.POST)
+        form = PlaneacionForm(request.POST, request.FILES)
         if form.is_valid():
             planeacion = form.save(commit=False)
             planeacion.madre = request.user
             planeacion.save()
+
+            # Guardar múltiples imágenes
+            for f in request.FILES.getlist('imagenes'):
+                Documentacion.objects.create(planeacion=planeacion, imagen=f)
+
+            messages.success(request, '✅ Planeación registrada exitosamente.')
             return redirect('planeaciones:lista_planeaciones')
+        else:
+            messages.error(request, '❌ Error al registrar la planeación.')
     else:
         form = PlaneacionForm()
+
     return render(request, 'planeaciones/registrar_planeacion.html', {'form': form})
 
 
 @login_required
 def editar_planeacion(request, id):
-    planeacion = get_object_or_404(Planeacion, id=id, madre=request.user)
+    planeacion = get_object_or_404(Planeacion, pk=id)
+    documentos = Documentacion.objects.filter(planeacion=planeacion)
+
     if request.method == 'POST':
-        form = PlaneacionForm(request.POST, instance=planeacion)
+        form = PlaneacionForm(request.POST, request.FILES, instance=planeacion)
+
+        # Si el usuario marcó imágenes para eliminar
+        eliminar_ids = request.POST.getlist('eliminar_documentos')
+        for doc_id in eliminar_ids:
+            doc = Documentacion.objects.filter(id=doc_id, planeacion=planeacion).first()
+            if doc:
+                doc.imagen.delete(save=False)
+                doc.delete()
+
         if form.is_valid():
             form.save()
-            return redirect('planeaciones:lista_planeaciones')
+
+            # Si subió nuevas imágenes
+            for f in request.FILES.getlist('imagenes'):
+                Documentacion.objects.create(planeacion=planeacion, imagen=f)
+
+            messages.success(request, '✅ Planeación actualizada correctamente.')
+            return redirect('planeaciones:detalle_planeacion', id=planeacion.id)
+        else:
+            messages.error(request, '❌ Ocurrió un error al actualizar la planeación.')
     else:
         form = PlaneacionForm(instance=planeacion)
-    return render(request, 'planeaciones/editar_planeacion.html', {'form': form})
+
+    return render(request, 'planeaciones/editar_planeacion.html', {
+        'form': form,
+        'planeacion': planeacion,
+        'documentos': documentos
+    })
+
+@login_required
+def detalle_planeacion(request, id):
+    planeacion = get_object_or_404(Planeacion, id=id, madre=request.user)
+    documentos = planeacion.documentos.all()
+    return render(request, 'planeaciones/detalle_planeacion.html', {
+        'planeacion': planeacion,
+        'documentos': documentos
+    })
+
+
 
 
 @login_required
@@ -65,7 +117,4 @@ def eliminar_planeacion(request, id):
     return render(request, 'planeaciones/eliminar_planeacion.html', {'planeacion': planeacion})
 
 
-@login_required
-def detalle_planeacion(request, id):
-    planeacion = get_object_or_404(Planeacion, id=id, madre=request.user)
-    return render(request, 'planeaciones/detalle_planeacion.html', {'planeacion': planeacion})
+
