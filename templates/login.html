@@ -2,209 +2,248 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ICBF Conecta - Iniciar Sesión</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
-  
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ICBF Conecta - Iniciar Sesión</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+    
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-    body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-color: #f8f6fb; /* Color de fondo si la imagen no carga */
-      background-image: url("{% static 'img/fondo2.png' %}");
-      background-size: cover;
-      background-position: center;
-    }
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f6fb; /* Color de fondo si la imagen no carga */
+            background-image: url("{% static 'img/fondo2.png' %}");
+            background-size: cover;
+            background-position: center;
+        }
 
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: #ffffff;
-      padding: 15px 30px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #ffffff;
+            padding: 15px 30px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
 
-    header img {
-      height: 70px;
-    }
+        header img {
+            height: 70px;
+        }
 
-    header nav ul {
-      list-style: none;
-      display: flex;
-      padding: 0;
-      margin: 0;
-    }
+        header nav ul {
+            list-style: none;
+            display: flex;
+            padding: 0;
+            margin: 0;
+        }
 
-    header nav ul li {
-      margin-left: 20px;
-    }
+        header nav ul li {
+            margin-left: 20px;
+        }
 
-    header nav ul li a {
-      text-decoration: none;
-      color: #9B59B6;
-      font-weight: bold;
-      font-size: 16px;
-    }
+        header nav ul li a {
+            text-decoration: none;
+            color: #9B59B6;
+            font-weight: bold;
+            font-size: 16px;
+        }
 
-    main {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: calc(100vh - 100px);
-      padding: 20px;
-    }
+        main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 100px);
+            padding: 20px;
+        }
 
-    .login-container {
-      background-color: #ffffff;
-      padding: 40px;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 400px;
-    }
+        /* INICIO DE CORRECCIONES DE DISEÑO */
 
-    .login-container h2 {
-      text-align: center;
-      margin-bottom: 25px;
-      color: #9B59B6;
-    }
+        .login-container {
+            background-color: #ffffff;
+            padding: 30px; /* Reducido un poco el padding */
+            border-radius: 12px; /* Más redondeado */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Sombra más definida */
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #f0f0f0; /* Borde sutil */
+        }
 
-    .form-group {
-      margin-bottom: 20px;
-    }
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 30px; /* Más espacio abajo */
+            color: #9B59B6;
+            font-size: 28px; /* Tamaño de fuente ligeramente mayor */
+            font-weight: 700;
+        }
+        
+        /* Contenedor principal para cada campo */
+        .form-field {
+            margin-bottom: 20px;
+        }
 
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-      color: #333;
-      font-size: 14px;
-    }
+        .form-field label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-size: 14px;
+            font-weight: 700; /* Etiqueta en negrita */
+        }
 
-    .form-group input {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
+        .form-field input, .form-field select {
+            width: 100%;
+            padding: 12px; /* Un poco más de padding */
+            font-size: 16px;
+            border: 1px solid #ddd; /* Borde más claro */
+            border-radius: 6px; /* Borde más redondeado */
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
 
-    /* Contenedor para el input de contraseña y el ícono */
-    .password-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
+        .form-field input:focus, .form-field select:focus {
+            border-color: #9B59B6;
+            box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.2); /* Sombra de enfoque sutil */
+            outline: none;
+        }
 
-    /* Estilo para el ícono de ver/ocultar contraseña */
-    .password-wrapper i {
-      position: absolute;
-      right: 15px; /* Ajusta el espaciado desde la derecha */
-      cursor: pointer;
-      color: #999;
-    }
-    .form-group input:focus {
-      border-color: #9B59B6;
-      outline: none;
-    }
+        /* Contenedor para el input de contraseña y el ícono */
+        .password-wrapper {
+            position: relative;
+            display: flex; /* Asegura que el input ocupe el espacio */
+            align-items: center;
+        }
 
-    .btn-submit {
-      width: 100%;
-      background-color: #9B59B6;
-      color: white;
-      border: none;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-    }
+        /* Estilo para el ícono de ver/ocultar contraseña */
+        .password-wrapper i {
+            position: absolute;
+            right: 12px; 
+            cursor: pointer;
+            color: #999;
+            padding: 10px; /* Área de clic más grande */
+            transition: color 0.3s;
+        }
+        .password-wrapper i:hover {
+            color: #9B59B6;
+        }
 
-    .btn-submit:hover {
-      background-color: #8e44ad;
-    }
+        /* Estilo para el botón Ingresar (ahora con la clase .btn-submit) */
+        .btn-submit {
+            width: 100%;
+            background-color: #9B59B6;
+            color: white;
+            border: none;
+            padding: 14px; /* Un poco más de padding */
+            font-size: 18px; /* Fuente más grande */
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            transition: background-color 0.3s, transform 0.1s;
+            margin-top: 10px; /* Pequeño espacio extra arriba */
+        }
 
-    .form-footer {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 14px;
-    }
+        .btn-submit:hover {
+            background-color: #8e44ad;
+        }
 
-    .form-footer a {
-      color: #9B59B6;
-      text-decoration: none;
-    }
+        .btn-submit:active {
+            transform: scale(0.99); /* Efecto de clic */
+        }
 
-    .form-footer a:hover {
-      text-decoration: underline;
-    }
+        /* FIN DE CORRECCIONES DE DISEÑO */
 
-    .error {
-      color: red;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-  </style>
+        .form-footer {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .form-footer a {
+            color: #9B59B6;
+            text-decoration: none;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 
 <body>
 
-  <header>
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
-    <nav>
-      <ul>
-        <li><a href="{% url 'home' %}">Regresar</a></li>
-      </ul>
-    </nav>
-  </header>
+    <header>
+        <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
+        <nav>
+            <ul>
+                <li><a href="{% url 'home' %}">Regresar</a></li>
+            </ul>
+        </nav>
+    </header>
 
-  <main>
-    <div class="login-container">
-      <h2>Iniciar Sesión</h2>
+    <main>
+        <div class="login-container">
+            <h2>Iniciar Sesión</h2>
 
-      {% if form.errors %}
-        <p class="error">Documento, Tipo de Documento o Contraseña incorrectos</p>
-      {% endif %}
+            {% if form.errors %}
+                <p class="error">Documento, Tipo de Documento o Contraseña incorrectos</p>
+            {% endif %}
 
-      <form method="post">
-  {% csrf_token %}
-  {{ form.username.label_tag }}
-  {{ form.username }}
-  
-  {{ form.password.label_tag }}
-  {{ form.password }}
-  
-  <button type="submit">Ingresar</button>
-</form>
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-field">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                </div>
+                
+                <div class="form-field">
+                    {{ form.password.label_tag }}
+                    
+                    <div class="password-wrapper">
+                        {{ form.password }}
+                        <i class="fas fa-eye" id="togglePassword"></i>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit">Ingresar</button>
+            </form>
 
-    </div>
-  </main>
+            <div class="form-footer">
+                <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
+            </div>
+
+        </div>
+    </main>
 </body>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const togglePassword = document.querySelector('#togglePassword');
-    // Django renderiza el input con el id 'id_password'
-    const passwordInput = document.querySelector('#id_password');
+    document.addEventListener('DOMContentLoaded', function () {
+        const togglePassword = document.querySelector('#togglePassword');
+        // Django renderiza el input de contraseña con el id 'id_password'
+        const passwordInput = document.querySelector('#id_password');
 
-    // Es buena práctica verificar si el elemento existe antes de añadir el listener
-    if (togglePassword && passwordInput) {
-      togglePassword.addEventListener('click', function () {
-        // Cambiar el tipo de input
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        
-        // Cambiar el ícono del ojo
-        this.classList.toggle('fa-eye-slash');
-      });
-    }
-  });
+        // Es buena práctica verificar si el elemento existe antes de añadir el listener
+        if (togglePassword && passwordInput) {
+            togglePassword.addEventListener('click', function () {
+                // Cambiar el tipo de input
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                // Cambiar el ícono del ojo: de 'fa-eye' a 'fa-eye-slash' y viceversa
+                this.classList.toggle('fa-eye-slash');
+                this.classList.toggle('fa-eye');
+            });
+        }
+    });
 </script>
 </html>
