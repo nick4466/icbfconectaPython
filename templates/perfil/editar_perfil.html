@@ -87,9 +87,11 @@
       width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px;
       font-family: "Poppins", sans-serif; font-size: 15px; transition: border-color 0.3s, box-shadow 0.3s;
     }
-    form input:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); outline: none; }
-    .required-star { color: #dc3545; margin-left: 4px; font-weight: bold; }
-    
+
+    /* --- ESTILOS DE FOCO DIFERENCIADOS POR ROL --- */
+    .admin-body form input:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); outline: none; }
+    .madre-padre-body form input:focus { border-color: #9B59B6; box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.2); outline: none; }
+
     .form-actions { margin-top: 30px; display: flex; gap: 15px; justify-content: flex-end; }
     .btn-guardar, .btn-volver {
       text-decoration: none; color: white; padding: 12px 25px; border-radius: 8px;
@@ -182,9 +184,7 @@
         <div class="form-grid">
           {% for field in form %}
             <div class="form-group">
-              <label for="{{ field.id_for_label }}">{{ field.label }}
-                {% if field.field.required %}<span class="required-star">*</span>{% endif %}
-              </label>
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
               {{ field }}
               {% if field.errors %}
                 <div style="color: red; font-size: 12px; margin-top: 5px;">
@@ -194,7 +194,7 @@
             </div>
           {% endfor %}
         </div>
-        
+
         <div class="form-actions">
           <a href="{% url 'role_redirect' %}" class="btn-volver {% if user.rol.nombre_rol == 'administrador' %}admin-btn{% else %}madre-padre-btn{% endif %}">
             Volver
