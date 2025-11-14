@@ -183,7 +183,6 @@ class HogarComunitario(models.Model):
     # 💡 NUEVO: Relación con la regional. Es obligatorio para cada hogar.
     # Usamos PROTECT para evitar que se borre una regional si tiene hogares asociados.
     regional = models.ForeignKey(Regional, on_delete=models.PROTECT, related_name='hogares', null=True)
-
     nombre_hogar = models.CharField(max_length=100)
     direccion = models.CharField(max_length=150)
     localidad = models.CharField(max_length=50, null=True, blank=True)

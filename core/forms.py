@@ -1,7 +1,7 @@
 # core/forms.py
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
-from .models import Usuario, Nino
+from .models import Usuario, Nino, MadreComunitaria, HogarComunitario, Regional
 
 
 # ----------------------------------------------------
@@ -33,6 +33,7 @@ class UsuarioMadreForm(forms.ModelForm):
 # --- Formulario del Perfil MadreComunitaria ---
 # --- Formulario del Perfil MadreComunitaria ---
 class MadreProfileForm(forms.ModelForm):
+
     class Meta:
         model = MadreComunitaria
         # Incluye todos los campos del perfil de la madre
@@ -47,18 +48,25 @@ class MadreProfileForm(forms.ModelForm):
              'certificado_residencia_pdf': forms.FileInput(),
              'cartas_recomendacion_pdf': forms.FileInput(),
         }
-        # --- Formulario de Hogar Comunitario ---
+
+# --- Formulario de Hogar Comunitario ---
 class HogarForm(forms.ModelForm):
+    regional = forms.ModelChoiceField(
+        queryset=Regional.objects.all(),
+        required=True,
+        label="Regional",
+        empty_label="-- Seleccione una Regional --"
+    )
+
     class Meta:
         model = HogarComunitario
-        # Excluye el campo 'madre' ya que lo asignaremos en la vista
-        exclude = ['madre', 'fecha_registro']
-        fields = [
-            'regional', 'nombre_hogar', 'direccion', 'localidad', 'ciudad', 'barrio', 'estrato',
-            'num_habitaciones', 'num_banos', 'material_construccion', 'riesgos_cercanos',
-            'fotos_interior', 'fotos_exterior', 'geolocalizacion_lat', 'geolocalizacion_lon',
-            'tipo_tenencia', 'documento_tenencia_pdf', 'capacidad_maxima', 'estado'
-        ]
+        # Usamos 'fields' para declarar explícitamente todos los campos del formulario.
+        # Esto asegura que 'regional' se incluya correctamente.
+        fields = ['regional', 'nombre_hogar', 'direccion', 'localidad', 'ciudad', 'barrio', 
+                  'estrato', 'num_habitaciones', 'num_banos', 'material_construccion', 
+                  'riesgos_cercanos', 'fotos_interior', 'fotos_exterior', 'geolocalizacion_lat', 
+                  'geolocalizacion_lon', 'tipo_tenencia', 'documento_tenencia_pdf', 
+                  'capacidad_maxima', 'estado']
         widgets = {
             'nombre_hogar': forms.TextInput(attrs={'required': True, 'placeholder': 'Nombre del hogar'}),
             'direccion': forms.TextInput(attrs={'required': True, 'placeholder': 'Dirección completa'}),
@@ -208,8 +216,13 @@ class PadreForm(forms.ModelForm):
         correo = self.cleaned_data.get('correo')
         documento = self.cleaned_data.get('documento')
 
-        if Usuario.objects.filter(correo=correo, rol__nombre_rol__in=['madre_comunitaria', 'administrador']).exclude(documento=documento).exists():
-            raise forms.ValidationError('Este correo ya está registrado para otro usuario que no es padre.')
+        # Si el formulario está ligado a una instancia (edición), el chequeo es diferente
+        if self.instance and self.instance.pk:
+            if Usuario.objects.filter(correo=correo).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError('Este correo ya está en uso por otro usuario.')
+        # Si es un formulario de creación y el correo ya existe
+        elif not self.instance.pk and Usuario.objects.filter(correo=correo).exists():
+            raise forms.ValidationError('Este correo ya está registrado. Si es el mismo padre, usa su número de documento para cargarlo.')
         return correo
 
     def clean(self):

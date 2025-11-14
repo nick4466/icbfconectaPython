@@ -50,10 +50,18 @@ def registrar_desarrollo(request):
         comunicativa = request.POST.get('dimension_comunicativa')
         socio_afectiva = request.POST.get('dimension_socio_afectiva')
         corporal = request.POST.get('dimension_corporal')
+        # --- Capturar ratings ---
+        rating_cognitiva = request.POST.get('rating_cognitiva')
+        rating_comunicativa = request.POST.get('rating_comunicativa')
+        rating_socio_afectiva = request.POST.get('rating_socio_afectiva')
+        rating_corporal = request.POST.get('rating_corporal')
         
-        if not all([nino_id, fecha_registro, cognitiva, comunicativa, socio_afectiva, corporal]):
+        # Se incluyen los ratings en la validación
+        if not all([nino_id, fecha_registro, cognitiva, comunicativa, socio_afectiva, corporal,
+                    rating_cognitiva, rating_comunicativa, rating_socio_afectiva, rating_corporal]):
             return render(request, 'madre/desarrollo_form.html', {
                 'ninos': ninos_del_hogar,
+                'nino_id_preseleccionado': nino_id,
                 'error': 'Todos los campos son obligatorios.'
             })
 
@@ -64,6 +72,10 @@ def registrar_desarrollo(request):
             dimension_comunicativa=comunicativa,
             dimension_socio_afectiva=socio_afectiva,
             dimension_corporal=corporal,
+            rating_cognitiva=rating_cognitiva,
+            rating_comunicativa=rating_comunicativa,
+            rating_socio_afectiva=rating_socio_afectiva,
+            rating_corporal=rating_corporal,
         )
         
         redirect_url = reverse('desarrollo:listar_desarrollos')
@@ -116,6 +128,12 @@ def editar_desarrollo(request, id):
         desarrollo.dimension_comunicativa = request.POST.get('dimension_comunicativa')
         desarrollo.dimension_socio_afectiva = request.POST.get('dimension_socio_afectiva')
         desarrollo.dimension_corporal = request.POST.get('dimension_corporal')
+        # --- Actualizar ratings ---
+        desarrollo.rating_cognitiva = request.POST.get('rating_cognitiva')
+        desarrollo.rating_comunicativa = request.POST.get('rating_comunicativa')
+        desarrollo.rating_socio_afectiva = request.POST.get('rating_socio_afectiva')
+        desarrollo.rating_corporal = request.POST.get('rating_corporal')
+
         desarrollo.save()
         
         redirect_url = reverse('desarrollo:listar_desarrollos')

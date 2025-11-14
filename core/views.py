@@ -36,6 +36,29 @@ def rol_requerido(nombre_rol):
         return _wrapped_view
     return decorator
 
+@login_required
+def buscar_padre_por_documento(request):
+    """
+    Vista AJAX para buscar un padre por su documento.
+    """
+    documento = request.GET.get('documento')
+    data = {'encontrado': False}
+
+    if documento:
+        usuario_padre = Usuario.objects.filter(documento=documento, rol__nombre_rol='padre').first()
+        if usuario_padre:
+            padre_profile = Padre.objects.filter(usuario=usuario_padre).first()
+            data.update({
+                'encontrado': True,
+                'nombres': usuario_padre.nombres,
+                'apellidos': usuario_padre.apellidos,
+                'correo': usuario_padre.correo,
+                'telefono': usuario_padre.telefono,
+                'direccion': usuario_padre.direccion,
+                'ocupacion': padre_profile.ocupacion if padre_profile else ''
+            })
+    return JsonResponse(data)
+
 # -----------------------------------------------------------------
 # 💡 NUEVA FUNCIÓN: Matricular Niño (CRUD Crear)
 # -----------------------------------------------------------------
@@ -59,38 +82,49 @@ def matricular_nino(request):
         padre_form = PadreForm(request.POST, prefix='padre')
         nino_form = NinoForm(request.POST, prefix='nino')
         if padre_form.is_valid() and nino_form.is_valid():
-            with transaction.atomic():
-                # Buscar el rol padre
-                rol_padre = Rol.objects.get(nombre_rol='padre')
-                doc_padre = padre_form.cleaned_data['documento']
-                correo_padre = padre_form.cleaned_data['correo']
-                # Buscar usuario padre existente por documento y rol=padre
-                usuario_padre = Usuario.objects.filter(documento=doc_padre, rol=rol_padre).first()
-                if not usuario_padre:
-                    # Si no existe, crear usuario padre
-                    usuario_padre = Usuario.objects.create(
+            try:
+                with transaction.atomic():
+                    rol_padre = Rol.objects.get(nombre_rol='padre')
+                    doc_padre = padre_form.cleaned_data['documento']
+                    
+                    # Buscar o crear el usuario del padre
+                    usuario_padre, created = Usuario.objects.get_or_create(
                         documento=doc_padre,
-                        nombres=padre_form.cleaned_data['nombres'],
-                        apellidos=padre_form.cleaned_data['apellidos'],
-                        correo=correo_padre,
-                        telefono=padre_form.cleaned_data['telefono'],
-                        direccion=padre_form.cleaned_data['direccion'],
                         rol=rol_padre,
+                        defaults={
+                            'nombres': padre_form.cleaned_data['nombres'],
+                            'apellidos': padre_form.cleaned_data['apellidos'],
+                            'correo': padre_form.cleaned_data['correo'],
+                            'telefono': padre_form.cleaned_data['telefono'],
+                            'direccion': padre_form.cleaned_data['direccion'],
+                        }
                     )
-                    # Contraseña inicial igual al documento
-                    usuario_padre.set_password(str(doc_padre))
-                    usuario_padre.save()
-                # Crear perfil de padre si no existe
-                padre_obj, created = Padre.objects.get_or_create(usuario=usuario_padre)
-                padre_obj.ocupacion = padre_form.cleaned_data.get('ocupacion', '')
-                padre_obj.save()
-                # Crear el niño y asociar
-                nino = nino_form.save(commit=False)
-                nino.hogar = hogar_madre
-                nino.padre = padre_obj
-                nino.save()
-                messages.success(request, 'Niño matriculado correctamente.')
-                return redirect('listar_ninos')
+
+                    if created:
+                        usuario_padre.set_password(str(doc_padre))
+                        usuario_padre.save()
+                    else: # Si ya existía, actualizamos sus datos por si hay cambios
+                        usuario_padre.nombres = padre_form.cleaned_data['nombres']
+                        usuario_padre.apellidos = padre_form.cleaned_data['apellidos']
+                        usuario_padre.correo = padre_form.cleaned_data['correo']
+                        usuario_padre.telefono = padre_form.cleaned_data['telefono']
+                        usuario_padre.direccion = padre_form.cleaned_data['direccion']
+                        usuario_padre.save()
+
+                    # Buscar o crear el perfil del padre
+                    padre_obj, _ = Padre.objects.get_or_create(usuario=usuario_padre)
+                    padre_obj.ocupacion = padre_form.cleaned_data.get('ocupacion', '')
+                    padre_obj.save()
+
+                    # Crear el niño y asociarlo
+                    nino = nino_form.save(commit=False)
+                    nino.hogar = hogar_madre
+                    nino.padre = padre_obj
+                    nino.save()
+                    messages.success(request, f'Niño {nino.nombres} matriculado correctamente.')
+                    return redirect('listar_ninos')
+            except Exception as e:
+                messages.error(request, f"Ocurrió un error inesperado: {e}")
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
@@ -323,9 +357,23 @@ def editar_madre(request, id):
 
 @login_required
 def eliminar_madre(request, id):
-    madre = get_object_or_404(Usuario, id=id, rol__nombre_rol='madre_comunitaria')
-    madre.delete()
-    messages.success(request, '¡Madre comunitaria eliminada exitosamente!')
+    # Obtener el usuario que es madre comunitaria
+    usuario_madre = get_object_or_404(Usuario, id=id, rol__nombre_rol='madre_comunitaria')
+    
+    try:
+        # Usar una transacción para asegurar la integridad de los datos
+        with transaction.atomic():
+            # El perfil de MadreComunitaria se eliminará en cascada cuando se elimine el Usuario,
+            # pero el HogarComunitario está protegido.
+            # Primero, eliminamos los hogares asociados a su perfil.
+            if hasattr(usuario_madre, 'madre_profile'):
+                HogarComunitario.objects.filter(madre=usuario_madre.madre_profile).delete()
+            # Ahora sí podemos eliminar el usuario (y su perfil de madre en cascada)
+            usuario_madre.delete()
+        messages.success(request, '¡Madre comunitaria y su hogar asociado han sido eliminados exitosamente!')
+    except Exception as e:
+        messages.error(request, f"Ocurrió un error al intentar eliminar a la madre: {e}")
+        
     return redirect('listar_madres')
 
 @login_required
@@ -509,7 +557,7 @@ def listar_ninos(request):
         messages.error(request, 'Acceso denegado.')
         return redirect('home')
     try:
-        hogar = HogarComunitaria.objects.get(madre=request.user.madre_profile)
+        hogar = HogarComunitario.objects.get(madre=request.user.madre_profile)
     except HogarComunitario.DoesNotExist:
         messages.error(request, 'No tienes un hogar comunitario asignado.')
         return redirect('madre_dashboard')

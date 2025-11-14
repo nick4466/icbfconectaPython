@@ -158,11 +158,12 @@
       <div class="step-form" id="step2" {% if modo_edicion %}style="display:block"{% else %}style="display:none"{% endif %}>
         <h2>{% if modo_edicion %}Perfil y Documentos de la Madre{% else %}Paso 2: Perfil y Documentos de la Madre{% endif %}</h2>
         <hr style="margin-bottom:20px" />
+
         {% for field in madre_profile_form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}<span class="required-star">*</span>{% endif %}</label>
-          {{ field }} {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
-        </div>
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}<span class="required-star">*</span>{% endif %}</label>
+            {{ field }} {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
+          </div>
         {% endfor %}
         <div class="form-actions">
           {% if not modo_edicion %}
@@ -173,25 +174,29 @@
       </div>
 
       <!-- PASO 3 -->
-      <div class="step-form" id="step3" {% if modo_edicion %}style="display:block"{% else %}style="display:none"{% endif %}>
-        <h2>{% if modo_edicion %}Datos del Hogar Comunitario{% else %}Paso 3: Datos del Hogar Comunitario{% endif %}</h2>
-        <hr style="margin-bottom:20px" />
-        {% for field in hogar_form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}<span class="required-star">*</span>{% endif %}</label>
-          {{ field }} {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
-        </div>
-        {% endfor %}
-        <div class="form-actions">
-          {% if not modo_edicion %}
-          <button type="button" class="btn-volver" onclick="prevStep(3)">Anterior</button>
-          <button type="submit" class="btn-guardar">Finalizar Creación</button>
-          {% else %}
-          <a href="{% url 'listar_madres' %}" class="btn-volver">Cancelar</a>
-          <button type="submit" class="btn-guardar">Guardar Cambios</button>
-          {% endif %}
-        </div>
-      </div>
+<div class="step-form" id="step3" {% if modo_edicion %}style="display:block"{% else %}style="display:none"{% endif %}>
+  <h2>{% if modo_edicion %}Datos del Hogar Comunitario{% else %}Paso 3: Datos del Hogar Comunitario{% endif %}</h2>
+  <hr style="margin-bottom:20px" />
+  <!-- Renderiza todos los campos del formulario del hogar, incluyendo 'regional' -->
+  {% for field in hogar_form %}
+    <div class="form-group">
+      <label for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}<span class="required-star">*</span>{% endif %}</label>
+      {{ field }}
+      {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
+    </div>
+  {% endfor %}
+
+  <div class="form-actions">
+    {% if not modo_edicion %}
+      <button type="button" class="btn-volver" onclick="prevStep(3)">Anterior</button>
+      <button type="submit" class="btn-guardar">Finalizar Creación</button>
+    {% else %}
+      <a href="{% url 'listar_madres' %}" class="btn-volver">Cancelar</a>
+      <button type="submit" class="btn-guardar">Guardar Cambios</button>
+    {% endif %}
+  </div>
+</div>
+
     </form>
   </div>
 </body>

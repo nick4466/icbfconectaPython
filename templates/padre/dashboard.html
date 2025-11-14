@@ -106,60 +106,72 @@
     }
 
     .card {
-      background-color: #fff;
+      background-color: #faf6fd;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.08);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
-      display: flex; /* Flexbox para alinear foto e info */
-      overflow: hidden; /* Para que el borde redondeado afecte a la imagen */
-      padding: 0; /* Quitamos el padding general */
+      overflow: hidden;
+      padding: 20px;
     }
 
     .card:hover {
       transform: translateY(-5px);
       box-shadow: 0 8px 15px rgba(0,0,0,0.12);
     }
-    
-    .card-imagen {
-      flex-shrink: 0;
-      width: 130px; /* Ancho fijo para la foto */
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 15px;
     }
 
-    .card-imagen img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover; /* La imagen cubre el espacio sin deformarse */
+    .card-header img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #e5d5f5;
     }
 
-    .card-contenido {
-      padding: 20px;
+    .card-header-info h3 {
+      margin: 0;
+      color: #5e3370;
+      font-size: 20px;
+    }
+
+    .card-header-info p {
+      margin: 4px 0 0;
+      color: #777;
+      font-size: 16px;
+    }
+
+    .card-body {
       display: flex;
       flex-direction: column;
-      flex-grow: 1;
+      gap: 10px;
     }
 
-    .card h3 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      color: #5e3370; /* Morado oscuro para el título */
-      font-size: 19px;
-    }
-
-    .card p {
-      margin: 4px 0;
-      color: #555; /* Gris oscuro para el texto */
+    .card-body p {
+      margin: 0;
+      color: #555;
       line-height: 1.5;
-      font-size: 15px;
     }
 
-    .card .resumen-desarrollo {
+    .resumen-desarrollo {
       font-style: italic;
       color: #666;
-      margin-top: 10px;
-      font-size: 14px;
+      background-color: #f0eaf5;
+      padding: 10px;
+      border-radius: 8px;
+      border-left: 3px solid #9B59B6;
     }
 
-    .card .btn-ver-desarrollo {
+    .card-footer {
+      margin-top: 20px;
+    }
+
+    .btn-ver-desarrollo {
       text-decoration: none; background-color: #9B59B6; color: white; 
       padding: 8px 16px; border-radius: 8px; display: inline-block; 
       margin-top: auto; /* Empuja el botón hacia abajo */
@@ -202,21 +214,27 @@
     <div class="grid-container">
       {% for data in ninos_data %}
         <div class="card">
-          <div class="card-imagen">
+          <div class="card-header">
             <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto de {{ data.nino.nombres }}">
+            <div class="card-header-info">
+              <h3>{{ data.nino.nombres }} {{ data.nino.apellidos }}</h3>
+              <p>{{ data.nino.get_edad_str }}</p>
+            </div>
           </div>
-          <div class="card-contenido">
-            <h3>{{ data.nino.nombres }} {{ data.nino.apellidos }}</h3>
-            
+          <div class="card-body">
             {% if data.ultimo_desarrollo %}
               <p>Último registro: <strong>{{ data.ultimo_desarrollo.fecha_fin_mes|date:"d \d\e F" }}</strong>.</p>
-              <p class="resumen-desarrollo">"{{ data.ultimo_desarrollo.dimension_cognitiva|truncatewords:15 }}"</p>
+              <p class="resumen-desarrollo">
+                <i class="fas fa-quote-left" style="font-size: 0.8em; opacity: 0.6; margin-right: 5px;"></i>
+                {{ data.ultimo_desarrollo.dimension_cognitiva|truncatewords:15 }}
+              </p>
             {% else %}
               <p>Aún no hay registros de desarrollo para {{ data.nino.nombres }}.</p>
             {% endif %}
-            
+          </div>
+          <div class="card-footer">
             <a href="{% url 'padre_ver_desarrollo' data.nino.id %}" class="btn-ver-desarrollo">
-              Ver Desarrollo
+              <i class="fas fa-chart-line"></i> Ver desarrollo
             </a>
           </div>
         </div>

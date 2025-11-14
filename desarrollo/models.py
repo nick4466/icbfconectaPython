@@ -1,10 +1,33 @@
 from django.db import models
 from core.models import Nino
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class DesarrolloNino(models.Model):
     nino = models.ForeignKey(Nino, on_delete=models.CASCADE, related_name='desarrollos')
     fecha_fin_mes = models.DateField()
     
+    # --- Calificaciones con Estrellas ---
+    rating_cognitiva = models.PositiveSmallIntegerField(
+        verbose_name="Rating Dimensión Cognitiva",
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        null=True, blank=True
+    )
+    rating_comunicativa = models.PositiveSmallIntegerField(
+        verbose_name="Rating Dimensión Comunicativa",
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        null=True, blank=True
+    )
+    rating_socio_afectiva = models.PositiveSmallIntegerField(
+        verbose_name="Rating Dimensión Socio-afectiva",
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        null=True, blank=True
+    )
+    rating_corporal = models.PositiveSmallIntegerField(
+        verbose_name="Rating Dimensión Corporal",
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        null=True, blank=True
+    )
+
     # Dimensiones del desarrollo
     dimension_cognitiva = models.TextField(verbose_name="Dimensión Cognitiva")
     dimension_comunicativa = models.TextField(verbose_name="Dimensión Comunicativa")

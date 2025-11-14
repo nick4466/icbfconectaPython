@@ -137,6 +137,12 @@
     .modal-contenido p { margin: 12px 0; font-size: 16px; line-height: 1.5; }
   </style>
   <style>
+    .display-stars { color: #f5b301; font-size: 1.2rem; }
+    .display-stars .inactive { color: #ddd; }
+    .dimension-block { margin-top: 15px; }
+    .dimension-block p { margin: 5px 0; }
+  </style>
+  <style>
     .mensaje-exito {
       background-color: #4CAF50;
       color: white;
@@ -232,6 +238,10 @@
           data-comunicativa="{{ desarrollo.dimension_comunicativa }}"
           data-socioafectiva="{{ desarrollo.dimension_socio_afectiva }}"
           data-corporal="{{ desarrollo.dimension_corporal }}"
+          data-rating-cognitiva="{{ desarrollo.rating_cognitiva|default:0 }}"
+          data-rating-comunicativa="{{ desarrollo.rating_comunicativa|default:0 }}"
+          data-rating-socioafectiva="{{ desarrollo.rating_socio_afectiva|default:0 }}"
+          data-rating-corporal="{{ desarrollo.rating_corporal|default:0 }}"
         >
           <td>{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}</td>
           <td>{{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}</td>
@@ -264,10 +274,22 @@
       <p><strong>Tutor:</strong> <span id="modal-tutor"></span></p>
       <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
       <hr>
-      <p><strong>Dimensión Cognitiva:</strong> <span id="modal-cognitiva"></span></p>
-      <p><strong>Dimensión Comunicativa:</strong> <span id="modal-comunicativa"></span></p>
-      <p><strong>Dimensión Socio-Afectiva:</strong> <span id="modal-socioafectiva"></span></p>
-      <p><strong>Dimensión Corporal:</strong> <span id="modal-corporal"></span></p>
+      <div class="dimension-block">
+        <p><strong>Dimensión Cognitiva:</strong> <span class="display-stars" id="modal-rating-cognitiva"></span></p>
+        <p><span id="modal-cognitiva"></span></p>
+      </div>
+      <div class="dimension-block">
+        <p><strong>Dimensión Comunicativa:</strong> <span class="display-stars" id="modal-rating-comunicativa"></span></p>
+        <p><span id="modal-comunicativa"></span></p>
+      </div>
+      <div class="dimension-block">
+        <p><strong>Dimensión Socio-Afectiva:</strong> <span class="display-stars" id="modal-rating-socioafectiva"></span></p>
+        <p><span id="modal-socioafectiva"></span></p>
+      </div>
+      <div class="dimension-block">
+        <p><strong>Dimensión Corporal:</strong> <span class="display-stars" id="modal-rating-corporal"></span></p>
+        <p><span id="modal-corporal"></span></p>
+      </div>
     </div>
   </div>
 
@@ -287,6 +309,16 @@
       }
     };
 
+    function renderStars(container, rating) {
+      let starsHTML = '';
+      const totalStars = 5;
+      const numRating = parseInt(rating, 10);
+      for (let i = 1; i <= totalStars; i++) {
+        starsHTML += (i <= numRating) ? '★' : '<span class="inactive">★</span>';
+      }
+      container.innerHTML = starsHTML;
+    }
+
     document.querySelectorAll('.ver-detalles').forEach(button => {
       button.addEventListener('click', function() {
         const fila = this.closest('tr');
@@ -298,6 +330,12 @@
         document.getElementById('modal-comunicativa').textContent = fila.dataset.comunicativa;
         document.getElementById('modal-socioafectiva').textContent = fila.dataset.socioafectiva;
         document.getElementById('modal-corporal').textContent = fila.dataset.corporal;
+
+        // Renderizar estrellas
+        renderStars(document.getElementById('modal-rating-cognitiva'), fila.dataset.ratingCognitiva);
+        renderStars(document.getElementById('modal-rating-comunicativa'), fila.dataset.ratingComunicativa);
+        renderStars(document.getElementById('modal-rating-socioafectiva'), fila.dataset.ratingSocioafectiva);
+        renderStars(document.getElementById('modal-rating-corporal'), fila.dataset.ratingCorporal);
 
         modal.style.display = 'flex';
       });

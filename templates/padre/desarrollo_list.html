@@ -114,6 +114,32 @@
             object-fit: cover;
         }
 
+        .card .info-item {
+            font-size: 15px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        /* --- Nuevos estilos para las tarjetas de desarrollo --- */
+        .dimension-block {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0eaf5;
+        }
+        .dimension-block:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        .dimension-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        .display-stars { color: #f5b301; font-size: 1.3rem; }
+        .display-stars .inactive { color: #ddd; }
+
         @media (max-width: 768px) {
             .contenedor {
                 grid-template-columns: 1fr;
@@ -149,8 +175,11 @@
         <div class="columna1">
             {% if nino %}
             <div class="card">
-                <h1>{{ nino.nombres }}<br>{{ nino.apellidos }}</h1>
-                <h2>{{ nino.get_edad_str }}</h2>
+                <h1>{{ nino.nombres }} {{ nino.apellidos }}</h1>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                <p class="info-item"><i class="fas fa-birthday-cake" style="color: #9B59B6; width: 20px;"></i> <strong>Edad:</strong> {{ nino.get_edad_str }}</p>
+                <p class="info-item"><i class="fas fa-calendar-day" style="color: #9B59B6; width: 20px;"></i> <strong>Nacimiento:</strong> {{ nino.fecha_nacimiento|date:"d \d\e F, Y" }}</p>
+                <p class="info-item"><i class="fas fa-venus-mars" style="color: #9B59B6; width: 20px;"></i> <strong>Género:</strong> {{ nino.genero|capfirst }}</p>
                 <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto del niño">
             </div>
             {% endif %}
@@ -158,15 +187,39 @@
         <div class="columna2">
             {% for desarrollo in desarrollos %}
             <div class="card">
-                <h2>Fecha: {{ desarrollo.fecha_fin_mes|date:"d \d\e F \d\e Y" }}</h2>
-                <h3><i class="fas fa-brain"></i> Dimensión Cognitiva</h3>
-                <p>{{ desarrollo.dimension_cognitiva }}</p>
-                <h3><i class="fas fa-comments"></i> Dimensión Comunicativa</h3>
-                <p>{{ desarrollo.dimension_comunicativa }}</p>
-                <h3><i class="fas fa-heart"></i> Dimensión Socio-Afectiva</h3>
-                <p>{{ desarrollo.dimension_socio_afectiva }}</p>
-                <h3><i class="fas fa-running"></i> Dimensión Corporal</h3>
-                <p>{{ desarrollo.dimension_corporal }}</p>
+                <h2><i class="fas fa-calendar-alt"></i> Registro de: {{ desarrollo.fecha_fin_mes|date:"F \d\e Y" }}</h2>
+                
+                <div class="dimension-block">
+                    <div class="dimension-header">
+                        <h3><i class="fas fa-brain"></i> Dimensión Cognitiva</h3>
+                        <span class="display-stars">{% for i in "12345" %}{% if forloop.counter <= desarrollo.rating_cognitiva %}★{% else %}<span class="inactive">★</span>{% endif %}{% endfor %}</span>
+                    </div>
+                    <p>{{ desarrollo.dimension_cognitiva }}</p>
+                </div>
+
+                <div class="dimension-block">
+                    <div class="dimension-header">
+                        <h3><i class="fas fa-comments"></i> Dimensión Comunicativa</h3>
+                        <span class="display-stars">{% for i in "12345" %}{% if forloop.counter <= desarrollo.rating_comunicativa %}★{% else %}<span class="inactive">★</span>{% endif %}{% endfor %}</span>
+                    </div>
+                    <p>{{ desarrollo.dimension_comunicativa }}</p>
+                </div>
+
+                <div class="dimension-block">
+                    <div class="dimension-header">
+                        <h3><i class="fas fa-heart"></i> Dimensión Socio-Afectiva</h3>
+                        <span class="display-stars">{% for i in "12345" %}{% if forloop.counter <= desarrollo.rating_socio_afectiva %}★{% else %}<span class="inactive">★</span>{% endif %}{% endfor %}</span>
+                    </div>
+                    <p>{{ desarrollo.dimension_socio_afectiva }}</p>
+                </div>
+
+                <div class="dimension-block">
+                    <div class="dimension-header">
+                        <h3><i class="fas fa-running"></i> Dimensión Corporal</h3>
+                        <span class="display-stars">{% for i in "12345" %}{% if forloop.counter <= desarrollo.rating_corporal %}★{% else %}<span class="inactive">★</span>{% endif %}{% endfor %}</span>
+                    </div>
+                    <p>{{ desarrollo.dimension_corporal }}</p>
+                </div>
             </div>
             {% empty %}
             <div class="card">

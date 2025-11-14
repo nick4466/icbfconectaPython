@@ -148,6 +148,48 @@
     </form>
   </div>
 
+  {% if not modo_edicion %}
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const docInput = document.getElementById('id_padre-documento');
+    if (docInput) {
+      docInput.addEventListener('blur', function() {
+        const documento = this.value;
+        if (documento.length > 5) { // Un chequeo simple
+          fetch(`{% url 'buscar_padre' %}?documento=${documento}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.encontrado) {
+                // Rellenar campos y hacerlos de solo lectura
+                document.getElementById('id_padre-nombres').value = data.nombres;
+                document.getElementById('id_padre-apellidos').value = data.apellidos;
+                document.getElementById('id_padre-correo').value = data.correo;
+                document.getElementById('id_padre-telefono').value = data.telefono;
+                document.getElementById('id_padre-direccion').value = data.direccion;
+                document.getElementById('id_padre-ocupacion').value = data.ocupacion;
+
+                // Opcional: deshabilitar campos para evitar edición
+                document.getElementById('id_padre-nombres').readOnly = true;
+                document.getElementById('id_padre-apellidos').readOnly = true;
+                document.getElementById('id_padre-correo').readOnly = true;
+              } else {
+                // Limpiar y habilitar campos si no se encuentra el padre
+                document.getElementById('id_padre-nombres').value = '';
+                document.getElementById('id_padre-apellidos').value = '';
+                document.getElementById('id_padre-correo').value = '';
+                
+                document.getElementById('id_padre-nombres').readOnly = false;
+                document.getElementById('id_padre-apellidos').readOnly = false;
+                document.getElementById('id_padre-correo').readOnly = false;
+              }
+            });
+        }
+      });
+    }
+  });
+  </script>
+  {% endif %}
+
   <script>
     // Añade un asterisco a los campos obligatorios del formulario de Django
     document.addEventListener('DOMContentLoaded', function() {
