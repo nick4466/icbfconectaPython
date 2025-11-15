@@ -191,7 +191,7 @@
           <td class="acciones">
             <a href="#" class="btn-novedad"><i class="fas fa-plus-circle"></i> Novedad</a>
             <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino.id }}" class="btn-desarrollo"><i class="fas fa-child"></i> Desarrollo</a>
-            <a href="#" class="btn-reporte"><i class="fas fa-file-alt"></i> Reporte</a>
+            <a href="{% url 'desarrollo:reporte_resumen' nino.id %}" class="btn-reporte"><i class="fas fa-file-alt"></i> Reporte</a>
           </td>
         </tr>
         {% empty %}
