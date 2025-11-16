@@ -19,6 +19,12 @@ from .models import Rol, Usuario, MadreComunitaria, HogarComunitario
 from .forms import UsuarioMadreForm, MadreProfileForm, HogarForm 
 from django.http import JsonResponse
 from .models import Ciudad
+
+# --- Dependencias para PDF ---
+from django.http import HttpResponse
+from django.template.loader import get_template
+import openpyxl
+from xhtml2pdf import pisa
 # Asegúrate de importar todos los formularios y modelos necesarios
 
 # ----------------------------------------------------
@@ -145,6 +151,16 @@ def home(request):
 @login_required
 def admin_dashboard(request):
     return render(request, 'admin/dashboard.html')
+
+@login_required
+@rol_requerido('administrador')
+def admin_reportes(request):
+    """Renderiza la página de reportes para el administrador."""
+    context = {
+        'regionales_filtro': Regional.objects.all().order_by('nombre'),
+        'escolaridad_choices': MadreComunitaria.NIVEL_ESCOLARIDAD_CHOICES
+    }
+    return render(request, 'admin/reportes.html', context)
 
 # ---------- Formularios simples ----------
 class MadreForm(forms.ModelForm):
@@ -519,6 +535,139 @@ def editar_administrador(request, id):
         form = AdminForm(instance=admin)
 
     return render(request, 'admin/administradores_form.html', {'form': form, 'admin': admin})
+
+@login_required
+@rol_requerido('administrador')
+def reporte_administradores_excel(request):
+    # Obtener filtros de la URL
+    nombre = request.GET.get('nombre')
+    documento = request.GET.get('documento')
+
+    # Filtrar administradores
+    rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
+    administradores = Usuario.objects.filter(rol=rol_admin)
+    if nombre:
+        administradores = administradores.filter(Q(nombres__icontains=nombre) | Q(apellidos__icontains=nombre))
+    if documento:
+        administradores = administradores.filter(documento__icontains=documento)
+
+    # Crear el libro de Excel
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = 'Administradores'
+
+    # Encabezados
+    headers = ['Nombres', 'Apellidos', 'Tipo Documento', 'Documento', 'Correo', 'Teléfono']
+    sheet.append(headers)
+
+    # Datos
+    for admin in administradores:
+        sheet.append([
+            admin.nombres,
+            admin.apellidos,
+            admin.get_tipo_documento_display(),
+            admin.documento,
+            admin.correo,
+            admin.telefono
+        ])
+
+    # Preparar la respuesta HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="reporte_administradores.xlsx"'
+    workbook.save(response)
+    return response
+
+@login_required
+@rol_requerido('administrador')
+def reporte_madres_excel(request):
+    # Obtener filtros
+    nombre = request.GET.get('nombre')
+    hogar_asignado = request.GET.get('hogar_asignado')
+    escolaridad = request.GET.get('escolaridad', None)
+
+    # Filtrar madres
+    madres = MadreComunitaria.objects.select_related('usuario').prefetch_related('hogares_asignados').all()
+    if nombre:
+        madres = madres.filter(Q(usuario__nombres__icontains=nombre) | Q(usuario__apellidos__icontains=nombre))
+    if hogar_asignado and hogar_asignado != '':
+        madres = madres.filter(hogares_asignados__nombre_hogar__icontains=hogar_asignado)
+    if escolaridad and escolaridad != '':
+        madres = madres.filter(nivel_escolaridad=escolaridad)
+
+    # Crear libro de Excel
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = 'Madres Comunitarias'
+    sheet.append(['Nombres', 'Apellidos', 'Correo', 'Documento', 'Nivel de Escolaridad', 'Hogar Asignado'])
+
+    # Llenar datos
+    for madre in madres.distinct():
+        hogar = madre.hogares_asignados.first()
+        sheet.append([
+            madre.usuario.nombres,
+            madre.usuario.apellidos,
+            madre.usuario.correo,
+            madre.usuario.documento,
+            madre.get_nivel_escolaridad_display(),
+            hogar.nombre_hogar if hogar else 'N/A'
+        ])
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="reporte_madres_comunitarias.xlsx"'
+    workbook.save(response)
+    return response
+
+@login_required
+@rol_requerido('administrador')
+def reporte_hogares_excel(request):
+    # Obtener filtros
+    nombre_hogar = request.GET.get('nombre_hogar')
+    regional_id = request.GET.get('regional')
+    ciudad = request.GET.get('ciudad')
+    madre_comunitaria = request.GET.get('madre_comunitaria')
+    ninos_matriculados = request.GET.get('ninos_matriculados')
+
+    # Filtrar hogares
+    hogares = HogarComunitario.objects.select_related('madre__usuario', 'regional', 'ciudad').annotate(
+        num_ninos=Count('ninos')
+    ).all()
+    if nombre_hogar:
+        hogares = hogares.filter(nombre_hogar__icontains=nombre_hogar)
+    if regional_id:
+        hogares = hogares.filter(regional_id=regional_id)
+    if ciudad:
+        hogares = hogares.filter(ciudad__nombre__icontains=ciudad)
+    if madre_comunitaria:
+        hogares = hogares.filter(Q(madre__usuario__nombres__icontains=madre_comunitaria) | Q(madre__usuario__apellidos__icontains=madre_comunitaria))
+    if ninos_matriculados:
+        try:
+            hogares = hogares.filter(num_ninos=int(ninos_matriculados))
+        except (ValueError, TypeError):
+            pass
+
+    # Crear libro de Excel
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = 'Hogares Comunitarios'
+    sheet.append(['Nombre del Hogar', 'Madre Comunitaria', 'Regional', 'Ciudad', 'Dirección', 'Niños Matriculados', 'Capacidad', 'Estado'])
+
+    # Llenar datos
+    for hogar in hogares:
+        sheet.append([
+            hogar.nombre_hogar,
+            f"{hogar.madre.usuario.nombres} {hogar.madre.usuario.apellidos}",
+            hogar.regional.nombre if hogar.regional else 'N/A',
+            hogar.ciudad.nombre if hogar.ciudad else 'N/A',
+            hogar.direccion,
+            hogar.num_ninos,
+            hogar.capacidad_maxima,
+            hogar.get_estado_display()
+        ])
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="reporte_hogares_comunitarios.xlsx"'
+    workbook.save(response)
+    return response
 
 @login_required
 def eliminar_administrador(request, id):

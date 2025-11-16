@@ -149,15 +149,15 @@ class Padre(models.Model):
 # ------------------------
 class MadreComunitaria(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='madre_profile')
-
-    # Información académica y experiencia
-    nivel_escolaridad = models.CharField(max_length=100, choices=[
+    NIVEL_ESCOLARIDAD_CHOICES = [
         ('Primaria', 'Primaria'),
         ('Bachiller', 'Bachiller'),
         ('Técnico', 'Técnico'),
         ('Tecnólogo', 'Tecnólogo'),
         ('Profesional', 'Profesional')
-    ])
+    ]
+    # Información académica y experiencia
+    nivel_escolaridad = models.CharField(max_length=100, choices=NIVEL_ESCOLARIDAD_CHOICES)
     titulo_obtenido = models.CharField(max_length=150, null=True, blank=True)
     institucion = models.CharField(max_length=150, null=True, blank=True)
     experiencia_previa = models.TextField(null=True, blank=True)

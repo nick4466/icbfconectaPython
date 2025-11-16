@@ -318,28 +318,17 @@
     <div class="sidebar">
       <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
       <h2>ICBF Conecta</h2>
-      <a href="{% url 'admin_dashboard' %}"
-        ><i class="fa-solid fa-tachometer-alt"></i> Inicio</a
-      >
-      <a href="{% url 'listar_hogares' %}"
-        ><i class="fa-solid fa-house"></i> Hogares</a
-      >
-      <a href="{% url 'listar_madres' %}" class="active"
-        ><i class="fa-solid fa-users"></i> Madres</a
-      >
-      <a href="{% url 'listar_administradores' %}"
-        ><i class="fa-solid fa-user-shield"></i> Administradores</a
-      >
-      <a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a>
+      <a href="{% url 'admin_dashboard' %}">
+        <i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
+      <a href="{% url 'listar_hogares' %}"><i class="fa-solid fa-house"></i> Hogares</a>
+      <a href="{% url 'listar_madres' %}" class="active"><i class="fa-solid fa-users"></i> Madres</a>
+      <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
+      <a href="{% url 'admin_reportes' %}" ><i class="fa-solid fa-chart-line"></i> Reportes</a>
       <div class="dropdown">
         <a href="#"><i class="fa-solid fa-cog"></i> Ajustes</a>
         <div class="dropdown-menu">
-          <a href="{% url 'editar_perfil' %}"
-            ><i class="fa-solid fa-user-pen"></i> Editar Perfil</a
-          >
-          <a href="{% url 'cambiar_contrasena' %}"
-            ><i class="fa-solid fa-key"></i> Cambiar Contraseña</a
-          >
+          <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+          <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
         </div>
       </div>
       <div class="logout">

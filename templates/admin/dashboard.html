@@ -189,11 +189,11 @@
   <div class="sidebar">
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
     <h2>ICBF Conecta</h2>
-
+    <a href="{% url 'admin_dashboard' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
     <a href="{% url 'listar_hogares' %}" class="active"><i class="fa-solid fa-house"></i> Hogares</a>
     <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Madres</a>
     <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
-    <a href="#"><i class="fa-solid fa-chart-line"></i> Reportes</a>
+    <a href="{% url 'admin_reportes' %}"><i class="fa-solid fa-chart-line"></i> Reportes</a>
     <div class="dropdown">
       <a href="#"><i class="fa-solid fa-cog"></i> Ajustes</a>
       <div class="dropdown-menu">
@@ -241,11 +241,11 @@
         <a href="{% url 'listar_administradores' %}">Entrar</a>
       </div>
 
-      <div class="card" onclick="location.href='#'">
+      <div class="card" onclick="location.href='{% url 'admin_reportes' %}'">
         <i class="fa-solid fa-chart-pie"></i>
         <h3>Ver Reportes</h3>
         <p>Revisa estadísticas generales y reportes del sistema.</p>
-        <a href="#">Ver</a>
+        <a href="{% url 'admin_reportes' %}">Ver</a>
       </div>
     </div>
   </div>

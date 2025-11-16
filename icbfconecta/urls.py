@@ -44,6 +44,7 @@ urlpatterns = [
     
     # Dashboards
     path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
+    path('dashboard/admin/reportes/', views.admin_reportes, name='admin_reportes'),
     path('dashboard/madre/', views.madre_dashboard, name='madre_dashboard'), # Nuevo
     path('dashboard/padre/', views.padre_dashboard, name='padre_dashboard'), # Nuevo para padres
 
@@ -65,6 +66,11 @@ urlpatterns = [
     path('madres/editar/<int:id>/', views.editar_madre, name='editar_madre'),
     path('madres/eliminar/<int:id>/', views.eliminar_madre, name='eliminar_madre'),
     path('madres/detalles/<int:id>/', views.detalles_madre_json, name='detalles_madre_json'),
+    
+    # --- Reportes Excel ---
+    path('reportes/administradores/excel/', views.reporte_administradores_excel, name='reporte_administradores_excel'),
+    path('reportes/madres/excel/', views.reporte_madres_excel, name='reporte_madres_excel'),
+    path('reportes/hogares/excel/', views.reporte_hogares_excel, name='reporte_hogares_excel'),
 
     # --- CRUD Administradores ---
     path('administradores/', views.listar_administradores, name='listar_administradores'),
@@ -96,7 +102,8 @@ urlpatterns = [
     # --- URLs de Asistencias no borrar please ultra importarte ;D #---
     path('asistencia/', include('asistencia.urls')),
     path('novedades/', include('novedades.urls')),
-
+    
+    
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
