@@ -127,9 +127,10 @@
       <table>
         <thead>
           <tr>
-            <th>Regional</th>
             <th>Nombre del Hogar</th>
             <th>Madre Comunitaria</th>
+            <th>Regional</th>
+            <th>Ciudad</th>
             <th>Localidad</th>
             <th>Dirección</th>
             <th>Niños Matriculados</th>
@@ -139,9 +140,10 @@
         <tbody>
           {% for hogar in hogares %}
           <tr>
-            <td>{{ hogar.regional.nombre|default:"N/A" }}</td>
             <td>{{ hogar.nombre_hogar }}</td>
             <td>{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}</td>
+            <td>{{ hogar.regional.nombre|default:"N/A" }}</td>
+            <td>{{ hogar.ciudad.nombre|default:"N/A" }}</td>
             <td>{{ hogar.localidad }}</td>
             <td>{{ hogar.direccion }}</td>
             <td>

@@ -89,6 +89,9 @@ urlpatterns = [
     # Se incluye el archivo de URLs de la app 'planeaciones'<--- tener encuenta para los botones dirigidos a planeaciones
     path('planeaciones/', include(('planeaciones.urls', 'planeaciones'), namespace='planeaciones')),
 
+     # --- URL para cargar ciudades según la regional seleccionada (AJAX) ---
+     path("ajax/cargar-ciudades/", views.cargar_ciudades, name="cargar_ciudades"),
+
     #-----------------------------------------------juanito---------------------------------------------#
     # --- URLs de Asistencias no borrar please ultra importarte ;D #---
     path('asistencia/', include('asistencia.urls')),

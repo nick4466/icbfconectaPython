@@ -1,7 +1,7 @@
 # core/forms.py
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
-from .models import Usuario, Nino, MadreComunitaria, HogarComunitario, Regional
+from .models import Usuario, Nino, MadreComunitaria, HogarComunitario, Regional, Ciudad
 
 
 # ----------------------------------------------------
@@ -31,15 +31,16 @@ class UsuarioMadreForm(forms.ModelForm):
         fields = ['documento', 'tipo_documento', 'nombres', 'apellidos', 'correo', 'telefono', 'direccion']
 
 # --- Formulario del Perfil MadreComunitaria ---
-# --- Formulario del Perfil MadreComunitaria ---
 class MadreProfileForm(forms.ModelForm):
+    foto_madre = forms.ImageField(label="Foto de la Madre", required=True, widget=forms.FileInput(attrs={'accept': 'image/*'}))
 
     class Meta:
         model = MadreComunitaria
         # Incluye todos los campos del perfil de la madre
-        exclude = ['usuario', 'fecha_registro'] 
+        exclude = ['usuario', 'fecha_registro']
         widgets = {
              # Es crucial listar todos los FileField aquí
+             'foto_madre': forms.FileInput(),
              'firma_digital': forms.FileInput(),
              'documento_identidad_pdf': forms.FileInput(),
              'certificado_escolaridad_pdf': forms.FileInput(),
@@ -55,48 +56,44 @@ class HogarForm(forms.ModelForm):
         queryset=Regional.objects.all(),
         required=True,
         label="Regional",
+        widget=forms.Select,
         empty_label="-- Seleccione una Regional --"
+    )
+    ciudad = forms.ModelChoiceField(
+        queryset=Ciudad.objects.none(),
+        required=True,
+        label="Ciudad",
+        widget=forms.Select,
+        empty_label="-- Seleccione una Ciudad --"
     )
 
     class Meta:
         model = HogarComunitario
-        # Usamos 'fields' para declarar explícitamente todos los campos del formulario.
-        # Esto asegura que 'regional' se incluya correctamente.
-        fields = ['regional', 'nombre_hogar', 'direccion', 'localidad', 'ciudad', 'barrio', 
-                  'estrato', 'num_habitaciones', 'num_banos', 'material_construccion', 
-                  'riesgos_cercanos', 'fotos_interior', 'fotos_exterior', 'geolocalizacion_lat', 
-                  'geolocalizacion_lon', 'tipo_tenencia', 'documento_tenencia_pdf', 
-                  'capacidad_maxima', 'estado']
-        widgets = {
-            'nombre_hogar': forms.TextInput(attrs={'required': True, 'placeholder': 'Nombre del hogar'}),
-            'direccion': forms.TextInput(attrs={'required': True, 'placeholder': 'Dirección completa'}),
-            'localidad': forms.TextInput(attrs={'placeholder': 'Localidad'}),
-            'ciudad': forms.TextInput(attrs={'placeholder': 'Ciudad'}),
-            'barrio': forms.TextInput(attrs={'placeholder': 'Barrio'}),
-            'estrato': forms.NumberInput(attrs={'min': 1, 'max': 6}),
-            'num_habitaciones': forms.NumberInput(attrs={'min': 0}),
-            'num_banos': forms.NumberInput(attrs={'min': 0}),
-            'material_construccion': forms.TextInput(attrs={'placeholder': 'Material de construcción'}),
-            'riesgos_cercanos': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Describa riesgos cercanos al hogar'}),
-            'fotos_interior': forms.FileInput(),
-            'fotos_exterior': forms.FileInput(),
-            'geolocalizacion_lat': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': 'Latitud'}),
-            'geolocalizacion_lon': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': 'Longitud'}),
-            'tipo_tenencia': forms.Select(),
-            'documento_tenencia_pdf': forms.FileInput(),
-            'capacidad_maxima': forms.NumberInput(attrs={'value': 15, 'min': 1}),
-            'estado': forms.Select(),
-        }
+        fields = ['regional', 'ciudad', 'direccion', 'localidad']  # Ajusta según los campos reales del modelo
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'regional' in self.data:
+            try:
+                regional_id = int(self.data.get('regional'))
+                self.fields['ciudad'].queryset = Ciudad.objects.filter(regional_id=regional_id).order_by('nombre')
+            except (ValueError, TypeError):
+                self.fields['ciudad'].queryset = Ciudad.objects.none()
+        elif self.instance and self.instance.pk and self.instance.regional:
+            self.fields['ciudad'].queryset = Ciudad.objects.filter(regional=self.instance.regional).order_by('nombre')
+        else:
+            self.fields['ciudad'].queryset = Ciudad.objects.none()
 
 # ----------------------------------------------------
 # 💡 NUEVO: Formulario para Administradores
 # ----------------------------------------------------
 class AdminForm(forms.ModelForm):
     contraseña = forms.CharField(widget=forms.PasswordInput, required=False, label="Nueva Contraseña")
+    foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))
 
     class Meta:
         model = Usuario
-        fields = ['nombres', 'apellidos', 'documento', 'correo', 'contraseña']
+        fields = ['nombres', 'apellidos', 'documento', 'correo', 'foto_admin', 'contraseña']
 
 
 class CustomAuthForm(AuthenticationForm):
@@ -153,10 +150,11 @@ class CustomPasswordResetForm(PasswordResetForm):
 class AdminPerfilForm(forms.ModelForm):
     """Formulario para que el Administrador edite su perfil."""
     correo = forms.EmailField(label="Correo electrónico", required=True)
+    foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))
 
     class Meta:
         model = Usuario
-        fields = ['nombres', 'apellidos', 'correo']
+        fields = ['nombres', 'apellidos', 'correo', 'foto_admin']
 
 
 class MadrePerfilForm(forms.ModelForm):

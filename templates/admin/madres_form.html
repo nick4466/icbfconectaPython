@@ -4,12 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% if madre_profile_form.instance.id %}Editar{% else %}Crear{% endif %} Madre Comunitaria</title>
+  <title>{% if modo_edicion %}Editar{% else %}Crear{% endif %} Madre Comunitaria</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
-    /* Estilos idénticos a los tuyos, sin cambios visuales */
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:"Poppins",sans-serif;background:#f3f6fa;color:#333;display:flex;min-height:100vh}
     .sidebar{width:250px;background:linear-gradient(180deg,#004080,#007bff);color:white;display:flex;flex-direction:column;padding:25px 0}
@@ -43,48 +42,6 @@
   </style>
 </head>
 <body>
-  <script>
-    let currentStep = 1;
-    const modoEdicion = '{{ modo_edicion|default:"" }}' === 'True' || '{{ modo_edicion|default:"" }}' === 'true';
-
-    function updateIndicators(step) {
-      if (modoEdicion) return; // No mostrar indicadores en modo edición
-      for (let i = 1; i <= 3; i++) {
-        document.getElementById(`step${i}-indicator`).style.color = i <= step ? '#007bff' : '#ccc';
-      }
-    }
-
-    function prevStep(step) {
-      currentStep = step - 1;
-      document.getElementById(`step${step}`).style.display = 'none';
-      document.getElementById(`step${currentStep}`).style.display = 'block';
-      updateIndicators(currentStep);
-    }
-
-    function nextStep(step) {
-      currentStep = step + 1;
-      document.getElementById(`step${step}`).style.display = 'none';
-      document.getElementById(`step${currentStep}`).style.display = 'block';
-      updateIndicators(currentStep);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      if (modoEdicion) {
-        // En modo edición, mostrar todos los pasos
-        for (let i = 1; i <= 3; i++) {
-          document.getElementById(`step${i}`).style.display = 'block';
-        }
-      } else {
-        // En modo creación, mostrar según initial_step
-        const initialStep = parseInt('{{ initial_step|default:1 }}');
-        for (let i = 1; i <= 3; i++) {
-          document.getElementById(`step${i}`).style.display = i === initialStep ? 'block' : 'none';
-        }
-        updateIndicators(initialStep);
-      }
-    });
-  </script>
-
   <div class="sidebar">
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
     <h2>ICBF Conecta</h2>
@@ -160,10 +117,24 @@
         <hr style="margin-bottom:20px" />
 
         {% for field in madre_profile_form %}
+          {% if field.name == 'foto_madre' %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}<span class="required-star">*</span>{% endif %}</label>
+            {{ field }}
+            <div id="image-preview-container" style="margin-top: 15px;">
+              <img id="image-preview"
+                                 src="{% if madre_profile_form.instance.foto_madre %}{{ madre_profile_form.instance.foto_madre.url }}{% else %}#{% endif %}"
+                                 alt="Vista previa de la foto"
+                                 style="max-width: 200px; max-height: 200px; border-radius: 8px;"
+                                 {% if not madre_profile_form.instance.foto_madre %}hidden{% endif %} />
+            </div>
+          </div>
+          {% else %}
           <div class="form-group">
             <label for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}<span class="required-star">*</span>{% endif %}</label>
             {{ field }} {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
           </div>
+        {% endif %}
         {% endfor %}
         <div class="form-actions">
           {% if not modo_edicion %}
@@ -177,13 +148,37 @@
 <div class="step-form" id="step3" {% if modo_edicion %}style="display:block"{% else %}style="display:none"{% endif %}>
   <h2>{% if modo_edicion %}Datos del Hogar Comunitario{% else %}Paso 3: Datos del Hogar Comunitario{% endif %}</h2>
   <hr style="margin-bottom:20px" />
-  <!-- Renderiza todos los campos del formulario del hogar, incluyendo 'regional' -->
+
+  <div class="form-group">
+    <label for="id_regional">Regional <span class="required-star">*</span></label>
+    <select name="regional" id="id_regional" class="form-control" required>
+      <option value="">-- Seleccione una Regional --</option>
+      {% for regional in regionales %}
+        <option value="{{ regional.id }}" {% if hogar_form.data.regional == regional.id|stringformat:'s' or hogar_form.initial.regional == regional.id or hogar_form.instance.regional_id == regional.id %}selected{% endif %}>{{ regional.nombre }}</option>
+      {% endfor %}
+    </select>
+    {% for error in hogar_form.regional.errors %}<span class="error">{{ error }}</span>{% endfor %}
+  </div>
+  <div class="form-group">
+    <label for="id_ciudad">Ciudad <span class="required-star">*</span></label>
+    <select name="ciudad" id="id_ciudad" class="form-control" required {% if not hogar_form.initial.regional and not hogar_form.data.regional %}disabled{% endif %} data-selected-id="{{ hogar_form.instance.ciudad_id }}">
+      <option value="">-- Seleccione una Ciudad --</option>
+      {% if hogar_form.fields.ciudad.queryset.exists %}
+        {% for ciudad in hogar_form.fields.ciudad.queryset %}
+          <option value="{{ ciudad.pk }}" {% if hogar_form.initial.ciudad == ciudad.pk or hogar_form.data.ciudad == ciudad.pk|stringformat:'s' %}selected{% endif %}>{{ ciudad.nombre }}</option>
+        {% endfor %}
+      {% endif %}
+    </select>
+    {% for error in hogar_form.ciudad.errors %}<span class="error">{{ error }}</span>{% endfor %}
+  </div>
   {% for field in hogar_form %}
+    {% if field.name != 'regional' and field.name != 'ciudad' %}
     <div class="form-group">
       <label for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}<span class="required-star">*</span>{% endif %}</label>
       {{ field }}
       {% for error in field.errors %}<span class="error">{{ error }}</span>{% endfor %}
     </div>
+    {% endif %}
   {% endfor %}
 
   <div class="form-actions">
@@ -199,5 +194,119 @@
 
     </form>
   </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // --- Lógica para formulario multi-paso ---
+      const modoEdicion = '{{ modo_edicion|default:"" }}' === 'True' || '{{ modo_edicion|default:"" }}' === 'true';
+      if (modoEdicion) {
+        for (let i = 1; i <= 3; i++) {
+          document.getElementById(`step${i}`).style.display = 'block';
+        }
+      } else {
+        const initialStep = parseInt('{{ initial_step|default:1 }}');
+        for (let i = 1; i <= 3; i++) {
+          document.getElementById(`step${i}`).style.display = i === initialStep ? 'block' : 'none';
+        }
+        updateIndicators(initialStep);
+      }
+
+      // --- AJAX: cargar ciudades según regional ---
+      const regionalSelect = document.getElementById('id_regional');
+      const ciudadSelect = document.getElementById('id_ciudad');
+
+      if (regionalSelect && ciudadSelect) {
+        // Deshabilitar ciudad inicialmente si no hay regional seleccionada
+        if (!regionalSelect.value) {
+          ciudadSelect.disabled = true;
+          ciudadSelect.innerHTML = '<option value="">-- Seleccione una Ciudad --</option>';
+        }
+
+        regionalSelect.addEventListener('change', function() {
+          const regionalId = this.value;
+          ciudadSelect.innerHTML = '<option value="">Cargando...</option>';
+          ciudadSelect.disabled = true;
+
+          if (regionalId) {
+            fetch(`/ajax/cargar-ciudades/?regional_id=${regionalId}`)
+              .then(response => response.json())
+              .then(data => {
+                ciudadSelect.innerHTML = '<option value="">-- Seleccione una Ciudad --</option>';
+                data.forEach(ciudad => {
+                  const option = document.createElement('option');
+                  option.value = ciudad.id;
+                  option.textContent = ciudad.nombre;
+                  ciudadSelect.appendChild(option);
+                });
+                ciudadSelect.disabled = false;
+              })
+              .catch(err => {
+                ciudadSelect.innerHTML = '<option value="">-- Seleccione una Ciudad --</option>';
+                ciudadSelect.disabled = true;
+                console.error('Error al cargar ciudades:', err);
+              });
+          } else {
+            ciudadSelect.innerHTML = '<option value="">-- Seleccione una Ciudad --</option>';
+            ciudadSelect.disabled = true;
+          }
+        });
+
+        // Si hay un valor inicial en regional (modo edición), disparar el change para cargar ciudades y seleccionar la ciudad actual
+        if (regionalSelect.value) {
+          const event = new Event('change');
+          regionalSelect.dispatchEvent(event);
+          // Esperar a que se carguen las ciudades y luego seleccionar la ciudad actual si existe
+          setTimeout(() => {
+            if (ciudadSelect.dataset.selectedId) {
+              ciudadSelect.value = ciudadSelect.dataset.selectedId;
+              ciudadSelect.disabled = false;
+            }
+          }, 500);
+        }
+      }
+
+      // --- Lógica para previsualización de imagen ---
+      const fotoInput = document.getElementById('{{ madre_profile_form.foto_madre.id_for_label }}');
+      const imagePreview = document.getElementById('image-preview');
+
+      if (fotoInput && imagePreview) {
+        fotoInput.addEventListener('change', function(event) {
+          const file = event.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              imagePreview.src = e.target.result;
+              imagePreview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    });
+
+    // --- Funciones para navegación de pasos (fuera del DOMContentLoaded) ---
+    let currentStep = 1;
+    const modoEdicionGlobal = '{{ modo_edicion|default:"" }}' === 'True' || '{{ modo_edicion|default:"" }}' === 'true';
+
+    function updateIndicators(step) {
+      if (modoEdicionGlobal) return;
+      for (let i = 1; i <= 3; i++) {
+        document.getElementById(`step${i}-indicator`).style.color = i <= step ? '#007bff' : '#ccc';
+      }
+    }
+
+    function prevStep(step) {
+      currentStep = step - 1;
+      document.getElementById(`step${step}`).style.display = 'none';
+      document.getElementById(`step${currentStep}`).style.display = 'block';
+      updateIndicators(currentStep);
+    }
+
+    function nextStep(step) {
+      currentStep = step + 1;
+      document.getElementById(`step${step}`).style.display = 'none';
+      document.getElementById(`step${currentStep}`).style.display = 'block';
+      updateIndicators(currentStep);
+    }
+  </script>
 </body>
 </html>

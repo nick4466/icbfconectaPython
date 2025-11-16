@@ -253,6 +253,12 @@
         font-size: 22px;
         color: #004080;
       }
+      .modal-header-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #004080;
+      }
       .close-button {
         color: #aaa;
         float: right;
@@ -363,6 +369,7 @@
         <table>
           <thead>
             <tr>
+              <th>Foto</th>
               <th>Nombres</th>
               <th>Apellidos</th>
               <th>Correo electrónico</th>
@@ -373,6 +380,15 @@
     <tbody>
         {% for madre_perfil in madres %} 
             <tr>
+                <td>
+                    {% if madre_perfil.foto_madre %}
+                        <img src="{{ madre_perfil.foto_madre.url }}" alt="Foto de {{ madre_perfil.usuario.nombres }}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                        <div style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background-color: #e9ecef; border-radius: 8px;">
+                            <i class="fa-solid fa-user" style="font-size: 24px; color: #adb5bd;"></i>
+                        </div>
+                    {% endif %}
+                </td>
                 <td>{{ madre_perfil.usuario.nombres|default:"N/A" }}</td>
                 <td>{{ madre_perfil.usuario.apellidos|default:"N/A" }}</td>
                 <td>{{ madre_perfil.usuario.correo|default:"N/A" }}</td>
@@ -392,7 +408,7 @@
             </tr>
         {% empty %}
             <tr>
-                <td colspan="6" style="text-align: center; padding: 20px; color: #888;">No hay madres comunitarias registradas.</td>
+                <td colspan="5" style="text-align: center; padding: 20px; color: #888;">No hay madres comunitarias registradas.</td>
             </tr>
         {% endfor %}
     </tbody>
@@ -404,7 +420,9 @@
     <div id="detalleModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 id="modal-nombre"></h2>
+          <div class="modal-header-content" id="modal-header-content">
+            
+          </div>
           <span class="close-button">&times;</span>
         </div>
         <div class="modal-body">
@@ -417,7 +435,7 @@
       document.addEventListener("DOMContentLoaded", function () {
         const modal = document.getElementById('detalleModal');
         const modalBody = modal.querySelector('.modal-body');
-        const modalTitle = modal.querySelector('#modal-nombre');
+        const modalHeaderContent = document.getElementById('modal-header-content');
         const closeButton = modal.querySelector('.close-button');
 
         document.querySelectorAll('.ver-detalles').forEach(button => {
@@ -425,7 +443,7 @@
                 const madrePerfilId = this.dataset.madreId;
                 const url = `/madres/detalles/${madrePerfilId}/`;
 
-                modalTitle.textContent = 'Cargando detalles...';
+                modalHeaderContent.innerHTML = '<h2>Cargando detalles...</h2>';
                 modalBody.innerHTML = '<p>Por favor, espere.</p>';
                 modal.style.display = 'flex';
 
@@ -436,8 +454,18 @@
                     }
                     const data = await response.json();
 
-                    modalTitle.textContent = `Detalles de ${data.usuario.nombres} ${data.usuario.apellidos}`;
-                    
+                    let headerHTML = '';
+                    if (data.perfil.foto_madre_url) {
+                        // Si la ruta ya es absoluta, úsala. Si es relativa, anteponer MEDIA_URL
+                        let fotoUrl = data.perfil.foto_madre_url.startsWith('http') ? data.perfil.foto_madre_url : data.perfil.foto_madre_url;
+                        headerHTML += `<img src="${fotoUrl}" alt="Foto" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px;">`;
+                    } else {
+                        headerHTML += `<div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background-color: #e9ecef; border-radius: 50%; margin-bottom: 15px;"><i class="fa-solid fa-user" style="font-size: 40px; color: #adb5bd;"></i></div>`;
+                    }
+                    headerHTML += `<h2>${data.usuario.nombres} ${data.usuario.apellidos}</h2>`;
+
+                    modalHeaderContent.innerHTML = headerHTML;
+
                     modalBody.innerHTML = `
                         <h4>Datos de Usuario</h4>
                         <p><strong>Documento:</strong> ${data.usuario.tipo_documento} ${data.usuario.documento}</p>
@@ -453,14 +481,15 @@
                         <h4>Hogar Comunitario Asignado</h4>
                         <p><strong>Nombre:</strong> ${data.hogar.nombre_hogar}</p>
                         <p><strong>Regional:</strong> ${data.hogar.regional}</p>
+                        <p><strong>Ciudad:</strong> ${data.hogar.ciudad}</p>
                         <p><strong>Dirección:</strong> ${data.hogar.direccion}</p>
                         <p><strong>Localidad:</strong> ${data.hogar.localidad}</p>
                         <p><strong>Capacidad:</strong> ${data.hogar.capacidad_maxima} niños</p>
                     `;
 
                 } catch (error) {
-                    modalTitle.textContent = 'Error';
-                    modalBody.innerHTML = `<p style="color: red;">${error.message}</p>`;
+                    modalHeaderContent.innerHTML = '<h2>Error</h2>';
+                    modalBody.innerHTML = `<p style="color: red;">No se pudo cargar la información. Por favor, inténtelo de nuevo más tarde.</p>`;
                 }
 
             });

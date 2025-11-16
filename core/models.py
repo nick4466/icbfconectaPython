@@ -38,7 +38,18 @@ class Regional(models.Model):
 
 def madre_upload_path(instance, filename):
     return f"madres_documentos/{instance.usuario.documento}/{filename}"
+def admin_upload_path(instance, filename):
+    # Guarda la foto en una carpeta por documento, igual que madres
+    return f"administradores/fotos/{instance.documento}/{filename}"
+# ------------------------
+# Ciudades
+# ------------------------
+class Ciudad(models.Model):
+    nombre = models.CharField(max_length=120)
+    regional = models.ForeignKey(Regional, on_delete=models.CASCADE, related_name="ciudades")
 
+    def __str__(self):
+        return self.nombre
 
 # ------------------------
 # Gestor de usuarios personalizado
@@ -90,6 +101,8 @@ class Usuario(AbstractUser):
     direccion = models.CharField(max_length=100, null=True, blank=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
     rol = models.ForeignKey(Rol, on_delete=models.PROTECT, null=True)
+    # Foto de perfil para administradores (y opcional para cualquier usuario)
+    foto_admin = models.ImageField(upload_to=admin_upload_path, null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
    
@@ -154,6 +167,7 @@ class MadreComunitaria(models.Model):
     disponibilidad_tiempo = models.BooleanField(default=False)
     firma_digital = models.FileField(upload_to='madres_documentos/firmas/', null=True, blank=True)
 
+    foto_madre = models.ImageField(upload_to='madres_documentos/fotos/', null=True, blank=True)
     # Documentos soporte
     documento_identidad_pdf = models.FileField(upload_to='madres_documentos/cedulas/', null=True, blank=True)
     certificado_escolaridad_pdf = models.FileField(upload_to='madres_documentos/educacion/', null=True, blank=True)
@@ -182,11 +196,11 @@ class MadreComunitaria(models.Model):
 class HogarComunitario(models.Model):
     # 💡 NUEVO: Relación con la regional. Es obligatorio para cada hogar.
     # Usamos PROTECT para evitar que se borre una regional si tiene hogares asociados.
-    regional = models.ForeignKey(Regional, on_delete=models.PROTECT, related_name='hogares', null=True)
+    regional = models.ForeignKey(Regional, on_delete=models.PROTECT, related_name='hogares')
+    ciudad = models.ForeignKey(Ciudad, on_delete=models.PROTECT, related_name='hogares')
     nombre_hogar = models.CharField(max_length=100)
-    direccion = models.CharField(max_length=150)
-    localidad = models.CharField(max_length=50, null=True, blank=True)
-    ciudad = models.CharField(max_length=100, null=True, blank=True)
+    direccion = models.CharField(max_length=200)
+    localidad = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, null=True, blank=True)
     estrato = models.IntegerField(null=True, blank=True)
 
@@ -324,8 +338,7 @@ class Planeacion(models.Model):
 
     def __str__(self):
         return f"{self.nombre_actividad} - {self.fecha}"
-    
-    
+
     
 # ------------------------ JUANITO ------------------------
 # Novedades

@@ -153,6 +153,7 @@
       <table>
         <thead>
           <tr>
+            <th>Foto</th>
             <th>Nombre</th>
             <th>Apellidos</th>
             <th>Documento</th>
@@ -163,6 +164,13 @@
         <tbody>
           {% for admin in administradores %}
           <tr>
+            <td>
+              {% if admin.foto_admin %}
+                <img src="{{ admin.foto_admin.url }}" alt="Foto de {{ admin.nombres }}" style="width:48px; height:48px; object-fit:cover; border-radius:50%; border:2px solid #007bff; background:#f8f9fa;" />
+              {% else %}
+                <i class="fa-solid fa-user fa-2x" style="color:#ccc;"></i>
+              {% endif %}
+            </td>
             <td>{{ admin.nombres|default:"N/A" }}</td>
             <td>{{ admin.apellidos|default:"N/A" }}</td>
             <td>{{ admin.documento }}</td>
@@ -174,7 +182,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="5" style="text-align:center; color:#888;">No hay administradores registrados.</td>
+            <td colspan="6" style="text-align:center; color:#888;">No hay administradores registrados.</td>
           </tr>
           {% endfor %}
         </tbody>

@@ -112,12 +112,30 @@
     {% endif %}
 
     <div class="content-container">
-      <form method="post">
+      {% if admin and admin.foto_admin %}
+        <div style="text-align:center; margin-bottom:20px;">
+          <img id="preview-foto-admin" src="{{ admin.foto_admin.url }}" alt="Foto actual" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid #007bff;">
+        </div>
+      {% else %}
+        <div style="text-align:center; margin-bottom:20px;">
+          <img id="preview-foto-admin" src="https://ui-avatars.com/api/?name=Admin&background=dee2e6&color=495057&size=100" alt="Sin foto" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid #adb5bd;">
+        </div>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {% for field in form %}
           <div class="form-group">
             <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required and field.name != 'contraseña' %}<span class="required-star">*</span>{% endif %}{% if not admin and field.name == 'contraseña' %}<span class="required-star">*</span>{% endif %}</label>
-            {{ field }}
+            <div style="position:relative;">
+              {% if field.name == 'contraseña' %}
+                {{ field }}
+                <span style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer;" onclick="togglePassword()">
+                  <i id="icono-ojo" class="fa-solid fa-eye" style="color:#888;"></i>
+                </span>
+              {% else %}
+                {{ field }}
+              {% endif %}
+            </div>
             {% if field.name == 'contraseña' and admin %}<small style="color: #6c757d; font-size: 12px;">Dejar en blanco para no cambiar la contraseña.</small>{% endif %}
             {% for error in field.errors %}
               <span style="color: #dc3545; font-size: 12px; margin-top: 4px;">{{ error }}</span>
@@ -130,6 +148,38 @@
         </div>
       </form>
     </div>
+    <script>
+      // Previsualización de la foto seleccionada
+      document.addEventListener('DOMContentLoaded', function() {
+        const inputFoto = document.querySelector('input[name="foto_admin"]');
+        const preview = document.getElementById('preview-foto-admin');
+        if(inputFoto) {
+          inputFoto.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+              const reader = new FileReader();
+              reader.onload = function(ev) {
+                preview.src = ev.target.result;
+              }
+              reader.readAsDataURL(e.target.files[0]);
+            }
+          });
+        }
+      });
+      // Mostrar/ocultar contraseña
+      function togglePassword() {
+        const input = document.getElementById('id_contraseña');
+        const icon = document.getElementById('icono-ojo');
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.classList.remove('fa-eye');
+          icon.classList.add('fa-eye-slash');
+        } else {
+          input.type = 'password';
+          icon.classList.remove('fa-eye-slash');
+          icon.classList.add('fa-eye');
+        }
+      }
+    </script>
   </div>
 </body>
 </html>
