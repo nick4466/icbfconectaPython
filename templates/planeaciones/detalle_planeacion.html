@@ -71,17 +71,45 @@
     nav ul .dropdown:hover .dropdown-content { display: block; }
 
     .main-title {
-        text-align: center;
-        margin-top: 20px;
-        padding: 20px;
-        font-size: 26px;
+    position: relative;              /* permite ubicar el botón encima */
+    text-align: center;
+    margin-top: 20px;
+    padding: 30px;
+    font-size: 26px;
+    font-weight: bold;
+    color: #7a3eb1;
+    background-color: rgba(255, 255, 255, 0.7);
+    margin: 20px auto;
+    width: 80%;
+    border-radius: 10px;
+}
+
+    /* Botón flotando a la derecha */
+    .btn-descargar {
+        position: absolute;
+        left: 10px;                 /* distancia al borde derecho */
+        top: 50%;
+        transform: translateY(-50%);     /* centra verticalmente */
+        background-color: #450652;
+        color: white;
+        padding: 8px 14px;
+        text-decoration: none;
+        font-size: 14px;
+        border-radius: 6px;
         font-weight: bold;
-        color: #7a3eb1;
-        background-color: rgba(255, 255, 255, 0.7);
-        margin: 20px auto;
-        width: 80%;
-        border-radius: 10px;
+        transition: 0.3s ease;
     }
+
+    .btn-descargar:hover {
+        background-color: #5a5a5c;
+        transform: translateY(-50%) scale(1.05);
+    }
+
+    .btn-descargar:active {
+        background-color: #411664;
+    }
+
+    
 
     /* Campos superiores en fila */
     .form-top {
@@ -158,19 +186,12 @@
         z-index: 10;
         position: relative;
     }
-
-    .btn-volver {
-        display: inline-block;
-        background-color: #f3c1e5;
-        color: #5e3370;
-        padding: 10px 20px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: bold;
-        margin: 20px;
-    }
-
-    .btn-volver:hover { background-color: #e8a9d6; }
+     .btn-container {
+    display: flex;
+    justify-content: center; /* centra horizontalmente */
+    margin: 20px 0;
+   }
+  
 
     @media(max-width:768px){
         .main-title { font-size: 24px; width: 90%; }
@@ -178,26 +199,46 @@
         .form-top { grid-template-columns: 1fr; }
     }
 
+
   </style>
 </head>
 <body>
 <header>
-  <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF Conecta"/>
-  <nav>
-    <ul>
-      <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
-      <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
-      <li>
-        <form method="post" action="{% url 'logout' %}" style="display:inline;">
-          {% csrf_token %}
-          <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
-        </form>
-      </li>
-    </ul>
-  </nav>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF Conecta" />
+    
+    <nav>
+      <ul>
+
+        <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
+        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
+        <li class="dropdown">
+          <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
+          <div class="dropdown-content">
+            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+          </div>
+        </li>
+        <li>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+            </form>
+        </li>
+      </ul>
+    </nav>
 </header>
 
-<div class="main-title">Detalle de Planeación</div>
+
+<div class="main-title">
+    <span class="title-text">Detalle de Planeación {{ planeacion.nombre_experiencia }}</span>
+
+    <a href="{% url 'planeaciones:pdf_planeacion' planeacion_id=planeacion.id %}" 
+       class="btn-descargar">
+        Descargar PDF
+    </a>
+</div>
+
 
 <!-- Campos superiores -->
 <div class="form-top">
@@ -253,7 +294,6 @@
   </table>
 </div>
 
-<a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-volver">Volver</a>
 
 </body>
 </html>

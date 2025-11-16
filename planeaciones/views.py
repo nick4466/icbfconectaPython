@@ -1,9 +1,19 @@
 from pyexpat.errors import messages
+from tkinter import Image
 from django.contrib.auth.decorators import login_required
 from .models import Documentacion, Planeacion
 from .forms import DocumentacionForm, PlaneacionForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from datetime import datetime
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Planeacion
+from .utils import render_to_pdf
+from django.template.loader import get_template
+from xhtml2pdf import pisa
 
 
 
@@ -51,10 +61,10 @@ def registrar_planeacion(request):
             for f in request.FILES.getlist('imagenes'):
                 Documentacion.objects.create(planeacion=planeacion, imagen=f)
 
-            messages.success(request, '✅ Planeación registrada exitosamente.')
+            messages.success(request, ' Planeación registrada exitosamente.')
             return redirect('planeaciones:lista_planeaciones')
         else:
-            messages.error(request, '❌ Error al registrar la planeación.')
+            messages.error(request, ' Error al registrar la planeación.')
     else:
         form = PlaneacionForm()
 
@@ -84,10 +94,10 @@ def editar_planeacion(request, id):
             for f in request.FILES.getlist('imagenes'):
                 Documentacion.objects.create(planeacion=planeacion, imagen=f)
 
-            messages.success(request, '✅ Planeación actualizada correctamente.')
+            messages.success(request, ' Planeación actualizada correctamente.')
             return redirect('planeaciones:detalle_planeacion', id=planeacion.id)
         else:
-            messages.error(request, '❌ Ocurrió un error al actualizar la planeación.')
+            messages.error(request, ' Ocurrió un error al actualizar la planeación.')
     else:
         form = PlaneacionForm(instance=planeacion)
 
@@ -119,3 +129,31 @@ def eliminar_planeacion(request, id):
 
 
 
+
+@login_required
+def generar_planeacion_pdf(request, planeacion_id):
+    planeacion = Planeacion.objects.get(id=planeacion_id)
+    imagenes = planeacion.documentos.all()
+
+    template = get_template('planeaciones/reporte_planeacion.html')
+
+    context = {
+        'planeacion': planeacion,
+        'imagenes': imagenes,
+        'BASE_URL': request.build_absolute_uri('/'),
+    }
+
+    html = template.render(context)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="planeacion_{planeacion.id}.pdf"'
+
+    pisa_status = pisa.CreatePDF(
+        html, 
+        dest=response,
+        link_callback=None
+    )
+
+    if pisa_status.err:
+        return HttpResponse("Error al generar PDF")
+
+    return response
