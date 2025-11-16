@@ -289,7 +289,7 @@
       <h2><i class="fas fa-file-alt"></i> {{ titulo_form }}</h2>
       <p style="text-align: center; color: #555; margin-top: -15px; margin-bottom: 25px;">Los campos con <span class="required-star">*</span> son obligatorios.</p>
 
-      <form method="post" action="{{ form_action }}">
+      <form method="post" action="{{ form_action }}" id="desarrolloForm">
         {% csrf_token %}
         <div class="form-grid">
           <div class="form-group">
@@ -303,6 +303,7 @@
               {% endfor %}
             {% elif desarrollo %}
               <input type="text" value="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}" disabled>
+              <input type="hidden" name="nino" value="{{ desarrollo.nino.id }}">
             {% else %}
               <select name="nino" required>
                 <option value="">-- Seleccionar Nombre y Apellidos del niño --</option>
@@ -393,37 +394,53 @@
   </div>
 
   <script>
-    // Ocultar el mensaje de éxito después de 5 segundos
-    const mensajeExito = document.getElementById('mensajeExito');
-    if (mensajeExito) {
-      setTimeout(() => {
-        mensajeExito.style.display = 'none';
-      }, 5000);
+  // Mostrar y ocultar mensaje de éxito
+  const mensajeExito = document.getElementById('mensajeExito');
+  if (mensajeExito) {
+    setTimeout(() => {
+      mensajeExito.style.display = 'none';
+    }, 5000);
+  }
+
+  // ---- VALIDACIÓN FRONTEND DE ESTRELLAS ----
+  const form = document.getElementById('desarrolloForm');
+
+  form.addEventListener('submit', function (event) {
+    const ratings = [
+      'rating_cognitiva',
+      'rating_comunicativa',
+      'rating_socio_afectiva',
+      'rating_corporal'
+    ];
+
+    for (const name of ratings) {
+      if (!document.querySelector(`input[name="${name}"]:checked`)) {
+        alert('Por favor, califica todas las dimensiones con estrellas antes de guardar.');
+        event.preventDefault();
+        return;
+      }
     }
 
-    // Validación de frontend para los ratings de estrellas
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(event) {
-      const ratings = [
-        'rating_cognitiva',
-        'rating_comunicativa',
-        'rating_socio_afectiva',
-        'rating_corporal'
-      ];
-      let todosCalificados = true;
+    // ---- VALIDACIÓN DE FECHAS DUPLICADAS ----
+    const fechasExistentes = {{ fechas_existentes_por_nino|safe }};
+    const ninoInput = document.querySelector('select[name="nino"], input[name="nino"]');
+    const fechaInput = document.querySelector('[name="fecha_registro"]');
 
-      for (const name of ratings) {
-        if (!document.querySelector(`input[name="${name}"]:checked`)) {
-          todosCalificados = false;
-          break;
-        }
-      }
+    const ninoId = ninoInput ? ninoInput.value : null;
+    const fechaSeleccionada = fechaInput.value;
 
-      if (!todosCalificados) {
-        alert('Por favor, califica todas las dimensiones con estrellas antes de guardar.');
-        event.preventDefault(); // Evita que el formulario se envíe
-      }
-    });
-  </script>
+    const fechasDelNino = fechasExistentes[ninoId] || [];
+    const fechaActual = "{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}";
+
+    const fechasSinActual = fechasDelNino.filter(f => f !== fechaActual);
+
+    if (fechasSinActual.includes(fechaSeleccionada)) {
+      alert("❌ Ya existe un desarrollo registrado este mes para este niño. Selecciona otra fecha.");
+      event.preventDefault();
+    }
+  });
+</script>
+
+
 </body>
 </html>

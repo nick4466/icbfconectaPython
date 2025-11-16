@@ -12,6 +12,7 @@ from xhtml2pdf import pisa
 from io import BytesIO
 from django.conf import settings
 import os
+from django.core.paginator import Paginator
 from django.templatetags.static import static
 
 
@@ -41,7 +42,7 @@ def padre_ver_desarrollo(request, nino_id):
 # -----------------------------------------------------------------
 @login_required
 def registrar_desarrollo(request):
-    # Esta vista ahora solo maneja la creación
+    
     nino_id_preseleccionado = request.GET.get('nino')
 
     if request.user.rol.nombre_rol != 'madre_comunitaria':
@@ -54,7 +55,7 @@ def registrar_desarrollo(request):
 
     ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
 
-    # Mapeo de ratings a descripciones para autocompletado
+    # Mapeo de ratings a descripciones
     rating_map = {
         "1": "Malo",
         "2": "Regular",
@@ -67,7 +68,48 @@ def registrar_desarrollo(request):
         nino_id = request.POST.get('nino')
         fecha_registro = request.POST.get('fecha_registro')
 
-        # --- Capturar ratings y observaciones ---
+        # ----- VALIDACIÓN DE CAMPOS OBLIGATORIOS -----
+        errores = []
+
+        if not nino_id:
+            errores.append("debes seleccionar un niño")
+
+        if not fecha_registro:
+            errores.append("debes seleccionar una fecha")
+
+        if not request.POST.get('rating_cognitiva'):
+            errores.append("debes calificar la dimensión cognitiva")
+
+        if not request.POST.get('rating_comunicativa'):
+            errores.append("debes calificar la dimensión comunicativa")
+
+        if not request.POST.get('rating_socio_afectiva'):
+            errores.append("debes calificar la dimensión socio-afectiva")
+
+        if not request.POST.get('rating_corporal'):
+            errores.append("debes calificar la dimensión corporal")
+
+        # Si faltan datos → enviar mensaje de error
+        if errores:
+            mensaje_error = "Error: " + ", ".join(errores) + "."
+            return render(request, 'madre/desarrollo_form.html', {
+                'ninos': ninos_del_hogar,
+                'nino_id_preseleccionado': nino_id,
+                'error': mensaje_error.capitalize(),
+            })
+
+        # ----- VALIDAR REGISTRO DUPLICADO -----
+        if DesarrolloNino.objects.filter(
+            nino_id=nino_id,
+            fecha_fin_mes=fecha_registro
+        ).exists():
+            return render(request, 'madre/desarrollo_form.html', {
+                'ninos': ninos_del_hogar,
+                'nino_id_preseleccionado': nino_id,
+                'error': "Ya existe un registro para este niño en esa fecha.",
+            })
+
+        # ----- OBTENER CALIFICACIONES Y GENERAR DESCRIPCIÓN -----
         rating_cognitiva = request.POST.get('rating_cognitiva')
         cognitiva_obs = request.POST.get('dimension_cognitiva', '').strip()
         cognitiva = cognitiva_obs if cognitiva_obs else rating_map.get(rating_cognitiva, "")
@@ -83,30 +125,8 @@ def registrar_desarrollo(request):
         rating_corporal = request.POST.get('rating_corporal')
         corporal_obs = request.POST.get('dimension_corporal', '').strip()
         corporal = corporal_obs if corporal_obs else rating_map.get(rating_corporal, "")
-        
-        # --- Validación de campos obligatorios con mensajes de error específicos ---
-        errores = []
-        if not nino_id:
-            errores.append("debes seleccionar un niño")
-        if not fecha_registro:
-            errores.append("debes seleccionar una fecha")
-        if not rating_cognitiva:
-            errores.append("debes calificar la dimensión cognitiva")
-        if not rating_comunicativa:
-            errores.append("debes calificar la dimensión comunicativa")
-        if not rating_socio_afectiva:
-            errores.append("debes calificar la dimensión socio-afectiva")
-        if not rating_corporal:
-            errores.append("debes calificar la dimensión corporal")
 
-        if errores:
-            mensaje_error = "Error: " + ", ".join(errores) + "."
-            return render(request, 'madre/desarrollo_form.html', {
-                'ninos': ninos_del_hogar,
-                'nino_id_preseleccionado': nino_id,
-                'error': mensaje_error.capitalize()
-            })
-
+        # ----- CREACIÓN DEL REGISTRO -----
         DesarrolloNino.objects.create(
             nino_id=nino_id,
             fecha_fin_mes=fecha_registro,
@@ -119,16 +139,18 @@ def registrar_desarrollo(request):
             dimension_socio_afectiva=socio_afectiva,
             dimension_corporal=corporal,
         )
-        
+
         redirect_url = reverse('desarrollo:listar_desarrollos')
         return redirect(f'{redirect_url}?nino={nino_id}&exito=1')
 
+    # ----- CARGA INICIAL DEL FORMULARIO -----
     return render(request, 'madre/desarrollo_form.html', {
         'ninos': ninos_del_hogar,
         'form_action': reverse('desarrollo:registrar_desarrollo'),
         'titulo_form': 'Registrar Desarrollo de Niño',
         'nino_id_preseleccionado': nino_id_preseleccionado,
     })
+
 
 @login_required
 def listar_desarrollos(request):
@@ -143,14 +165,38 @@ def listar_desarrollos(request):
     desarrollos = DesarrolloNino.objects.filter(nino__hogar=hogar_madre).select_related('nino', 'nino__padre__usuario').order_by('-fecha_fin_mes')
     ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
 
-    nino_id_filtro = request.GET.get('nino')
+    # --- Lógica de Filtrado Mejorada ---
+    nino_id_filtro = request.GET.get('nino', '')
+    mes_filtro = request.GET.get('mes', '') # YYYY-MM
+
     if nino_id_filtro:
         desarrollos = desarrollos.filter(nino__id=nino_id_filtro)
 
+    if mes_filtro:
+        try:
+            # Extraer año y mes del formato 'YYYY-MM'
+            year, month = map(int, mes_filtro.split('-'))
+            desarrollos = desarrollos.filter(fecha_fin_mes__year=year, fecha_fin_mes__month=month)
+        except (ValueError, TypeError):
+            pass # Ignorar si el formato de mes es inválido
+
+    # --- Paginación ---
+    paginator = Paginator(desarrollos, 6) # 6 registros por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # --- Devolver filtros para mantenerlos en la URL de paginación ---
+    filtros = {
+        'nino': nino_id_filtro,
+        'mes': mes_filtro,
+    }
+
     return render(request, 'madre/desarrollo_list.html', {
-        'desarrollos': desarrollos,
+        'desarrollos': page_obj, # Usar el objeto de página en lugar del queryset completo
         'ninos': ninos_del_hogar,
         'nino_id_filtro': nino_id_filtro,
+        'mes_filtro': mes_filtro,
+        'filtros': filtros,
     })
 
 @login_required
@@ -174,24 +220,76 @@ def editar_desarrollo(request, id):
     }
 
     if request.method == 'POST':
-        desarrollo.fecha_fin_mes = request.POST.get('fecha_registro')
 
-        # --- Actualizar ratings y dimensiones ---
+        nueva_fecha = request.POST.get('fecha_registro')
+
+        # ----- VALIDACIONES OBLIGATORIAS -----
+        errores = []
+        if not nueva_fecha:
+            errores.append("debes seleccionar una fecha")
+
+        if not request.POST.get('rating_cognitiva'):
+            errores.append("debes calificar la dimensión cognitiva")
+
+        if not request.POST.get('rating_comunicativa'):
+            errores.append("debes calificar la dimensión comunicativa")
+
+        if not request.POST.get('rating_socio_afectiva'):
+            errores.append("debes calificar la dimensión socio-afectiva")
+
+        if not request.POST.get('rating_corporal'):
+            errores.append("debes calificar la dimensión corporal")
+
+        # Si faltan datos → regresar el error
+        if errores:
+            mensaje_error = "Error: " + ", ".join(errores) + "."
+            return render(request, 'madre/desarrollo_form.html', {
+                'desarrollo': desarrollo,
+                'form_action': reverse('desarrollo:editar_desarrollo', args=[id]),
+                'titulo_form': 'Editar Registro de Desarrollo',
+                'nino_id_preseleccionado': desarrollo.nino.id,
+                'error': mensaje_error.capitalize(),
+            })
+
+        # ----- VALIDAR DUPLICADO DE FECHA PARA ESTE NIÑO -----
+        if DesarrolloNino.objects.filter(
+            nino=desarrollo.nino,
+            fecha_fin_mes=nueva_fecha
+        ).exclude(id=desarrollo.id).exists():
+            return render(request, 'madre/desarrollo_form.html', {
+                'desarrollo': desarrollo,
+                'form_action': reverse('desarrollo:editar_desarrollo', args=[id]),
+                'titulo_form': 'Editar Registro de Desarrollo',
+                'nino_id_preseleccionado': desarrollo.nino.id,
+                'error': "Ya existe un registro para este niño en esa fecha.",
+            })
+
+        # ----- GUARDAR CAMBIOS -----
+        desarrollo.fecha_fin_mes = nueva_fecha
+
         desarrollo.rating_cognitiva = request.POST.get('rating_cognitiva')
         cognitiva_obs = request.POST.get('dimension_cognitiva', '').strip()
-        desarrollo.dimension_cognitiva = cognitiva_obs if cognitiva_obs else rating_map.get(desarrollo.rating_cognitiva, "")
+        desarrollo.dimension_cognitiva = (
+            cognitiva_obs if cognitiva_obs else rating_map.get(desarrollo.rating_cognitiva, "")
+        )
 
         desarrollo.rating_comunicativa = request.POST.get('rating_comunicativa')
         comunicativa_obs = request.POST.get('dimension_comunicativa', '').strip()
-        desarrollo.dimension_comunicativa = comunicativa_obs if comunicativa_obs else rating_map.get(desarrollo.rating_comunicativa, "")
+        desarrollo.dimension_comunicativa = (
+            comunicativa_obs if comunicativa_obs else rating_map.get(desarrollo.rating_comunicativa, "")
+        )
 
         desarrollo.rating_socio_afectiva = request.POST.get('rating_socio_afectiva')
         socio_afectiva_obs = request.POST.get('dimension_socio_afectiva', '').strip()
-        desarrollo.dimension_socio_afectiva = socio_afectiva_obs if socio_afectiva_obs else rating_map.get(desarrollo.rating_socio_afectiva, "")
+        desarrollo.dimension_socio_afectiva = (
+            socio_afectiva_obs if socio_afectiva_obs else rating_map.get(desarrollo.rating_socio_afectiva, "")
+        )
 
         desarrollo.rating_corporal = request.POST.get('rating_corporal')
         corporal_obs = request.POST.get('dimension_corporal', '').strip()
-        desarrollo.dimension_corporal = corporal_obs if corporal_obs else rating_map.get(desarrollo.rating_corporal, "")
+        desarrollo.dimension_corporal = (
+            corporal_obs if corporal_obs else rating_map.get(desarrollo.rating_corporal, "")
+        )
 
         desarrollo.save()
 
@@ -204,6 +302,8 @@ def editar_desarrollo(request, id):
         'titulo_form': 'Editar Registro de Desarrollo',
         'nino_id_preseleccionado': desarrollo.nino.id,
     })
+
+
 
 @login_required
 def eliminar_desarrollo(request, id):

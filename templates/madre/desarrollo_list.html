@@ -84,11 +84,6 @@
       background-color: #5a6268;
     }
 
-    table { width: 100%; border-collapse: collapse; font-size: 16px; background-color: white; border-radius: 10px; overflow: hidden; }
-    thead { background-color: #f3c1e5; color: #5e3370; }
-    th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
-    tbody tr:hover { background-color: #f9e6ff; }
-
     .acciones {
       display: flex;
       gap: 5px;
@@ -143,6 +138,11 @@
     .dimension-block p { margin: 5px 0; }
   </style>
   <style>
+    /* Custom properties para colores consistentes */
+    :root {
+      --primary-color: #9B59B6;
+      --star-color: #f5b301;
+    }
     .mensaje-exito {
       background-color: #4CAF50;
       color: white;
@@ -153,6 +153,117 @@
       font-size: 16px;
       transition: opacity 0.5s ease;
     }
+
+    /* === NUEVO DISEÑO DE CARDS === */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 25px;
+  margin-top: 25px;
+}
+
+.desarrollo-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 5px 14px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  border-top: 5px solid var(--primary-color);
+  transition: transform .25s ease, box-shadow .25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.desarrollo-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+}
+
+.card-header h3 {
+  font-size: 18px;
+  margin: 0;
+  color: var(--primary-color);
+  font-weight: 700;
+  z-index: 2;
+}
+
+.card-header .fecha {
+  margin: 4px 0 15px 0;
+  font-size: 15px;
+  color: #555;
+}
+
+/* Cuerpo */
+.card-body {
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.dimension-rating {
+  font-size: 14px;
+  color: #444;
+}
+
+.dimension-rating strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.stars-display {
+  color: var(--star-color);
+  font-size: 15px;
+}
+
+.stars-display .inactive {
+  color: #ddd;
+}
+
+/* Footer / Acciones */
+.card-footer {
+  margin-top: auto;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Ícono de fondo */
+.card-icon {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 80px;
+  color: var(--primary-color);
+  opacity: 0.08;
+  z-index: 1;
+}
+    /* --- ESTILOS DE PAGINACIÓN --- */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 30px;
+      gap: 8px;
+    }
+    .pagination a, .pagination span {
+      color: #9B59B6;
+      padding: 8px 14px;
+      text-decoration: none;
+      transition: background-color .3s;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: white;
+    }
+    .pagination a:hover { background-color: #f1f1f1; }
+    .pagination .current { background-color: #9B59B6; color: white; border-color: #9B59B6; }
+    .pagination .disabled { color: #ccc; border-color: #ddd; background-color: #f8f9fa; }
   </style>
 </head>
 <body>
@@ -201,9 +312,9 @@
         <input type="month" name="mes" value="{{ mes_filtro }}">
         <button type="submit"><i class="fas fa-filter"></i> Filtrar</button>
         {% if nino_id_filtro %}
-          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino_id_filtro }}" style="margin-left: 5px;">Limpiar</a>
+          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino_id_filtro }}" style="margin-left: 5px;">Limpiar Mes</a>
         {% else %}
-          <a href="{% url 'desarrollo:listar_desarrollos' %}" style="margin-left: 5px;">Limpiar</a>
+          <a href="{% url 'desarrollo:listar_desarrollos' %}" style="margin-left: 5px;">Limpiar Filtros</a>
         {% endif %}
       </form>
 
@@ -219,50 +330,74 @@
       </div>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Niño</th>
-          <th>Tutor</th>
-          <th>Fecha Registro</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for desarrollo in desarrollos %}
-        <tr 
-          data-nino="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}"
-          data-tutor="{{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}"
-          data-fecha="{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}"
-          data-cognitiva="{{ desarrollo.dimension_cognitiva }}"
-          data-comunicativa="{{ desarrollo.dimension_comunicativa }}"
-          data-socioafectiva="{{ desarrollo.dimension_socio_afectiva }}"
-          data-corporal="{{ desarrollo.dimension_corporal }}"
-          data-rating-cognitiva="{{ desarrollo.rating_cognitiva|default:0 }}"
-          data-rating-comunicativa="{{ desarrollo.rating_comunicativa|default:0 }}"
-          data-rating-socioafectiva="{{ desarrollo.rating_socio_afectiva|default:0 }}"
-          data-rating-corporal="{{ desarrollo.rating_corporal|default:0 }}"
-        >
-          <td>{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}</td>
-          <td>{{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}</td>
-          <td>{{ desarrollo.fecha_fin_mes|date:"Y-m-d" }}</td>
-          <td class="acciones">
-            <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-            <a href="{% url 'desarrollo:editar_desarrollo' desarrollo.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
-            <a href="{% url 'desarrollo:eliminar_desarrollo' desarrollo.id %}" 
-               class="btn-accion btn-rojo" 
-               title="Eliminar"
-               onclick="return confirm('¿Estás segura de que deseas eliminar este registro? Esta acción no se puede deshacer.');"
-            ><i class="fas fa-trash"></i></a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4">No hay registros de desarrollo que coincidan con los filtros.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="card-grid">
+      {% for desarrollo in desarrollos %}
+     <div class="desarrollo-card"
+  data-nino="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}"
+  data-tutor="{{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}"
+  data-fecha="{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}"
+  data-cognitiva="{{ desarrollo.dimension_cognitiva }}"
+  data-comunicativa="{{ desarrollo.dimension_comunicativa }}"
+  data-socioafectiva="{{ desarrollo.dimension_socio_afectiva }}"
+  data-corporal="{{ desarrollo.dimension_corporal }}"
+  data-rating-cognitiva="{{ desarrollo.rating_cognitiva|default:0 }}"
+  data-rating-comunicativa="{{ desarrollo.rating_comunicativa|default:0 }}"
+  data-rating-socioafectiva="{{ desarrollo.rating_socio_afectiva|default:0 }}"
+  data-rating-corporal="{{ desarrollo.rating_corporal|default:0 }}"
+>
+
+  <!-- ICONO DECORATIVO -->
+  <i class="fas fa-baby card-icon"></i>
+
+  <div class="card-header">
+    <h3><i class="fas fa-calendar-alt"></i> {{ desarrollo.fecha_fin_mes|date:"Y-m-d" }}</h3>
+  </div>
+
+  <div class="card-body">
+    <p><i class="fas fa-child"></i><strong>Nombre:</strong> {{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}</p>
+    <p><i class="fas fa-user"></i><strong>Tutor:</strong> {{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}</p>
+  </div>
+
+  <div class="card-footer acciones">
+    <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+    <a href="{% url 'desarrollo:editar_desarrollo' desarrollo.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
+    <a href="{% url 'desarrollo:eliminar_desarrollo' desarrollo.id %}" 
+       class="btn-accion btn-rojo"
+       onclick="return confirm('¿Estás segura de que deseas eliminar este registro? Esta acción no se puede deshacer.');">
+       <i class="fas fa-trash"></i>
+    </a>
+  </div>
+
+</div>
+
+      {% empty %}
+        <p style="grid-column: 1 / -1; text-align: center; color: #777; font-size: 18px; padding: 40px 0;">No hay registros de desarrollo que coincidan con los filtros.</p>
+      {% endfor %}
+    </div>
+
+    <!-- Controles de Paginación -->
+    <div class="pagination">
+      {% if desarrollos.has_previous %}
+        <a href="?page=1{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; Primera</a>
+        <a href="?page={{ desarrollos.previous_page_number }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+      {% else %}
+        <span class="disabled">&laquo; Primera</span>
+        <span class="disabled">Anterior</span>
+      {% endif %}
+
+      <span class="current">
+        Página {{ desarrollos.number }} de {{ desarrollos.paginator.num_pages }}.
+      </span>
+
+      {% if desarrollos.has_next %}
+        <a href="?page={{ desarrollos.next_page_number }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+        <a href="?page={{ desarrollos.paginator.num_pages }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última &raquo;</a>
+      {% else %}
+        <span class="disabled">Siguiente</span>
+        <span class="disabled">Última &raquo;</span>
+      {% endif %}
+    </div>
+
   </div>
 
   <!-- Modal Detalles -->
@@ -321,21 +456,21 @@
 
     document.querySelectorAll('.ver-detalles').forEach(button => {
       button.addEventListener('click', function() {
-        const fila = this.closest('tr');
+        const card = this.closest('.desarrollo-card');
         
-        document.getElementById('modal-nino').textContent = fila.dataset.nino;
-        document.getElementById('modal-tutor').textContent = fila.dataset.tutor;
-        document.getElementById('modal-fecha').textContent = fila.dataset.fecha;
-        document.getElementById('modal-cognitiva').textContent = fila.dataset.cognitiva;
-        document.getElementById('modal-comunicativa').textContent = fila.dataset.comunicativa;
-        document.getElementById('modal-socioafectiva').textContent = fila.dataset.socioafectiva;
-        document.getElementById('modal-corporal').textContent = fila.dataset.corporal;
+        document.getElementById('modal-nino').textContent = card.dataset.nino;
+        document.getElementById('modal-tutor').textContent = card.dataset.tutor;
+        document.getElementById('modal-fecha').textContent = card.dataset.fecha;
+        document.getElementById('modal-cognitiva').textContent = card.dataset.cognitiva;
+        document.getElementById('modal-comunicativa').textContent = card.dataset.comunicativa;
+        document.getElementById('modal-socioafectiva').textContent = card.dataset.socioafectiva;
+        document.getElementById('modal-corporal').textContent = card.dataset.corporal;
 
         // Renderizar estrellas
-        renderStars(document.getElementById('modal-rating-cognitiva'), fila.dataset.ratingCognitiva);
-        renderStars(document.getElementById('modal-rating-comunicativa'), fila.dataset.ratingComunicativa);
-        renderStars(document.getElementById('modal-rating-socioafectiva'), fila.dataset.ratingSocioafectiva);
-        renderStars(document.getElementById('modal-rating-corporal'), fila.dataset.ratingCorporal);
+        renderStars(document.getElementById('modal-rating-cognitiva'), card.dataset.ratingCognitiva);
+        renderStars(document.getElementById('modal-rating-comunicativa'), card.dataset.ratingComunicativa);
+        renderStars(document.getElementById('modal-rating-socioafectiva'), card.dataset.ratingSocioafectiva);
+        renderStars(document.getElementById('modal-rating-corporal'), card.dataset.ratingCorporal);
 
         modal.style.display = 'flex';
       });
