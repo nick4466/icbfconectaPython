@@ -332,7 +332,7 @@
             </div>
             <div class="rating-labels"><span>Malo</span><span>Regular</span><span>Bueno</span><span>Muy Bueno</span><span>Excelente</span></div>
             <h4>Observación:</h4>
-            <textarea name="dimension_cognitiva" required placeholder="Detalles de la dimensión cognitiva del niño">{{ desarrollo.dimension_cognitiva }}</textarea>
+            <textarea name="dimension_cognitiva" placeholder="Opcional: Detalles de la dimensión cognitiva">{{ desarrollo.dimension_cognitiva|default_if_none:'' }}</textarea>
           </div>
 
           <div class="dimension-card">
@@ -346,7 +346,7 @@
             </div>
             <div class="rating-labels"><span>Malo</span><span>Regular</span><span>Bueno</span><span>Muy Bueno</span><span>Excelente</span></div>
             <h4>Observación:</h4>
-            <textarea name="dimension_comunicativa" required placeholder="Detalles de la dimensión comunicativa del niño">{{ desarrollo.dimension_comunicativa }}</textarea>
+            <textarea name="dimension_comunicativa" placeholder="Opcional: Detalles de la dimensión comunicativa">{{ desarrollo.dimension_comunicativa|default_if_none:'' }}</textarea>
           </div>
 
           <div class="dimension-card">
@@ -360,7 +360,7 @@
             </div>
             <div class="rating-labels"><span>Malo</span><span>Regular</span><span>Bueno</span><span>Muy Bueno</span><span>Excelente</span></div>
             <h4>Observación:</h4>
-            <textarea name="dimension_socio_afectiva" required placeholder="Detalles de la dimensión socio afectiva del niño">{{ desarrollo.dimension_socio_afectiva }}</textarea>
+            <textarea name="dimension_socio_afectiva" placeholder="Opcional: Detalles de la dimensión socio afectiva">{{ desarrollo.dimension_socio_afectiva|default_if_none:'' }}</textarea>
           </div>
 
           <div class="dimension-card">
@@ -374,14 +374,16 @@
             </div>
             <div class="rating-labels"><span>Malo</span><span>Regular</span><span>Bueno</span><span>Muy Bueno</span><span>Excelente</span></div>
             <h4>Observación:</h4>
-            <textarea name="dimension_corporal" required placeholder="Detalles de la dimensión corporal del niño">{{ desarrollo.dimension_corporal }}</textarea>
+            <textarea name="dimension_corporal" placeholder="Opcional: Detalles de la dimensión corporal">{{ desarrollo.dimension_corporal|default_if_none:'' }}</textarea>
           </div>
         </div>
 
         <button class="botones" type="submit"><i class="fas fa-save"></i> Guardar Registro</button>
       </form>
       <div style="text-align: center; margin-top: 20px;">
-        {% if nino_id_preseleccionado %}
+        {% if desarrollo %}
+          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ desarrollo.nino.id }}" style="color: #555; text-decoration: none;">← Volver al listado</a>
+        {% elif nino_id_preseleccionado %}
           <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino_id_preseleccionado|stringformat:'s' }}" style="color: #555; text-decoration: none;">← Volver al listado</a>
         {% else %}
           <a href="{% url 'desarrollo:listar_desarrollos' %}" style="color: #555; text-decoration: none;">← Volver al listado</a>
@@ -398,6 +400,30 @@
         mensajeExito.style.display = 'none';
       }, 5000);
     }
+
+    // Validación de frontend para los ratings de estrellas
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+      const ratings = [
+        'rating_cognitiva',
+        'rating_comunicativa',
+        'rating_socio_afectiva',
+        'rating_corporal'
+      ];
+      let todosCalificados = true;
+
+      for (const name of ratings) {
+        if (!document.querySelector(`input[name="${name}"]:checked`)) {
+          todosCalificados = false;
+          break;
+        }
+      }
+
+      if (!todosCalificados) {
+        alert('Por favor, califica todas las dimensiones con estrellas antes de guardar.');
+        event.preventDefault(); // Evita que el formulario se envíe
+      }
+    });
   </script>
 </body>
 </html>

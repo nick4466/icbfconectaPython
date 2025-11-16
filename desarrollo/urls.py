@@ -14,4 +14,8 @@ urlpatterns = [
 
     # --- URL para el Padre de Familia ---
     path('ver/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
+
+    # --- URLs para Reportes ---
+    path('reporte/resumen/<int:nino_id>/', views.reporte_resumen, name='reporte_resumen'),
+    path('reporte/pdf/<int:nino_id>/', views.generar_reporte_pdf, name='generar_reporte_pdf'),
 ]

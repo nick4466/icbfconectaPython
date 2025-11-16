@@ -8,14 +8,17 @@ from django.contrib.auth.hashers import make_password
 from django.db.models import Q, Count
 from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional
 from django.utils import timezone
-from django.http import JsonResponse
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
 from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm, AdminForm
 from django.contrib import messages
 from desarrollo.models import DesarrolloNino
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 from .models import Rol, Usuario, MadreComunitaria, HogarComunitario
 from .forms import UsuarioMadreForm, MadreProfileForm, HogarForm 
+from django.http import JsonResponse
+from .models import Ciudad
 # Asegúrate de importar todos los formularios y modelos necesarios
 
 # ----------------------------------------------------
@@ -153,7 +156,7 @@ class MadreForm(forms.ModelForm):
 class HogarForm(forms.ModelForm):
     class Meta:
         model = HogarComunitario
-        fields = ['nombre_hogar', 'direccion', 'localidad', 'estado']
+        fields = ['nombre_hogar', 'direccion', 'localidad', 'estado', 'regional', 'ciudad']
 # En la sección de formularios simples en views.py
 class AdministradorForm(forms.ModelForm):
     # Añadir el campo de contraseña, ya que no se incluye automáticamente
@@ -170,18 +173,39 @@ class AdministradorForm(forms.ModelForm):
 
 @rol_requerido('administrador')
 def listar_madres(request):
+    # 💡 MEJORA: Lógica de filtrado
+    query_nombre = request.GET.get('nombre', '')
+    query_documento = request.GET.get('documento', '')
+    query_hogar = request.GET.get('hogar', '')
+
     # Obtener todos los perfiles de madre con sus datos relacionados
     madres_query = MadreComunitaria.objects.select_related('usuario').prefetch_related('hogares_asignados').all()
 
+    if query_nombre:
+        madres_query = madres_query.filter(Q(usuario__nombres__icontains=query_nombre) | Q(usuario__apellidos__icontains=query_nombre))
+    if query_documento:
+        madres_query = madres_query.filter(usuario__documento__icontains=query_documento)
+    if query_hogar:
+        madres_query = madres_query.filter(hogares_asignados__nombre_hogar__icontains=query_hogar)
     
     context = {
-        'madres': madres_query
+        'madres': madres_query,
+        'filtros': { # Devolver los filtros a la plantilla
+            'nombre': query_nombre,
+            'documento': query_documento,
+            'hogar': query_hogar,
+        }
     }
     return render(request, 'admin/madres_list.html', context)
 
 @login_required
 @rol_requerido('administrador')
 def listar_hogares(request):
+    # 💡 MEJORA: Lógica de filtrado
+    query_nombre = request.GET.get('nombre_hogar', '')
+    query_madre = request.GET.get('madre', '')
+    query_regional = request.GET.get('regional', '')
+
     # Consulta base
     hogares = HogarComunitario.objects.select_related(
         'madre__usuario', 'regional'
@@ -189,8 +213,24 @@ def listar_hogares(request):
         num_ninos=Count('ninos')
     ).order_by('regional__nombre', 'nombre_hogar')
 
+    if query_nombre:
+        hogares = hogares.filter(nombre_hogar__icontains=query_nombre)
+    if query_madre:
+        hogares = hogares.filter(Q(madre__usuario__nombres__icontains=query_madre) | Q(madre__usuario__apellidos__icontains=query_madre))
+    if query_regional:
+        hogares = hogares.filter(regional_id=query_regional)
 
-    return render(request, 'admin/hogares_list.html', {'hogares': hogares})
+    context = {
+        'hogares': hogares,
+        'regionales_filtro': Regional.objects.all().order_by('nombre'), # Para el dropdown de filtros
+        'filtros': {
+            'nombre_hogar': query_nombre,
+            'madre': query_madre,
+            'regional': query_regional,
+        }
+    }
+
+    return render(request, 'admin/hogares_list.html', context)
 
 # Importa los formularios correctos al inicio de tu views.py
 # from .forms import UsuarioMadreForm, MadreProfileForm, HogarForm 
@@ -205,15 +245,20 @@ def listar_hogares(request):
 def crear_madre(request):
     rol_madre, _ = Rol.objects.get_or_create(nombre_rol='madre_comunitaria')
 
+    regionales = Regional.objects.all().order_by('nombre')
     if request.method == 'POST':
-        usuario_form = UsuarioMadreForm(request.POST)
+        usuario_form = UsuarioMadreForm(request.POST, request.FILES)
         madre_profile_form = MadreProfileForm(request.POST, request.FILES)
-        hogar_form = HogarForm(request.POST, request.FILES)
+        hogar_form = HogarForm(request.POST)  # ¡Esta es la línea que faltaba!
         error_step = 1
 
         if usuario_form.is_valid() and madre_profile_form.is_valid() and hogar_form.is_valid():
             documento = usuario_form.cleaned_data.get('documento')
+            # 💡 CORRECCIÓN: Priorizar el nombre del hogar del formulario. Si está vacío, generar uno.
             nombre_hogar = hogar_form.cleaned_data.get('nombre_hogar')
+            if not nombre_hogar:
+                nombre_hogar = "Hogar de " + usuario_form.cleaned_data.get('nombres', '').split(' ')[0]
+
             direccion_hogar = hogar_form.cleaned_data.get('direccion')
             localidad = hogar_form.cleaned_data.get('localidad')
 
@@ -222,7 +267,7 @@ def crear_madre(request):
                 messages.error(request, f"Ya existe un usuario con el documento {documento} registrado.")
                 return render(request, 'admin/madres_form.html', {
                     'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
-                    'initial_step': 1
+                    'initial_step': 1, 'regionales': regionales
                 })
 
             # Validación de hogar duplicado
@@ -236,7 +281,7 @@ def crear_madre(request):
             if messages.get_messages(request):
                 return render(request, 'admin/madres_form.html', {
                     'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
-                    'initial_step': error_step
+                    'initial_step': error_step, 'regionales': regionales
                 })
 
             try:
@@ -245,6 +290,7 @@ def crear_madre(request):
                     # 1️⃣ Crear usuario
                     usuario = usuario_form.save(commit=False)
                     usuario.rol = rol_madre
+                    # La contraseña se establece aquí, puedes cambiarla si es necesario
                     usuario.set_password('123456')
                     usuario.is_active = True
                     usuario.save()
@@ -257,6 +303,7 @@ def crear_madre(request):
                     # 3️⃣ Crear hogar comunitario asociado a la madre
                     hogar = hogar_form.save(commit=False)
                     hogar.madre = madre_profile
+                    hogar.nombre_hogar = nombre_hogar
                     hogar.save()
 
                 messages.success(request, '¡Madre comunitaria y hogar creados exitosamente! Contraseña por defecto: 123456')
@@ -278,7 +325,8 @@ def crear_madre(request):
             'usuario_form': usuario_form,
             'madre_profile_form': madre_profile_form,
             'hogar_form': hogar_form,
-            'initial_step': error_step
+            'initial_step': error_step, # Para saber en qué paso del formulario mostrar el error
+            'regionales': regionales
         })
 
     # GET
@@ -288,10 +336,12 @@ def crear_madre(request):
         'usuario_form': UsuarioMadreForm(),
         'madre_profile_form': MadreProfileForm(),
         # Pasamos los datos iniciales al formulario del hogar
-        'hogar_form': HogarForm(initial=initial_hogar),
+        'hogar_form': HogarForm(),
+        'regionales': regionales,
         'initial_step': 1
     })
 @login_required
+@rol_requerido('administrador')
 def editar_madre(request, id):
     # Obtener el usuario que es madre comunitaria
     usuario_madre = get_object_or_404(Usuario, id=id, rol__nombre_rol='madre_comunitaria')
@@ -303,13 +353,15 @@ def editar_madre(request, id):
     hogar = HogarComunitario.objects.filter(madre=madre_profile).first()
     
     if not hogar:
+        # Si por alguna razón no tiene hogar, es mejor redirigir.
         messages.error(request, 'Esta madre no tiene un hogar comunitario asignado.')
         return redirect('listar_madres')
 
     if request.method == 'POST':
+        # PASAR request.FILES para permitir subida de nueva foto
         usuario_form = UsuarioMadreForm(request.POST, instance=usuario_madre)
         madre_profile_form = MadreProfileForm(request.POST, request.FILES, instance=madre_profile)
-        hogar_form = HogarForm(request.POST, request.FILES, instance=hogar)
+        hogar_form = HogarForm(request.POST, instance=hogar)
         
         if usuario_form.is_valid() and madre_profile_form.is_valid() and hogar_form.is_valid():
             # Validación para hogar duplicado, excluyendo el hogar actual
@@ -328,30 +380,37 @@ def editar_madre(request, id):
                     'usuario_form': usuario_form,
                     'madre_profile_form': madre_profile_form,
                     'hogar_form': hogar_form,
-                    'modo_edicion': True
+                    'modo_edicion': True,
+                    'regionales': Regional.objects.all().order_by('nombre')
                 })
 
             try:
                 with transaction.atomic():
-                    usuario_form.save()
+                    # Guardar usuario
+                    usuario_actualizado = usuario_form.save()
+                    
+                    # Guardar perfil y hogar
                     madre_profile_form.save()
                     hogar_form.save()
                 
                 messages.success(request, '¡Madre comunitaria y hogar actualizados exitosamente!')
-                return redirect('listar_madres')
-            
+                return redirect('listar_madres') # Corregido para que el redirect esté dentro del try
             except Exception as e:
                 messages.error(request, f'Error al guardar los cambios: {str(e)}')
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
     else:
         usuario_form = UsuarioMadreForm(instance=usuario_madre)
         madre_profile_form = MadreProfileForm(instance=madre_profile)
         hogar_form = HogarForm(instance=hogar)
 
+    regionales = Regional.objects.all().order_by('nombre')
     return render(request, 'admin/madres_form.html', {
         'usuario_form': usuario_form,
         'madre_profile_form': madre_profile_form,
         'hogar_form': hogar_form,
-        'modo_edicion': True
+        'modo_edicion': True,
+        'regionales': regionales
     })
 
 
@@ -379,10 +438,24 @@ def eliminar_madre(request, id):
 @login_required
 @rol_requerido('administrador')
 def listar_administradores(request):
+    # 💡 MEJORA: Lógica de filtrado
+    query_nombre = request.GET.get('nombre', '')
+    query_documento = request.GET.get('documento', '')
+
     rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
     # Incluimos la regional en la consulta para optimizar
     administradores = Usuario.objects.filter(rol=rol_admin).order_by('nombres')
-    return render(request, 'admin/administradores_list.html', {'administradores': administradores})
+
+    if query_nombre:
+        administradores = administradores.filter(Q(nombres__icontains=query_nombre) | Q(apellidos__icontains=query_nombre))
+    if query_documento:
+        administradores = administradores.filter(documento__icontains=query_documento)
+
+    context = {
+        'administradores': administradores,
+        'filtros': {'nombre': query_nombre, 'documento': query_documento}
+    }
+    return render(request, 'admin/administradores_list.html', context)
 
 
 @login_required
@@ -391,7 +464,7 @@ def crear_administrador(request):
     rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
     
     if request.method == 'POST':
-        form = AdminForm(request.POST)
+        form = AdminForm(request.POST, request.FILES)
         if form.is_valid():
             documento = form.cleaned_data['documento']
             correo = form.cleaned_data['correo']
@@ -423,9 +496,8 @@ def crear_administrador(request):
 @rol_requerido('administrador')
 def editar_administrador(request, id):
     admin = get_object_or_404(Usuario, id=id, rol__nombre_rol='administrador')
-    
     if request.method == 'POST':
-        form = AdminForm(request.POST, instance=admin)
+        form = AdminForm(request.POST, request.FILES, instance=admin)
         if form.is_valid():
             documento = form.cleaned_data['documento']
             correo = form.cleaned_data['correo']
@@ -435,13 +507,11 @@ def editar_administrador(request, id):
                 return render(request, 'admin/administradores_form.html', {'form': form, 'admin': admin})
 
             usuario = form.save(commit=False)
-            
             nueva_contraseña = form.cleaned_data.get('contraseña')
             if nueva_contraseña:
                 usuario.set_password(nueva_contraseña)
                 if request.user.id == admin.id:
                     update_session_auth_hash(request, usuario)
-            
             usuario.save()
             messages.success(request, '¡Administrador actualizado exitosamente!')
             return redirect('listar_administradores')
@@ -719,7 +789,13 @@ def detalles_madre_json(request, id):
     try:
         madre_perfil = get_object_or_404(MadreComunitaria, id=id)
         usuario = madre_perfil.usuario
-        hogar = HogarComunitario.objects.filter(madre=madre_perfil).first()
+        hogar = HogarComunitario.objects.filter(madre=madre_perfil).first() if hasattr(HogarComunitario, 'madre') else None
+
+        # Obtener la URL de la foto de la madre
+        if madre_perfil.foto_madre and hasattr(madre_perfil.foto_madre, 'url'):
+            foto_madre_url = madre_perfil.foto_madre.url
+        else:
+            foto_madre_url = ''
 
         data = {
             'usuario': {
@@ -735,15 +811,33 @@ def detalles_madre_json(request, id):
                 'nivel_escolaridad': madre_perfil.nivel_escolaridad,
                 'titulo_obtenido': madre_perfil.titulo_obtenido or "No especificado",
                 'experiencia_previa': madre_perfil.experiencia_previa or "No especificada",
+                'foto_madre_url': foto_madre_url,
             },
             'hogar': {
                 'nombre_hogar': hogar.nombre_hogar if hogar else "Sin hogar asignado",
                 'direccion': hogar.direccion if hogar else "N/A",
                 'localidad': hogar.localidad if hogar else "N/A",
                 'barrio': hogar.barrio if hogar else "N/A",
-                'capacidad_maxima': hogar.capacidad_maxima if hogar else "N/A",
+                'capacidad_maxima': getattr(hogar, 'capacidad_maxima', 'N/A') if hogar else "N/A",
+                'regional': hogar.regional.nombre if hogar and hogar.regional else "N/A",
+                'ciudad': hogar.ciudad.nombre if hogar and hogar.ciudad else "N/A",
             }
         }
         return JsonResponse(data)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+def cargar_ciudades(request):
+    """
+    Retorna JSON con las ciudades de la regional indicada.
+    Parámetro: ?regional_id=ID
+    """
+    regional_id = request.GET.get("regional_id")
+    if not regional_id:
+        return JsonResponse([], safe=False)
+    try:
+        ciudades = Ciudad.objects.filter(regional_id=regional_id).order_by('nombre')
+        data = [{"id": c.id, "nombre": c.nombre} for c in ciudades]
+        return JsonResponse(data, safe=False)
+    except Exception:
+        return JsonResponse([], safe=False)

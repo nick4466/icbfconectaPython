@@ -1,8 +1,19 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
+from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
-from core.models import Nino, HogarComunitario, Padre
 from .models import DesarrolloNino
+from novedades.models import Novedad
+from core.models import Nino, HogarComunitario, Padre, MadreComunitaria
+from django.utils import timezone
+from datetime import datetime
+from django.db.models import Q
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from io import BytesIO
+from django.conf import settings
+import os
+from django.templatetags.static import static
+
 
 # -----------------------------------------------------------------
 # VISTA DEL PADRE
@@ -37,45 +48,76 @@ def registrar_desarrollo(request):
         return redirect('role_redirect')
 
     try:
-        hogar_madre = HogarComunitario.objects.get(madre=request.user.madre_profile)
+        hogar_madre = HogarComunitario.objects.get(madre__usuario=request.user)
     except HogarComunitario.DoesNotExist:
         return redirect('madre_dashboard')
 
     ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
 
+    # Mapeo de ratings a descripciones para autocompletado
+    rating_map = {
+        "1": "Malo",
+        "2": "Regular",
+        "3": "Bueno",
+        "4": "Muy Bueno",
+        "5": "Excelente",
+    }
+
     if request.method == 'POST':
         nino_id = request.POST.get('nino')
         fecha_registro = request.POST.get('fecha_registro')
-        cognitiva = request.POST.get('dimension_cognitiva')
-        comunicativa = request.POST.get('dimension_comunicativa')
-        socio_afectiva = request.POST.get('dimension_socio_afectiva')
-        corporal = request.POST.get('dimension_corporal')
-        # --- Capturar ratings ---
+
+        # --- Capturar ratings y observaciones ---
         rating_cognitiva = request.POST.get('rating_cognitiva')
+        cognitiva_obs = request.POST.get('dimension_cognitiva', '').strip()
+        cognitiva = cognitiva_obs if cognitiva_obs else rating_map.get(rating_cognitiva, "")
+
         rating_comunicativa = request.POST.get('rating_comunicativa')
+        comunicativa_obs = request.POST.get('dimension_comunicativa', '').strip()
+        comunicativa = comunicativa_obs if comunicativa_obs else rating_map.get(rating_comunicativa, "")
+
         rating_socio_afectiva = request.POST.get('rating_socio_afectiva')
+        socio_afectiva_obs = request.POST.get('dimension_socio_afectiva', '').strip()
+        socio_afectiva = socio_afectiva_obs if socio_afectiva_obs else rating_map.get(rating_socio_afectiva, "")
+
         rating_corporal = request.POST.get('rating_corporal')
+        corporal_obs = request.POST.get('dimension_corporal', '').strip()
+        corporal = corporal_obs if corporal_obs else rating_map.get(rating_corporal, "")
         
-        # Se incluyen los ratings en la validación
-        if not all([nino_id, fecha_registro, cognitiva, comunicativa, socio_afectiva, corporal,
-                    rating_cognitiva, rating_comunicativa, rating_socio_afectiva, rating_corporal]):
+        # --- Validación de campos obligatorios con mensajes de error específicos ---
+        errores = []
+        if not nino_id:
+            errores.append("debes seleccionar un niño")
+        if not fecha_registro:
+            errores.append("debes seleccionar una fecha")
+        if not rating_cognitiva:
+            errores.append("debes calificar la dimensión cognitiva")
+        if not rating_comunicativa:
+            errores.append("debes calificar la dimensión comunicativa")
+        if not rating_socio_afectiva:
+            errores.append("debes calificar la dimensión socio-afectiva")
+        if not rating_corporal:
+            errores.append("debes calificar la dimensión corporal")
+
+        if errores:
+            mensaje_error = "Error: " + ", ".join(errores) + "."
             return render(request, 'madre/desarrollo_form.html', {
                 'ninos': ninos_del_hogar,
                 'nino_id_preseleccionado': nino_id,
-                'error': 'Todos los campos son obligatorios.'
+                'error': mensaje_error.capitalize()
             })
 
         DesarrolloNino.objects.create(
             nino_id=nino_id,
             fecha_fin_mes=fecha_registro,
-            dimension_cognitiva=cognitiva,
-            dimension_comunicativa=comunicativa,
-            dimension_socio_afectiva=socio_afectiva,
-            dimension_corporal=corporal,
             rating_cognitiva=rating_cognitiva,
             rating_comunicativa=rating_comunicativa,
             rating_socio_afectiva=rating_socio_afectiva,
             rating_corporal=rating_corporal,
+            dimension_cognitiva=cognitiva,
+            dimension_comunicativa=comunicativa,
+            dimension_socio_afectiva=socio_afectiva,
+            dimension_corporal=corporal,
         )
         
         redirect_url = reverse('desarrollo:listar_desarrollos')
@@ -94,7 +136,7 @@ def listar_desarrollos(request):
         return redirect('role_redirect')
     
     try:
-        hogar_madre = HogarComunitario.objects.get(madre=request.user.madre_profile)
+        hogar_madre = HogarComunitario.objects.get(madre__usuario=request.user)
     except HogarComunitario.DoesNotExist:
         return render(request, 'madre/desarrollo_list.html', {'error': 'No tienes un hogar asignado.'})
 
@@ -119,23 +161,40 @@ def editar_desarrollo(request, id):
     desarrollo = get_object_or_404(DesarrolloNino, id=id)
 
     # Verificación de seguridad: la madre solo puede editar registros de su hogar.
-    if desarrollo.nino.hogar.madre != request.user.madre_profile:
+    if desarrollo.nino.hogar.madre.usuario != request.user:
         return redirect('desarrollo:listar_desarrollos')
+
+    # Mapeo de ratings a descripciones
+    rating_map = {
+        "1": "Malo",
+        "2": "Regular",
+        "3": "Bueno",
+        "4": "Muy Bueno",
+        "5": "Excelente",
+    }
 
     if request.method == 'POST':
         desarrollo.fecha_fin_mes = request.POST.get('fecha_registro')
-        desarrollo.dimension_cognitiva = request.POST.get('dimension_cognitiva')
-        desarrollo.dimension_comunicativa = request.POST.get('dimension_comunicativa')
-        desarrollo.dimension_socio_afectiva = request.POST.get('dimension_socio_afectiva')
-        desarrollo.dimension_corporal = request.POST.get('dimension_corporal')
-        # --- Actualizar ratings ---
+
+        # --- Actualizar ratings y dimensiones ---
         desarrollo.rating_cognitiva = request.POST.get('rating_cognitiva')
+        cognitiva_obs = request.POST.get('dimension_cognitiva', '').strip()
+        desarrollo.dimension_cognitiva = cognitiva_obs if cognitiva_obs else rating_map.get(desarrollo.rating_cognitiva, "")
+
         desarrollo.rating_comunicativa = request.POST.get('rating_comunicativa')
+        comunicativa_obs = request.POST.get('dimension_comunicativa', '').strip()
+        desarrollo.dimension_comunicativa = comunicativa_obs if comunicativa_obs else rating_map.get(desarrollo.rating_comunicativa, "")
+
         desarrollo.rating_socio_afectiva = request.POST.get('rating_socio_afectiva')
+        socio_afectiva_obs = request.POST.get('dimension_socio_afectiva', '').strip()
+        desarrollo.dimension_socio_afectiva = socio_afectiva_obs if socio_afectiva_obs else rating_map.get(desarrollo.rating_socio_afectiva, "")
+
         desarrollo.rating_corporal = request.POST.get('rating_corporal')
+        corporal_obs = request.POST.get('dimension_corporal', '').strip()
+        desarrollo.dimension_corporal = corporal_obs if corporal_obs else rating_map.get(desarrollo.rating_corporal, "")
 
         desarrollo.save()
-        
+
         redirect_url = reverse('desarrollo:listar_desarrollos')
         return redirect(f'{redirect_url}?nino={desarrollo.nino.id}&exito=1')
 
@@ -153,10 +212,154 @@ def eliminar_desarrollo(request, id):
 
     desarrollo = get_object_or_404(DesarrolloNino, id=id)
 
-    if desarrollo.nino.hogar.madre != request.user.madre_profile:
+    if desarrollo.nino.hogar.madre.usuario != request.user:
         return redirect('desarrollo:listar_desarrollos')
 
     nino_id = desarrollo.nino.id
     desarrollo.delete()
     
     return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino_id}')
+
+@login_required
+def generar_reporte(request):
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
+
+    try:
+        hogar_madre = HogarComunitario.objects.get(madre__usuario=request.user)
+    except HogarComunitario.DoesNotExist:
+        return render(request, 'madre/reporte_form.html', {'error': 'No tienes un hogar asignado.'})
+
+    ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
+    context = {'ninos': ninos_del_hogar}
+
+    if request.method == 'GET' and 'nino' in request.GET:
+        nino_id = request.GET.get('nino')
+        tipo_reporte = request.GET.get('tipo_reporte', 'ambos')
+        fecha_inicio = request.GET.get('fecha_inicio')
+        fecha_fin = request.GET.get('fecha_fin')
+
+        if nino_id:
+            nino_seleccionado = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
+            desarrollos = []
+            novedades = []
+
+            # Filtrar Desarrollos
+            if tipo_reporte in ['desarrollos', 'ambos']:
+                query_desarrollo = DesarrolloNino.objects.filter(nino=nino_seleccionado)
+                if fecha_inicio:
+                    query_desarrollo = query_desarrollo.filter(fecha_fin_mes__gte=fecha_inicio)
+                if fecha_fin:
+                    query_desarrollo = query_desarrollo.filter(fecha_fin_mes__lte=fecha_fin)
+                desarrollos = query_desarrollo.order_by('fecha_fin_mes')
+
+            # Filtrar Novedades
+            if tipo_reporte in ['novedades', 'ambos']:
+                query_novedad = Novedad.objects.filter(nino=nino_seleccionado)
+                if fecha_inicio:
+                    query_novedad = query_novedad.filter(fecha__gte=fecha_inicio)
+                if fecha_fin:
+                    query_novedad = query_novedad.filter(fecha__lte=fecha_fin)
+                novedades = query_novedad.order_by('fecha')
+
+            context.update({
+                'nino_seleccionado': nino_seleccionado,
+                'desarrollos': desarrollos,
+                'novedades': novedades,
+                'filtros': request.GET, # Pasa los filtros para mantenerlos en el form
+                'mostrar_resumen': True
+            })
+
+    return render(request, 'madre/reporte_form.html', context)
+
+@login_required
+def reporte_resumen(request, nino_id):
+    nino = get_object_or_404(Nino, id=nino_id)
+    
+    # Asegurarse de que la madre solo pueda ver niños de su hogar
+    if not request.user.is_staff:
+        try:
+            hogar_madre = HogarComunitario.objects.get(madre__usuario=request.user)
+            if nino.hogar != hogar_madre:
+                return redirect('gestion_ninos')
+        except HogarComunitario.DoesNotExist:
+            return redirect('gestion_ninos')
+
+    desarrollos = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes')
+    novedades = Novedad.objects.filter(nino=nino).order_by('-fecha')
+
+    context = {
+        'nino': nino,
+        'desarrollos': desarrollos,
+        'novedades': novedades,
+    }
+    return render(request, 'reporte/reporte_resumen.html', context)
+
+
+@login_required
+def generar_reporte_pdf(request, nino_id):
+    nino = get_object_or_404(Nino, id=nino_id)
+
+    tipo_reporte = request.GET.get('tipo_reporte', 'ambos')
+
+    # Obtener fechas como strings
+    fecha_inicio_str = request.GET.get('fecha_inicio') or None
+    fecha_fin_str = request.GET.get('fecha_fin') or None
+
+    # Convertir fechas SOLO si vienen
+    def parse_fecha(f):
+        try:
+            return datetime.strptime(f, '%Y-%m-%d').date() if f else None
+        except:
+            return None
+
+    fecha_inicio = parse_fecha(fecha_inicio_str)
+    fecha_fin = parse_fecha(fecha_fin_str)
+
+    # Base de consultas vacías
+    desarrollos = DesarrolloNino.objects.none()
+    novedades = Novedad.objects.none()
+
+    # Aplicar tipo de reporte
+    if tipo_reporte in ['ambos', 'desarrollo']:
+        desarrollos = DesarrolloNino.objects.filter(nino=nino)
+
+    if tipo_reporte in ['ambos', 'novedades']:
+        novedades = Novedad.objects.filter(nino=nino)
+
+    # Aplicar filtros de fecha de forma SEGURA
+    if fecha_inicio:
+        desarrollos = desarrollos.filter(fecha_fin_mes__gte=fecha_inicio)
+        novedades = novedades.filter(fecha__gte=fecha_inicio)
+
+    if fecha_fin:
+        desarrollos = desarrollos.filter(fecha_fin_mes__lte=fecha_fin)
+        novedades = novedades.filter(fecha__lte=fecha_fin)
+    
+    logo_url = request.build_absolute_uri(static('img/logoSinFondo.png'))
+
+    # Renderizar plantilla HTML
+    template_path = 'reporte/reporte_pdf.html'
+    context = {
+        'nino': nino,
+        'desarrollos': desarrollos.order_by('fecha_fin_mes'),
+        'novedades': novedades.order_by('fecha'),
+        'tipo_reporte': tipo_reporte,
+        'fecha_inicio': fecha_inicio_str or "N/A",
+        'fecha_fin': fecha_fin_str or "N/A",
+        'logo_url': logo_url,
+        'hogar_comunitario': nino.hogar, # Mover aquí
+    }
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # Generar PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="reporte_{nino.nombres}_{nino.apellidos}.pdf"'
+    
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    
+    if pisa_status.err:
+        return HttpResponse('Error generando PDF. <pre>' + html + '</pre>')
+
+    return response

@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generar Reporte para {{ nino.nombres }} {{ nino.apellidos }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondito.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: #333;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 25px;
+      background-color: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      text-align: center;
+      color: #7a3eb1;
+    }
+    h1 { font-size: 28px; margin-bottom: 20px; }
+    h2 { font-size: 22px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #f3c1e5; padding-bottom: 10px; }
+
+    /* Formulario de Opciones */
+    .form-container {
+      background-color: #faf6ff;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      border: 1px solid #e5d5f5;
+    }
+    .form-container form {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-around;
+      gap: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #5e3370;
+    }
+    .form-group input[type="date"], .form-group select {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    .btn-generar {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      transition: background-color 0.3s;
+      align-self: flex-end;
+    }
+    .btn-generar:hover {
+      background-color: #218838;
+    }
+
+    /* Tablas de Resumen */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    thead {
+      background-color: #f3c1e5;
+      color: #5e3370;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    tbody tr:hover {
+      background-color: #f9e6ff;
+    }
+    .empty-row td {
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+      color: #777;
+    }
+    .btn-back {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 15px;
+        background-color: #9B59B6;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    .btn-back:hover {
+        background-color: #8e44ad;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Generar Reporte para: {{ nino.nombres }} {{ nino.apellidos }}</h1>
+
+    <div class="form-container">
+      <form action="{% url 'desarrollo:generar_reporte_pdf' nino.id %}" method="get" target="_blank">
+        <div class="form-group">
+          <label for="tipo_reporte">Contenido del Reporte</label>
+          <select name="tipo_reporte" id="tipo_reporte">
+            <option value="ambos">Desarrollo y Novedades</option>
+            <option value="desarrollo">Solo Desarrollo</option>
+            <option value="novedades">Solo Novedades</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="fecha_inicio">Desde</label>
+          <input type="date" name="fecha_inicio" id="fecha_inicio">
+        </div>
+        <div class="form-group">
+          <label for="fecha_fin">Hasta</label>
+          <input type="date" name="fecha_fin" id="fecha_fin">
+        </div>
+        <button type="submit" class="btn-generar"><i class="fas fa-file-pdf"></i> Generar PDF</button>
+      </form>
+    </div>
+
+    <!-- Resumen de Desarrollos -->
+    <h2>Resumen de Desarrollos</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Dimensión Cognitiva</th>
+          <th>Dimensión Comunicativa</th>
+          <th>Dimensión Socio-afectiva</th>
+          <th>Dimensión Corporal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for desarrollo in desarrollos %}
+        <tr>
+          <td>{{ desarrollo.fecha_fin_mes|date:"Y-m-d" }}</td>
+          <td>{{ desarrollo.dimension_cognitiva }}</td>
+          <td>{{ desarrollo.dimension_comunicativa }}</td>
+          <td>{{ desarrollo.dimension_socio_afectiva }}</td>
+          <td>{{ desarrollo.dimension_corporal }}</td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row">
+          <td colspan="5">No hay registros de desarrollo para este niño.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Resumen de Novedades -->
+    <h2>Resumen de Novedades</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Tipo de Novedad</th>
+          <th>Descripción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for novedad in novedades %}
+        <tr>
+          <td>{{ novedad.fecha|date:"Y-m-d" }}</td>
+          <td>{{ novedad.get_tipo_novedad_display }}</td>
+          <td>{{ novedad.descripcion }}</td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row">
+          <td colspan="3">No hay registros de novedades para este niño.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <a href="{% url 'gestion_ninos' %}" class="btn-back"><i class="fas fa-arrow-left"></i> Volver a Gestión de Niños</a>
+  </div>
+
+</body>
+</html>

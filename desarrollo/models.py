@@ -29,10 +29,10 @@ class DesarrolloNino(models.Model):
     )
 
     # Dimensiones del desarrollo
-    dimension_cognitiva = models.TextField(verbose_name="Dimensión Cognitiva")
-    dimension_comunicativa = models.TextField(verbose_name="Dimensión Comunicativa")
-    dimension_socio_afectiva = models.TextField(verbose_name="Dimensión Socio-afectiva")
-    dimension_corporal = models.TextField(verbose_name="Dimensión Corporal")
+    dimension_cognitiva = models.TextField(verbose_name="Dimensión Cognitiva", null=True, blank=True)
+    dimension_comunicativa = models.TextField(verbose_name="Dimensión Comunicativa", null=True, blank=True)
+    dimension_socio_afectiva = models.TextField(verbose_name="Dimensión Socio-afectiva", null=True, blank=True)
+    dimension_corporal = models.TextField(verbose_name="Dimensión Corporal", null=True, blank=True)
 
     def __str__(self):
         return f"Desarrollo de {self.nino.nombres} para {self.fecha_fin_mes.strftime('%B %Y')}"
