@@ -173,18 +173,39 @@ class AdministradorForm(forms.ModelForm):
 
 @rol_requerido('administrador')
 def listar_madres(request):
+    # 💡 MEJORA: Lógica de filtrado
+    query_nombre = request.GET.get('nombre', '')
+    query_documento = request.GET.get('documento', '')
+    query_hogar = request.GET.get('hogar', '')
+
     # Obtener todos los perfiles de madre con sus datos relacionados
     madres_query = MadreComunitaria.objects.select_related('usuario').prefetch_related('hogares_asignados').all()
 
+    if query_nombre:
+        madres_query = madres_query.filter(Q(usuario__nombres__icontains=query_nombre) | Q(usuario__apellidos__icontains=query_nombre))
+    if query_documento:
+        madres_query = madres_query.filter(usuario__documento__icontains=query_documento)
+    if query_hogar:
+        madres_query = madres_query.filter(hogares_asignados__nombre_hogar__icontains=query_hogar)
     
     context = {
-        'madres': madres_query
+        'madres': madres_query,
+        'filtros': { # Devolver los filtros a la plantilla
+            'nombre': query_nombre,
+            'documento': query_documento,
+            'hogar': query_hogar,
+        }
     }
     return render(request, 'admin/madres_list.html', context)
 
 @login_required
 @rol_requerido('administrador')
 def listar_hogares(request):
+    # 💡 MEJORA: Lógica de filtrado
+    query_nombre = request.GET.get('nombre_hogar', '')
+    query_madre = request.GET.get('madre', '')
+    query_regional = request.GET.get('regional', '')
+
     # Consulta base
     hogares = HogarComunitario.objects.select_related(
         'madre__usuario', 'regional'
@@ -192,8 +213,24 @@ def listar_hogares(request):
         num_ninos=Count('ninos')
     ).order_by('regional__nombre', 'nombre_hogar')
 
+    if query_nombre:
+        hogares = hogares.filter(nombre_hogar__icontains=query_nombre)
+    if query_madre:
+        hogares = hogares.filter(Q(madre__usuario__nombres__icontains=query_madre) | Q(madre__usuario__apellidos__icontains=query_madre))
+    if query_regional:
+        hogares = hogares.filter(regional_id=query_regional)
 
-    return render(request, 'admin/hogares_list.html', {'hogares': hogares})
+    context = {
+        'hogares': hogares,
+        'regionales_filtro': Regional.objects.all().order_by('nombre'), # Para el dropdown de filtros
+        'filtros': {
+            'nombre_hogar': query_nombre,
+            'madre': query_madre,
+            'regional': query_regional,
+        }
+    }
+
+    return render(request, 'admin/hogares_list.html', context)
 
 # Importa los formularios correctos al inicio de tu views.py
 # from .forms import UsuarioMadreForm, MadreProfileForm, HogarForm 
@@ -401,10 +438,24 @@ def eliminar_madre(request, id):
 @login_required
 @rol_requerido('administrador')
 def listar_administradores(request):
+    # 💡 MEJORA: Lógica de filtrado
+    query_nombre = request.GET.get('nombre', '')
+    query_documento = request.GET.get('documento', '')
+
     rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
     # Incluimos la regional en la consulta para optimizar
     administradores = Usuario.objects.filter(rol=rol_admin).order_by('nombres')
-    return render(request, 'admin/administradores_list.html', {'administradores': administradores})
+
+    if query_nombre:
+        administradores = administradores.filter(Q(nombres__icontains=query_nombre) | Q(apellidos__icontains=query_nombre))
+    if query_documento:
+        administradores = administradores.filter(documento__icontains=query_documento)
+
+    context = {
+        'administradores': administradores,
+        'filtros': {'nombre': query_nombre, 'documento': query_documento}
+    }
+    return render(request, 'admin/administradores_list.html', context)
 
 
 @login_required
