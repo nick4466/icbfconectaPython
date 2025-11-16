@@ -24,6 +24,7 @@ from .models import Ciudad
 from django.http import HttpResponse
 from django.template.loader import get_template
 import openpyxl
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from xhtml2pdf import pisa
 # Asegúrate de importar todos los formularios y modelos necesarios
 
@@ -536,45 +537,140 @@ def editar_administrador(request, id):
 
     return render(request, 'admin/administradores_form.html', {'form': form, 'admin': admin})
 
+def _setup_excel_report_header(ws, title, record_count, num_columns):
+    """
+    Función auxiliar para configurar el encabezado personalizado en los reportes de Excel.
+    """
+    # --- ESTILOS ---
+    title_font = Font(name='Poppins', bold=True, size=16)
+    info_bar_font = Font(name='Poppins', bold=True, color='FFFFFF')
+    info_bar_fill = PatternFill(start_color='004080', end_color='004080', fill_type='solid')
+    info_label_font = Font(name='Poppins', bold=True)
+    center_alignment = Alignment(horizontal='center', vertical='center')
+    left_alignment = Alignment(horizontal='left', vertical='center')
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+    # --- TÍTULO PRINCIPAL ---
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_columns)
+    title_cell = ws.cell(row=1, column=1, value=title)
+    title_cell.font = title_font
+    title_cell.alignment = center_alignment
+    ws.row_dimensions[1].height = 30
+
+    # --- BARRA DE INFORMACIÓN ---
+    ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=num_columns)
+    info_bar_cell = ws.cell(row=2, column=1, value="Información del reporte")
+    info_bar_cell.font = info_bar_font
+    info_bar_cell.fill = info_bar_fill
+    info_bar_cell.alignment = center_alignment
+    ws.row_dimensions[2].height = 25
+
+    # --- Lógica para dividir las columnas de la sección informativa ---
+    # Si hay 6 columnas, el punto medio será 3. El label irá de 1 a 3, y el valor de 4 a 6.
+    mid_point_col = num_columns // 2
+
+    # --- SECCIÓN INFORMATIVA ---
+    # Fecha de Generación
+    ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=mid_point_col)
+    fecha_label = ws.cell(row=3, column=1, value="Fecha de Generación:")
+    fecha_label.font = info_label_font
+
+    ws.merge_cells(start_row=3, start_column=mid_point_col + 1, end_row=3, end_column=num_columns)
+    fecha_value = ws.cell(row=3, column=mid_point_col + 1, value=timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
+    fecha_value.alignment = left_alignment
+
+    # Aplicar borde a toda la fila 3
+    for col in range(1, num_columns + 1):
+        ws.cell(row=3, column=col).border = thin_border
+
+    # Total de Registros
+    ws.merge_cells(start_row=4, start_column=1, end_row=4, end_column=mid_point_col)
+    total_label = ws.cell(row=4, column=1, value="Total de Registros:")
+    total_label.font = info_label_font
+
+    ws.merge_cells(start_row=4, start_column=mid_point_col + 1, end_row=4, end_column=num_columns)
+    total_value = ws.cell(row=4, column=mid_point_col + 1, value=record_count)
+    total_value.alignment = left_alignment
+
+    # Aplicar borde a toda la fila 4
+    for col in range(1, num_columns + 1):
+        ws.cell(row=4, column=col).border = thin_border
+
+    # Ajustar ancho de la primera columna
+    ws.column_dimensions['A'].width = 25
+
+    # Devolver la fila donde deben empezar los datos de la tabla
+    return 5 # Los datos comenzarán en la fila 5
+
 @login_required
 @rol_requerido('administrador')
 def reporte_administradores_excel(request):
     # Obtener filtros de la URL
-    nombre = request.GET.get('nombre')
-    documento = request.GET.get('documento')
+    nombre = request.GET.get('nombre', '')
+    documento = request.GET.get('documento', '')
 
     # Filtrar administradores
     rol_admin, _ = Rol.objects.get_or_create(nombre_rol='administrador')
-    administradores = Usuario.objects.filter(rol=rol_admin)
+    administradores = Usuario.objects.filter(rol=rol_admin).order_by('nombres')
     if nombre:
         administradores = administradores.filter(Q(nombres__icontains=nombre) | Q(apellidos__icontains=nombre))
     if documento:
         administradores = administradores.filter(documento__icontains=documento)
 
-    # Crear el libro de Excel
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = 'Administradores'
-
-    # Encabezados
+    # --- Encabezados y configuración inicial ---
     headers = ['Nombres', 'Apellidos', 'Tipo Documento', 'Documento', 'Correo', 'Teléfono']
-    sheet.append(headers)
+    num_columns = len(headers)
 
-    # Datos
+    # Crear el libro de Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Administradores'
+
+    # --- Generar encabezado del reporte ---
+    start_row = _setup_excel_report_header(ws, "Reporte De Administradores", administradores.count(), num_columns)
+
+    # --- ESTILOS PARA LA TABLA DE DATOS ---
+    header_font = Font(name='Poppins', bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='004080', end_color='004080', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center')
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+    # --- Escribir encabezados de la tabla de datos ---
+    for col_num, header_title in enumerate(headers, 1):
+        cell = ws.cell(row=start_row, column=col_num, value=header_title)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    ws.row_dimensions[start_row].height = 25
+
+    # --- Llenar datos ---
     for admin in administradores:
-        sheet.append([
-            admin.nombres,
-            admin.apellidos,
-            admin.get_tipo_documento_display(),
-            admin.documento,
-            admin.correo,
-            admin.telefono
-        ])
+        start_row += 1
+        ws.cell(row=start_row, column=1, value=admin.nombres)
+        ws.cell(row=start_row, column=2, value=admin.apellidos)
+        ws.cell(row=start_row, column=3, value=admin.get_tipo_documento_display())
+        ws.cell(row=start_row, column=4, value=admin.documento)
+        ws.cell(row=start_row, column=5, value=admin.correo)
+        ws.cell(row=start_row, column=6, value=admin.telefono)
+
+    # --- AJUSTAR ANCHO DE COLUMNAS Y BORDES ---
+    for col_num, header_title in enumerate(headers, 1):
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(col_num)
+        for cell in ws[column_letter]:
+            cell.border = thin_border
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 4)
+        ws.column_dimensions[column_letter].width = adjusted_width
 
     # Preparar la respuesta HTTP
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="reporte_administradores.xlsx"'
-    workbook.save(response)
+    wb.save(response)
     return response
 
 @login_required
@@ -582,39 +678,71 @@ def reporte_administradores_excel(request):
 def reporte_madres_excel(request):
     # Obtener filtros
     nombre = request.GET.get('nombre')
-    hogar_asignado = request.GET.get('hogar_asignado')
+    hogar_asignado = request.GET.get('hogar') # Corregido para coincidir con el filtro de la lista
     escolaridad = request.GET.get('escolaridad', None)
 
     # Filtrar madres
-    madres = MadreComunitaria.objects.select_related('usuario').prefetch_related('hogares_asignados').all()
+    madres = MadreComunitaria.objects.select_related('usuario').prefetch_related('hogares_asignados').order_by('usuario__nombres')
     if nombre:
         madres = madres.filter(Q(usuario__nombres__icontains=nombre) | Q(usuario__apellidos__icontains=nombre))
     if hogar_asignado and hogar_asignado != '':
         madres = madres.filter(hogares_asignados__nombre_hogar__icontains=hogar_asignado)
     if escolaridad and escolaridad != '':
         madres = madres.filter(nivel_escolaridad=escolaridad)
+    
+    madres_list = madres.distinct()
 
-    # Crear libro de Excel
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = 'Madres Comunitarias'
-    sheet.append(['Nombres', 'Apellidos', 'Correo', 'Documento', 'Nivel de Escolaridad', 'Hogar Asignado'])
+    # --- Encabezados y configuración inicial ---
+    headers = ['Nombres', 'Apellidos', 'Correo', 'Documento', 'Nivel de Escolaridad', 'Hogar Asignado']
+    num_columns = len(headers)
 
-    # Llenar datos
-    for madre in madres.distinct():
+    # --- Crear libro de Excel ---
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Madres Comunitarias'
+
+    # --- Generar encabezado del reporte ---
+    start_row = _setup_excel_report_header(ws, "Reporte De Madres Comunitarias", madres_list.count(), num_columns)
+
+    # --- ESTILOS PARA LA TABLA DE DATOS ---
+    header_font = Font(name='Poppins', bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='004080', end_color='004080', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center')
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+    # --- Escribir encabezados de la tabla de datos ---
+    for col_num, header_title in enumerate(headers, 1):
+        cell = ws.cell(row=start_row, column=col_num, value=header_title)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    ws.row_dimensions[start_row].height = 25
+        
+    # --- Llenar datos ---
+    for madre in madres_list:
         hogar = madre.hogares_asignados.first()
-        sheet.append([
-            madre.usuario.nombres,
-            madre.usuario.apellidos,
-            madre.usuario.correo,
-            madre.usuario.documento,
-            madre.get_nivel_escolaridad_display(),
-            hogar.nombre_hogar if hogar else 'N/A'
-        ])
+        start_row += 1
+        row_data = [madre.usuario.nombres, madre.usuario.apellidos, madre.usuario.correo, madre.usuario.documento, madre.get_nivel_escolaridad_display(), hogar.nombre_hogar if hogar else 'N/A']
+        for col_num, cell_value in enumerate(row_data, 1):
+            ws.cell(row=start_row, column=col_num, value=cell_value)
+
+    # --- AJUSTAR ANCHO DE COLUMNAS Y BORDES ---
+    for col_num, header_title in enumerate(headers, 1):
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(col_num)
+        for cell in ws[column_letter]:
+            cell.border = thin_border
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 4)
+        ws.column_dimensions[column_letter].width = adjusted_width
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="reporte_madres_comunitarias.xlsx"'
-    workbook.save(response)
+    wb.save(response)
     return response
 
 @login_required
@@ -622,15 +750,15 @@ def reporte_madres_excel(request):
 def reporte_hogares_excel(request):
     # Obtener filtros
     nombre_hogar = request.GET.get('nombre_hogar')
-    regional_id = request.GET.get('regional')
-    ciudad = request.GET.get('ciudad')
-    madre_comunitaria = request.GET.get('madre_comunitaria')
+    regional_id = request.GET.get('regional', '')
+    ciudad = request.GET.get('ciudad', '')
+    madre_comunitaria = request.GET.get('madre', '') # Corregido para coincidir con el filtro de la lista
     ninos_matriculados = request.GET.get('ninos_matriculados')
 
     # Filtrar hogares
     hogares = HogarComunitario.objects.select_related('madre__usuario', 'regional', 'ciudad').annotate(
         num_ninos=Count('ninos')
-    ).all()
+    ).order_by('regional__nombre', 'nombre_hogar')
     if nombre_hogar:
         hogares = hogares.filter(nombre_hogar__icontains=nombre_hogar)
     if regional_id:
@@ -645,28 +773,56 @@ def reporte_hogares_excel(request):
         except (ValueError, TypeError):
             pass
 
-    # Crear libro de Excel
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = 'Hogares Comunitarios'
-    sheet.append(['Nombre del Hogar', 'Madre Comunitaria', 'Regional', 'Ciudad', 'Dirección', 'Niños Matriculados', 'Capacidad', 'Estado'])
+    # --- Encabezados y configuración inicial ---
+    headers = ['Nombre del Hogar', 'Madre Comunitaria', 'Regional', 'Ciudad', 'Dirección', 'Niños Matriculados', 'Capacidad', 'Estado']
+    num_columns = len(headers)
 
-    # Llenar datos
+    # --- Crear libro de Excel ---
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Hogares Comunitarios'
+
+    # --- Generar encabezado del reporte ---
+    start_row = _setup_excel_report_header(ws, "Reporte De Hogares Comunitarios", hogares.count(), num_columns)
+
+    # --- ESTILOS PARA LA TABLA DE DATOS ---
+    header_font = Font(name='Poppins', bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='004080', end_color='004080', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center')
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+    # --- Escribir encabezados de la tabla de datos ---
+    for col_num, header_title in enumerate(headers, 1):
+        cell = ws.cell(row=start_row, column=col_num, value=header_title)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    ws.row_dimensions[start_row].height = 25
+
+    # --- Llenar datos ---
     for hogar in hogares:
-        sheet.append([
-            hogar.nombre_hogar,
-            f"{hogar.madre.usuario.nombres} {hogar.madre.usuario.apellidos}",
-            hogar.regional.nombre if hogar.regional else 'N/A',
-            hogar.ciudad.nombre if hogar.ciudad else 'N/A',
-            hogar.direccion,
-            hogar.num_ninos,
-            hogar.capacidad_maxima,
-            hogar.get_estado_display()
-        ])
+        start_row += 1
+        row_data = [hogar.nombre_hogar, f"{hogar.madre.usuario.nombres} {hogar.madre.usuario.apellidos}", hogar.regional.nombre if hogar.regional else 'N/A', hogar.ciudad.nombre if hogar.ciudad else 'N/A', hogar.direccion, hogar.num_ninos, hogar.capacidad_maxima, hogar.get_estado_display()]
+        for col_num, cell_value in enumerate(row_data, 1):
+            ws.cell(row=start_row, column=col_num, value=cell_value)
+
+    # --- AJUSTAR ANCHO DE COLUMNAS Y BORDES ---
+    for col_num, header_title in enumerate(headers, 1):
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(col_num)
+        for cell in ws[column_letter]:
+            cell.border = thin_border
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 4)
+        ws.column_dimensions[column_letter].width = adjusted_width
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="reporte_hogares_comunitarios.xlsx"'
-    workbook.save(response)
+    wb.save(response)
     return response
 
 @login_required

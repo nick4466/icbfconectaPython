@@ -222,12 +222,26 @@
 
     /* Responsive */
     @media (max-width: 800px) {
-      .sidebar {
-        display: none;
-      }
-      .main {
-        padding: 20px;
-      }
+        .sidebar {
+            display: none;
+        }
+        .main {
+            padding: 20px;
+        }
+        .main header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .report-section form {
+            grid-template-columns: 1fr; /* Apila los campos en una sola columna */
+        }
+        .form-actions {
+            grid-column: 1 / -1; /* Asegura que ocupe todo el ancho */
+            flex-direction: column; /* Apila los botones */
+            gap: 12px;
+            margin-top: 10px;
+        }
     }
   </style>
 </head>
