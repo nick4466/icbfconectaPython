@@ -13,12 +13,21 @@
         body {
             margin: 0;
             font-family: 'Roboto', sans-serif;
-            background-image: url("{% static 'img/fondito.jpg' %}");
+            background-image: url("{% static 'img/fondopadres.jpg' %}");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             background-attachment: fixed;
         }
+        .borde2 {
+      text-align: center;
+      background-color: rgba(155, 89, 182, 0.9);
+      color: white;
+      padding: 12px 0;
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
 
         /* NAVBAR ORIGINAL */
         header {
@@ -210,6 +219,7 @@
 
 <body>
 
+     <div class="borde2"></div>
 <header>
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
     <nav>
@@ -276,85 +286,31 @@
 
 
         {% for desarrollo in desarrollos %}
-        <div class="card">
-            <h2><i class="fas fa-calendar-alt"></i> Registro del 
-                {{ desarrollo.fecha_fin_mes|date:"d \\d\\e F \\d\\e Y" }}
-            </h2>
-
-            <!-- Cognitiva -->
-            <div class="dimension-block">
-                <div class="dimension-header">
-                    <h3><i class="fas fa-brain"></i> Dimensión Cognitiva</h3>
-                    <span class="display-stars">
-                        {% for i in "12345" %}
-                            {% if forloop.counter <= desarrollo.rating_cognitiva %}
-                                ★
-                            {% else %}
-                                <span class="inactive">★</span>
-                            {% endif %}
-                        {% endfor %}
-                    </span>
-                </div>
-                <p>{{ desarrollo.dimension_cognitiva }}</p>
+        <div class="card" style="margin-bottom:24px; position:relative;">
+            <!-- Badge de Promedio -->
+            {% if desarrollo.promedio %}
+            <div class="badge-promedio" style="position:absolute; top:18px; left:18px; background:#fff; color:#7a3eb1; font-weight:700; font-size:14px; border-radius:16px; padding:4px 12px; box-shadow:0 2px 8px rgba(155,89,182,0.08); border:2px solid {{ desarrollo.accent_color }};">
+                Promedio: {{ desarrollo.promedio }}
             </div>
-
-            <!-- Comunicativa -->
-            <div class="dimension-block">
-                <div class="dimension-header">
-                    <h3><i class="fas fa-comments"></i> Dimensión Comunicativa</h3>
-                    <span class="display-stars">
-                        {% for i in "12345" %}
-                            {% if forloop.counter <= desarrollo.rating_comunicativa %}
-                                ★
-                            {% else %}
-                                <span class="inactive">★</span>
-                            {% endif %}
-                        {% endfor %}
-                    </span>
-                </div>
-                <p>{{ desarrollo.dimension_comunicativa }}</p>
+            {% endif %}
+            <div class="dimension-header">
+                <span style="font-size:22px; color:{{ desarrollo.accent_color }};">
+                    <i class="{{ desarrollo.icono }}"></i>
+                </span>
             </div>
-
-            <!-- Socioafectiva -->
-            <div class="dimension-block">
-                <div class="dimension-header">
-                    <h3><i class="fas fa-heart"></i> Dimensión Socio-Afectiva</h3>
-                    <span class="display-stars">
-                        {% for i in "12345" %}
-                            {% if forloop.counter <= desarrollo.rating_socio_afectiva %}
-                                ★
-                            {% else %}
-                                <span class="inactive">★</span>
-                            {% endif %}
-                        {% endfor %}
-                    </span>
-                </div>
-                <p>{{ desarrollo.dimension_socio_afectiva }}</p>
+            <div style="margin-bottom:8px; color:#555; font-size:18px;">
+                <strong>Fecha de registro:</strong> {{ desarrollo.fecha_fin_mes|date:"d \d\e F \d\e Y" }}
             </div>
-
-            <!-- Corporal -->
             <div class="dimension-block">
-                <div class="dimension-header">
-                    <h3><i class="fas fa-running"></i> Dimensión Corporal</h3>
-                    <span class="display-stars">
-                        {% for i in "12345" %}
-                            {% if forloop.counter <= desarrollo.rating_corporal %}
-                                ★
-                            {% else %}
-                                <span class="inactive">★</span>
-                            {% endif %}
-                        {% endfor %}
-                    </span>
-                </div>
-                <p>{{ desarrollo.dimension_corporal }}</p>
+                <p><strong>Cognitiva:</strong> {{ desarrollo.dimension_cognitiva }} <span class="display-stars">{% for i in "12345" %}<i class="fas fa-star{% if desarrollo.rating_cognitiva < i|add:'0' %} inactive{% endif %}"></i>{% endfor %}</span></p>
+                <p><strong>Comunicativa:</strong> {{ desarrollo.dimension_comunicativa }} <span class="display-stars">{% for i in "12345" %}<i class="fas fa-star{% if desarrollo.rating_comunicativa < i|add:'0' %} inactive{% endif %}"></i>{% endfor %}</span></p>
+                <p><strong>Socio-afectiva:</strong> {{ desarrollo.dimension_socio_afectiva }} <span class="display-stars">{% for i in "12345" %}<i class="fas fa-star{% if desarrollo.rating_socio_afectiva < i|add:'0' %} inactive{% endif %}"></i>{% endfor %}</span></p>
+                <p><strong>Corporal:</strong> {{ desarrollo.dimension_corporal }} <span class="display-stars">{% for i in "12345" %}<i class="fas fa-star{% if desarrollo.rating_corporal < i|add:'0' %} inactive{% endif %}"></i>{% endfor %}</span></p>
             </div>
-
         </div>
-
         {% empty %}
         <div class="card">
-            <h2>Sin registros</h2>
-            <p>No hay información aún.</p>
+            <p>No hay registros de desarrollo para este niño.</p>
         </div>
         {% endfor %}
 

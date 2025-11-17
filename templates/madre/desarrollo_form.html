@@ -246,6 +246,16 @@
     .rating-labels span {
       width: 50px; text-align: center;
     }
+    .error-container {
+      color: #721c24;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -284,6 +294,9 @@
     {% if error %}
     <p style="color: red; text-align: center;">{{ error }}</p>
     {% endif %}
+
+    <!-- Contenedor para mensajes de error de JavaScript -->
+    <div id="js-error-container"></div>
 
     <div class="card">
       <h2><i class="fas fa-file-alt"></i> {{ titulo_form }}</h2>
@@ -393,6 +406,8 @@
     </div>
   </div>
 
+  <div id="fechasExistentesJson" style="display:none">{{ fechas_existentes_por_nino|safe }}</div>
+
   <script>
   // Mostrar y ocultar mensaje de éxito
   const mensajeExito = document.getElementById('mensajeExito');
@@ -402,43 +417,66 @@
     }, 5000);
   }
 
-  // ---- VALIDACIÓN FRONTEND DE ESTRELLAS ----
+  // ---- FUNCIÓN PARA MOSTRAR ERRORES EN LA PÁGINA ----
+  function mostrarError(mensaje) {
+    const errorContainer = document.getElementById('js-error-container');
+    // Limpiar errores anteriores
+    errorContainer.innerHTML = '';
+
+    // Crear y añadir el nuevo mensaje de error
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-container'; // Usamos una clase para estilizarlo
+    errorDiv.textContent = mensaje;
+    errorContainer.appendChild(errorDiv);
+
+    // Hacer scroll para que el usuario vea el mensaje
+    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ---- VALIDACIÓN FRONTEND ----
   const form = document.getElementById('desarrolloForm');
+  if (form) {
+    form.addEventListener('submit', function (event) {
+      const ninoInput = document.querySelector('select[name="nino"], input[name="nino"]');
+      const fechaInput = document.querySelector('[name="fecha_registro"]');
+      const ratings = [
+        'rating_cognitiva',
+        'rating_comunicativa',
+        'rating_socio_afectiva',
+        'rating_corporal'
+      ];
+      let allRatingsChecked = true;
+      for (const name of ratings) {
+        if (!document.querySelector(`input[name="${name}"]:checked`)) {
+          allRatingsChecked = false;
+          break;
+        }
+      }
 
-  form.addEventListener('submit', function (event) {
-    const ratings = [
-      'rating_cognitiva',
-      'rating_comunicativa',
-      'rating_socio_afectiva',
-      'rating_corporal'
-    ];
-
-    for (const name of ratings) {
-      if (!document.querySelector(`input[name="${name}"]:checked`)) {
-        alert('Por favor, califica todas las dimensiones con estrellas antes de guardar.');
+      // Validación principal de campos obligatorios
+      if (!ninoInput || !ninoInput.value || !fechaInput || !fechaInput.value || !allRatingsChecked) {
         event.preventDefault();
+        mostrarError('Todos los campos son obligatorios. Por favor, completa el niño, la fecha y las 4 calificaciones de estrellas.');
         return;
       }
-    }
 
-    // ---- VALIDACIÓN DE FECHAS DUPLICADAS ----
-    const fechasExistentes = {{ fechas_existentes_por_nino|safe }};
-    const ninoInput = document.querySelector('select[name="nino"], input[name="nino"]');
-    const fechaInput = document.querySelector('[name="fecha_registro"]');
-
-    const ninoId = ninoInput ? ninoInput.value : null;
-    const fechaSeleccionada = fechaInput.value;
-
-    const fechasDelNino = fechasExistentes[ninoId] || [];
-    const fechaActual = "{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}";
-
-    const fechasSinActual = fechasDelNino.filter(f => f !== fechaActual);
-
-    if (fechasSinActual.includes(fechaSeleccionada)) {
-      alert("❌ Ya existe un desarrollo registrado este mes para este niño. Selecciona otra fecha.");
-      event.preventDefault();
-    }
-  });
+      // ---- VALIDACIÓN DE FECHAS DUPLICADAS ----
+      try {
+        const fechasExistentes = JSON.parse(document.getElementById('fechasExistentesJson').textContent);
+        const ninoId = ninoInput ? ninoInput.value : null;
+        const fechaSeleccionada = fechaInput.value;
+        const fechasDelNino = fechasExistentes[ninoId] || [];
+        const fechaActual = "{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}";
+        const fechasSinActual = fechasDelNino.filter(f => f !== fechaActual);
+        if (fechasSinActual.includes(fechaSeleccionada)) {
+          event.preventDefault();
+          mostrarError('❌ Ya existe un desarrollo registrado este mes para este niño. Selecciona otra fecha.');
+        }
+      } catch (e) {
+        // Si no existe el JSON, no validar fechas duplicadas
+      }
+    });
+  }
 </script>
 
 
