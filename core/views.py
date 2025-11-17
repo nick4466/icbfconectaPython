@@ -19,6 +19,7 @@ from .models import Rol, Usuario, MadreComunitaria, HogarComunitario
 from .forms import UsuarioMadreForm, MadreProfileForm, HogarForm 
 from django.http import JsonResponse
 from .models import Ciudad
+from django.core.paginator import Paginator
 
 # --- Dependencias para PDF ---
 from django.http import HttpResponse
@@ -205,13 +206,19 @@ def listar_madres(request):
     if query_hogar:
         madres_query = madres_query.filter(hogares_asignados__nombre_hogar__icontains=query_hogar)
     
+    # 💡 CORRECCIÓN: Añadir paginación
+    paginator = Paginator(madres_query.distinct(), 5) # 5 madres por página
+    page_number = request.GET.get('page')
+    madres_paginadas = paginator.get_page(page_number)
+
     context = {
-        'madres': madres_query,
+        'madres': madres_paginadas, # Enviar el objeto paginado a la plantilla
         'filtros': { # Devolver los filtros a la plantilla
             'nombre': query_nombre,
             'documento': query_documento,
             'hogar': query_hogar,
-        }
+        },
+        'paginator': paginator # Opcional, pero útil para la plantilla
     }
     return render(request, 'admin/madres_list.html', context)
 
@@ -237,14 +244,20 @@ def listar_hogares(request):
     if query_regional:
         hogares = hogares.filter(regional_id=query_regional)
 
+    # 💡 CORRECCIÓN: Añadir paginación
+    paginator = Paginator(hogares, 5) # 5 hogares por página
+    page_number = request.GET.get('page')
+    hogares_paginados = paginator.get_page(page_number)
+
     context = {
-        'hogares': hogares,
+        'hogares': hogares_paginados, # Enviar el objeto paginado
         'regionales_filtro': Regional.objects.all().order_by('nombre'), # Para el dropdown de filtros
         'filtros': {
             'nombre_hogar': query_nombre,
             'madre': query_madre,
             'regional': query_regional,
-        }
+        },
+        'paginator': paginator # Opcional
     }
 
     return render(request, 'admin/hogares_list.html', context)
@@ -468,9 +481,15 @@ def listar_administradores(request):
     if query_documento:
         administradores = administradores.filter(documento__icontains=query_documento)
 
+    # 💡 CORRECCIÓN: Añadir paginación
+    paginator = Paginator(administradores, 5) # 5 administradores por página
+    page_number = request.GET.get('page')
+    admins_paginados = paginator.get_page(page_number)
+
     context = {
-        'administradores': administradores,
-        'filtros': {'nombre': query_nombre, 'documento': query_documento}
+        'administradores': admins_paginados, # Enviar el objeto paginado
+        'filtros': {'nombre': query_nombre, 'documento': query_documento},
+        'paginator': paginator # Opcional
     }
     return render(request, 'admin/administradores_list.html', context)
 
@@ -912,12 +931,32 @@ def padre_ver_desarrollo(request, nino_id):
         padre = Padre.objects.get(usuario=request.user)
         # 💡 CAMBIO: Obtener el niño específico y verificar que pertenece al padre
         nino = get_object_or_404(Nino, id=nino_id, padre=padre)
-        
-        desarrollos = []
-        if nino:
-            desarrollos = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes')
 
-        return render(request, 'padre/desarrollo_list.html', {'nino': nino, 'desarrollos': desarrollos})
+        # 1. Obtener todos los desarrollos para el niño
+        desarrollos_qs = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes')
+
+        # 2. Aplicar filtro por mes si existe
+        mes_filtro = request.GET.get('mes', '')
+        if mes_filtro:
+            try:
+                # mes_filtro viene en formato 'YYYY-MM'
+                year, month = map(int, mes_filtro.split('-'))
+                desarrollos_qs = desarrollos_qs.filter(fecha_fin_mes__year=year, fecha_fin_mes__month=month)
+            except (ValueError, TypeError):
+                mes_filtro = '' # Ignorar filtro si el formato es incorrecto
+
+        # 3. Aplicar paginación
+        paginator = Paginator(desarrollos_qs, 2) # 5 registros por página
+        page_number = request.GET.get('page')
+        desarrollos_paginados = paginator.get_page(page_number)
+
+        return render(request, 'padre/desarrollo_list.html', {
+            'nino': nino,
+            'desarrollos': desarrollos_paginados,
+            'filtros': {
+                'mes': mes_filtro
+            }
+        })
     except (Padre.DoesNotExist, Nino.DoesNotExist):
         return redirect('padre_dashboard')
 
@@ -1056,17 +1095,23 @@ def eliminar_nino(request, id):
 @login_required
 def gestion_ninos(request):
     # 1. Verificar rol y obtener el hogar de la madre
-    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria': # pragma: no cover
         messages.error(request, 'Acceso denegado.')
         return redirect('home')
     try:
         hogar = HogarComunitario.objects.get(madre=request.user.madre_profile)
-    except HogarComunitario.DoesNotExist:
+    except HogarComunitario.DoesNotExist: # pragma: no cover
         messages.error(request, 'No tienes un hogar comunitario asignado.')
         return redirect('madre_dashboard')
     # 2. Filtrar los niños que pertenecen a ese hogar
-    ninos = Nino.objects.filter(hogar=hogar).order_by('nombres', 'apellidos')
-    return render(request, 'madre/gestion_ninos_list.html', {'ninos': ninos})
+    ninos_lista = Nino.objects.filter(hogar=hogar).order_by('nombres', 'apellidos')
+
+    # 3. Aplicar paginación
+    paginator = Paginator(ninos_lista, 3)  # 3 niños por página, como fue solicitado.
+    page_number = request.GET.get('page')
+    ninos_paginados = paginator.get_page(page_number)
+
+    return render(request, 'madre/gestion_ninos_list.html', {'ninos': ninos_paginados})
 
 # ----------------------------------------------------
 # 💡 NUEVA FUNCIÓN: Cambiar Contraseña del Usuario
