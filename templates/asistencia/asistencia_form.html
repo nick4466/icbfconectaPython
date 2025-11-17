@@ -1,244 +1,483 @@
-    
-{% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ICBF Conecta - Llamado de Asistencia</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
-  <style>
-    * { box-sizing: border-box; }
-    .btn-mini-historial {
-  background-color: #7a3eb1;
-  color: white;
-  padding: 6px 10px;
-  font-size: 13px;
-  border-radius: 6px;
-  text-decoration: none;
-  transition: background-color 0.3s ease;
-}
-.btn-mini-historial:hover {
-  background-color: #9B59B6;
-}
+      
+  {% load static %}
+  <!DOCTYPE html>
+  <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ICBF Conecta - Llamado de Asistencia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+    <style>
+      * { box-sizing: border-box; }
+      .btn-mini-historial {
+    background-color: #7a3eb1;
+    color: white;
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+  }
+  .btn-mini-historial:hover {
+    background-color: #9B59B6;
+  }
 
-    body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-image: url("{% static 'img/fondito.jpg' %}");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-    }
-    header {
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 15px 30px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-    }
-    header img { height: 60px; }
-    nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      padding: 0;
-      margin: 0;
-    }
-    nav ul li a {
-      text-decoration: none;
-      color: #9B59B6;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background-color 0.3s ease;
-    }
-    nav ul li a:hover { background-color: #f3c1e5; }
-    .main-title {
-      text-align: center;
-      margin-top: 20px;
-      padding: 20px;
-      font-size: 26px;
-      font-weight: bold;
-      color: #7a3eb1;
-      background-color: rgba(255, 255, 255, 0.7);
-      margin: 20px auto;
-      width: 80%;
-      border-radius: 10px;
-    }
-    .card {
-      background-color: rgba(255, 255, 255, 0.85);
-      border-radius: 12px;
-      padding: 20px;
-      backdrop-filter: blur(3px);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      max-width: 1000px;
-      margin: 0 auto 40px;
-    }
-    .card h1 {
-      color: #9B59B6;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .fecha-container {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .fecha-container label {
-      font-size: 18px;
-      margin-right: 10px;
-      color: #7a3eb1;
-    }
-    .fecha-container input {
-      padding: 8px;
-      font-size: 16px;
-      border: 1px solid #9B59B6;
-      border-radius: 6px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      padding: 15px;
-      text-align: center;
-      border: 1px solid #d5b4f3;
-      font-size: 15px;
-    }
-    th {
-      background-color: #f3c1e5;
-      color: #5e3370;
-    }
-    tr:nth-child(even) { background-color: #fdf6ff; }
-    tr:hover { background-color: #f3e9ff; }
-    .radio-group {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-    input[type="radio"] {
-      transform: scale(1.1);
-      cursor: pointer;
-    }
-    label {
-      padding: 6px 10px;
-      border: 1px solid #9B59B6;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    input[type="radio"]:checked + label {
-      background-color: #e8d4f8;
-      border-color: #7a3eb1;
-      color: #000;
-    }
-    label:hover { background-color: #f8f9fa; }
-    .btn-guardar {
-      background-color: #9B59B6;
-      color: white;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 20px;
-      width: 100%;
-      transition: background-color 0.3s ease;
-    }
-    .btn-guardar:hover { background-color: #8e44ad; }
-    .mensaje-exito {
-      background-color: #4CAF50;
-      color: white;
-      padding: 15px;
-      margin-bottom: 20px;
-      text-align: center;
-      border-radius: 8px;
-    }
-    @media (max-width: 768px) {
-      .main-title { font-size: 22px; width: 90%; }
-      .card { padding: 15px; }
-      th, td { font-size: 14px; padding: 10px; }
-    }
-  </style>
-</head>
-<body>
+      body {
+        margin: 0;
+        font-family: 'Roboto', sans-serif;
+        background-image: url("{% static 'img/fondito.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: scroll;
+      }
+      header {
+        background-color: rgba(255, 255, 255, 0.85);
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid #e5d5f5;
+        backdrop-filter: blur(4px);
+      }
+      header img { height: 60px; }
+      nav ul {
+        list-style: none;
+        display: flex;
+        gap: 20px;
+        padding: 0;
+        margin: 0;
+      }
+      nav ul li a {
+        text-decoration: none;
+        color: #9B59B6;
+        font-weight: bold;
+        font-size: 16px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background-color 0.3s ease;
+      }
+      nav ul li a:hover { background-color: #f3c1e5; }
+      .main-title {
+        text-align: center;
+        margin-top: 20px;
+        padding: 20px;
+        font-size: 26px;
+        font-weight: bold;
+        color: #7a3eb1;
+        background-color: rgba(255, 255, 255, 0.7);
+        margin: 20px auto;
+        width: 80%;
+        border-radius: 10px;
+      }
+      .card {
+        background-color: rgba(255, 255, 255, 0.85);
+        border-radius: 12px;
+        padding: 20px;
+        backdrop-filter: blur(3px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        max-width: 1000px;
+        margin: 0 auto 40px;
+      }
+      .card h1 {
+        color: #9B59B6;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .fecha-container {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .fecha-container label {
+        font-size: 18px;
+        margin-right: 10px;
+        color: #7a3eb1;
+      }
+      .fecha-container input {
+        padding: 8px;
+        font-size: 16px;
+        border: 1px solid #9B59B6;
+        border-radius: 6px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th, td {
+        padding: 15px;
+        text-align: center;
+        border: 1px solid #d5b4f3;
+        font-size: 15px;
+      }
+      th {
+        background-color: #f3c1e5;
+        color: #5e3370;
+      }
+      tr:nth-child(even) { background-color: #fdf6ff; }
+      tr:hover { background-color: #f3e9ff; }
+      .radio-group {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+      }
+      input[type="radio"] {
+        transform: scale(1.1);
+        cursor: pointer;
+      }
+      label {
+        padding: 6px 10px;
+        border: 1px solid #9B59B6;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      input[type="radio"]:checked + label {
+        background-color: #e8d4f8;
+        border-color: #7a3eb1;
+        color: #000;
+      }
+      label:hover { background-color: #f8f9fa; }
+      .btn-guardar {
+        background-color: #9B59B6;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 20px;
+        width: 100%;
+        transition: background-color 0.3s ease;
+      }
+      .btn-guardar:hover { background-color: #8e44ad; }
+      .mensaje-exito {
+        background-color: #4CAF50;
+        color: white;
+        padding: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+        border-radius: 8px;
+      }
+      @media (max-width: 768px) {
+        .main-title { font-size: 22px; width: 90%; }
+        .card { padding: 15px; }
+        th, td { font-size: 14px; padding: 10px; }
+      }
 
-  <header>
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
-    <nav>
-      <ul>
-        <li><a href="#"><i class="fas fa-arrow-left"></i> Volver</a></li>
-        <li><a href="{% url 'novedades_list' %}">Reportar Novedad</a></li>
+      .btn-mini-green {
+    background-color: #4caf50;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: none;
+    text-decoration: none;
+    font-size: 0.8em;
+    font-weight: bold;
+  }
 
-        <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
-        
-      </ul>
-    </nav>
-  </header>
+  .btn-mini-green:hover {
+    background-color: #388e3c;
+  }
 
-  <div class="main-title">ICBF - CONECTA | Llamado de Asistencia</div>
 
-  <div class="card">
-    {% if mensaje %}
-      <div class="mensaje-exito">{{ mensaje }}</div>
-    {% endif %}
-    <form method="post">
-      {% csrf_token %}
-      <div class="fecha-container">
-        <label for="fecha">Fecha:</label>
-        <input type="date" id="fecha" name="fecha" value="{{ fecha_hoy }}" required>
-      </div>
+  .modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
 
-      <table>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Nombre Completo</th>
-      <th>Asistencia</th>
-      <th>Calificar</th>
-      <th>Historial Asistencia</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for nino in ninos %}
-    <tr>
-      <td>{{ forloop.counter }}</td>
-      <td>{{ nino.nombres }} {{ nino.apellidos }}</td>
-      <td>
-        <div class="radio-group">
-          <input type="radio" id="presente-{{ nino.id }}" name="nino_{{ nino.id }}" value="Presente" required>
-          <label for="presente-{{ nino.id }}">Presente</label>
-          <input type="radio" id="ausente-{{ nino.id }}" name="nino_{{ nino.id }}" value="Ausente">
-          <label for="ausente-{{ nino.id }}">Ausente</label>
-          <input type="radio" id="justificado-{{ nino.id }}" name="nino_{{ nino.id }}" value="Justificado">
-          <label for="justificado-{{ nino.id }}">Justificado</label>
+  .modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    position: relative;
+    animation: slideUp 0.3s ease-out;
+  }
+  .modal-content h2 {
+    color: #7a3eb1;
+    margin-bottom: 15px;
+  }
+
+  .modal-content label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+    color: #5e3370;
+  }
+
+  .modal-content textarea,
+  .modal-content select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+
+  .close {
+    position: absolute;
+    top: 20px; right: 30px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #9B59B6;
+    cursor: pointer;
+  }
+
+  /* Presente */
+  input[type="radio"]:checked + label.presente {
+    background-color: #2ecc71; /* verde */
+    border-color: #27ae60;
+    color: white;
+    font-weight: bold;
+  }
+
+  /* Ausente */
+  input[type="radio"]:checked + label.ausente {
+    background-color: #e74c3c; /* rojo */
+    border-color: #c0392b;
+    color: white;
+    font-weight: bold;
+  }
+
+  /* Justificado */
+  input[type="radio"]:checked + label.justificado {
+    background-color: #7a3eb1; /* morado intenso */
+    border-color: #5e3370;
+    color: white;
+    font-weight: bold;
+  }
+
+    </style>
+  </head>
+  <body>
+
+    <header>
+      <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
+      <nav>
+        <ul>
+          <li><a href="#"><i class="fas fa-arrow-left"></i> Volver</a></li>
+          <li><a href="{% url 'novedades_list' %}">Reportar Novedad</a></li>
+
+          <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+          
+        </ul>
+      </nav>
+    </header>
+
+    <div class="main-title">ICBF - CONECTA | Llamado de Asistencia</div>
+
+    <div class="card">
+      {% if mensaje %}
+        <div class="mensaje-exito">{{ mensaje }}</div>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="fecha-container">
+          <label for="fecha">Fecha:</label>
+          <input type="date" id="fecha" name="fecha" value="{{ fecha_hoy }}" required>
         </div>
-      </td>
-      <td>
-        <a href="{% url 'historial_asistencia' nino.id %}" class="btn-mini-historial">
-          <i class="fas fa-history"></i> Ver
-        </a>
-      </td>
-      <td>
-        <a href="{% url 'historial_asistencia' nino.id %}" class="btn-mini-historial">
-          <i class="fas fa-history"></i> Ver
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
 
+        <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre Completo</th>
+        <th>Asistencia</th>
+        <th>Calificar</th>
+        <th>Historial Asistencia</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for nino in ninos %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ nino.nombres }} {{ nino.apellidos }}</td>
+        <td>
+  <div class="radio-group">
+    <input type="radio" id="presente-{{ nino.id }}" name="nino_{{ nino.id }}" value="Presente" onclick="ocultarModal({{ nino.id }})">
+    <label for="presente-{{ nino.id }}" class="presente">Presente</label>
 
-      <button type="submit" class="btn-guardar">Guardar Registro</button>
-    </form>
+    <input type="radio" id="ausente-{{ nino.id }}" name="nino_{{ nino.id }}" value="Ausente" onclick="mostrarModal({{ nino.id }})">
+    <label for="ausente-{{ nino.id }}" class="ausente">Ausente</label>
+
+    <input type="radio" id="justificado-{{ nino.id }}" name="nino_{{ nino.id }}" value="Justificado" disabled>
+    <label for="justificado-{{ nino.id }}" class="justificado">Justificado</label>
   </div>
 
-</body>
-</html>
+  </td>
+
+
+        <td>
+          <a href="{% url 'historial_asistencia' nino.id %}" class="btn-mini-historial">
+            <i class="fas fa-history"></i> Ver
+          </a>
+        </td>
+        <td>
+          <a href="{% url 'historial_asistencia' nino.id %}" class="btn-mini-historial">
+            <i class="fas fa-history"></i> Ver
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+
+        <button type="submit" class="btn-guardar">Guardar Registro</button>
+      </form>
+    </div>
+
+    <div id="modal-justificar" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="cerrarModal()">&times;</span>
+      <h2>Justificar Ausencia</h2>
+      <form id="form-justificacion">
+    {% csrf_token %}
+    <input type="hidden" name="nino_id" id="modal-nino-id">
+    <input type="hidden" name="fecha" id="modal-fecha">
+
+    <label for="tipo">Tipo de falta:</label>
+    <select name="tipo" required>
+      <option value="">Selecciona</option>
+      <option value="Médica">Médica</option>
+      <option value="Familiar">Familiar</option>
+      <option value="Transporte">Transporte</option>
+      <option value="Otra">Otra</option>
+    </select>
+
+    <label for="descripcion">Descripción:</label>
+    <textarea name="descripcion" rows="3" required></textarea>
+
+    <label for="observaciones">Observaciones:</label>
+    <textarea name="observaciones" rows="2"></textarea>
+
+    <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+    <button type="button" class="btn-mini-green" onclick="guardarJustificacion()">Guardar Justificación</button>
+    <button type="button" class="btn-mini-historial" onclick="sinJustificar()">Sin justificar</button>
+  </div>
+
+  </form>
+
+    </div>
+  </div>
+
+
+  </body>
+  </html>
+
+  <script>
+  function mostrarJustificar(ninoId) {
+    document.getElementById("justificar-btn-" + ninoId).style.display = "block";
+  }
+
+  function ocultarJustificar(ninoId) {
+    document.getElementById("justificar-btn-" + ninoId).style.display = "none";
+  }
+
+  function redirigirNovedad(ninoId) {
+    const fecha = document.getElementById("fecha").value;
+    if (!fecha) {
+      alert("Por favor selecciona la fecha antes de marcar Ausente.");
+      return;
+    }
+    window.location.href = `/novedades/nueva/?nino_id=${ninoId}&fecha=${fecha}`;
+  }
+  function ocultarJustificar() {} // ya no necesitamos mostrar/ocultar nada
+
+
+  function mostrarModal(ninoId) {
+    const fecha = document.getElementById("fecha").value;
+    if (!fecha) {
+      alert("Selecciona la fecha antes de justificar.");
+      return;
+    }
+    document.getElementById("modal-nino-id").value = ninoId;
+    document.getElementById("modal-fecha").value = fecha;
+    document.getElementById("modal-justificar").style.display = "flex";
+  }
+
+  function ocultarModal(ninoId) {
+    document.getElementById("modal-justificar").style.display = "none";
+  }
+
+  function cerrarModal() {
+    document.getElementById("modal-justificar").style.display = "none";
+  }
+
+
+  function guardarJustificacion() {
+    const form = document.getElementById("form-justificacion");
+    const formData = new FormData(form);
+
+   fetch("{% url 'crear_novedad_desde_asistencia' %}", {
+  method: "POST",
+  body: formData,
+  headers: {
+    "X-CSRFToken": csrftoken
+  }
+})
+
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert("Justificación guardada <3");
+        cerrarModal();
+
+        // Actualizar visualmente el estado en la tabla
+        const ninoId = formData.get("nino_id");
+        document.querySelector(`#justificado-${ninoId}`).checked = true;
+      } else {
+        alert("Error al guardar la justificación ❌");
+      }
+    })
+    .catch(error => console.error("Error:", error));
+  }
+
+
+  function activarJustificado(ninoId) {
+    const caja = document.getElementById("caja-" + ninoId);
+    caja.classList.add("justificado-activo");
+  }
+
+
+  function sinJustificar() {
+    const ninoId = document.getElementById("modal-nino-id").value;
+    cerrarModal();
+
+    // Marcar visualmente como Ausente
+    document.querySelector(`#ausente-${ninoId}`).checked = true;
+  }
+
+
+  function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      // ¿Coincide con el nombre?
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+  </script>
+

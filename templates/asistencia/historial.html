@@ -1,0 +1,199 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Historial de Asistencia - {{ nino.nombres }} {{ nino.apellidos }}</title>
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+  <style>
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background-image: url("{% static 'img/fondito.jpg' %}");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 40px auto;
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 30px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+h1 {
+  color: #7a3eb1;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 26px;
+  font-weight: bold;
+}
+
+p {
+  text-align: center;
+  font-size: 18px;
+  color: #5e3370;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th {
+  background: linear-gradient(135deg, #9B59B6, #7a3eb1);
+  color: white;
+  font-weight: bold;
+  padding: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #e5d5f5;
+  font-size: 15px;
+}
+
+tr:nth-child(even) { background-color: #fdf6ff; }
+tr:hover { background-color: #f3e9ff; transition: 0.3s; }
+
+.estado-presente { color: #2ecc71; font-weight: bold; }
+.estado-ausente { color: #e74c3c; font-weight: bold; }
+.estado-justificado { color: #7a3eb1; font-weight: bold; }
+
+.volver {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 16px;
+  background-color: #9B59B6;
+  color: white;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.volver:hover { background-color: #8e44ad; }
+
+
+.resumen {
+  text-align: center;
+  margin: 15px 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.resumen span {
+  margin: 0 10px;
+}
+/* ------------- Graficas -------------- */
+.grafico {
+  display: flex;
+  height: 30px;
+  margin: 20px auto;
+  max-width: 600px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  font-weight: bold;
+  color: white;
+  text-align: center;
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  animation: expand 0.6s ease-out;
+}
+
+.barra.presente { background: #2ecc71; }
+.barra.ausente { background: #e74c3c; }
+.barra.justificado { background: #7a3eb1; }
+
+@keyframes expand {
+  from { flex-grow: 0; opacity: 0; }
+  to { opacity: 1; }
+}
+    
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Historial de Asistencia</h1>
+  <p><strong>Niño:</strong> {{ nino.nombres }} {{ nino.apellidos }}</p>
+
+
+
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for asistencia in historial %}
+      <tr>
+        <td>{{ asistencia.fecha|date:"d/m/Y" }}</td>
+        <td>
+          {% if asistencia.estado == "Presente" %}
+            <span class="estado-presente">Presente</span>
+          {% elif asistencia.estado == "Ausente" %}
+            <span class="estado-ausente">Ausente</span>
+          {% elif asistencia.estado == "Justificado" %}
+            <span class="estado-justificado">Justificado</span>
+          {% else %}
+            {{ asistencia.estado }}
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="2">No hay registros de asistencia.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+    <!-- Resumen de asistencias -->
+  <div class="resumen">
+    <span class="estado-presente">Presente: {{ presentes }}</span> |
+    <span class="estado-ausente">Ausente: {{ ausentes }}</span> |
+    <span class="estado-justificado">Justificado: {{ justificados }}</span>
+  </div>
+
+<!-- Gráfico de barras -->
+<div class="grafico">
+  <div class="barra presente" style="width: {{ porc_presentes }}%">
+    {{ porc_presentes }}%
+  </div>
+  <div class="barra ausente" style="width: {{ porc_ausentes }}%">
+    {{ porc_ausentes }}%
+  </div>
+  <div class="barra justificado" style="width: {{ porc_justificados }}%">
+    {{ porc_justificados }}%
+  </div>
+</div>
+
+
+
+
+  <a href="{% url 'asistencia_form' %}" class="volver"><i class="fas fa-arrow-left"></i> Volver</a>
+</div>
+
+</body>
+</html>

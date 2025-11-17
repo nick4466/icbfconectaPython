@@ -215,7 +215,7 @@ nav ul {
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
     <nav>
       <ul>
-        <li><a href="#"><i class="fas fa-arrow-left"></i> Volver</a></li>
+        <li><a href="{% url 'asistencia_form' %}"><i class="fas fa-arrow-left"></i> Volver</a></li>
         <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
         
       </ul>
@@ -247,7 +247,7 @@ nav ul {
         <tr>
           <th>Fecha</th>
           <th>Niño</th>
-          <th>Clase</th>
+         
           <th>Tipo</th>
           <th>Prioridad</th>
           
@@ -260,7 +260,7 @@ nav ul {
         <tr>
           <td>{{ novedad.fecha|date:"d/m/Y" }}</td>
           <td>{{ novedad.nino }}</td>
-          <td>{{ novedad.clase }}</td>
+
           <td>{{ novedad.get_tipo_display }}</td>
           <td>Prioridad: {{ novedad.get_prioridad }}</td>
           <!-- TEMA DE PRIORIDAD -->
