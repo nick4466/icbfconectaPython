@@ -2,325 +2,360 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historial de Correos</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial de Correos</title>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Roboto', sans-serif;
-            background-image: url("{% static 'img/fondito.jpg' %}");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
-        header{
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 15px 30px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 2px solid #e5d5f5;
-            backdrop-filter: blur(4px);
-        }
+  <style>
+    /* ======= ESTILO BASE TOMADO DEL DISEÑO QUE PROVISTE ======= */
 
-        header img {
-            height: 60px;
-        }
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondito.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
 
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 20px;
-            padding: 0;
-            margin: 0;
-        }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+    header img { height: 60px; }
 
-        nav ul li a, nav ul li button {
-            text-decoration: none;
-            color: #9B59B6;
-            font-weight: bold;
-            font-size: 16px;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: background-color 0.3s ease;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-family: 'Roboto', sans-serif;
-        }
+    nav ul { display: flex; list-style: none; gap: 20px; }
+    nav ul li a, nav ul li button {
+      text-decoration: none; color: #9B59B6; font-weight: bold; font-size: 16px;
+      padding: 8px 12px; border-radius: 6px; background: none;
+      border: none; cursor: pointer;
+      transition: background-color .3s ease;
+    }
+    nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
 
-        nav ul li a:hover, nav ul li button:hover {
-            background-color: #f3c1e5;
-        }
+    /* ======= CONTENEDOR PRINCIPAL ======= */
+    .tabla-registros {
+      max-width: 1100px;
+      margin: 40px auto;
+      background-color: rgba(255,255,255,0.9);
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
 
-        nav ul .dropdown { position: relative; }
-        nav ul .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.98);
-            min-width: 200px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-            border-radius: 8px;
-            padding: 8px 0;
-        }
-        nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
-        nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
-        nav ul .dropdown:hover .dropdown-content { display: block; }
+    h1 {
+      text-align: center;
+      font-size: 32px;
+      color: #7a3eb1;
+      margin-bottom: 25px;
+    }
 
+    .filtros-y-botones {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
 
-        .container {
-            max-width: 1100px;
-            margin: 40px auto;
-            background-color: rgba(255,255,255,0.95);
-            padding: 30px;
-            border-radius: 14px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-        }
+    .filtros-form {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
 
-        h1 {
-            text-align: center;
-            color: #7a3eb1;
-            font-size: 32px;
-            margin-bottom: 25px;
-        }
+    .filtros-form input {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 10px;
-            font-size: 16px;
-        }
+    .filtros-form button {
+      background-color: #9B59B6;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
-        thead {
-            background-color: #6d178d;
-            color: white;
-            font-weight: 700;
-        }
+    .btn-vaciar {
+      background-color: #dc3545 !important;
+      color: white;
+      padding: 9px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+    }
 
-        thead th {
-            padding: 14px;
-            text-transform: uppercase;
-            font-size: 15px;
-        }
+    /* ===== CARDS PARA LOS CORREOS ===== */
 
-        tbody tr {
-            background-color: #ffffff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            border-radius: 8px;
-        }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 30px;
+    }
 
-        tbody td {
-            padding: 12px;
-            font-size: 15px;
-            color: #444;
-            vertical-align: top;
-        }
+    @media(max-width: 900px){
+      .card-grid { grid-template-columns: 1fr; }
+    }
 
-        tbody tr:hover {
-            background-color: #f6e6ff !important;
-            transform: scale(1.01);
-            transition: 0.2s;
-        }
+    .correo-card {
+      background: #f8f6fa;
+      padding: 22px;
+      border-radius: 16px;
+      box-shadow: 0 3px 10px rgba(155,89,182,0.12);
+      position: relative;
+      border-left: 10px solid #9B59B6;
+      transition: transform .2s, box-shadow .2s;
+    }
 
-        .btn {
-            background-color: #921fc0;
-            color: white;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: background-color 0.3s ease;
-        }
+    .correo-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(155,89,182,0.18);
+    }
 
-        .btn:hover {
-            background-color: #b931d1;
-        }
+    .correo-titulo {
+      font-size: 22px;
+      font-weight: bold;
+      color: #7a3eb1;
+      margin: 0 0 6px 0;
+    }
 
-        .btn-delete {
-            background-color: #dc3545 !important;
-            color: white !important;
-            padding: 10px 18px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+    .correo-fecha {
+      font-size: 15px;
+      color: #555;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
 
-        .btn-delete:hover {
-            background-color: #a00 !important;
-        }
+    .correo-adjuntos,
+    .correo-estado {
+      margin: 6px 0;
+      font-size: 15px;
+      color: #444;
+    }
 
-        .status.success { color: green; font-weight: bold; }
-        .status.error { color: red; font-weight: bold; }
+    .acciones {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
 
-        .messages {
-            margin-bottom: 20px;
-            padding: 12px;
-            background-color: #e6ffe6;
-            color: #2a662a;
-            border-radius: 8px;
-        }
+    .btn-accion {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: .2s;
+    }
 
-        .destinatarios-lista {
-            list-style: none;
-            padding-left: 0;
-        }
-        .destinatarios-lista li {
-            margin-bottom: 4px;
-        }
+    .btn-accion:hover {
+      transform: scale(1.08);
+    }
 
-        /* Contenedor superior filtro + vaciar */
-        .top-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
+    .btn-ver { background: #28a745; color: white; }
+    .btn-eliminar { background: #dc3545; color: white; }
+    .btn-nuevo {
+      background: #9B59B6;
+      padding: 10px 18px;
+      color: white;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 30px;
+      border-radius: 8px;
+    }
+    .btn-nuevo:hover { background: #8e44ad; }
 
-    </style>
+    /* ========== MODAL ========== */
+    .modal {
+      display: none;
+      position: fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-contenido {
+      background: white;
+      width: 600px;
+      max-width: 90%;
+      padding: 30px;
+      border-radius: 14px;
+    }
+
+    .cerrar-modal {
+      float: right; cursor: pointer; font-size: 24px;
+      color: #777; font-weight: bold;
+    }
+
+    .cerrar-modal:hover { color: black; }
+
+    .modal-contenido h2 {
+      color: #7a3eb1;
+      margin-top: 0;
+    }
+
+  </style>
 </head>
 
 <body>
 
 <header>
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
-    <nav>
-      <ul>
-        <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
-        <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
-        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
-        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
-        <li class="dropdown">
-          <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
-          <div class="dropdown-content">
-            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
-          </div>
-        </li>
-        <li>
-            <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
-            </form>
-        </li>
-      </ul>
-    </nav>
+  <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
+  <nav>
+    <ul>
+      <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+      <li><a href="{% url 'listar_ninos' %}">Matrículas</a></li>
+      <li><a href="{% url 'planeaciones:lista_planeaciones' %}">Planeaciones</a></li>
+      <li><a href="{% url 'gestion_ninos' %}">Gestión de Niños</a></li>
+      <li>
+        <form method="post" action="{% url 'logout' %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+        </form>
+      </li>
+    </ul>
+  </nav>
 </header>
 
-<div class="container">
+<div class="tabla-registros">
 
-    <h1>Historial de Correos</h1>
+  <h1>Historial de Correos</h1>
 
-    {% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    </div>
-    {% endif %}
+  <div class="filtros-y-botones">
+    <form method="GET" class="filtros-form">
+      <input type="month" name="mes" value="{{ request.GET.mes }}">
+      <input type="text" name="nombre" placeholder="Buscar por nombre o correo" value="{{ request.GET.nombre }}">
+      <button><i class="fas fa-filter"></i> Filtrar</button>
+      <a href="?" title="Limpiar filtros" style="margin-left:6px;padding:8px 10px;border-radius:6px;background:#eee;color:#444;text-decoration:none;">Limpiar</a>
+    </form>
 
-    <!-- FILTRO + VACIAR -->
-    <div class="top-actions">
+    <form method="POST" action="{% url 'correos:vaciar_historial' %}"
+          onsubmit="return confirm('¿Vaciar historial?');">
+      {% csrf_token %}
+      <button class="btn-vaciar"><i class="fas fa-trash"></i> Vaciar historial</button>
+    </form>
+  </div>
 
-        <!-- FILTRAR -->
-        <form method="GET">
-            <input type="month" name="mes" value="{{ request.GET.mes }}">
-            <button type="submit" class="btn"><i class="fas fa-filter"></i> Filtrar</button>
+  <div class="card-grid">
+
+    {% for log in logs %}
+        <div class="correo-card"
+          data-asunto="{{ log.asunto }}"
+          data-fecha="{{ log.fecha_envio|date:'d/m/Y H:i' }}"
+          data-cuerpo="{{ log.cuerpo|escapejs }}"
+          data-destinatarios="{{ log.lista_destinatarios|join:'||' }}"
+        >
+
+      <p class="correo-titulo">{{ log.asunto }}</p>
+      <p class="correo-fecha"><i class="fas fa-calendar"></i> {{ log.fecha_envio|date:"d/m/Y H:i" }}</p>
+
+      <p class="correo-adjuntos">
+        <i class="fas fa-paperclip"></i>
+        {% if log.adjuntos.exists %}
+          {% for adj in log.adjuntos.all %}
+            <a href="{{ adj.archivo.url }}" target="_blank">{{ adj.nombre_original }}</a><br>
+          {% endfor %}
+        {% else %}
+          Sin adjuntos
+        {% endif %}
+      </p>
+
+      <p class="correo-estado">
+        {% if log.enviado_con_exito %}
+          <span style="color:green;font-weight:bold;">✔ Enviado</span>
+        {% else %}
+          <span style="color:red;font-weight:bold;">✖ Error</span>
+        {% endif %}
+      </p>
+
+      <div class="acciones">
+        <button class="btn-accion btn-ver ver-detalle-btn"><i class="fas fa-eye"></i> Ver</button>
+
+        <form method="POST" action="{% url 'correos:eliminar_log' log.id %}"
+              onsubmit="return confirm('¿Eliminar registro?');">
+          {% csrf_token %}
+          <button class="btn-accion btn-eliminar"><i class="fas fa-trash"></i></button>
         </form>
-
-        <!-- VACIAR HISTORIAL -->
-        <form action="{% url 'correos:vaciar_historial' %}" method="POST"
-              onsubmit="return confirm('¿Estás seguro de vaciar todo el historial?');">
-            {% csrf_token %}
-            <button type="submit" class="btn-delete">
-                <i class="fas fa-trash-alt"></i> Vaciar historial
-            </button>
-        </form>
+      </div>
 
     </div>
+    {% empty %}
+      <p style="grid-column:1/-1;text-align:center;color:#777;">No hay registros.</p>
+    {% endfor %}
 
-    <table>
-        <thead>
-            <tr>
-                <th>Asunto</th>
-                <th>Destinatarios</th>
-                <th>Fecha</th>
-                <th>Adjuntos</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
+  </div>
 
-        <tbody>
-            {% for log in logs %}
-            <tr>
-                <td>{{ log.asunto }}</td>
-
-                <!-- LISTA DE DESTINATARIOS BONITA -->
-                <td>
-                    <ul class="destinatarios-lista">
-                        {% for email in log.lista_destinatarios %}
-                            <li>{{ email }}</li>
-                        {% endfor %}
-                    </ul>
-                </td>
-
-                <td>{{ log.fecha_envio|date:"d/m/Y H:i" }}</td>
-
-                <td>
-                    {% if log.adjuntos.exists %}
-                        {% for adj in log.adjuntos.all %}
-                            <a href="{{ adj.archivo.url }}" target="_blank">{{ adj.nombre_original }}</a><br>
-                        {% endfor %}
-                    {% else %}
-                        Sin adjuntos
-                    {% endif %}
-                </td>
-
-                <td class="status {% if log.enviado_con_exito %}success{% else %}error{% endif %}">
-                    {% if log.enviado_con_exito %}
-                        Enviado
-                    {% else %}
-                        Error
-                    {% endif %}
-                </td>
-
-                <td>
-                    <form method="POST" action="{% url 'correos:eliminar_log' log.id %}"
-                          onsubmit="return confirm('¿Eliminar este registro?');">
-                        {% csrf_token %}
-                        <button class="btn-delete"><i class="fas fa-trash-alt"></i> Eliminar</button>
-                    </form>
-                </td>
-            </tr>
-
-            {% empty %}
-            <tr>
-                <td colspan="6" style="text-align:center;">No hay registros.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <br>
-
-    <a href="{% url 'correos:enviar' %}" class="btn">
-        <i class="fas fa-paper-plane"></i> Enviar nuevo correo
-    </a>
+  <a href="{% url 'correos:enviar' %}" class="btn-nuevo">
+    <i class="fas fa-paper-plane"></i> Enviar nuevo correo
+  </a>
 
 </div>
+
+<!-- ============== MODAL ============== -->
+<div id="modalDetalles" class="modal">
+  <div class="modal-contenido">
+    <span class="cerrar-modal">&times;</span>
+    <h2>Detalle del Correo</h2>
+
+    <p><strong>Asunto:</strong> <span id="md-asunto"></span></p>
+    <p><strong>Fecha:</strong> <span id="md-fecha"></span></p>
+    <p><strong>Destinatarios:</strong></p>
+    <ul id="md-destinatarios"></ul>
+    <p><strong>Cuerpo:</strong></p>
+    <p id="md-cuerpo"></p>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById("modalDetalles");
+  const cerrarBtn = document.querySelector(".cerrar-modal");
+
+  cerrarBtn.onclick = () => modal.style.display = "none";
+  window.onclick = e => { if(e.target === modal) modal.style.display = "none"; };
+
+  document.querySelectorAll(".ver-detalle-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const card = btn.closest(".correo-card");
+
+      document.getElementById("md-asunto").textContent = card.dataset.asunto;
+      document.getElementById("md-fecha").textContent = card.dataset.fecha;
+      document.getElementById("md-cuerpo").textContent = card.dataset.cuerpo;
+
+      const destinatariosRaw = card.dataset.destinatarios || '';
+      const destinatarios = destinatariosRaw ? destinatariosRaw.split('||') : [];
+      const ul = document.getElementById("md-destinatarios");
+      ul.innerHTML = "";
+      destinatarios.forEach(d => {
+        let li = document.createElement("li");
+        li.textContent = d;
+        ul.appendChild(li);
+      });
+
+      modal.style.display = "flex";
+    });
+  });
+</script>
 
 </body>
 </html>
