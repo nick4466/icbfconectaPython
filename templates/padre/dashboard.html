@@ -1,0 +1,289 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Página Principal - Padres de Familia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondopadres.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    .borde2 {
+      text-align: center;
+      background-color: rgba(155, 89, 182, 0.9);
+      color: white;
+      padding: 12px 0;
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    /* ──────────────────────────────── */
+    /* NAVBAR – LA DEJÉ IGUAL */
+    /* ──────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+
+    header img { height: 60px; }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav ul li a, nav ul li button {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    nav ul li a:hover, nav ul li button:hover {
+      background-color: #f3c1e5;
+    }
+
+    nav ul .dropdown { position: relative; }
+
+    nav ul .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      min-width: 180px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 8px 0;
+      z-index: 1;
+    }
+
+    nav ul .dropdown:hover .dropdown-content { display: block; }
+    nav ul .dropdown-content a {
+      color: #9B59B6;
+      padding: 12px 16px;
+      display: block;
+      text-decoration: none;
+    }
+    nav ul .dropdown-content a:hover { background:#f3c1e5; }
+
+    /* ──────────────────────────────── */
+    /* CONTENEDOR */
+    /* ──────────────────────────────── */
+    .dashboard-container {
+      max-width: 1100px;
+      margin: 40px auto;
+      background-color: rgba(255, 255, 255, 0.96);
+      border-radius: 18px;
+      padding: 35px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 30px;
+      color: #7a3eb1;
+      margin-bottom: 10px;
+    }
+
+    .bienvenida p {
+      text-align: center;
+      font-size: 18px;
+      color: #5e3370;
+      margin-bottom: 35px;
+    }
+
+    /* ──────────────────────────────── */
+    /* NUEVO DISEÑO DE TARJETAS */
+    /* ──────────────────────────────── */
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 30px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: transform 0.25s, box-shadow 0.25s;
+      border: 1px solid #eee;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    /* HEADER DE LA CARD */
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 15px;
+    }
+
+    /* FOTO RECTANGULAR (no redonda) */
+    .card-header img {
+      width: 105px;
+      height: 105px;
+      border-radius: 12px;     /* ← ya no es círculo */
+      object-fit: cover;
+      border: 3px solid #e4d6ff;
+    }
+
+    .card-header-info h3 {
+      margin: 0;
+      color: #5e3370;
+      font-size: 21px;
+      font-weight: bold;
+    }
+
+    .card-header-info p {
+      margin: 5px 0 0;
+      font-size: 15px;
+      color: #777;
+    }
+
+    /* CUERPO */
+    .card-body p {
+      margin: 0;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .resumen-desarrollo {
+      background: #f3edfb;
+      padding: 12px;
+      border-radius: 10px;
+      border-left: 4px solid #9B59B6;
+      margin-top: 8px;
+      font-style: italic;
+      color: #633d85;
+    }
+
+    /* FOOTER */
+    .btn-ver-desarrollo {
+      display: inline-block;
+      background-color: #9B59B6;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background 0.2s;
+      margin-top: 18px;
+    }
+
+    .btn-ver-desarrollo:hover {
+      background-color: #7d3cbf;
+    }
+  </style>
+</head>
+
+<body>
+     <div class="borde2"></div>
+
+  <!-- NAVBAR SE MANTIENE IGUAL -->
+  <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
+    <nav>
+      <ul>
+        <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="#"><i class="fas fa-calendar"></i> Calendario</a></li>
+
+        <li class="dropdown">
+          <a href="#"><i class="fas fa-cog"></i> Ajustes</a>
+          <div class="dropdown-content">
+            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+          </div>
+        </li>
+
+        <li>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+          </form>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="dashboard-container">
+    <div class="bienvenida">
+      <h1>¡Bienvenido, <strong>{{ user.nombres }}!</strong></h1>
+      <p>Aquí puedes ver el desarrollo y la actividad diaria de tus hijos.</p>
+    </div>
+
+    <div class="grid-container">
+      {% for data in ninos_data %}
+        <div class="card" style="margin-bottom:28px; position:relative;">
+          <div class="card-header">
+            <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto de {{ data.nino.nombres }}">
+            <div class="card-header-info">
+              <h3 style="font-size:22px;color:#7a3eb1;font-weight:700;margin-bottom:2px;">{{ data.nino.nombres }} {{ data.nino.apellidos }}</h3>
+            </div>
+          </div>
+          <div class="card-body">
+            {% if data.ultimo_desarrollo %}
+              <div style="margin-bottom:8px; color:#555; font-size:15px; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-calendar-alt" style="color:#7a3eb1;"></i>
+                <strong>Último registro:</strong>
+                <span style="background:#eaf6ff;padding:2px 10px;border-radius:12px; font-weight:600; color:#7a3eb1;">{{ data.ultimo_desarrollo.fecha_fin_mes|date:"d \d\e F \d\e Y" }}</span>
+              </div>
+              <p class="resumen-desarrollo" style="margin-bottom:10px;">
+                <i class="fas fa-quote-left" style="opacity:0.6;margin-right:5px;"></i>
+                {{ data.ultimo_desarrollo.dimension_cognitiva|truncatewords:15 }}
+              </p>
+              {% if data.ultimo_desarrollo.promedio %}
+                <span style="display:inline-block;background:#fff;color:#7a3eb1;font-weight:700;padding:5px 16px;border-radius:16px;font-size:15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(155,89,182,0.08);border:2px solid #7a3eb1; position:absolute; top:18px; right:18px;">
+                  <i class="fas fa-star" style="color:#f5b301; margin-right:6px;"></i>
+                  Promedio: {{ data.ultimo_desarrollo.promedio }}
+                </span>
+              {% endif %}
+            {% else %}
+              <p>Aún no hay registros de desarrollo para {{ data.nino.nombres }}.</p>
+            {% endif %}
+          </div>
+          <a href="{% url 'padre_ver_desarrollo' data.nino.id %}" class="btn-ver-desarrollo">
+            <i class="fas fa-chart-line"></i> Ver desarrollo
+          </a>
+        </div>
+      {% empty %}
+        <div class="card" style="padding:30px;">
+          <h3>No hay niños asignados</h3>
+          <p>Si crees que es un error, contacta a la madre comunitaria.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</body>
+</html>

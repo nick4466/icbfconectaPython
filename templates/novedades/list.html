@@ -1,0 +1,300 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Listado de Novedades - ICBF Conecta</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+  <style>
+    * { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background-image: url("{% static 'img/fondito.jpg' %}");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: rgba(0, 0, 0, 0.4); /* más oscuro *//* oscurece ligeramente */
+}
+
+header {
+      background-color: rgba(231, 231, 231, 0.795);
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+    }
+    header img { height: 60px; }
+nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+    nav ul li a {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+    }
+    nav ul li a:hover { background-color: #f3c1e5; }
+    .main-title {
+      text-align: center;
+      margin-top: 20px;
+      padding: 20px;
+      font-size: 26px;
+      font-weight: bold;
+      color: #7a3eb1;
+      background-color: rgba(234, 233, 233, 0.7);
+      margin: 20px auto;
+      width: 80%;
+      border-radius: 10px;
+    }
+
+
+
+    .main-title {
+      text-align: center;
+      margin-top: 20px;
+      padding: 20px;
+      font-size: 26px;
+      font-weight: bold;
+      color: #7a3eb1;
+      background-color: rgba(255, 255, 255, 0.7);
+      margin: 20px auto;
+      width: 80%;
+      border-radius: 10px;
+    }
+
+    .btn-primary {
+      background-color: #7a3eb1;
+      color: white;
+      padding: 10px 18px;
+      font-size: 15px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .btn-primary:hover {
+      background-color: #9B59B6;
+    }
+
+.card {
+  background-color: rgba(230, 230, 230, 0.687); /* más transparente */
+  backdrop-filter: blur(6px) saturate(120%);   /* más difuminado y vibrante */
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);    /* sombra más profunda */
+  max-width: 1000px;
+  margin: 0 auto 40px;
+  transition: box-shadow 0.3s ease;
+}
+.card:hover {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+}
+
+
+
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 15px;
+      text-align: center;
+      border: 1px solid #d5b4f3;
+      font-size: 15px;
+    }
+    th {
+      background-color: #f3c1e5;
+      color: #5e3370;
+      font-weight: 600;
+    }
+    tr:nth-child(even) { background-color: #fdf6ff; }
+    tr:hover { background-color: #f3e9ff; }
+    tr { transition: background-color 0.3s ease; }
+
+    .menu-container {
+      position: relative;
+      display: inline-block;
+    }
+    .menu-trigger {
+      font-size: 20px;
+      background: none;
+      border: none;
+      color: #7a3eb1;
+      cursor: pointer;
+      padding: 5px;
+    }
+    .menu-options {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      border: 1px solid #d5b4f3;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      border-radius: 6px;
+      min-width: 130px;
+      z-index: 10;
+    }
+    .menu-options a {
+      display: block;
+      padding: 10px 14px;
+      text-decoration: none;
+      color: #5e3370;
+      font-size: 14px;
+    }
+    .menu-options a:hover {
+      background-color: #f3c1e5;
+    }
+    .menu-container:hover .menu-options {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .main-title { font-size: 22px; width: 90%; }
+      .card { padding: 15px; }
+      th, td { font-size: 14px; padding: 10px; }
+    }
+
+    
+
+    .prioridad-1 { color: green; }
+.prioridad-3 { color: orange; font-weight: bold; }
+.prioridad-5 { color: red; font-weight: bold; }
+
+
+
+
+.busqueda-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.busqueda-input {
+  padding: 6px 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 250px;
+}
+
+.btn-purple {
+  background-color: #7c4dff;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.btn-purple:hover {
+  background-color: #5e35b1;
+}
+
+  </style>
+</head>
+<body>
+    
+  <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
+    <nav>
+      <ul>
+        <li><a href="{% url 'asistencia_form' %}"><i class="fas fa-arrow-left"></i> Volver</a></li>
+        <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+        
+      </ul>
+    </nav>
+  </header>
+
+  <div style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.050); z-index: -1;"></div>
+  <!-- contenido aquí -->
+
+
+  <form method="get" class="busqueda-form" style="margin-bottom: 20px;">
+  <input type="text" name="q" placeholder="Buscar novedad..." value="{{ query }}" class="busqueda-input">
+  <button type="submit" class="btn btn-sm btn-purple">Buscar</button>
+</form>
+
+
+
+
+  <h2 class="main-title">Listado de Novedades</h2>
+
+  <div style="text-align: center; margin-bottom: 20px;">
+  <a href="{% url 'novedades_create' %}" class="btn btn-primary">Registrar nueva novedad</a>
+</div>
+
+
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Niño</th>
+         
+          <th>Tipo</th>
+          <th>Prioridad</th>
+          
+          <th>Descripción</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for novedad in novedades %}
+        <tr>
+          <td>{{ novedad.fecha|date:"d/m/Y" }}</td>
+          <td>{{ novedad.nino }}</td>
+
+          <td>{{ novedad.get_tipo_display }}</td>
+          <td>Prioridad: {{ novedad.get_prioridad }}</td>
+          <!-- TEMA DE PRIORIDAD -->
+          <td>{{ novedad.descripcion|truncatechars:50 }}</td>
+          <td>
+            <div class="menu-container">
+              <button class="menu-trigger">⋯</button>
+              <div class="menu-options">
+                <a href="{% url 'novedades_detail' novedad.pk %}">Ver</a>
+                <a href="{% url 'novedades_edit' novedad.pk %}">Editar</a>
+                <a href="{% url 'novedades_delete' novedad.pk %}" style="color: red;">Eliminar</a>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7">No hay novedades registradas.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if novedades|length == 0 %}
+  <p>No se encontraron novedades que coincidan con "{{ query }}".</p>
+{% endif %}
+
+
+
+  </div>
+
+  <footer style="text-align: center; padding: 20px; color: #7a3eb1; font-size: 14px;">
+  © 2025 ICBF Conecta. Todos los derechos reservados.
+</footer>
+
+
+</body>
+</html>

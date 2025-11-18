@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de {{ nino.nombres }} {{ nino.apellidos }}</title>
+
+    <style>
+        @page {
+            size: letter;
+            margin: 25mm 25mm 30mm 25mm;
+        }
+
+        body {
+            font-family: "Helvetica Neue", "Helvetica", Arial, sans-serif;
+            font-size: 11pt;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        header {
+            position: fixed;
+            top: -50px;
+            left: 0;
+            right: 0;
+            height: 65px;
+            border-bottom: 2px solid #cbb1df;
+            padding-bottom: 10px;
+        }
+
+        header img {
+            height: 65px;
+            float: left;
+        }
+
+        header .header-text {
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        header .header-text h1 {
+            margin: 0;
+            font-size: 22pt;
+            color: #8e70b8;
+            font-weight: 600;
+        }
+
+        header .header-text h2 {
+            margin: 4px 0 0 0;
+            font-size: 13pt;
+            font-weight: normal;
+            color: #a291be;
+        }
+
+        .info-section {
+            background-color: #fcf8ff;
+            border: 1px solid #dbc7ed;
+            border-radius: 8px;
+            padding: 8px 15px;
+            margin-top: 40px;
+            margin-bottom: 35px;
+            font-size: 11pt;
+        }
+
+        .info-section p {
+            margin: 3px 0;
+            padding: 2px 0;
+        }
+
+        h3 {
+            font-size: 16pt;
+            color: #8e70b8;
+            border-bottom: 2px solid #d7bbe8;
+            padding-bottom: 6px;
+            margin-top: 35px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+
+        thead th {
+            background-color: #d7bbe8;
+            color: #5e3370;
+            padding: 12px 8px;
+            border: 1px solid #c1a6d4;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        tbody td {
+            border: 1px solid #dbc7ed;
+            padding: 10px 8px;
+            text-align: center;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #faf5ff;
+        }
+
+        .empty-data {
+            text-align: center;
+            font-style: italic;
+            padding: 20px 0;
+            color: #999;
+            background-color: #f7f2fc;
+            border: 1px dashed #d4c6e6;
+            border-radius: 6px;
+        }
+
+        footer {
+            position: fixed;
+            bottom: -50px;
+            left: 0;
+            right: 0;
+            height: 30px;
+            font-size: 9pt;
+            text-align: center;
+            color: #888;
+            line-height: 30px;
+        }
+
+        /* === FIRMAS ESTILO FORMATO ICBF === */
+
+        .firmas-container {
+            margin-top: 80px;
+            width: 100%;
+        }
+
+        .firmas-container table {
+            width: 100%;
+            border: none; /* Asegura que la tabla no tenga bordes propios */
+        }
+
+        .firmas-container td {
+            width: 50%;
+            text-align: center;
+            border: none; /* Asegura que las celdas no tengan bordes */
+            padding: 0 10px;
+            vertical-align: top;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <img src="{{ logo_url }}" alt="Logo" width="120">
+        <div class="header-text">
+            <h1>Reporte de Seguimiento</h1>
+            <h2>{{ hogar_comunitario.nombre_hogar|default:"Nombre del Hogar Comunitario" }}</h2>
+        </div>
+    </header>
+
+    <div class="info-section">
+        <p><strong>Nombre del niño:</strong> {{ nino.nombres }} {{ nino.apellidos }}</p>
+        <p><strong>Documento:</strong> {{ nino.documento|default:"N/A" }}</p>
+        <p><strong>Fecha de generación:</strong> {% now "Y-m-d H:i" %}</p>
+
+        {% if fecha_inicio != "N/A" and fecha_fin != "N/A" %}
+            <p><strong>Periodo del reporte:</strong> {{ fecha_inicio }} — {{ fecha_fin }}</p>
+        {% else %}
+            <p><strong>Periodo del reporte:</strong> Todo el historial</p>
+        {% endif %}
+    </div>
+
+    {% if tipo_reporte == 'ambos' or tipo_reporte == 'desarrollo' %}
+        <h3>Seguimiento de Desarrollo</h3>
+
+        {% if desarrollos %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Dimensión Cognitiva</th>
+                        <th>Dimensión Comunicativa</th>
+                        <th>Dimensión Socio-afectiva</th>
+                        <th>Dimensión Corporal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in desarrollos %}
+                        <tr>
+                            <td>{{ d.fecha_fin_mes|date:"Y-m-d" }}</td>
+                            <td>{{ d.dimension_cognitiva|default:"-" }}</td>
+                            <td>{{ d.dimension_comunicativa|default:"-" }}</td>
+                            <td>{{ d.dimension_socio_afectiva|default:"-" }}</td>
+                            <td>{{ d.dimension_corporal|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-data">No hay registros de desarrollo para este periodo.</p>
+        {% endif %}
+    {% endif %}
+
+    {% if tipo_reporte == 'ambos' or tipo_reporte == 'novedades' %}
+        <h3>Registro de Novedades</h3>
+
+        {% if novedades %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for n in novedades %}
+                        <tr>
+                            <td>{{ n.fecha|date:"Y-m-d" }}</td>
+                            <td>{{ n.get_tipo_novedad_display }}</td>
+                            <td>{{ n.descripcion }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-data">No hay novedades registradas en este periodo.</p>
+        {% endif %}
+    {% endif %}
+
+    <!-- SECCIÓN DE FIRMAS ESTILO FORMATO ICBF -->
+    <div class="firmas-container">
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <p style="margin: 0; padding-top: 50px; margin-bottom: 8px; font-weight: bold;">___________________________</p>
+                        <p style="font-size: 11pt; color: #000; font-weight: 600; margin: 0;">{{ nino.hogar.madre.usuario.get_full_name }}</p>
+                        <p style="font-size: 10pt; color: #000; margin: 2px 0 0 0;">Firma de la Madre Comunitaria</p>
+                    </td>
+                    <td>
+                        <p style="margin: 0; padding-top: 50px; margin-bottom: 8px; font-weight: bold;">___________________________</p>
+                        <p style="font-size: 11pt; color: #000; font-weight: 600; margin: 0;">{{ nino.padre.usuario.get_full_name }}</p>
+                        <p style="font-size: 10pt; color: #000; margin: 2px 0 0 0;">Firma del Padre, Madre o Cuidador</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

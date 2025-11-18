@@ -1,0 +1,344 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desarrollo de {{ nino.nombres }}</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-image: url("{% static 'img/fondopadres.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .borde2 {
+      text-align: center;
+      background-color: rgba(155, 89, 182, 0.9);
+      color: white;
+      padding: 12px 0;
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+        /* NAVBAR ORIGINAL */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 15px 30px;
+            border-bottom: 2px solid #e5d5f5;
+            backdrop-filter: blur(4px);
+            flex-wrap: wrap;
+        }
+
+        header img {
+            height: 60px;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            padding: 0;
+            margin: 0;
+        }
+
+        nav ul li a,
+        nav ul li button {
+            color: #9B59B6;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: 0.3s;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        nav ul li a:hover,
+        nav ul li button:hover {
+            background-color: #f3c1e5;
+        }
+
+        nav ul .dropdown {
+            position: relative;
+        }
+
+        nav ul .dropdown-content {
+            display: none;
+            position: absolute;
+            background: white;
+            min-width: 180px;
+            border-radius: 8px;
+            padding: 8px 0;
+            box-shadow: 0px 8px 15px rgba(0,0,0,0.15);
+        }
+
+        nav ul .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        nav ul .dropdown-content a {
+            padding: 12px 16px;
+            display: block;
+            color: #9B59B6;
+            text-decoration: none;
+        }
+
+        nav ul .dropdown-content a:hover {
+            background-color: #f3c1e5;
+        }
+
+        /* LAYOUT GENERAL */
+        .contenedor {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 30% 1fr;
+            gap: 25px;
+        }
+
+        .columna1,
+        .columna2 {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* TARJETAS (CARDS) */
+        .card {
+            background: rgba(255,255,255,0.96);
+            padding: 22px;
+            border-radius: 14px;
+            border-left: 5px solid #9B59B6;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+        }
+
+        /* --- FILTROS --- */
+        .filtros-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .filtros-form input { padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
+        .filtros-form button, .filtros-form a {
+            background-color: #8e44ad; color: white; border: none; padding: 8px 15px;
+            border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 14px;
+        }
+        .filtros-form a {
+            background-color: #6c757d;
+        }
+
+        .card h1, .card h2, .card h3 {
+            color: #7a3eb1;
+            margin: 0 0 10px 0;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 15px;
+        }
+
+        /* FOTO DEL NIÑO (GRANDE) */
+        .child-photo-large {
+            width: 100%;
+            max-width: 350px;
+            height: 350px;
+            object-fit: cover;
+            border-radius: 18px;
+            display: block;
+            margin: 0 auto 10px auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.18);
+        }
+
+        /* BLOQUES DE DIMENSIONES */
+        .dimension-block {
+            padding-top: 15px;
+            margin-top: 15px;
+            border-top: 1px solid #ece2f8;
+        }
+
+        .dimension-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .display-stars {
+            font-size: 1.3rem;
+            color: #f5b301;
+        }
+
+        .inactive {
+            color: #ccc;
+        }
+
+        /* --- PAGINACIÓN --- */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 8px;
+        }
+        .pagination a, .pagination span {
+            color: #9B59B6; padding: 8px 14px; text-decoration: none;
+            transition: background-color .3s; border: 1px solid #ddd;
+            border-radius: 6px; background-color: white;
+        }
+        .pagination a:hover { background-color: #f1f1f1; }
+        .pagination .current {
+            background-color: #9B59B6; color: white; border-color: #9B59B6;
+        }
+        .pagination .disabled {
+            color: #ccc; border-color: #ddd; background-color: #f8f9fa;
+        }
+
+        @media (max-width: 768px) {
+            .contenedor {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+     <div class="borde2"></div>
+<header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
+    <nav>
+        <ul>
+            <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+            <li><a href="#"><i class="fas fa-calendar"></i> Calendario</a></li>
+
+            <li class="dropdown">
+                <a><i class="fas fa-cog"></i> Ajustes</a>
+                <div class="dropdown-content">
+                    <a href="{% url 'editar_perfil' %}"><i class="fas fa-user-pen"></i> Editar Perfil</a>
+                    <a href="{% url 'cambiar_contrasena' %}"><i class="fas fa-key"></i> Cambiar Contraseña</a>
+                </div>
+            </li>
+
+            <li>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+                </form>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+
+<div class="contenedor">
+
+    <!-- COLUMNA 1 — Información del niño -->
+    <div class="columna1">
+        {% if nino %}
+        <div class="card">
+
+            <!-- FOTO PRIMERO -->
+            <img src="{% static 'img/nino_placeholder.jpg' %}" class="child-photo-large" alt="Foto del niño">
+
+            <h1 style="text-align:center; margin-top:15px;">
+                {{ nino.nombres }} {{ nino.apellidos }}
+            </h1>
+
+            <p class="info-item">
+                <strong>Nacimiento:</strong> {{ nino.fecha_nacimiento|date:"d \\d\\e F \\d\\e Y" }}
+            </p>
+
+            <p class="info-item">
+                <strong>Género:</strong> {{ nino.genero|capfirst }}
+            </p>
+
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- COLUMNA 2 — Registros -->
+    <div class="columna2">
+        <div class="card">
+            <h3>Filtrar Registros</h3>
+            <form method="get" class="filtros-form">
+                <input type="month" name="mes" value="{{ filtros.mes }}">
+                <button type="submit"><i class="fas fa-filter"></i> Filtrar</button>
+                <a href="{% url 'padre_ver_desarrollo' nino.id %}">Limpiar</a>
+            </form>
+        </div>
+
+
+
+        {% for desarrollo in desarrollos %}
+        <div class="card" style="margin-bottom:24px; position:relative;">
+            <!-- Badge de Promedio -->
+            {% if desarrollo.promedio %}
+            <div class="badge-promedio" style="position:absolute; top:18px; left:18px; background:#fff; color:#7a3eb1; font-weight:700; font-size:14px; border-radius:16px; padding:4px 12px; box-shadow:0 2px 8px rgba(155,89,182,0.08); border:2px solid {{ desarrollo.accent_color }};">
+                Promedio: {{ desarrollo.promedio }}
+            </div>
+            {% endif %}
+            <div class="dimension-header">
+                <span style="font-size:22px; color:{{ desarrollo.accent_color }};">
+                    <i class="{{ desarrollo.icono }}"></i>
+                </span>
+            </div>
+            <div style="margin-bottom:8px; color:#555; font-size:18px;">
+                <strong>Fecha de registro:</strong> {{ desarrollo.fecha_fin_mes|date:"d \d\e F \d\e Y" }}
+            </div>
+            <div class="dimension-block">
+                <p><strong>Cognitiva:</strong> {{ desarrollo.dimension_cognitiva }} <span class="display-stars">{% for i in "12345" %}<i class="fas fa-star{% if desarrollo.rating_cognitiva < i|add:'0' %} inactive{% endif %}"></i>{% endfor %}</span></p>
+                <p><strong>Comunicativa:</strong> {{ desarrollo.dimension_comunicativa }} <span class="display-stars">{% for i in "12345" %}<i class="fas fa-star{% if desarrollo.rating_comunicativa < i|add:'0' %} inactive{% endif %}"></i>{% endfor %}</span></p>
+                <p><strong>Socio-afectiva:</strong> {{ desarrollo.dimension_socio_afectiva }} <span class="display-stars">{% for i in "12345" %}<i class="fas fa-star{% if desarrollo.rating_socio_afectiva < i|add:'0' %} inactive{% endif %}"></i>{% endfor %}</span></p>
+                <p><strong>Corporal:</strong> {{ desarrollo.dimension_corporal }} <span class="display-stars">{% for i in "12345" %}<i class="fas fa-star{% if desarrollo.rating_corporal < i|add:'0' %} inactive{% endif %}"></i>{% endfor %}</span></p>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card">
+            <p>No hay registros de desarrollo para este niño.</p>
+        </div>
+        {% endfor %}
+
+        <!-- Controles de Paginación -->
+        {% if desarrollos.has_other_pages %}
+        <div class="pagination">
+            {% if desarrollos.has_previous %}
+                <a href="?page=1{% if filtros.mes %}&mes={{ filtros.mes }}{% endif %}">&laquo; Primera</a>
+                <a href="?page={{ desarrollos.previous_page_number }}{% if filtros.mes %}&mes={{ filtros.mes }}{% endif %}">Anterior</a>
+            {% else %}
+                <span class="disabled">&laquo; Primera</span>
+                <span class="disabled">Anterior</span>
+            {% endif %}
+
+            <span class="current">Página {{ desarrollos.number }} de {{ desarrollos.paginator.num_pages }}</span>
+
+            {% if desarrollos.has_next %}
+                <a href="?page={{ desarrollos.next_page_number }}{% if filtros.mes %}&mes={{ filtros.mes }}{% endif %}">Siguiente</a>
+                <a href="?page={{ desarrollos.paginator.num_pages }}{% if filtros.mes %}&mes={{ filtros.mes }}{% endif %}">Última &raquo;</a>
+            {% else %}
+                <span class="disabled">Siguiente</span>
+                <span class="disabled">Última &raquo;</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+</body>
+</html>

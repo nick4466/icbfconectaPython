@@ -1,0 +1,281 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar Correos Masivos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-image: url("{% static 'img/fondito.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        header{
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+    }
+
+    header img {
+      height: 60px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav ul li a, nav ul li button {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    nav ul li a:hover, nav ul li button:hover {
+      background-color: #f3c1e5;
+    }
+
+    /* Estilos para el menú desplegable */
+    nav ul .dropdown { position: relative; }
+    nav ul .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.98);
+      min-width: 200px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 8px;
+      padding: 8px 0;
+    }
+    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
+    nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
+    nav ul .dropdown:hover .dropdown-content { display: block; }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 14px;
+            padding: 30px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #7a3eb1;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 15px;
+            color: #6c4ea5;
+        }
+
+        input[type="text"], input[type="file"], textarea {
+            width: 100%;
+            padding: 10px 12px;
+            margin-top: 6px;
+            border: 1px solid #d1cbe6;
+            border-radius: 8px;
+            outline: none;
+            font-size: 15px;
+            transition: all 0.25s ease;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: #921fc0;
+            box-shadow: 0 0 6px rgba(122, 62, 177, 0.3);
+        }
+
+        textarea {
+            min-height: 150px;
+        }
+
+        .checkbox-list {
+            max-height: 220px;
+            overflow-y: auto;
+            border: 1px solid #d1cbe6;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 6px;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .checkbox-list label {
+            display: block;
+            margin-bottom: 6px;
+            cursor: pointer;
+        }
+
+        .select-all {
+            margin-bottom: 10px;
+            display: block;
+            cursor: pointer;
+            color: #921fc0;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .btn {
+            background-color: #921fc0;
+            color: white;
+            padding: 12px 22px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: #b931d1;
+        }
+
+        .messages {
+            margin-bottom: 20px;
+            padding: 12px;
+            background-color: #e6ffe6;
+            color: #2a662a;
+            border-radius: 8px;
+        }
+
+        /* Input buscar */
+        #buscar_nino {
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+                .btn-small {
+            font-size: 13px;          /* pequeño */
+            padding: 3px 8px;         /* pequeño */
+            background-color: #e0d6f5; /* color muy suave */
+            border: 1px solid #c4b3e0;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #6c4ea5;
+            font-weight: normal;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .btn-small:hover {
+            background-color: #d1bff2; /* resalta levemente al pasar mouse */
+            color: #921fc0;
+        }
+
+
+    </style>
+</head>
+<body>
+    <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
+    <nav>
+      <ul>
+        <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
+        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
+        <li class="dropdown">
+          <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
+          <div class="dropdown-content">
+            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+          </div>
+        </li>
+        <li>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+            </form>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+<div class="container">
+    <h1>Enviar Correos Masivos</h1>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <label for="buscar_nino">Buscar niño:</label>
+    <input type="text" id="buscar_nino" placeholder="Escriba nombre o apellido..." onkeyup="filtrarCheckboxes()">
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+            <label for="id_destinatarios">Seleccionar Padres:</label>
+        <button type="button" class="btn-small" onclick="toggleSeleccionarTodos()">Seleccionar todos</button>
+        <div class="checkbox-list">
+            {{ form.destinatarios }}
+        </div>
+        <label for="id_asunto">Asunto:</label>
+        {{ form.asunto }}
+
+        <label for="id_cuerpo">Cuerpo del correo:</label>
+        {{ form.cuerpo }}
+
+        <label for="id_archivos">Adjuntar archivos:</label>
+        <input type="file" name="archivos" id="id_archivos" multiple>
+
+        <button type="submit" class="btn"><i class="fas fa-paper-plane"></i> Enviar Correos</button>
+        <a href="{% url 'correos:historial' %}" class="btn"><i class="fas fa-history"></i> Ver Historial</a>
+    </form>
+</div>
+
+<script>
+    function filtrarCheckboxes() {
+        const input = document.getElementById('buscar_nino');
+        const filter = input.value.toLowerCase();
+        const checkboxes = document.querySelectorAll('.checkbox-list label');
+
+        checkboxes.forEach(label => {
+            const text = label.textContent.toLowerCase();
+            label.style.display = text.includes(filter) ? '' : 'none';
+        });
+    }
+
+    function toggleSeleccionarTodos() {
+        const checkboxes = document.querySelectorAll('.checkbox-list input[type="checkbox"]');
+        const allChecked = Array.from(checkboxes).every(c => c.checked);
+        checkboxes.forEach(c => c.checked = !allChecked);
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,288 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listado de Niños</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondito.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+    header img { height: 60px; }
+    nav ul { list-style: none; display: flex; gap: 20px; padding: 0; margin: 0; }
+    nav ul li a, nav ul li button {
+      text-decoration: none; color: #9B59B6; font-weight: bold; font-size: 16px;
+      padding: 8px 12px; border-radius: 6px; transition: background-color 0.3s ease;
+      background: none; border: none; cursor: pointer; font-family: 'Roboto', sans-serif;
+    }
+    nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
+
+    /* Estilos para el menú desplegable */
+    nav ul .dropdown { position: relative; }
+    nav ul .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.98);
+      min-width: 200px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 8px;
+      padding: 8px 0;
+    }
+    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
+    nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
+    nav ul .dropdown:hover .dropdown-content { display: block; }
+    .tabla-registros {
+      max-width: 1100px; margin: 40px auto; background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 14px; padding: 30px; box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+    h1 { text-align: center; margin-bottom: 25px; font-size: 32px; color: #7a3eb1; }
+    .filtros-y-botones { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-agregar, .btn-reporte {
+      background-color: #9B59B6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-agregar:hover { background-color: #8e44ad; }
+    .btn-reporte { background-color: #5e3370; }
+    .btn-reporte:hover { background-color: #3d2350; }
+    table { width: 100%; border-collapse: collapse; font-size: 16px; background-color: white; border-radius: 10px; overflow: hidden; }
+    thead { background-color: #f3c1e5; color: #5e3370; }
+    th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
+    tbody tr:hover { background-color: #f9e6ff; }
+    .acciones {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      align-items: center;
+    }
+    .acciones .btn-accion {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      padding: 4px 6px;
+      margin: 0 2px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: transform 0.2s;
+      text-decoration: none;
+      min-width: 28px;
+      min-height: 28px;
+    }
+    .acciones .btn-accion i { font-size: 15px; }
+    .acciones .btn-accion:hover { transform: scale(1.1); }
+    .btn-verde { background: #28a745; color: white; }
+    .btn-azul  { background: #007bff; color: white; }
+    .btn-rojo  { background: #dc3545; color: white; }
+    .empty-message { color: #777; margin-top: 20px; text-align: center; }
+    .modal {
+      display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center;
+    }
+    .modal-contenido {
+      background-color: #fff; margin: 10% auto; padding: 30px; border: 1px solid #ccc;
+      width: 80%; max-width: 600px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+      animation: zoomIn 0.3s ease; max-height: 80vh; overflow-y: auto;
+    }
+    @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .cerrar-modal { float: right; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; }
+    .cerrar-modal:hover { color: #000; }
+    .modal-contenido h2 { margin-top: 0; color: #7a3eb1; }
+    .modal-contenido p { margin: 12px 0; font-size: 16px; line-height: 1.5; }
+    .modal-contenido hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+
+    @media (max-width: 900px) {
+      .tabla-registros { padding: 10px; }
+      th, td { padding: 8px; font-size: 14px; }
+      .btn-agregar, .btn-reporte { font-size: 14px; padding: 8px 12px; }
+      .btn-group { flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
+    <nav>
+      <ul>
+        <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
+        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
+        <li class="dropdown">
+          <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
+          <div class="dropdown-content">
+            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+          </div>
+        </li>
+        <li>
+          <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+          </form>
+        </li>
+      </ul>
+    </nav>
+  </header>
+  <div class="tabla-registros">
+    <h1>Niños de mi Hogar Comunitario</h1>
+    <div class="filtros-y-botones">
+      <div class="btn-group">
+        <a href="{% url 'matricular_nino' %}" class="btn-agregar"><i class="fas fa-plus"></i> Matricular Nuevo Niño</a>
+        <a href="#" class="btn-reporte"><i class="fas fa-file-pdf"></i> Generar Reporte PDF</a>
+      </div>
+    </div>
+    <p style="margin-top: 10px; text-align:center; color:#555;">Solo se muestran los niños asociados a tu hogar.</p>
+    {% if ninos %}
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre Completo</th>
+            <th>Documento</th>
+            <th>Fecha de Nacimiento</th>
+            <th>Género</th>
+            <th>Padre/Tutor</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for nino in ninos %}
+          <tr
+            data-nombre="{{ nino.nombres }} {{ nino.apellidos }}"
+            data-documento="{{ nino.documento|default:'No registrado' }}"
+            data-fecha-nacimiento="{{ nino.fecha_nacimiento|date:'Y-m-d' }}"
+            data-genero="{{ nino.genero|capfirst }}"
+            data-fecha-ingreso="{{ nino.fecha_ingreso|date:'Y-m-d'|default:'N/A' }}"
+            data-tutor="{{ nino.padre.usuario.nombres }} {{ nino.padre.usuario.apellidos }}"
+            data-tutor-doc="{{ nino.padre.usuario.documento }}"
+            data-tutor-email="{{ nino.padre.usuario.email|default:'N/A' }}"
+            data-tutor-telefono="{{ nino.padre.usuario.telefono|default:'N/A' }}"
+            data-tutor-direccion="{{ nino.padre.usuario.direccion|default:'N/A' }}"
+            data-tutor-ocupacion="{{ nino.padre.ocupacion|default:'N/A' }}"
+          >
+            <td>{{ nino.nombres }} {{ nino.apellidos }}</td>
+            <td>{{ nino.documento|default:"N/A" }}</td>
+            <td>{{ nino.fecha_nacimiento|date:"Y-m-d" }}</td>
+            <td>{{ nino.genero|capfirst }}</td>
+            <td>{{ nino.padre.usuario.nombres }} {{ nino.padre.usuario.apellidos }}</td>
+            <td class="acciones">
+              <button class="btn-accion btn-verde ver-detalles" title="Ver Ficha"><i class="fas fa-eye"></i></button>
+              <a href="{% url 'editar_nino' nino.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-edit"></i></a>
+              <a href="{% url 'eliminar_nino' nino.id %}" class="btn-accion btn-rojo" title="Retirar" onclick="return confirm('¿Seguro que deseas retirar este niño?');"><i class="fas fa-trash-alt"></i></a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-message">Aún no hay niños matriculados en tu hogar. ¡Usa el botón para matricular al primero!</p>
+    {% endif %}
+    {% if messages %}
+      <div id="mensaje-exito">
+        {% for message in messages %}
+          <div class="error-message" style="background-color:#e0ffe0;color:#218838;">{{ message }}</div>
+        {% endfor %}
+      </div>
+      <script>
+        setTimeout(function() {
+          var msg = document.getElementById('mensaje-exito');
+          if (msg) { msg.style.display = 'none'; }
+        }, 3000);
+      </script>
+    {% endif %}
+  </div>
+
+  <!-- Modal Detalles del Niño -->
+  <div id="modalDetalles" class="modal">
+    <div class="modal-contenido">
+      <span class="cerrar-modal">&times;</span>
+      <h2><i class="fas fa-child" style="color: #9B59B6;"></i> Ficha del Niño</h2>
+      <p><strong>Nombre Completo:</strong> <span id="modal-nombre"></span></p>
+      <p><strong>Documento:</strong> <span id="modal-documento"></span></p>
+      <p><strong>Fecha de Nacimiento:</strong> <span id="modal-fecha-nacimiento"></span></p>
+      <p><strong>Género:</strong> <span id="modal-genero"></span></p>
+      <p><strong>Fecha de Ingreso:</strong> <span id="modal-fecha-ingreso"></span></p>
+      <hr>
+      <h3 style="color: #5e3370;">Datos del Tutor</h3>
+      <p><strong>Nombre del Tutor:</strong> <span id="modal-tutor"></span></p>
+      <p><strong>Documento del Tutor:</strong> <span id="modal-tutor-doc"></span></p>
+      <p><strong>Correo del Tutor:</strong> <span id="modal-tutor-email"></span></p>
+      <p><strong>Teléfono del Tutor:</strong> <span id="modal-tutor-telefono"></span></p>
+      <p><strong>Dirección del Tutor:</strong> <span id="modal-tutor-direccion"></span></p>
+      <p><strong>Ocupación del Tutor:</strong> <span id="modal-tutor-ocupacion"></span></p>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('modalDetalles');
+    const cerrarBoton = document.querySelector('.cerrar-modal');
+
+    function cerrarModal() {
+      modal.style.display = 'none';
+    }
+
+    cerrarBoton.onclick = cerrarModal;
+
+    window.onclick = function(event) {
+      if (event.target === modal) {
+        cerrarModal();
+      }
+    };
+
+    document.querySelectorAll('.ver-detalles').forEach(button => {
+      button.addEventListener('click', function() {
+        const fila = this.closest('tr');
+        
+        // Poblar datos del niño
+        document.getElementById('modal-nombre').textContent = fila.dataset.nombre;
+        document.getElementById('modal-documento').textContent = fila.dataset.documento;
+        document.getElementById('modal-fecha-nacimiento').textContent = fila.dataset.fechaNacimiento;
+        document.getElementById('modal-genero').textContent = fila.dataset.genero;
+        document.getElementById('modal-fecha-ingreso').textContent = fila.dataset.fechaIngreso;
+
+        // Poblar datos del tutor
+        document.getElementById('modal-tutor').textContent = fila.dataset.tutor;
+        document.getElementById('modal-tutor-doc').textContent = fila.dataset.tutorDoc;
+        document.getElementById('modal-tutor-email').textContent = fila.dataset.tutorEmail;
+        document.getElementById('modal-tutor-telefono').textContent = fila.dataset.tutorTelefono;
+        document.getElementById('modal-tutor-direccion').textContent = fila.dataset.tutorDireccion;
+        document.getElementById('modal-tutor-ocupacion').textContent = fila.dataset.tutorOcupacion;
+
+        modal.style.display = 'flex';
+      });
+    });
+  </script>
+
+</body>
+</html>
