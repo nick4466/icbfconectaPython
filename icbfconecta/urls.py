@@ -103,6 +103,9 @@ urlpatterns = [
     path('asistencia/', include('asistencia.urls')),
     path('novedades/', include('novedades.urls')),
     
+     # --- URLs de Correos Masivos ---
+     path("correos/", include("correos.urls")),
+
     
 ]
 if settings.DEBUG:

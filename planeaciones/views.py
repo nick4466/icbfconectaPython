@@ -1,9 +1,13 @@
-from pyexpat.errors import messages
 from django.contrib.auth.decorators import login_required
 from .models import Documentacion, Planeacion
 from .forms import DocumentacionForm, PlaneacionForm
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import get_template
+from django.http import HttpResponse
+from xhtml2pdf import pisa
 from django.contrib import messages
+from reportlab.pdfgen import canvas
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -84,10 +88,10 @@ def editar_planeacion(request, id):
             for f in request.FILES.getlist('imagenes'):
                 Documentacion.objects.create(planeacion=planeacion, imagen=f)
 
-            messages.success(request, '✅ Planeación actualizada correctamente.')
+            messages.success(request, ' Planeación actualizada correctamente.')
             return redirect('planeaciones:detalle_planeacion', id=planeacion.id)
         else:
-            messages.error(request, '❌ Ocurrió un error al actualizar la planeación.')
+            messages.error(request, ' Ocurrió un error al actualizar la planeación.')
     else:
         form = PlaneacionForm(instance=planeacion)
 
@@ -117,5 +121,86 @@ def eliminar_planeacion(request, id):
         return redirect('planeaciones:lista_planeaciones')
     return render(request, 'planeaciones/eliminar_planeacion.html', {'planeacion': planeacion})
 
+# Función genérica para generar PDF desde HTML
+def generar_pdf(template_path, context):
+    template = get_template(template_path)
+    html = template.render(context)
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = "inline; filename=reporte.pdf"
+
+    pisa_status = pisa.CreatePDF(html, dest=response, encoding='UTF-8')
+    if pisa_status.err:
+        return HttpResponse("Error al generar PDF")
+    return response
 
 
+# --- REPORTES ---
+@login_required
+def reporte_planeacion_pdf(request, id):
+    """Reporte individual de una planeación"""
+    planeacion = get_object_or_404(Planeacion, id=id, madre=request.user)
+
+    context = {
+        "planeacion": planeacion,
+        "imagenes": planeacion.documentos.all(),
+        "BASE_URL": request.build_absolute_uri('/'),
+    }
+    template_path = "planeaciones/reporte_individual.html"  # tu template individual
+    return generar_pdf(template_path, context)
+
+
+@login_required
+def reporte_todas_pdf(request):
+    madre = request.user
+    planeaciones = Planeacion.objects.filter(madre=madre).order_by('-fecha')
+
+    # Construir rutas absolutas de imágenes
+    for p in planeaciones:
+        p.docs = []
+        for img in p.documentos.all():
+            p.docs.append(request.build_absolute_uri(img.imagen.url))
+
+    context = {
+        "planeaciones": planeaciones,
+        "BASE_URL": request.build_absolute_uri('/'),
+    }
+
+    template_path = "planeaciones/reporte_todas.html"
+    return generar_pdf(template_path, context)
+
+
+@login_required
+def reporte_mes_pdf(request):
+    madre = request.user
+    mes = request.GET.get("mes")
+
+    planeaciones = Planeacion.objects.filter(madre=madre)
+    if mes:
+        planeaciones = planeaciones.filter(fecha__month=mes)
+
+    planeaciones = planeaciones.order_by('-fecha')
+
+    # Construir rutas absolutas de imágenes
+    for p in planeaciones:
+        p.docs = []
+        for img in p.documentos.all():
+            p.docs.append(request.build_absolute_uri(img.imagen.url))
+
+    context = {
+        "planeaciones": planeaciones,
+        "mes": mes,
+        "BASE_URL": request.build_absolute_uri('/'),
+    }
+
+    template_path = "planeaciones/reporte_todas.html"
+    return generar_pdf(template_path, context)
+
+
+@login_required
+def reporte_menu(request):
+    """Menu de selección de reportes"""
+    planeaciones = Planeacion.objects.filter(madre=request.user).order_by('-fecha')
+    return render(request, 'planeaciones/reporte_menu.html', {
+        "planeaciones": planeaciones
+    })

@@ -228,7 +228,7 @@
       <h2>Bienvenida, {{ user.nombres }}</h2>
       <p>Gracias por tu valiosa labor en el hogar <strong>{{ hogar_madre.nombre_hogar }}</strong>.</p>
       <a href="{% url 'asistencia_form' %}" class="btn-asistencia">Llamar Asistencia</a>
-      <a href="#" class="btn-enviar">Enviar Correos</a>
+      <a href="{% url 'correos:enviar' %}" class="btn-enviar">Enviar Correos</a>
     </div>
 
     <!-- Tarjeta 3: DEBERES -->
