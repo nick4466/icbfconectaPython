@@ -5,26 +5,37 @@ from novedades.models import Novedad
 from django.http import JsonResponse
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from core.models import Nino, Asistencia
+from datetime import date
+from django.http import JsonResponse
+
 def asistencia_form(request):
     ninos = Nino.objects.all()
-    fecha_hoy = date.today()
 
     if request.method == 'POST':
+        # ✅ Leer la fecha desde el formulario
+        fecha_str = request.POST.get('fecha')
+        fecha_hoy = date.fromisoformat(fecha_str) if fecha_str else date.today()
+
         for nino in ninos:
             estado = request.POST.get(f'nino_{nino.id}')
             if estado:
-                # Evita duplicados: actualiza si existe, crea si no
+                # ✅ Evita duplicados: actualiza si existe, crea si no
                 Asistencia.objects.update_or_create(
                     nino=nino,
                     fecha=fecha_hoy,
                     defaults={'estado': estado}
                 )
+
         return render(request, 'asistencia/asistencia_form.html', {
             'ninos': ninos,
             'fecha_hoy': fecha_hoy,
             'mensaje': 'Asistencia registrada exitosamente ✅'
         })
 
+    # Si es GET, usar fecha de hoy por defecto
+    fecha_hoy = date.today()
     return render(request, 'asistencia/asistencia_form.html', {
         'ninos': ninos,
         'fecha_hoy': fecha_hoy
@@ -40,7 +51,6 @@ def historial_asistencia(request, nino_id):
     ausentes = historial.filter(estado="Ausente").count()
     justificados = historial.filter(estado="Justificado").count()
 
-    # Evitar división por cero
     def porcentaje(valor):
         return round((valor / total) * 100) if total > 0 else 0
 
@@ -54,7 +64,6 @@ def historial_asistencia(request, nino_id):
         'porc_ausentes': porcentaje(ausentes),
         'porc_justificados': porcentaje(justificados),
     })
-
 
 
 

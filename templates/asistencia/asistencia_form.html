@@ -269,7 +269,7 @@
       <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
       <nav>
         <ul>
-          <li><a href="#"><i class="fas fa-arrow-left"></i> Volver</a></li>
+          <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-arrow-left"></i> Volver</a></li>
           <li><a href="{% url 'novedades_list' %}">Reportar Novedad</a></li>
 
           <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
@@ -322,8 +322,8 @@
 
 
         <td>
-          <a href="{% url 'historial_asistencia' nino.id %}" class="btn-mini-historial">
-            <i class="fas fa-history"></i> Ver
+          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino.id }}" class="btn-mini-historial">
+            Calificar
           </a>
         </td>
         <td>
@@ -344,7 +344,7 @@
     <div class="modal-content">
       <span class="close" onclick="cerrarModal()">&times;</span>
       <h2>Justificar Ausencia</h2>
-      <form id="form-justificacion">
+      <form id="form-justificacion" method="post"> 
     {% csrf_token %}
     <input type="hidden" name="nino_id" id="modal-nino-id">
     <input type="hidden" name="fecha" id="modal-fecha">
