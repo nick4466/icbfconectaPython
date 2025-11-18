@@ -105,6 +105,17 @@
       border: 1px solid #ccc;
       font-size: 14px;
     }
+   
+      .table-wrapper {
+          background-color: rgba(255, 255, 255, 0.75);   /* igual al del título */
+          padding: 25px;
+          border-radius: 12px;
+          width: 95%;
+          max-width: 1400px;
+          margin: 25px auto;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+          backdrop-filter: blur(3px);
+      }
 
     .table-container {
       max-width: 1200px;
@@ -181,7 +192,7 @@
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
-      margin: 20px auto;
+      margin:0;
       transition: background-color 0.3s;
     }
 
@@ -195,10 +206,20 @@
       border-radius: 8px;
       text-decoration: none;
       font-weight: bold;
-      margin: 0 20px;
+      margin: 0;
     }
 
     .btn-volver:hover { background-color: #e8a9d6; }
+  
+    
+    .contenedor-botones {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+     gap: 25px; /* separación */
+    margin-top: 20px;
+}
+
 
     /* Mensajes */
     .alert {
@@ -217,6 +238,8 @@
       box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
       animation: fadeIn 0.5s ease;
     }
+   
+
 
     .alert-success { background-color: #4CAF50; }
     .alert-error { background-color: #E74C3C; }
@@ -256,7 +279,7 @@
 </header>
 
 <div class="main-title">Editar Planeación</div>
-
+<div></div>
 <!-- Mensajes -->
 {% if messages %}
   {% for message in messages %}
@@ -283,7 +306,7 @@
       {{ form.intencionalidad_pedagogica }}
     </div>
   </div>
-
+ <div class="table-wrapper">
   <div class="table-container">
     <table>
       <thead>
@@ -327,9 +350,12 @@
     </table>
   </div>
 
-  <button type="submit" class="btn-guardar">Actualizar Planeación</button>
-  <a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-volver">← Volver a la lista</a>
-</form>
+ <div class="contenedor-botones">
+    <a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-volver">← Volver a la lista</a>
+    <button type="submit" class="btn-guardar">Actualizar Planeación</button>
+</div>
 
+</div>
+</form>
 </body>
 </html>
