@@ -18,61 +18,64 @@
             background-repeat: no-repeat;
             background-attachment: fixed;
         }
+
         header{
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 15px 30px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-    }
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #e5d5f5;
+            backdrop-filter: blur(4px);
+        }
 
-    header img {
-      height: 60px;
-    }
+        header img { height: 60px; }
 
-    nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      padding: 0;
-      margin: 0;
-    }
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            padding: 0;
+            margin: 0;
+        }
 
-    nav ul li a, nav ul li button {
-      text-decoration: none;
-      color: #9B59B6;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background-color 0.3s ease;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-family: 'Roboto', sans-serif;
-    }
+        nav ul li a, nav ul li button {
+            text-decoration: none;
+            color: #9B59B6;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+        }
 
-    nav ul li a:hover, nav ul li button:hover {
-      background-color: #f3c1e5;
-    }
+        nav ul li a:hover, nav ul li button:hover {
+            background-color: #f3c1e5;
+        }
 
-    /* Estilos para el menú desplegable */
-    nav ul .dropdown { position: relative; }
-    nav ul .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: rgba(255, 255, 255, 0.98);
-      min-width: 200px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-      z-index: 1;
-      border-radius: 8px;
-      padding: 8px 0;
-    }
-    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
-    nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
-    nav ul .dropdown:hover .dropdown-content { display: block; }
+        nav ul .dropdown { position: relative; }
+        nav ul .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.98);
+            min-width: 200px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 8px;
+            padding: 8px 0;
+        }
+        nav ul .dropdown-content a { 
+            color: #9B59B6; 
+            padding: 12px 16px; 
+            text-decoration: none; 
+            display: block; 
+        }
+        nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
+        nav ul .dropdown:hover .dropdown-content { display: block; }
 
         .container {
             max-width: 900px;
@@ -108,14 +111,7 @@
             transition: all 0.25s ease;
         }
 
-        input[type="text"]:focus, textarea:focus {
-            border-color: #921fc0;
-            box-shadow: 0 0 6px rgba(122, 62, 177, 0.3);
-        }
-
-        textarea {
-            min-height: 150px;
-        }
+        textarea { min-height: 150px; }
 
         .checkbox-list {
             max-height: 220px;
@@ -125,12 +121,6 @@
             border-radius: 8px;
             margin-top: 6px;
             background: rgba(255,255,255,0.9);
-        }
-
-        .checkbox-list label {
-            display: block;
-            margin-bottom: 6px;
-            cursor: pointer;
         }
 
         .select-all {
@@ -143,15 +133,13 @@
         }
 
         .btn {
-            background-color: #921fc0;
+            background-color: #753b8b;
             color: white;
             padding: 12px 22px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            margin-top: 20px;
-            margin-right: 10px;
             transition: background-color 0.3s ease;
             text-decoration: none;
             display: inline-flex;
@@ -159,45 +147,54 @@
             gap: 8px;
         }
 
-        .btn:hover {
-            background-color: #b931d1;
-        }
+        .btn:hover { background-color: #da84fa; }
 
-        .messages {
-            margin-bottom: 20px;
-            padding: 12px;
-            background-color: #e6ffe6;
-            color: #2a662a;
+        .btnvolver{
+            background-color:#753b8b;
+            color: white;
+            padding: 12px 22px;
+            border: none;
             border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btnvolver:hover { background-color:#da84fa; }
+
+        /* 🔹 CENTRAR TODOS LOS BOTONES */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
         }
 
-        /* Input buscar */
-        #buscar_nino {
-            margin-top: 5px;
-            margin-bottom: 15px;
-        }
-                .btn-small {
-            font-size: 13px;          /* pequeño */
-            padding: 3px 8px;         /* pequeño */
-            background-color: #e0d6f5; /* color muy suave */
+        /* Botón pequeño */
+        .btn-small {
+            font-size: 13px;
+            padding: 3px 8px;
+            background-color: #e0d6f5;
             border: 1px solid #c4b3e0;
             border-radius: 6px;
             cursor: pointer;
             color: #6c4ea5;
-            font-weight: normal;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: 0.3s ease;
         }
 
         .btn-small:hover {
-            background-color: #d1bff2; /* resalta levemente al pasar mouse */
+            background-color: #d1bff2;
             color: #921fc0;
         }
 
-
     </style>
 </head>
+
 <body>
-    <header>
+<header>
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
     <nav>
       <ul>
@@ -220,7 +217,7 @@
         </li>
       </ul>
     </nav>
-  </header>
+</header>
 
 <div class="container">
     <h1>Enviar Correos Masivos</h1>
@@ -239,11 +236,13 @@
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
-            <label for="id_destinatarios">Seleccionar Padres:</label>
+        <label for="id_destinatarios">Seleccionar Padres:</label>
         <button type="button" class="btn-small" onclick="toggleSeleccionarTodos()">Seleccionar todos</button>
+
         <div class="checkbox-list">
             {{ form.destinatarios }}
         </div>
+
         <label for="id_asunto">Asunto:</label>
         {{ form.asunto }}
 
@@ -253,8 +252,20 @@
         <label for="id_archivos">Adjuntar archivos:</label>
         <input type="file" name="archivos" id="id_archivos" multiple>
 
-        <button type="submit" class="btn"><i class="fas fa-paper-plane"></i> Enviar Correos</button>
-        <a href="{% url 'correos:historial' %}" class="btn"><i class="fas fa-history"></i> Ver Historial</a>
+        <!-- 🔹 BOTONES CENTRADOS -->
+        <div class="button-group">
+            <button type="submit" class="btn"><i class="fas fa-paper-plane"></i> Enviar Correos</button>
+
+            <a href="{% url 'correos:historial' %}" class="btn">
+                <i class="fas fa-history"></i> Ver Historial
+            </a>
+
+            <!-- 🔹 NUEVO BOTÓN DE VOLVER -->
+            <a href="{% url 'madre_dashboard' %}" class="btnvolver">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+
     </form>
 </div>
 
