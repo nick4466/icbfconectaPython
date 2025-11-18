@@ -67,6 +67,17 @@
         background-attachment: fixed;
         font-family: 'Roboto', sans-serif;
     }
+    .padre-body {
+        background-image: url("{% static 'img/fondopadres.jpg' %}");
+        background-size: cover;
+    }
+    .borde2 {
+      text-align: center;
+      background-color: rgba(155, 89, 182, 0.9);
+      padding: 12px 0;
+      font-size: 26px;
+      letter-spacing: 1px;
+    }
 
     /* --- ESTILOS CONTENIDO PRINCIPAL --- */
     .main { flex: 1; padding: 40px; }
@@ -93,9 +104,16 @@
     .madre-padre-body form input:focus { border-color: #9B59B6; box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.2); outline: none; }
 
     .form-actions { margin-top: 30px; display: flex; gap: 15px; justify-content: flex-end; }
-    .btn-guardar, .btn-volver {
-      text-decoration: none; color: white; padding: 12px 25px; border-radius: 8px;
-      font-weight: 600; border: none; cursor: pointer; font-size: 15px;
+    .btn-guardar,
+    .btn-volver {
+      text-decoration: none;
+      color: white;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
     }
     .btn-guardar.admin-btn { background: linear-gradient(90deg, #28a745, #218838); }
     .btn-volver.admin-btn { background: linear-gradient(90deg, #6c757d, #5a6268); text-align: center; }
@@ -109,8 +127,13 @@
     .messages li.error { background-color: #dc3545; }
   </style>
 </head>
-<body class="{% if user.rol.nombre_rol == 'administrador' %}admin-body{% else %}madre-padre-body{% endif %}">
+<body class="{% if user.rol.nombre_rol == 'administrador' %}admin-body
+            {% elif user.rol.nombre_rol == 'padre' %}padre-body
+            {% else %}madre-padre-body{% endif %}">
 
+  {% if user.rol.nombre_rol == 'padre' %}
+    <div class="borde2"></div>
+  {% endif %}
   {% if user.rol.nombre_rol == 'administrador' %}
     <!-- === SIDEBAR PARA ADMINISTRADOR === -->
     <div class="sidebar">

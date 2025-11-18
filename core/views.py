@@ -929,24 +929,67 @@ def padre_ver_desarrollo(request, nino_id):
 
     try:
         padre = Padre.objects.get(usuario=request.user)
-        # 💡 CAMBIO: Obtener el niño específico y verificar que pertenece al padre
         nino = get_object_or_404(Nino, id=nino_id, padre=padre)
 
-        # 1. Obtener todos los desarrollos para el niño
         desarrollos_qs = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes')
 
-        # 2. Aplicar filtro por mes si existe
         mes_filtro = request.GET.get('mes', '')
         if mes_filtro:
             try:
-                # mes_filtro viene en formato 'YYYY-MM'
                 year, month = map(int, mes_filtro.split('-'))
                 desarrollos_qs = desarrollos_qs.filter(fecha_fin_mes__year=year, fecha_fin_mes__month=month)
             except (ValueError, TypeError):
-                mes_filtro = '' # Ignorar filtro si el formato es incorrecto
+                mes_filtro = ''
 
-        # 3. Aplicar paginación
-        paginator = Paginator(desarrollos_qs, 2) # 5 registros por página
+        # === LÓGICA DE DIFERENCIACIÓN DE CARDS ===
+        desarrollos_list = []
+        for desarrollo in desarrollos_qs:
+            ratings = [desarrollo.rating_cognitiva, desarrollo.rating_comunicativa, desarrollo.rating_socio_afectiva, desarrollo.rating_corporal]
+            ratings_validos = [r for r in ratings if r is not None]
+            promedio = round(sum(ratings_validos) / len(ratings_validos), 1) if ratings_validos else None
+
+            # Lógica de acento, icono y mes_ano (igual que madre)
+            if promedio is not None:
+                if promedio >= 4.5:
+                    accent_color = '#7a3eb1'
+                    icono = 'fas fa-star'
+                elif promedio >= 4.0:
+                    accent_color = '#5dade2'
+                    icono = 'fas fa-smile-beam'
+                elif promedio >= 3.0:
+                    accent_color = '#48c9b0'
+                    icono = 'fas fa-smile'
+                elif promedio >= 2.0:
+                    accent_color = '#f7ca18'
+                    icono = 'fas fa-meh'
+                else:
+                    accent_color = '#e74c3c'
+                    icono = 'fas fa-frown'
+            else:
+                accent_color = '#9B59B6'
+                icono = 'fas fa-question'
+
+            mes_ano = desarrollo.fecha_fin_mes.strftime('%B %Y').capitalize()
+
+            desarrollos_list.append({
+                'id': desarrollo.id,
+                'dimension_cognitiva': desarrollo.dimension_cognitiva,
+                'dimension_comunicativa': desarrollo.dimension_comunicativa,
+                'dimension_socio_afectiva': desarrollo.dimension_socio_afectiva,
+                'dimension_corporal': desarrollo.dimension_corporal,
+                'rating_cognitiva': desarrollo.rating_cognitiva or 0,
+                'rating_comunicativa': desarrollo.rating_comunicativa or 0,
+                'rating_socio_afectiva': desarrollo.rating_socio_afectiva or 0,
+                'rating_corporal': desarrollo.rating_corporal or 0,
+                'promedio': promedio,
+                'accent_color': accent_color,
+                'icono': icono,
+                'mes_ano': mes_ano,
+                'fecha_fin_mes': desarrollo.fecha_fin_mes,
+            })
+
+        # Paginación
+        paginator = Paginator(desarrollos_list, 2)
         page_number = request.GET.get('page')
         desarrollos_paginados = paginator.get_page(page_number)
 

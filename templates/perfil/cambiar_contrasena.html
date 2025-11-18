@@ -54,6 +54,17 @@
         background-attachment: fixed;
         font-family: 'Roboto', sans-serif;
     }
+    .padre-body {
+        background-image: url("{% static 'img/fondopadres.jpg' %}");
+        background-size: cover;
+    }
+    .borde2 {
+      text-align: center;
+      background-color: rgba(155, 89, 182, 0.9);
+      padding: 12px 0;
+      font-size: 26px;
+      letter-spacing: 1px;
+    }
 
     /* --- ESTILOS CONTENIDO PRINCIPAL --- */
     .main { flex: 1; padding: 40px; }
@@ -102,8 +113,13 @@
 
   </style>
 </head>
-<body class="{% if user.rol.nombre_rol == 'administrador' %}admin-body{% else %}madre-padre-body{% endif %}">
+<body class="{% if user.rol.nombre_rol == 'administrador' %}admin-body
+            {% elif user.rol.nombre_rol == 'padre' %}padre-body
+            {% else %}madre-padre-body{% endif %}">
 
+  {% if user.rol.nombre_rol == 'padre' %}
+    <div class="borde2"></div>
+  {% endif %}
   {% if user.rol.nombre_rol == 'administrador' %}
     <!-- === SIDEBAR PARA ADMINISTRADOR === -->
     <div class="sidebar">

@@ -156,7 +156,6 @@ def registrar_desarrollo(request):
 def listar_desarrollos(request):
     if request.user.rol.nombre_rol != 'madre_comunitaria':
         return redirect('role_redirect')
-    
     try:
         hogar_madre = HogarComunitario.objects.get(madre__usuario=request.user)
     except HogarComunitario.DoesNotExist:
@@ -174,25 +173,65 @@ def listar_desarrollos(request):
 
     if mes_filtro:
         try:
-            # Extraer año y mes del formato 'YYYY-MM'
             year, month = map(int, mes_filtro.split('-'))
             desarrollos = desarrollos.filter(fecha_fin_mes__year=year, fecha_fin_mes__month=month)
         except (ValueError, TypeError):
-            pass # Ignorar si el formato de mes es inválido
+            pass
+
+    # === LÓGICA DE DIFERENCIACIÓN DE CARDS ===
+    hoy = timezone.now().date()
+    desarrollos_list = []
+    for desarrollo in desarrollos:
+        # Calcular promedio
+        ratings = [
+            desarrollo.rating_cognitiva or 0,
+            desarrollo.rating_comunicativa or 0,
+            desarrollo.rating_socio_afectiva or 0,
+            desarrollo.rating_corporal or 0,
+        ]
+        promedio = sum(ratings) / 4 if all(ratings) else 0
+        desarrollo.promedio = round(promedio, 1)
+        # Badge/accent/icon
+        if promedio >= 4.5:
+            desarrollo.badge = 'Excelente'
+            desarrollo.accent = 'card-accent-excelente'
+            desarrollo.icon = 'fa-baby'
+        elif promedio >= 3.5:
+            desarrollo.badge = 'Muy Bueno'
+            desarrollo.accent = 'card-accent-muybueno'
+            desarrollo.icon = 'fa-child'
+        elif promedio >= 2.5:
+            desarrollo.badge = 'Bueno'
+            desarrollo.accent = 'card-accent-bueno'
+            desarrollo.icon = 'fa-smile'
+        elif promedio >= 1.5:
+            desarrollo.badge = 'Regular'
+            desarrollo.accent = 'card-accent-regular'
+            desarrollo.icon = 'fa-meh'
+        else:
+            desarrollo.badge = 'Malo'
+            desarrollo.accent = 'card-accent-malo'
+            desarrollo.icon = 'fa-frown'
+        # ¿Es del mes actual?
+        if desarrollo.fecha_fin_mes.year == hoy.year and desarrollo.fecha_fin_mes.month == hoy.month:
+            desarrollo.accent += ' card-accent-actual'
+            desarrollo.is_actual = True
+        else:
+            desarrollo.is_actual = False
+        desarrollos_list.append(desarrollo)
 
     # --- Paginación ---
-    paginator = Paginator(desarrollos, 6) # 6 registros por página
+    paginator = Paginator(desarrollos_list, 4)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # --- Devolver filtros para mantenerlos en la URL de paginación ---
     filtros = {
         'nino': nino_id_filtro,
         'mes': mes_filtro,
     }
 
     return render(request, 'madre/desarrollo_list.html', {
-        'desarrollos': page_obj, # Usar el objeto de página en lugar del queryset completo
+        'desarrollos': page_obj,
         'ninos': ninos_del_hogar,
         'nino_id_filtro': nino_id_filtro,
         'mes_filtro': mes_filtro,

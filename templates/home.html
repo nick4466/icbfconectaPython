@@ -14,9 +14,11 @@
     body {
       margin: 0;
       font-family: 'Roboto', sans-serif;
-      background-image: url('{% static "img/fondo2.png" %}');
-      min-height: 100vh;
+      background-color: #f8f6fb; /* Color de fondo si la imagen no carga */
+      background-image: url('{% static 'img/fondo2.jpg' %}');
       background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
       display: flex;
       flex-direction: column;
     }
