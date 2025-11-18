@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Editar Desarrollo de Niño</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <style>
+    /* Usa los mismos estilos que desarrollo_form.html para mantener la coherencia visual */
+    body { margin: 0; font-family: 'Roboto', sans-serif; background-image: url("{% static 'img/fondito.jpg' %}"); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; }
+    .main-title { text-align: center; margin-top: 20px; padding: 20px; font-size: 30px; font-weight: bold; color: #7a3eb1; background-color: #f3c4ffb3; margin: 20px auto; width: 80%; border-radius: 10px; }
+    .contenedor { max-width: 900px; margin: 30px auto; background-color: rgba(255, 255, 255, 0.95); border-radius: 14px; padding: 30px; box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+    .card { background-color: rgba(255, 255, 255, 0.9); border-radius: 14px; padding: 30px; backdrop-filter: blur(3px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08); border-left: 8px solid #9B59B6; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 25px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    select, input[type="month"], textarea { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; background-color: #fff; transition: border-color 0.3s ease; }
+    select:focus, input:focus, textarea:focus { border-color: #9B59B6; outline: none; background-color: #f0f8ff; }
+    .dimension-card { background-color: #faf6fd; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); border: 1px solid #e5d5f5; }
+    .card h2 { color: #9B59B6; margin-bottom: 25px; font-size: 27px; text-align: center; }
+    textarea { resize: vertical; min-height: 100px; }
+    .botones { display: block; width: 100%; background-color: #9B59B6; color: white; border: none; padding: 15px 20px; font-size: 18px; border-radius: 10px; cursor: pointer; transition: background-color 0.3s ease, transform 0.2s ease; align-self: center; margin-top: 20px; }
+    .botones:hover { background-color: #8e44ad; }
+    .mensaje-exito { background-color: #4CAF50; color: white; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
+    .required-star { color: #e74c3c; font-weight: bold; margin-left: 5px; }
+    .error-container { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="main-title">ICBF - CONECTA | Editar Registro de Desarrollo</div>
+  <div class="contenedor">
+    {% if error %}
+    <div class="error-container">{{ error }}</div>
+    {% endif %}
+    <div class="card">
+      <h2><i class="fas fa-file-alt"></i> Editar Registro de Desarrollo</h2>
+      <form method="post" action="{{ form_action }}" id="editarDesarrolloForm">
+        {% csrf_token %}
+        <div class="form-grid">
+          <div class="form-group">
+            <h4>Nombres y Apellidos del niño<span class="required-star">*</span></h4>
+            <input type="text" value="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}" disabled>
+            <input type="hidden" name="nino" value="{{ desarrollo.nino.id }}">
+          </div>
+          <div class="form-group">
+            <h4>Fecha de Fin de Mes del Registro<span class="required-star">*</span></h4>
+            <input type="month" name="fecha_registro" value="{{ desarrollo.fecha_fin_mes|date:'Y-m' }}" required>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="dimension-card">
+            <h2>Dimensión Cognitiva<span class="required-star">*</span></h2>
+            <div class="rating-stars">
+              <input type="radio" id="cognitiva-5" name="rating_cognitiva" value="5" {% if desarrollo.rating_cognitiva == 5 %}checked{% endif %} required><label for="cognitiva-5">★</label>
+              <input type="radio" id="cognitiva-4" name="rating_cognitiva" value="4" {% if desarrollo.rating_cognitiva == 4 %}checked{% endif %}><label for="cognitiva-4">★</label>
+              <input type="radio" id="cognitiva-3" name="rating_cognitiva" value="3" {% if desarrollo.rating_cognitiva == 3 %}checked{% endif %}><label for="cognitiva-3">★</label>
+              <input type="radio" id="cognitiva-2" name="rating_cognitiva" value="2" {% if desarrollo.rating_cognitiva == 2 %}checked{% endif %}><label for="cognitiva-2">★</label>
+              <input type="radio" id="cognitiva-1" name="rating_cognitiva" value="1" {% if desarrollo.rating_cognitiva == 1 %}checked{% endif %}><label for="cognitiva-1">★</label>
+            </div>
+            <h4>Observación:</h4>
+            <textarea name="dimension_cognitiva" placeholder="Opcional: Detalles de la dimensión cognitiva">{{ desarrollo.dimension_cognitiva|default_if_none:'' }}</textarea>
+          </div>
+          <div class="dimension-card">
+            <h2>Dimensión Comunicativa<span class="required-star">*</span></h2>
+            <div class="rating-stars">
+              <input type="radio" id="comunicativa-5" name="rating_comunicativa" value="5" {% if desarrollo.rating_comunicativa == 5 %}checked{% endif %} required><label for="comunicativa-5">★</label>
+              <input type="radio" id="comunicativa-4" name="rating_comunicativa" value="4" {% if desarrollo.rating_comunicativa == 4 %}checked{% endif %}><label for="comunicativa-4">★</label>
+              <input type="radio" id="comunicativa-3" name="rating_comunicativa" value="3" {% if desarrollo.rating_comunicativa == 3 %}checked{% endif %}><label for="comunicativa-3">★</label>
+              <input type="radio" id="comunicativa-2" name="rating_comunicativa" value="2" {% if desarrollo.rating_comunicativa == 2 %}checked{% endif %}><label for="comunicativa-2">★</label>
+              <input type="radio" id="comunicativa-1" name="rating_comunicativa" value="1" {% if desarrollo.rating_comunicativa == 1 %}checked{% endif %}><label for="comunicativa-1">★</label>
+            </div>
+            <h4>Observación:</h4>
+            <textarea name="dimension_comunicativa" placeholder="Opcional: Detalles de la dimensión comunicativa">{{ desarrollo.dimension_comunicativa|default_if_none:'' }}</textarea>
+          </div>
+          <div class="dimension-card">
+            <h2>Dimensión Socio-Afectiva<span class="required-star">*</span></h2>
+            <div class="rating-stars">
+              <input type="radio" id="socio_afectiva-5" name="rating_socio_afectiva" value="5" {% if desarrollo.rating_socio_afectiva == 5 %}checked{% endif %} required><label for="socio_afectiva-5">★</label>
+              <input type="radio" id="socio_afectiva-4" name="rating_socio_afectiva" value="4" {% if desarrollo.rating_socio_afectiva == 4 %}checked{% endif %}><label for="socio_afectiva-4">★</label>
+              <input type="radio" id="socio_afectiva-3" name="rating_socio_afectiva" value="3" {% if desarrollo.rating_socio_afectiva == 3 %}checked{% endif %}><label for="socio_afectiva-3">★</label>
+              <input type="radio" id="socio_afectiva-2" name="rating_socio_afectiva" value="2" {% if desarrollo.rating_socio_afectiva == 2 %}checked{% endif %}><label for="socio_afectiva-2">★</label>
+              <input type="radio" id="socio_afectiva-1" name="rating_socio_afectiva" value="1" {% if desarrollo.rating_socio_afectiva == 1 %}checked{% endif %}><label for="socio_afectiva-1">★</label>
+            </div>
+            <h4>Observación:</h4>
+            <textarea name="dimension_socio_afectiva" placeholder="Opcional: Detalles de la dimensión socio afectiva">{{ desarrollo.dimension_socio_afectiva|default_if_none:'' }}</textarea>
+          </div>
+          <div class="dimension-card">
+            <h2>Dimensión Corporal<span class="required-star">*</span></h2>
+            <div class="rating-stars">
+              <input type="radio" id="corporal-5" name="rating_corporal" value="5" {% if desarrollo.rating_corporal == 5 %}checked{% endif %} required><label for="corporal-5">★</label>
+              <input type="radio" id="corporal-4" name="rating_corporal" value="4" {% if desarrollo.rating_corporal == 4 %}checked{% endif %}><label for="corporal-4">★</label>
+              <input type="radio" id="corporal-3" name="rating_corporal" value="3" {% if desarrollo.rating_corporal == 3 %}checked{% endif %}><label for="corporal-3">★</label>
+              <input type="radio" id="corporal-2" name="rating_corporal" value="2" {% if desarrollo.rating_corporal == 2 %}checked{% endif %}><label for="corporal-2">★</label>
+              <input type="radio" id="corporal-1" name="rating_corporal" value="1" {% if desarrollo.rating_corporal == 1 %}checked{% endif %}><label for="corporal-1">★</label>
+            </div>
+            <h4>Observación:</h4>
+            <textarea name="dimension_corporal" placeholder="Opcional: Detalles de la dimensión corporal">{{ desarrollo.dimension_corporal|default_if_none:'' }}</textarea>
+          </div>
+        </div>
+        <button class="botones" type="submit"><i class="fas fa-save"></i> Guardar Cambios</button>
+      </form>
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ desarrollo.nino.id }}" style="color: #555; text-decoration: none;">← Volver al listado</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Validación frontend para edición: solo mostrar mensaje si no se modificó ningún campo
+    document.getElementById('editarDesarrolloForm').addEventListener('submit', function(event) {
+      // Aquí puedes agregar la lógica para comparar los valores originales y los nuevos
+      // Si ningún campo fue modificado, mostrar el mensaje correspondiente y evitar el submit
+      // Ejemplo:
+      // event.preventDefault(); mostrarError('Para actualizar el registro debes modificar al menos un campo.');
+    });
+    function mostrarError(mensaje) {
+      const errorContainer = document.querySelector('.error-container');
+      if (errorContainer) {
+        errorContainer.textContent = mensaje;
+        errorContainer.style.display = 'block';
+        errorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  </script>
+</body>
+</html>

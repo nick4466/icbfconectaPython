@@ -66,48 +66,53 @@ def registrar_desarrollo(request):
 
     if request.method == 'POST':
         nino_id = request.POST.get('nino')
-        fecha_registro = request.POST.get('fecha_registro')
+        fecha_mes = request.POST.get('fecha_registro')  # formato YYYY-MM
 
-        # ----- VALIDACIÓN DE CAMPOS OBLIGATORIOS -----
+        # ----- VALIDACIÓN DE CAMPOS OBLIGATORIOS SOLO EN REGISTRO -----
         errores = []
-
         if not nino_id:
             errores.append("debes seleccionar un niño")
-
-        if not fecha_registro:
+        if not fecha_mes:
             errores.append("debes seleccionar una fecha")
-
         if not request.POST.get('rating_cognitiva'):
             errores.append("debes calificar la dimensión cognitiva")
-
         if not request.POST.get('rating_comunicativa'):
             errores.append("debes calificar la dimensión comunicativa")
-
         if not request.POST.get('rating_socio_afectiva'):
             errores.append("debes calificar la dimensión socio-afectiva")
-
         if not request.POST.get('rating_corporal'):
             errores.append("debes calificar la dimensión corporal")
-
-        # Si faltan datos → enviar mensaje de error
         if errores:
-            mensaje_error = "Error: " + ", ".join(errores) + "."
+            mensaje_error = "Todos los campos son obligatorios. Por favor, completa el niño, la fecha y las 4 calificaciones de estrellas."
             return render(request, 'madre/desarrollo_form.html', {
                 'ninos': ninos_del_hogar,
                 'nino_id_preseleccionado': nino_id,
-                'error': mensaje_error.capitalize(),
+                'error': mensaje_error,
+                'form_action': reverse('desarrollo:registrar_desarrollo'),
+                'titulo_form': 'Registrar Desarrollo de Niño',
             })
 
-        # ----- VALIDAR REGISTRO DUPLICADO -----
-        if DesarrolloNino.objects.filter(
-            nino_id=nino_id,
-            fecha_fin_mes=fecha_registro
-        ).exists():
-            return render(request, 'madre/desarrollo_form.html', {
-                'ninos': ninos_del_hogar,
-                'nino_id_preseleccionado': nino_id,
-                'error': "Ya existe un registro para este niño en esa fecha.",
-            })
+        # ----- VALIDAR REGISTRO DUPLICADO POR MES -----
+        year, month = None, None
+        try:
+            year, month = map(int, fecha_mes.split('-'))
+        except Exception:
+            pass
+        if year and month:
+            existe_mes = DesarrolloNino.objects.filter(
+                nino_id=nino_id,
+                fecha_fin_mes__year=year,
+                fecha_fin_mes__month=month
+            ).exists()
+            if existe_mes:
+                return render(request, 'madre/desarrollo_form.html', {
+                    'ninos': ninos_del_hogar,
+                    'nino_id_preseleccionado': nino_id,
+                    'error': "Ya existe un desarrollo para este niño en ese mes.",
+                })
+
+        # ----- GUARDAR EL REGISTRO -----
+        fecha_registro = f"{fecha_mes}-01"  # Guardar como primer día del mes
 
         # ----- OBTENER CALIFICACIONES Y GENERAR DESCRIPCIÓN -----
         rating_cognitiva = request.POST.get('rating_cognitiva')
@@ -247,9 +252,8 @@ def editar_desarrollo(request, id):
 
     # Verificación de seguridad: la madre solo puede editar registros de su hogar.
     if desarrollo.nino.hogar.madre.usuario != request.user:
-        return redirect('desarrollo:listar_desarrollos')
+        return redirect('madre_dashboard')
 
-    # Mapeo de ratings a descripciones
     rating_map = {
         "1": "Malo",
         "2": "Regular",
@@ -259,82 +263,78 @@ def editar_desarrollo(request, id):
     }
 
     if request.method == 'POST':
-
+        # --- Obtener todos los datos del POST ---
         nueva_fecha = request.POST.get('fecha_registro')
+        nueva_rating_cognitiva = request.POST.get('rating_cognitiva')
+        nueva_rating_comunicativa = request.POST.get('rating_comunicativa')
+        nueva_rating_socio_afectiva = request.POST.get('rating_socio_afectiva')
+        nueva_rating_corporal = request.POST.get('rating_corporal')
 
-        # ----- VALIDACIONES OBLIGATORIAS -----
+        # Validar que no se repita el desarrollo por mes (excepto el propio)
+        year, month = None, None
+        try:
+            year, month = map(int, nueva_fecha.split('-'))
+        except Exception:
+            pass
+        if year and month:
+            existe_mes = DesarrolloNino.objects.filter(
+                nino=desarrollo.nino,
+                fecha_fin_mes__year=year,
+                fecha_fin_mes__month=month
+            ).exclude(id=desarrollo.id).exists()
+            if existe_mes:
+                return render(request, 'madre/desarrollo_form.html', {
+                    'desarrollo': desarrollo,
+                    'form_action': reverse('desarrollo:editar_desarrollo', args=[id]),
+                    'titulo_form': 'Editar Registro de Desarrollo',
+                    'nino_id_preseleccionado': desarrollo.nino.id,
+                    'error': "Ya existe un desarrollo para este niño en ese mes."
+                })
+
+        # --- Validar campos obligatorios solo si se modifican para quedar vacíos ---
         errores = []
         if not nueva_fecha:
-            errores.append("debes seleccionar una fecha")
+            errores.append("la fecha no puede estar vacía")
+        if not nueva_rating_cognitiva:
+            errores.append("la calificación cognitiva no puede estar vacía")
+        if not nueva_rating_comunicativa:
+            errores.append("la calificación comunicativa no puede estar vacía")
+        if not nueva_rating_socio_afectiva:
+            errores.append("la calificación socio-afectiva no puede estar vacía")
+        if not nueva_rating_corporal:
+            errores.append("la calificación corporal no puede estar vacía")
 
-        if not request.POST.get('rating_cognitiva'):
-            errores.append("debes calificar la dimensión cognitiva")
-
-        if not request.POST.get('rating_comunicativa'):
-            errores.append("debes calificar la dimensión comunicativa")
-
-        if not request.POST.get('rating_socio_afectiva'):
-            errores.append("debes calificar la dimensión socio-afectiva")
-
-        if not request.POST.get('rating_corporal'):
-            errores.append("debes calificar la dimensión corporal")
-
-        # Si faltan datos → regresar el error
         if errores:
-            mensaje_error = "Error: " + ", ".join(errores) + "."
             return render(request, 'madre/desarrollo_form.html', {
                 'desarrollo': desarrollo,
                 'form_action': reverse('desarrollo:editar_desarrollo', args=[id]),
                 'titulo_form': 'Editar Registro de Desarrollo',
                 'nino_id_preseleccionado': desarrollo.nino.id,
-                'error': mensaje_error.capitalize(),
+                'error': f"Error al guardar: {', '.join(errores)}."
             })
 
-        # ----- VALIDAR DUPLICADO DE FECHA PARA ESTE NIÑO -----
-        if DesarrolloNino.objects.filter(
-            nino=desarrollo.nino,
-            fecha_fin_mes=nueva_fecha
-        ).exclude(id=desarrollo.id).exists():
-            return render(request, 'madre/desarrollo_form.html', {
-                'desarrollo': desarrollo,
-                'form_action': reverse('desarrollo:editar_desarrollo', args=[id]),
-                'titulo_form': 'Editar Registro de Desarrollo',
-                'nino_id_preseleccionado': desarrollo.nino.id,
-                'error': "Ya existe un registro para este niño en esa fecha.",
-            })
+        # Guardar cambios
+        desarrollo.fecha_fin_mes = f"{nueva_fecha}-01"
+        desarrollo.rating_cognitiva = nueva_rating_cognitiva
+        desarrollo.rating_comunicativa = nueva_rating_comunicativa
+        desarrollo.rating_socio_afectiva = nueva_rating_socio_afectiva
+        desarrollo.rating_corporal = nueva_rating_corporal
 
-        # ----- GUARDAR CAMBIOS -----
-        desarrollo.fecha_fin_mes = nueva_fecha
+        nueva_cognitiva_obs = request.POST.get('dimension_cognitiva', '').strip()
+        nueva_comunicativa_obs = request.POST.get('dimension_comunicativa', '').strip()
+        nueva_socio_afectiva_obs = request.POST.get('dimension_socio_afectiva', '').strip()
+        nueva_corporal_obs = request.POST.get('dimension_corporal', '').strip()
 
-        desarrollo.rating_cognitiva = request.POST.get('rating_cognitiva')
-        cognitiva_obs = request.POST.get('dimension_cognitiva', '').strip()
-        desarrollo.dimension_cognitiva = (
-            cognitiva_obs if cognitiva_obs else rating_map.get(desarrollo.rating_cognitiva, "")
-        )
-
-        desarrollo.rating_comunicativa = request.POST.get('rating_comunicativa')
-        comunicativa_obs = request.POST.get('dimension_comunicativa', '').strip()
-        desarrollo.dimension_comunicativa = (
-            comunicativa_obs if comunicativa_obs else rating_map.get(desarrollo.rating_comunicativa, "")
-        )
-
-        desarrollo.rating_socio_afectiva = request.POST.get('rating_socio_afectiva')
-        socio_afectiva_obs = request.POST.get('dimension_socio_afectiva', '').strip()
-        desarrollo.dimension_socio_afectiva = (
-            socio_afectiva_obs if socio_afectiva_obs else rating_map.get(desarrollo.rating_socio_afectiva, "")
-        )
-
-        desarrollo.rating_corporal = request.POST.get('rating_corporal')
-        corporal_obs = request.POST.get('dimension_corporal', '').strip()
-        desarrollo.dimension_corporal = (
-            corporal_obs if corporal_obs else rating_map.get(desarrollo.rating_corporal, "")
-        )
-
+        desarrollo.dimension_cognitiva = nueva_cognitiva_obs if nueva_cognitiva_obs else rating_map.get(nueva_rating_cognitiva, "")
+        desarrollo.dimension_comunicativa = nueva_comunicativa_obs if nueva_comunicativa_obs else rating_map.get(nueva_rating_comunicativa, "")
+        desarrollo.dimension_socio_afectiva = nueva_socio_afectiva_obs if nueva_socio_afectiva_obs else rating_map.get(nueva_rating_socio_afectiva, "")
+        desarrollo.dimension_corporal = nueva_corporal_obs if nueva_corporal_obs else rating_map.get(nueva_rating_corporal, "")
         desarrollo.save()
 
         redirect_url = reverse('desarrollo:listar_desarrollos')
         return redirect(f'{redirect_url}?nino={desarrollo.nino.id}&exito=1')
 
+    # Usar el template general para edición
     return render(request, 'madre/desarrollo_form.html', {
         'desarrollo': desarrollo,
         'form_action': reverse('desarrollo:editar_desarrollo', args=[id]),
