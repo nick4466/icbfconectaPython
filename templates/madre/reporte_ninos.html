@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Matrícula de Niño</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        h1, h2 { color: #7a3eb1; }
+        .section { margin-bottom: 25px; }
+        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .info-table th, .info-table td { border: 1px solid #ccc; padding: 8px; }
+        .info-table th { background: #f3c1e5; color: #5e3370; }
+        .info-table td { background: #fff; }
+        .footer { margin-top: 40px; font-size: 14px; color: #555; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Matrícula</h1>
+    <div class="section">
+        <h2>Datos del Niño</h2>
+        <table class="info-table">
+            <tr><th>Nombre</th><td>{{ nino.nombres }} {{ nino.apellidos }}</td></tr>
+            <tr><th>Documento</th><td>{{ nino.documento }}</td></tr>
+            <tr><th>Fecha de Nacimiento</th><td>{{ nino.fecha_nacimiento }}</td></tr>
+            <tr><th>Género</th><td>{{ nino.genero }}</td></tr>
+            <tr><th>RH</th><td>{{ nino.tipo_sangre }}</td></tr>
+            <tr><th>Discapacidad</th><td>{{ nino.tiene_discapacidad|yesno:"Sí,No" }}</td></tr>
+            <tr><th>Parentesco con Tutor</th><td>{{ nino.parentesco }}</td></tr>
+        </table>
+    </div>
+    <div class="section">
+        <h2>Datos del Padre/Tutor</h2>
+        <table class="info-table">
+            <tr><th>Nombre</th><td>{{ padre.usuario.nombres }} {{ padre.usuario.apellidos }}</td></tr>
+            <tr><th>Documento</th><td>{{ padre.usuario.documento }}</td></tr>
+            <tr><th>Correo</th><td>{{ padre.usuario.correo }}</td></tr>
+            <tr><th>Teléfono</th><td>{{ padre.usuario.telefono }}</td></tr>
+            <tr><th>Dirección</th><td>{{ padre.usuario.direccion }}</td></tr>
+            <tr><th>Ocupación</th><td>{{ padre.ocupacion }}</td></tr>
+        </table>
+        <div style="font-size:15px;color:#5e3370;margin-top:10px;">
+            <b>El padre/tutor puede ingresar al sistema con su documento como usuario y contraseña.</b>
+        </div>
+    </div>
+    <div class="section">
+        <h2>Hogar Comunitario donde se registró la matrícula</h2>
+        <table class="info-table">
+            <tr><th>Nombre del Hogar</th><td>{{ hogar.nombre_hogar }}</td></tr>
+            <tr><th>Dirección</th><td>{{ hogar.direccion }}</td></tr>
+            <tr><th>Ciudad</th><td>{{ hogar.ciudad }}</td></tr>
+            <tr><th>Regional</th><td>{{ hogar.regional }}</td></tr>
+            <tr><th>Madre Comunitaria</th><td>{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}</td></tr>
+        </table>
+    </div>
+    <div class="footer">
+        <b>Fecha de generación:</b> {{ fecha_reporte }}<br>
+        <b>Generado por:</b> {{ usuario_generador }}
+    </div>
+</body>
+</html>

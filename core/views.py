@@ -1,4 +1,3 @@
-# core/views.py
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
@@ -11,8 +10,41 @@ from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
 from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm, AdminForm
-from django.contrib import messages
 from desarrollo.models import DesarrolloNino
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from .models import Rol, Usuario, MadreComunitaria, HogarComunitario
+from .forms import UsuarioMadreForm, MadreProfileForm, HogarForm 
+from django.http import JsonResponse, HttpResponse
+from .models import Ciudad
+from django.core.paginator import Paginator
+from django.template.loader import get_template
+import io
+from xhtml2pdf import pisa
+
+# --- GENERAR REPORTE PDF DE MATRÍCULA DE UN NIÑO ---
+@login_required
+def reporte_matricula_nino_pdf(request, nino_id):
+    nino = get_object_or_404(Nino, id=nino_id)
+    padre = nino.padre
+    hogar = nino.hogar
+    usuario_generador = request.user.get_full_name() or request.user.username
+    fecha_reporte = timezone.now().strftime('%d/%m/%Y %H:%M')
+    template = get_template('madre/reporte_ninos.html')
+    context = {
+        'nino': nino,
+        'padre': padre,
+        'hogar': hogar,
+        'usuario_generador': usuario_generador,
+        'fecha_reporte': fecha_reporte,
+    }
+    html = template.render(context)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="reporte_matricula_{nino.nombres}_{nino.apellidos}.pdf"'
+    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=response, encoding='utf-8')
+    if pisa_status.err:
+        return HttpResponse('Error al generar el PDF', status=500)
+    return response
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from .models import Rol, Usuario, MadreComunitaria, HogarComunitario

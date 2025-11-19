@@ -86,7 +86,8 @@ urlpatterns = [
     path('ninos/<int:id>/editar/', views.editar_nino, name='editar_nino'),
     path('ninos/<int:id>/eliminar/', views.eliminar_nino, name='eliminar_nino'),
     path('gestion-ninos/', views.gestion_ninos, name='gestion_ninos'),
-    path('ninos/reporte/', views.generar_reporte_ninos, name='generar_reporte_ninos'),
+     path('ninos/<int:nino_id>/reporte_pdf/', views.reporte_matricula_nino_pdf, name='reporte_matricula_nino_pdf'),
+     path('ninos/reporte/', views.generar_reporte_ninos, name='generar_reporte_ninos'),
 
     # --- URLs de Desarrollo (Ahora en su propia app) ---
     path('desarrollo/', include('desarrollo.urls')),

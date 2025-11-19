@@ -694,6 +694,151 @@
                           }
                         }
                       }
+
+                      // Validaciones de campos
+                      function validarFormulario(e) {
+                        let errores = [];
+                        // Cédula (padre)
+                        let cedula = document.getElementById('{{ padre_form.documento_identidad.id_for_label }}');
+                        if (cedula) {
+                          let val = cedula.value.trim();
+                          if (!/^\d{6,10}$/.test(val) || val[0] === '0') {
+                            errores.push('La cédula debe tener entre 6 y 10 dígitos y no iniciar en 0.');
+                          }
+                        }
+                        // Tarjeta de Identidad (niño)
+                        let tarjeta = document.getElementById('{{ nino_form.tarjeta_identidad.id_for_label }}');
+                        if (tarjeta) {
+                          let val = tarjeta.value.trim();
+                          if (!/^\d{6,11}$/.test(val)) {
+                            errores.push('La tarjeta de identidad debe tener entre 6 y 11 dígitos.');
+                          }
+                        }
+                        // Registro Civil (niño)
+                        let registro = document.getElementById('{{ nino_form.registro_civil.id_for_label }}');
+                        if (registro) {
+                          let val = registro.value.trim();
+                          if (!/^\d{10,15}$/.test(val)) {
+                            errores.push('El registro civil debe tener entre 10 y 15 dígitos.');
+                          }
+                        }
+                        // Celular (padre)
+                        let celular = document.getElementById('{{ padre_form.celular.id_for_label }}');
+                        if (celular) {
+                          let val = celular.value.trim();
+                          if (!/^3\d{9}$/.test(val)) {
+                            errores.push('El celular debe tener 10 dígitos y empezar por 3.');
+                          }
+                        }
+                        // Teléfono fijo (padre)
+                        let fijo = document.getElementById('{{ padre_form.telefono.id_for_label }}');
+                        if (fijo) {
+                          let val = fijo.value.trim();
+                          if (!/^\d{7}$/.test(val) || val[0] === '0') {
+                            errores.push('El teléfono fijo debe tener 7 dígitos y no iniciar en 0.');
+                          }
+                        }
+                        // Nombre/Apellido (niño y padre)
+                        let nombres = [
+                          document.getElementById('{{ nino_form.nombres.id_for_label }}'),
+                          document.getElementById('{{ nino_form.apellidos.id_for_label }}'),
+                          document.getElementById('{{ padre_form.nombres.id_for_label }}'),
+                          document.getElementById('{{ padre_form.apellidos.id_for_label }}')
+                        ];
+                        nombres.forEach(function(campo) {
+                          if (campo) {
+                            let val = campo.value.trim();
+                            if (!/^([A-Za-zÁÉÍÓÚáéíóúÑñ ]{2,})$/.test(val)) {
+                              errores.push('Los nombres y apellidos deben tener mínimo 2 letras y solo letras y espacios.');
+                            }
+                          }
+                        });
+                        // Dirección (padre)
+                        let direccion = document.getElementById('{{ padre_form.direccion.id_for_label }}');
+                        if (direccion) {
+                          let val = direccion.value.trim();
+                          if (!/^([A-Za-zÁÉÍÓÚáéíóúÑñ0-9 #.\-]{5,})$/.test(val)) {
+                            errores.push('La dirección debe tener mínimo 5 caracteres y solo letras, números y #.-');
+                          }
+                        }
+                        // Estrato (padre)
+                        let estrato = document.getElementById('{{ padre_form.estrato.id_for_label }}');
+                        if (estrato) {
+                          let val = estrato.value.trim();
+                          if (!/^[1-6]$/.test(val)) {
+                            errores.push('El estrato debe ser un número entre 1 y 6.');
+                          }
+                        }
+                        // Edad niño (comparar con fecha nacimiento y máximo 5 años)
+                        let edad = document.getElementById('{{ nino_form.edad.id_for_label }}');
+                        let fechaNac = document.getElementById('{{ nino_form.fecha_nacimiento.id_for_label }}');
+                        if (edad && fechaNac) {
+                          let edadVal = parseInt(edad.value);
+                          let fechaVal = fechaNac.value;
+                          if (fechaVal) {
+                            let hoy = new Date();
+                            let fnac = new Date(fechaVal);
+                            let edadReal = hoy.getFullYear() - fnac.getFullYear();
+                            let m = hoy.getMonth() - fnac.getMonth();
+                            if (m < 0 || (m === 0 && hoy.getDate() < fnac.getDate())) {
+                              edadReal--;
+                            }
+                            if (edadReal > 5) {
+                              errores.push('El niño es muy mayor de 5 años. No puede ser matriculado.');
+                            } else if (edadVal !== edadReal || edadVal < 0 || edadVal > 6) {
+                              errores.push('La edad del niño debe coincidir con la fecha de nacimiento y estar entre 0 y 6 años.');
+                            }
+                          }
+                        }
+                              // Validación en tiempo real para fecha de nacimiento (no mayor a 5 años)
+                              document.addEventListener("DOMContentLoaded", function() {
+                                var fechaNac = document.getElementById("{{ nino_form.fecha_nacimiento.id_for_label }}");
+                                if (fechaNac) {
+                                  fechaNac.addEventListener('change', function() {
+                                    let hoy = new Date();
+                                    let fnac = new Date(this.value);
+                                    let edadReal = hoy.getFullYear() - fnac.getFullYear();
+                                    let m = hoy.getMonth() - fnac.getMonth();
+                                    if (m < 0 || (m === 0 && hoy.getDate() < fnac.getDate())) {
+                                      edadReal--;
+                                    }
+                                    let errorDiv = document.getElementById('form-errores');
+                                    if (!errorDiv) {
+                                      errorDiv = document.createElement('div');
+                                      errorDiv.id = 'form-errores';
+                                      errorDiv.style.color = '#dc3545';
+                                      errorDiv.style.fontWeight = 'bold';
+                                      errorDiv.style.marginBottom = '10px';
+                                      document.querySelector('form').prepend(errorDiv);
+                                    }
+                                    if (edadReal > 5) {
+                                      errorDiv.innerHTML = 'El niño es muy mayor de 5 años. No puede ser matriculado.';
+                                      window.scrollTo({top:0, behavior:'smooth'});
+                                    } else {
+                                      errorDiv.innerHTML = '';
+                                    }
+                                  });
+                                }
+                              });
+                        // Mostrar errores
+                        let errorDiv = document.getElementById('form-errores');
+                        if (!errorDiv) {
+                          errorDiv = document.createElement('div');
+                          errorDiv.id = 'form-errores';
+                          errorDiv.style.color = '#dc3545';
+                          errorDiv.style.fontWeight = 'bold';
+                          errorDiv.style.marginBottom = '10px';
+                          document.querySelector('form').prepend(errorDiv);
+                        }
+                        if (errores.length > 0) {
+                          e.preventDefault();
+                          errorDiv.innerHTML = errores.join('<br>');
+                          window.scrollTo({top:0, behavior:'smooth'});
+                        } else {
+                          errorDiv.innerHTML = '';
+                        }
+                      }
+
                       document.addEventListener("DOMContentLoaded", function() {
                         var fotoInput = document.getElementById("{{ nino_form.foto.id_for_label }}");
                         var carnetInput = document.getElementById("{{ nino_form.carnet_vacunacion.id_for_label }}");
@@ -703,6 +848,11 @@
                         if (carnetInput) carnetInput.addEventListener('change', function(){ showPreview(this, 'preview-carnet'); document.getElementById('file-upload-message').style.display='block'; document.getElementById('file-upload-message').innerHTML='<span style=\"color:#28a745;font-weight:600;\">Carné cargado correctamente</span>'; });
                         if (epsInput) epsInput.addEventListener('change', function(){ showPreview(this, 'preview-eps'); document.getElementById('file-upload-message').style.display='block'; document.getElementById('file-upload-message').innerHTML='<span style=\"color:#28a745;font-weight:600;\">Certificado EPS cargado correctamente</span>'; });
                         if (docPadreInput) docPadreInput.addEventListener('change', function(){ showPreview(this, 'preview-doc-padre'); document.getElementById('file-upload-message').style.display='block'; document.getElementById('file-upload-message').innerHTML='<span style=\"color:#28a745;font-weight:600;\">Documento del padre cargado correctamente</span>'; });
+                        // Validación al enviar
+                        var form = document.querySelector('form');
+                        if (form) {
+                          form.addEventListener('submit', validarFormulario);
+                        }
                       });
                     </script>
                 <script>
