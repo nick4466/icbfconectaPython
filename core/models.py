@@ -3,6 +3,23 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 # ------------------------
+# Discapacidad
+# ------------------------
+class Discapacidad(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        db_table = 'discapacidades'
+        verbose_name = 'Discapacidad'
+        verbose_name_plural = 'Discapacidades'
+
+    def __str__(self):
+        return self.nombre
+from django.db import models
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+# ------------------------
 # Roles del sistema
 # ------------------------
 class Rol(models.Model):
@@ -265,6 +282,16 @@ class ConvivienteHogar(models.Model):
 # Niños
 # ------------------------
 class Nino(models.Model):
+    TIPO_SANGRE_CHOICES = [
+        ('O+', 'O+'), ('O-', 'O-'), ('A+', 'A+'), ('A-', 'A-'),
+        ('B+', 'B+'), ('B-', 'B-'), ('AB+', 'AB+'), ('AB-', 'AB-')
+    ]
+    PARENTESCO_CHOICES = [
+        ('padre', 'Padre'), ('madre', 'Madre'), ('tutor', 'Tutor'),
+        ('abuelo', 'Abuelo/a'), ('tio', 'Tío/a'), ('hermano', 'Hermano/a'),
+        ('otro', 'Otro')
+    ]
+
     nombres = models.CharField(max_length=50)
     apellidos = models.CharField(max_length=50)
     fecha_nacimiento = models.DateField()
@@ -280,6 +307,11 @@ class Nino(models.Model):
             ('no_especificado', 'no_especificado')
         ]
     )
+    tipo_sangre = models.CharField(max_length=3, choices=TIPO_SANGRE_CHOICES, null=True, blank=True)
+    parentesco = models.CharField(max_length=20, choices=PARENTESCO_CHOICES, null=True, blank=True)
+    tiene_discapacidad = models.BooleanField(default=False)
+    tipos_discapacidad = models.ManyToManyField('Discapacidad', blank=True)
+    otra_discapacidad = models.CharField(max_length=100, null=True, blank=True)
     nacionalidad = models.CharField(max_length=50, null=True, blank=True)
     fecha_ingreso = models.DateField(null=True, blank=True)
     hogar = models.ForeignKey(HogarComunitario, on_delete=models.PROTECT, related_name='ninos')

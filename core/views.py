@@ -90,24 +90,26 @@ def matricular_nino(request):
         return redirect('madre_dashboard')
 
     if request.method == 'POST':
-        padre_form = PadreForm(request.POST, prefix='padre')
-        nino_form = NinoForm(request.POST, prefix='nino')
+        padre_form = PadreForm(request.POST, request.FILES, prefix='padre')
+        nino_form = NinoForm(request.POST, request.FILES, prefix='nino')
         if padre_form.is_valid() and nino_form.is_valid():
             try:
                 with transaction.atomic():
                     rol_padre = Rol.objects.get(nombre_rol='padre')
                     doc_padre = padre_form.cleaned_data['documento']
+                    tipo_doc = padre_form.cleaned_data['tipo_documento']
                     
                     # Buscar o crear el usuario del padre
                     usuario_padre, created = Usuario.objects.get_or_create(
                         documento=doc_padre,
                         rol=rol_padre,
                         defaults={
+                            'tipo_documento': tipo_doc,
                             'nombres': padre_form.cleaned_data['nombres'],
                             'apellidos': padre_form.cleaned_data['apellidos'],
                             'correo': padre_form.cleaned_data['correo'],
                             'telefono': padre_form.cleaned_data['telefono'],
-                            'direccion': padre_form.cleaned_data['direccion'],
+                            'direccion': padre_form.cleaned_data.get('direccion', ''),
                         }
                     )
 
@@ -115,23 +117,52 @@ def matricular_nino(request):
                         usuario_padre.set_password(str(doc_padre))
                         usuario_padre.save()
                     else: # Si ya existía, actualizamos sus datos por si hay cambios
+                        usuario_padre.tipo_documento = tipo_doc
                         usuario_padre.nombres = padre_form.cleaned_data['nombres']
                         usuario_padre.apellidos = padre_form.cleaned_data['apellidos']
                         usuario_padre.correo = padre_form.cleaned_data['correo']
                         usuario_padre.telefono = padre_form.cleaned_data['telefono']
-                        usuario_padre.direccion = padre_form.cleaned_data['direccion']
+                        usuario_padre.direccion = padre_form.cleaned_data.get('direccion', '')
                         usuario_padre.save()
 
                     # Buscar o crear el perfil del padre
                     padre_obj, _ = Padre.objects.get_or_create(usuario=usuario_padre)
                     padre_obj.ocupacion = padre_form.cleaned_data.get('ocupacion', '')
+                    padre_obj.estrato = padre_form.cleaned_data.get('estrato')
+                    padre_obj.telefono_contacto_emergencia = padre_form.cleaned_data.get('telefono_contacto_emergencia', '')
+                    padre_obj.nombre_contacto_emergencia = padre_form.cleaned_data.get('nombre_contacto_emergencia', '')
+                    padre_obj.situacion_economica_hogar = padre_form.cleaned_data.get('situacion_economica_hogar', '')
+                    
+                    # Guardar el archivo de documento si se proporciona
+                    if 'documento_identidad_img' in request.FILES:
+                        padre_obj.documento_identidad_img = request.FILES['documento_identidad_img']
+                    
                     padre_obj.save()
 
                     # Crear el niño y asociarlo
                     nino = nino_form.save(commit=False)
                     nino.hogar = hogar_madre
                     nino.padre = padre_obj
+                    # Nuevos campos
+                    nino.tipo_sangre = nino_form.cleaned_data.get('tipo_sangre')
+                    nino.parentesco = nino_form.cleaned_data.get('parentesco')
+                    nino.tiene_discapacidad = nino_form.cleaned_data.get('tiene_discapacidad', False)
+                    nino.otra_discapacidad = nino_form.cleaned_data.get('otra_discapacidad', '')
                     nino.save()
+                    # ManyToMany: tipos_discapacidad
+                    if nino.tiene_discapacidad:
+                        nino.tipos_discapacidad.set(nino_form.cleaned_data.get('tipos_discapacidad'))
+                    else:
+                        nino.tipos_discapacidad.clear()
+                    # Guardar archivos del niño (fotos y documentos)
+                    if 'nino-foto' in request.FILES:
+                        nino.foto = request.FILES['nino-foto']
+                    if 'nino-carnet_vacunacion' in request.FILES:
+                        nino.carnet_vacunacion = request.FILES['nino-carnet_vacunacion']
+                    if 'nino-certificado_eps' in request.FILES:
+                        nino.certificado_eps = request.FILES['nino-certificado_eps']
+                    nino.save()
+                    
                     messages.success(request, f'Niño {nino.nombres} matriculado correctamente.')
                     return redirect('listar_ninos')
             except Exception as e:
@@ -142,7 +173,9 @@ def matricular_nino(request):
         padre_form = PadreForm(prefix='padre')
         nino_form = NinoForm(prefix='nino')
 
-    return render(request, 'madre/nino_form.html', {
+    # TODO: CAMBIAR TEMPLATE - Para usar el nuevo template mejorado, cambia 'madre/nino_form.html' 
+    # por 'madre/nino_form_nuevo.html' (que tiene mejor organización de campos)
+    return render(request, 'madre/nino_form_nuevo.html', {
         'hogar_madre': hogar_madre,
         'nino_form': nino_form,
         'padre_form': padre_form,

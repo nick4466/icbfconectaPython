@@ -1,7 +1,7 @@
 # core/forms.py
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
-from .models import Usuario, Nino, MadreComunitaria, HogarComunitario, Regional, Ciudad
+from .models import Usuario, Nino, MadreComunitaria, HogarComunitario, Regional, Ciudad, Discapacidad
 
 
 # ----------------------------------------------------
@@ -186,26 +186,123 @@ class PadrePerfilForm(forms.ModelForm):
 
 
 # ----------------------------------------------------
-# 👶 FORMULARIO DE NIÑOS
+# 👶 FORMULARIO DE NIÑOS (Expandido)
 # ----------------------------------------------------
 class NinoForm(forms.ModelForm):
+    foto = forms.ImageField(
+        label="Foto del Niño",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*'})
+    )
+    carnet_vacunacion = forms.FileField(
+        label="Carné de Vacunación",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+    )
+    certificado_eps = forms.FileField(
+        label="Certificado EPS/Afiliación",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+    )
+    tipo_sangre = forms.ChoiceField(
+        choices=Nino.TIPO_SANGRE_CHOICES,
+        label="Tipo de Sangre",
+        required=False
+    )
+    parentesco = forms.ChoiceField(
+        choices=Nino.PARENTESCO_CHOICES,
+        label="Parentesco con el Niño",
+        required=True
+    )
+    tiene_discapacidad = forms.BooleanField(
+        label="¿Tiene alguna discapacidad?",
+        required=False
+    )
+    tipos_discapacidad = forms.ModelMultipleChoiceField(
+        queryset=Discapacidad.objects.all(),
+        label="Tipo(s) de Discapacidad",
+        required=False,
+        widget=forms.CheckboxSelectMultiple
+    )
+    otra_discapacidad = forms.CharField(
+        label="Otra discapacidad (especifique)",
+        required=False
+    )
+
     class Meta:
         model = Nino
-        fields = ['nombres', 'apellidos', 'documento', 'fecha_nacimiento', 'genero']
+        fields = [
+            'nombres', 'apellidos', 'documento', 'fecha_nacimiento', 'genero', 'nacionalidad', 'fecha_ingreso',
+            'tipo_sangre', 'parentesco', 'tiene_discapacidad', 'tipos_discapacidad', 'otra_discapacidad',
+            'foto', 'carnet_vacunacion', 'certificado_eps'
+        ]
         widgets = {
-            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'})
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+            'fecha_ingreso': forms.DateInput(attrs={'type': 'date'}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        tiene_discapacidad = cleaned_data.get('tiene_discapacidad')
+        tipos_discapacidad = cleaned_data.get('tipos_discapacidad')
+        otra_discapacidad = cleaned_data.get('otra_discapacidad')
+        if tiene_discapacidad:
+            if not tipos_discapacidad and not otra_discapacidad:
+                self.add_error('tipos_discapacidad', 'Seleccione al menos un tipo de discapacidad o especifique otra.')
+        return cleaned_data
+
 
 # ----------------------------------------------------
-# 👨 FORMULARIO DE REGISTRO DE PADRES
+# 👨 FORMULARIO DE REGISTRO DE PADRES (Expandido)
 # ----------------------------------------------------
 class PadreForm(forms.ModelForm):
+    # Campos de Usuario
+    documento = forms.IntegerField(label='Número de Documento', required=True)
+    nombres = forms.CharField(max_length=50, label="Nombres", required=True)
+    apellidos = forms.CharField(max_length=50, label="Apellidos", required=True)
+    correo = forms.EmailField(label="Correo electrónico", required=True)
+    tipo_documento = forms.ChoiceField(
+        choices=[('CC', 'Cédula de ciudadanía'), ('TI', 'Tarjeta de identidad'), ('CE', 'Cédula de extranjería'), ('PA', 'Pasaporte')],
+        label="Tipo de Documento",
+        required=True
+    )
+    telefono = forms.CharField(max_length=20, label="Teléfono", required=True)
+    direccion = forms.CharField(max_length=100, label="Dirección", required=False)
+    
+    # Campos de Padre (perfil)
     ocupacion = forms.CharField(max_length=50, required=True, label="Ocupación")
+    estrato = forms.IntegerField(
+        label="Estrato",
+        required=False,
+        min_value=1,
+        max_value=6,
+        widget=forms.NumberInput(attrs={'min': '1', 'max': '6'})
+    )
+    telefono_contacto_emergencia = forms.CharField(
+        max_length=20,
+        label="Teléfono de Contacto de Emergencia",
+        required=False
+    )
+    nombre_contacto_emergencia = forms.CharField(
+        max_length=100,
+        label="Nombre del Contacto de Emergencia",
+        required=False
+    )
+    situacion_economica_hogar = forms.CharField(
+        max_length=100,
+        label="Situación Económica del Hogar",
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 3})
+    )
+    documento_identidad_img = forms.FileField(
+        label="Cédula/Documento de Identidad",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+    )
 
     class Meta:
         model = Usuario
-        fields = ['documento', 'nombres', 'apellidos', 'correo', 'telefono', 'direccion']
+        fields = ['tipo_documento', 'documento', 'nombres', 'apellidos', 'correo', 'telefono', 'direccion']
         widgets = {
             'telefono': forms.TextInput(attrs={'required': True}),
         }
