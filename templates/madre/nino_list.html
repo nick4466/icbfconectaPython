@@ -168,6 +168,7 @@
       <table>
         <thead>
           <tr>
+            <th>Foto</th>
             <th>Nombre Completo</th>
             <th>Documento</th>
             <th>Fecha de Nacimiento</th>
@@ -191,6 +192,13 @@
             data-tutor-direccion="{{ nino.padre.usuario.direccion|default:'N/A' }}"
             data-tutor-ocupacion="{{ nino.padre.ocupacion|default:'N/A' }}"
           >
+            <td>
+              {% if nino.foto %}
+                <img src="{{ nino.foto.url }}" alt="Foto de {{ nino.nombres }}" style="width:55px;height:55px;object-fit:cover;border-radius:50%;box-shadow:0 2px 8px #ccc;">
+              {% else %}
+                <span style="color:#aaa;font-size:22px;"><i class="fas fa-user-circle"></i></span>
+              {% endif %}
+            </td>
             <td>{{ nino.nombres }} {{ nino.apellidos }}</td>
             <td>{{ nino.documento|default:"N/A" }}</td>
             <td>{{ nino.fecha_nacimiento|date:"Y-m-d" }}</td>
