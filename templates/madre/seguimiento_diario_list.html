@@ -1,0 +1,320 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listado de Seguimientos Diarios</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondito.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+
+    header img { height: 60px; }
+
+    nav ul { list-style: none; display: flex; gap: 20px; padding: 0; margin: 0; }
+
+    nav ul li a, nav ul li button {
+      text-decoration: none; color: #9B59B6; font-weight: bold; font-size: 16px;
+      padding: 8px 12px; border-radius: 6px; transition: background-color 0.3s ease;
+      background: none; border: none; cursor: pointer; font-family: 'Roboto', sans-serif;
+    }
+
+    nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
+
+    /* Estilos para el menú desplegable */
+    nav ul .dropdown { position: relative; }
+    nav ul .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.98);
+      min-width: 200px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 8px;
+      padding: 8px 0;
+    }
+    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
+    nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
+    nav ul .dropdown:hover .dropdown-content { display: block; }
+
+    .tabla-registros {
+      max-width: 1100px; margin: 40px auto; background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 14px; padding: 30px; box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    h1 { text-align: center; margin-bottom: 25px; font-size: 32px; color: #7a3eb1; }
+
+    .filtros-y-botones { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+
+    .filtros-form { display: flex; gap: 10px; align-items: center; }
+    .filtros-form input[type="date"] { padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
+    .filtros-form button { background-color: #8e44ad; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+
+    .btn-agregar, .btn-volver {
+      background-color: #9B59B6; color: white; border: none; padding: 10px 20px;
+      font-size: 16px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-agregar:hover { background-color: #8e44ad; }
+
+    .btn-volver {
+      background-color: #6c757d;
+    }
+    .btn-volver:hover {
+      background-color: #5a6268;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 16px; background-color: white; border-radius: 10px; overflow: hidden; margin-top: 20px;}
+    thead { background-color: #f3c1e5; color: #5e3370; }
+    th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
+    tbody tr:hover { background-color: #f9e6ff; }
+
+    .acciones {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .acciones .btn-accion {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      padding: 4px 6px;
+      margin: 0 2px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: transform 0.2s;
+      text-decoration: none;
+      min-width: 28px;
+      min-height: 28px;
+    }
+    .acciones .btn-accion i { font-size: 15px; }
+    .acciones .btn-accion:hover { transform: scale(1.1); }
+    .btn-verde { background: #28a745; color: white; }
+    .btn-azul  { background: #007bff; color: white; }
+    .btn-rojo  { background: #dc3545; color: white; }
+
+    .empty-message { color: #777; margin-top: 20px; text-align: center; font-size: 18px; padding: 40px 0;}
+
+    .modal {
+      display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center;
+    }
+    .modal-contenido {
+      background-color: #fff; margin: 10% auto; padding: 30px; border: 1px solid #ccc;
+      width: 80%; max-width: 600px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+      animation: zoomIn 0.3s ease; max-height: 80vh; overflow-y: auto;
+    }
+    @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .cerrar-modal { float: right; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; }
+    .cerrar-modal:hover { color: #000; }
+    .modal-contenido h2 { margin-top: 0; color: #7a3eb1; }
+    .modal-contenido p { margin: 12px 0; font-size: 16px; line-height: 1.5; }
+    .modal-contenido hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+    .display-stars { color: #f5b301; font-size: 1.2rem; }
+    .display-stars .inactive { color: #ddd; }
+
+    .mensaje-exito {
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      transition: opacity 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
+    <nav>
+      <ul>
+        <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
+        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
+        <li class="dropdown">
+          <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
+          <div class="dropdown-content">
+            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+          </div>
+        </li>
+        <li>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+            </form>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="tabla-registros">
+    <h1>
+      Seguimientos Diarios
+      {% if nino_filtrado %}<br><small style="font-size: 18px; color: #555;">de {{ nino_filtrado.nombres }} {{ nino_filtrado.apellidos }}</small>{% endif %}
+    </h1>
+
+    {% if request.GET.exito %}
+    <div class="mensaje-exito" id="mensajeExito">¡Seguimiento registrado correctamente!</div>
+    {% endif %}
+
+    <div class="filtros-y-botones">
+      <form method="get" class="filtros-form">
+        <label for="fecha_filtro">Fecha:</label>
+        <input type="date" id="fecha_filtro" name="fecha" value="{{ fecha_filtro }}">
+        <button type="submit"><i class="fas fa-filter"></i> Filtrar</button>
+        <a href="{% url 'desarrollo:listar_seguimientos' %}" class="btn-volver" style="margin-left: 5px;">Limpiar Filtro</a>
+      </form>
+
+      <div>
+        <a href="{% url 'gestion_ninos' %}" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a Gestión</a>
+        <a href="{% url 'desarrollo:registrar_seguimiento' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-agregar">
+          <i class="fas fa-plus"></i> Añadir Seguimiento
+        </a>
+      </div>
+    </div>
+
+    {% if seguimientos %}
+      <table>
+        <thead>
+          <tr>
+            <th>Niño/a</th>
+            <th>Fecha</th>
+            <th>Planeación</th>
+            <th>Valoración</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for seguimiento in seguimientos %}
+          <tr
+            data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
+            data-fecha="{{ seguimiento.fecha|date:'Y-m-d' }}"
+            data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
+            data-participacion="{{ seguimiento.participacion }}"
+            data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+            data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
+            data-valoracion="{{ seguimiento.valoracion|default:0 }}"
+          >
+            <td>{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</td>
+            <td>{{ seguimiento.fecha|date:"Y-m-d" }}</td>
+            <td>{{ seguimiento.planeacion.nombre_experiencia }}</td>
+            <td>
+              <span class="display-stars">
+                {% for i in "12345" %}
+                  {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
+                {% endfor %}
+              </span>
+            </td>
+            <td class="acciones">
+              <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+              <!-- No hay editar para seguimiento diario, solo eliminar -->
+              <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-message">No hay seguimientos diarios registrados para la fecha seleccionada.</p>
+    {% endif %}
+  </div>
+
+  <!-- Modal Detalles -->
+  <div id="modalDetalles" class="modal">
+    <div class="modal-contenido">
+      <span class="cerrar-modal">&times;</span>
+      <h2>Detalles del Seguimiento Diario</h2>
+      <p><strong>Niño/a:</strong> <span id="modal-nino"></span></p>
+      <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
+      <p><strong>Planeación:</strong> <span id="modal-planeacion"></span></p>
+      <hr>
+      <p><strong>Participación:</strong> <span id="modal-participacion"></span></p>
+      <p><strong>Comportamiento, Interés y Logro:</strong> <span id="modal-comportamiento"></span></p>
+      <p><strong>Observaciones:</strong> <span id="modal-observaciones"></span></p>
+      <p><strong>Valoración:</strong> <span class="display-stars" id="modal-valoracion"></span></p>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('modalDetalles');
+    const cerrarBoton = document.querySelector('.cerrar-modal');
+
+    function cerrarModal() {
+      modal.style.display = 'none';
+    }
+
+    cerrarBoton.onclick = cerrarModal;
+
+    window.onclick = function(event) {
+      if (event.target === modal) {
+        cerrarModal();
+      }
+    };
+
+    function renderStars(container, rating) {
+      let starsHTML = '';
+      const totalStars = 5;
+      const numRating = parseInt(rating, 10);
+      for (let i = 1; i <= totalStars; i++) {
+        starsHTML += (i <= numRating) ? '★' : '<span class="inactive">★</span>';
+      }
+      container.innerHTML = starsHTML;
+    }
+
+    document.querySelectorAll('.ver-detalles').forEach(button => {
+      button.addEventListener('click', function() {
+        const row = this.closest('tr');
+        
+        document.getElementById('modal-nino').textContent = row.dataset.nino;
+        document.getElementById('modal-fecha').textContent = row.dataset.fecha;
+        document.getElementById('modal-planeacion').textContent = row.dataset.planeacion;
+        document.getElementById('modal-participacion').textContent = row.dataset.participacion;
+        document.getElementById('modal-comportamiento').textContent = row.dataset.comportamiento;
+        document.getElementById('modal-observaciones').textContent = row.dataset.observaciones;
+
+        renderStars(document.getElementById('modal-valoracion'), row.dataset.valoracion);
+
+        modal.style.display = 'flex';
+      });
+    });
+
+    // Ocultar el mensaje de éxito después de 5 segundos
+    const mensajeExito = document.getElementById('mensajeExito');
+    if (mensajeExito) {
+      setTimeout(() => {
+        mensajeExito.style.opacity = '0';
+        setTimeout(() => { mensajeExito.style.display = 'none'; }, 500);
+      }, 5000);
+    }
+  </script>
+
+</body>
+</html>

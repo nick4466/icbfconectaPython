@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
-from .models import DesarrolloNino
+from .models import DesarrolloNino, SeguimientoDiario
+from planeaciones.models import Planeacion as PlaneacionModel
 from novedades.models import Novedad
 from core.models import Nino, HogarComunitario, Padre, MadreComunitaria
 from django.utils import timezone
@@ -502,3 +503,200 @@ def generar_reporte_pdf(request, nino_id):
         return HttpResponse('Error generando PDF. <pre>' + html + '</pre>')
 
     return response
+
+# -----------------------------------------------------------------
+# CRUD SEGUIMIENTO DIARIO PARA MADRE COMUNITARIA
+# -----------------------------------------------------------------
+@login_required
+def registrar_seguimiento_diario(request):
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
+
+    try:
+        hogar_madre = HogarComunitario.objects.get(madre__usuario=request.user)
+    except HogarComunitario.DoesNotExist:
+        return render(request, 'madre/seguimiento_diario_form.html', {'error': 'No tienes un hogar asignado.'})
+
+    # --- Lógica para guardar el formulario (POST) ---
+    if request.method == 'POST':
+        fecha_str = request.POST.get('fecha')
+        nino_id = request.POST.get('nino')
+
+        # Validaciones iniciales
+        if not nino_id:
+            return render(request, 'madre/seguimiento_diario_form.html', {
+                'error': "Por favor, selecciona un niño.",
+                'fecha_filtro': fecha_str,
+            })
+
+        try:
+            fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            return render(request, 'madre/seguimiento_diario_form.html', {'error': 'La fecha proporcionada no es válida.'})
+
+        nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
+
+        # 1. Validar si existe planeación para la fecha
+        planeacion_del_dia = PlaneacionModel.objects.filter(madre=hogar_madre.madre.usuario, fecha=fecha_obj).first()
+        if not planeacion_del_dia:
+            return render(request, 'madre/seguimiento_diario_form.html', {
+                'error': f"No hay actividad planeada para el día {fecha_str}. No se puede registrar seguimiento.",
+                'fecha_filtro': fecha_str,
+            })
+
+        # 2. Validar asistencia del niño
+        asistencia = nino.asistencias.filter(fecha=fecha_obj).first()
+        if not asistencia or asistencia.estado != 'Presente':
+            return render(request, 'madre/seguimiento_diario_form.html', {
+                'error': f"El niño {nino.nombres} no asistió el {fecha_str}, no se puede registrar seguimiento.",
+                'fecha_filtro': fecha_str,
+                'planeacion': planeacion_del_dia,
+            })
+
+        # 3. Validar que no exista un seguimiento duplicado
+        # 3. Validar seguimiento duplicado
+        if SeguimientoDiario.objects.filter(nino=nino, fecha=fecha_obj).exists():
+            return render(request, 'madre/seguimiento_diario_form.html', {
+                'error': f"Ya existe un seguimiento para {nino.nombres} en esta fecha.",
+                'fecha_filtro': fecha_str,
+                'planeacion': planeacion_del_dia,
+            })
+        # Crear el registro de seguimiento
+        # Crear el registro
+        SeguimientoDiario.objects.create(
+            nino=nino,
+            planeacion=planeacion_del_dia,
+            fecha=fecha_obj,
+            participacion=request.POST.get('participacion'),
+            comportamiento_logro=request.POST.get('comportamiento_logro'),
+            observaciones=request.POST.get('observaciones'),
+            valoracion=request.POST.get('valoracion')
+        )
+        # Redirigir a la lista de seguimientos del niño específico
+        redirect_url = reverse('desarrollo:listar_seguimientos')
+        return redirect(f'{redirect_url}?nino={nino_id}')
+
+    # --- Lógica para mostrar el formulario (GET) ---
+    fecha_str = request.GET.get('fecha')
+    nino_id_preseleccionado = request.GET.get('nino')
+    context = {
+        'titulo_form': 'Registrar Seguimiento Diario',
+        'fecha_filtro': fecha_str,
+        'nino_preseleccionado': None, # Inicializamos
+    }
+
+    # Si se preselecciona un niño (ej: desde la gestión), lo obtenemos y lo pasamos al contexto.
+    if nino_id_preseleccionado:
+        try:
+            context['nino_preseleccionado'] = Nino.objects.get(id=nino_id_preseleccionado, hogar=hogar_madre)
+        except Nino.DoesNotExist:
+            pass # Si el niño no existe o no pertenece al hogar, simplemente no se preselecciona.
+
+    # Si no se ha seleccionado una fecha, simplemente mostramos el selector de fecha.
+    if not fecha_str:
+        return render(request, 'madre/seguimiento_diario_form.html', context)
+
+    # --- A partir de aquí, asumimos que SÍ hay una fecha ---
+    fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+
+    planeacion_del_dia = PlaneacionModel.objects.filter(madre=hogar_madre.madre.usuario, fecha=fecha_obj).first()
+    if not planeacion_del_dia:
+        context['error'] = f"No hay actividad planeada para este día ({fecha_str}). No se puede registrar seguimiento."
+        return render(request, 'madre/seguimiento_diario_form.html', context)
+
+    # --- Verificación de asistencia específica si viene un niño preseleccionado ---
+    if context.get('nino_preseleccionado'):
+        nino_obj = context['nino_preseleccionado']
+        asistencia = nino_obj.asistencias.filter(fecha=fecha_obj).first()
+        
+        if not asistencia:
+            context['error'] = f"No se puede registrar seguimiento: Aún no se ha registrado la asistencia de {nino_obj.nombres} para el día {fecha_str}."
+            return render(request, 'madre/seguimiento_diario_form.html', context) # Detiene y muestra el error
+        
+        if asistencia.estado != 'Presente':
+            context['error'] = f"No se puede registrar seguimiento: El niño {nino_obj.nombres} fue registrado como '{asistencia.estado}' el día {fecha_str}."
+            return render(request, 'madre/seguimiento_diario_form.html', context) # Detiene y muestra el error
+
+
+    ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
+    ninos_disponibles = []
+    for nino in ninos_del_hogar:
+        asistio = nino.asistencias.filter(fecha=fecha_obj, estado='Presente').exists()
+        ya_tiene_seguimiento = SeguimientoDiario.objects.filter(nino=nino, fecha=fecha_obj).exists()
+        if asistio and not ya_tiene_seguimiento:
+            ninos_disponibles.append(nino)
+
+    # Si hay un niño preseleccionado que no está en la lista de disponibles, no mostramos el mensaje genérico.
+    context.update({
+        'planeacion': planeacion_del_dia,
+        'ninos_para_seleccionar': ninos_disponibles,
+        'paso': 'registrar_datos'
+    })
+
+    if not ninos_disponibles:
+        if not context.get('nino_preseleccionado'):
+            context['info'] = f"Todos los niños que asistieron el {fecha_str} ya tienen su seguimiento registrado o no hay niños disponibles."
+
+    return render(request, 'madre/seguimiento_diario_form.html', context)
+
+@login_required
+def listar_seguimientos(request):
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
+
+    try:
+        hogar_madre = HogarComunitario.objects.get(madre__usuario=request.user)
+    except HogarComunitario.DoesNotExist:
+        return render(request, 'madre/seguimiento_diario_list.html', {'error': 'No tienes un hogar asignado.'})
+
+    nino_id_filtro = request.GET.get('nino')
+    fecha_str = request.GET.get('fecha')
+    nino_filtrado = None
+
+    # La consulta base siempre filtra por el hogar de la madre
+    seguimientos = SeguimientoDiario.objects.filter(nino__hogar=hogar_madre).select_related('nino')
+
+    # Si se especifica un niño, se convierte en el filtro principal
+    if nino_id_filtro:
+        seguimientos = seguimientos.filter(nino__id=nino_id_filtro)
+        try:
+            nino_filtrado = Nino.objects.get(id=nino_id_filtro)
+        except Nino.DoesNotExist:
+            pass # No se encontró el niño
+
+    # Si se especifica una fecha, se usa como filtro secundario
+    if fecha_str:
+        try:
+            fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+            seguimientos = seguimientos.filter(fecha=fecha_obj)
+        except (ValueError, TypeError):
+            fecha_str = None # Ignorar fecha inválida
+    else:
+        # Si no hay fecha, no se filtra por fecha, mostrando todos los seguimientos del niño (si aplica)
+        fecha_str = None
+
+    return render(request, 'madre/seguimiento_diario_list.html', {
+        'seguimientos': seguimientos.order_by('-fecha'),
+        'fecha_filtro': fecha_str,
+        'nino_id_filtro': nino_id_filtro,
+        'nino_filtrado': nino_filtrado,
+    })
+
+@login_required
+def eliminar_seguimiento(request, id):
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
+
+    seguimiento = get_object_or_404(SeguimientoDiario, id=id)
+
+    # Seguridad: solo la madre del hogar puede eliminar
+    if seguimiento.nino.hogar.madre.usuario != request.user:
+        return redirect('desarrollo:listar_seguimientos')
+
+    nino_id = seguimiento.nino.id
+    fecha_seguimiento = seguimiento.fecha.strftime('%Y-%m-%d')
+    seguimiento.delete()
+    
+    # Redirigir a la lista de seguimientos del niño específico
+    redirect_url = reverse('desarrollo:listar_seguimientos')
+    return redirect(f'{redirect_url}?nino={nino_id}')
