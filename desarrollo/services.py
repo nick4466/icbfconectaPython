@@ -23,10 +23,15 @@ class GeneradorEvaluacionMensual:
         self.seguimientos_mes = self._get_seguimientos()
         self.novedades_mes = self._get_novedades()
 
-    def run(self):
+    def run(self, only_tendencia=False):
         """
         Ejecuta todos los pasos para generar y guardar la evaluación.
+        Si only_tendencia=True, solo recalcula la tendencia respecto al mes anterior.
         """
+        if only_tendencia:
+            self._generar_valoracion_general()  # Solo tendencia y participaciones
+            self.evaluacion.save(run_generator=False) # Guardar sin volver a llamar al generador
+            return # Detener la ejecución aquí
         self._generar_valoracion_general()
         self._generar_evaluacion_por_areas()
         self._generar_fortalezas()
@@ -34,7 +39,7 @@ class GeneradorEvaluacionMensual:
         self._generar_alertas()
         self._generar_conclusion_general()
 
-        self.evaluacion.save()
+        self.evaluacion.save(run_generator=False) # Guardar sin volver a llamar al generador
 
     def _get_seguimientos(self):
         return SeguimientoDiario.objects.filter(
@@ -54,9 +59,19 @@ class GeneradorEvaluacionMensual:
         if not self.seguimientos_mes.exists():
             return
 
-        # 1. Promedio de valoración
-        avg_rating = self.seguimientos_mes.aggregate(avg=Avg('valoracion'))['avg']
-        self.evaluacion.valoracion_promedio_mes = round(avg_rating, 2) if avg_rating else None
+        # 1. Logro del Mes (Cualitativo)
+        valoraciones = self.seguimientos_mes.values_list('valoracion', flat=True)
+        if valoraciones:
+            conteo = Counter(valoraciones)
+            # Agrupar valoraciones por categoría
+            alto = conteo[5] + conteo[4]
+            adecuado = conteo[3]
+            en_proceso = conteo[2] + conteo[1]
+            
+            # Determinar la categoría dominante
+            categorias = {'Alto': alto, 'Adecuado': adecuado, 'En Proceso': en_proceso}
+            logro_dominante = max(categorias, key=categorias.get)
+            self.evaluacion.logro_mes = logro_dominante
 
         # 2. Tendencia
         mes_anterior_fin = self.fecha_inicio_mes - timedelta(days=1)
@@ -66,15 +81,22 @@ class GeneradorEvaluacionMensual:
                 fecha_fin_mes__year=mes_anterior_fin.year,
                 fecha_fin_mes__month=mes_anterior_fin.month
             )
-            if evaluacion_anterior.valoracion_promedio_mes and self.evaluacion.valoracion_promedio_mes:
-                if self.evaluacion.valoracion_promedio_mes > evaluacion_anterior.valoracion_promedio_mes:
-                    self.evaluacion.tendencia_valoracion = 'mejora'
-                elif self.evaluacion.valoracion_promedio_mes < evaluacion_anterior.valoracion_promedio_mes:
-                    self.evaluacion.tendencia_valoracion = 'baja'
+            if evaluacion_anterior.logro_mes and self.evaluacion.logro_mes:
+                # Mapeo de logros a un valor numérico para comparación
+                orden_logros = {'Alto': 3, 'Adecuado': 2, 'En Proceso': 1}
+                logro_actual_val = orden_logros.get(self.evaluacion.logro_mes, 0)
+                logro_anterior_val = orden_logros.get(evaluacion_anterior.logro_mes, 0)
+
+                if logro_actual_val > logro_anterior_val:
+                    self.evaluacion.tendencia_valoracion = 'Avanza'
+                elif logro_actual_val < logro_anterior_val:
+                    self.evaluacion.tendencia_valoracion = 'Retrocede'
                 else:
-                    self.evaluacion.tendencia_valoracion = 'mantiene'
+                    self.evaluacion.tendencia_valoracion = 'Se Mantiene'
+            else:
+                self.evaluacion.tendencia_valoracion = 'Se Mantiene'
         except DesarrolloNino.DoesNotExist:
-            self.evaluacion.tendencia_valoracion = 'mantiene' # No hay datos para comparar
+            self.evaluacion.tendencia_valoracion = 'Sin datos previos'
 
         # 3. Participación y Comportamiento más frecuentes
         participaciones = self.seguimientos_mes.values_list('participacion', flat=True)
@@ -92,7 +114,7 @@ class GeneradorEvaluacionMensual:
             # ... y así para las demás áreas
             return
 
-        avg_rating = self.evaluacion.valoracion_promedio_mes or 0
+        logro = self.evaluacion.logro_mes
         
         # Mapeo simple de palabras clave a dimensiones
         palabras_clave = {
@@ -106,14 +128,14 @@ class GeneradorEvaluacionMensual:
         observaciones_texto = " ".join(s.observaciones for s in self.seguimientos_mes if s.observaciones)
 
         for area, keywords in palabras_clave.items():
-            texto_area = self._crear_texto_area(area, avg_rating, observaciones_texto, keywords)
+            texto_area = self._crear_texto_area(area, logro, observaciones_texto, keywords)
             setattr(self.evaluacion, area, texto_area)
 
-    def _crear_texto_area(self, nombre_area, avg_rating, observaciones, keywords):
+    def _crear_texto_area(self, nombre_area, logro, observaciones, keywords):
         # Genera un texto descriptivo para un área de desarrollo
-        if avg_rating >= 4.0:
+        if logro == 'Alto':
             desempeno = "un desempeño destacado, mostrando avances significativos"
-        elif avg_rating >= 3.0:
+        elif logro == 'Adecuado':
             desempeno = "un progreso adecuado y constante"
         else:
             desempeno = "algunas dificultades y requiere apoyo adicional"
@@ -134,7 +156,7 @@ class GeneradorEvaluacionMensual:
             self.evaluacion.fortalezas_mes = "No hay datos para identificar fortalezas."
             return
 
-        if self.evaluacion.valoracion_promedio_mes and self.evaluacion.valoracion_promedio_mes >= 3.8:
+        if self.evaluacion.logro_mes == 'Alto':
             fortalezas.append("Valoraciones generales consistentemente altas durante el mes.")
         
         if self.evaluacion.participacion_frecuente in ['alta', 'media']:
@@ -202,12 +224,12 @@ class GeneradorEvaluacionMensual:
             self.evaluacion.conclusion_general = "No es posible generar una conclusión debido a la falta de seguimientos diarios este mes."
             return
 
-        avg_rating = self.evaluacion.valoracion_promedio_mes or 0
+        logro = self.evaluacion.logro_mes
         
-        if avg_rating >= 4.0 and not self.evaluacion.aspectos_a_mejorar.startswith("-"):
+        if logro == 'Alto' and not self.evaluacion.aspectos_a_mejorar.startswith("-"):
             estado = "cumplió con los objetivos esperados para el mes, mostrando un desarrollo sobresaliente."
             recomendacion = "Se recomienda continuar estimulando sus habilidades y curiosidad."
-        elif avg_rating >= 3.0:
+        elif logro == 'Adecuado':
             estado = "se encuentra en proceso, mostrando un progreso constante y adecuado."
             recomendacion = "Se recomienda reforzar las áreas donde se identificaron oportunidades de mejora y mantener la motivación."
         else:

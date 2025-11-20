@@ -7,15 +7,17 @@ class DesarrolloNino(models.Model):
     nino = models.ForeignKey(Nino, on_delete=models.CASCADE, related_name='desarrollos')
     fecha_fin_mes = models.DateField()
     
-    # --- 2. Valoración General del Mes (Automática) ---
-    valoracion_promedio_mes = models.FloatField(
-        verbose_name="Valoración Promedio del Mes",
+    # --- 2. Indicadores Cualitativos del Mes (Automáticos) ---
+    logro_mes = models.CharField(
+        max_length=20,
+        choices=[('Alto', 'Alto'), ('Adecuado', 'Adecuado'), ('En Proceso', 'En Proceso')],
+        verbose_name="Logro General del Mes",
         null=True, blank=True,
-        help_text="Promedio de las valoraciones diarias (1-5 estrellas) de los seguimientos."
+        help_text="Categoría cualitativa basada en la frecuencia de valoraciones diarias."
     )
     tendencia_valoracion = models.CharField(
-        max_length=10,
-        choices=[('mejora', 'Mejora'), ('baja', 'Baja'), ('mantiene', 'Se Mantiene')],
+        max_length=20,  # Aumentado para permitir 'Sin datos previos'
+        choices=[('Avanza', 'Avanza'), ('Retrocede', 'Retrocede'), ('Se Mantiene', 'Se Mantiene'), ('Sin datos previos', 'Sin datos previos')],
         verbose_name="Tendencia de Valoración",
         null=True, blank=True,
         help_text="Comparación con el promedio del mes anterior."
@@ -84,12 +86,10 @@ class DesarrolloNino(models.Model):
         unique_together = ('nino', 'fecha_fin_mes')
 
     def save(self, *args, **kwargs):
-        # La generación automática se llama antes de guardar.
-        # Se puede añadir una condición para que solo se ejecute una vez
-        # o si ciertos campos están vacíos.
-        is_new = self._state.adding
+        # El generador se ejecuta solo si no es una actualización desde el generador mismo
+        run_generator = kwargs.pop('run_generator', True)
         super().save(*args, **kwargs)
-        if is_new: # Solo se genera la primera vez que se crea el informe
+        if run_generator:
             from .services import GeneradorEvaluacionMensual
             GeneradorEvaluacionMensual(self).run()
     
@@ -148,5 +148,3 @@ class SeguimientoDiario(models.Model):
         verbose_name_plural = "Seguimientos Diarios"
         unique_together = ('nino', 'fecha') # Asegura un solo seguimiento por niño y día
         ordering = ['-fecha', 'nino']
-
- 

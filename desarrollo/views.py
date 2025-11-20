@@ -81,27 +81,25 @@ def listar_desarrollos(request):
     desarrollos_list = []
 
     for desarrollo in desarrollos:
-        promedio = desarrollo.valoracion_promedio_mes or 0
+        logro = desarrollo.logro_mes
 
         # Badge/accent/icon
-        if promedio >= 4.0:
+        if logro == 'Alto':
             desarrollo.badge = 'Excelente'
             desarrollo.accent = 'card-accent-excelente'
-            desarrollo.icon = 'fa-baby'
-        elif promedio >= 3.0:
+            desarrollo.icon = 'fa-seedling'
+        elif logro == 'Adecuado':
             desarrollo.badge = 'Bueno'
             desarrollo.accent = 'card-accent-muybueno'
             desarrollo.icon = 'fa-child'
-        elif promedio >= 2.0:
+        elif logro == 'En Proceso':
             desarrollo.badge = 'Regular'
             desarrollo.accent = 'card-accent-regular'
             desarrollo.icon = 'fa-meh'
         else:
-            desarrollo.badge = 'Necesita Apoyo'
+            desarrollo.badge = 'Sin Datos'
             desarrollo.accent = 'card-accent-malo'
             desarrollo.icon = 'fa-frown'
-
-        desarrollo.promedio_redondeado = round(promedio, 1)
 
         # ¿Es del mes actual?
         if desarrollo.fecha_fin_mes.year == hoy.year and desarrollo.fecha_fin_mes.month == hoy.month:
@@ -202,36 +200,6 @@ def ver_desarrollo(request, id):
     # Esto evita el error TemplateDoesNotExist y reutiliza la lógica existente.
     mes_str = desarrollo.fecha_fin_mes.strftime('%Y-%m')
     return redirect(reverse('desarrollo:registrar_desarrollo') + f'?nino={desarrollo.nino.id}&mes={mes_str}')
-
-
-@login_required
-def editar_desarrollo(request, id):
-    if request.user.rol.nombre_rol != 'madre_comunitaria':
-        return redirect('role_redirect')
-
-    desarrollo = get_object_or_404(DesarrolloNino, id=id)
-
-    # Seguridad: la madre solo puede editar registros de su hogar.
-    if desarrollo.nino.hogar.madre.usuario != request.user:
-        return redirect('desarrollo:listar_desarrollos')
-
-    if request.method == 'POST':
-        # Solo se actualizan los campos manuales
-        desarrollo.observaciones_adicionales = request.POST.get('observaciones_adicionales', '').strip()
-        desarrollo.recomendaciones_personales = request.POST.get('recomendaciones_personales', '').strip()
-        
-        # Usamos update_fields para ser eficientes y evitar re-llamar al generador
-        desarrollo.save(update_fields=['observaciones_adicionales', 'recomendaciones_personales'])
-
-        messages.success(request, "Las observaciones y recomendaciones han sido guardadas.")
-        return redirect('desarrollo:ver_desarrollo', id=desarrollo.id)
-
-    return render(request, 'madre/desarrollo_form.html', {
-        'desarrollo': desarrollo,
-        'form_action': reverse('desarrollo:editar_desarrollo', args=[id]),
-        'titulo_form': f'Editar Observaciones para {desarrollo.nino.nombres}',
-        'edit_mode': True, # Para diferenciar en la plantilla
-    })
 
 
 @login_required
@@ -675,6 +643,22 @@ def registrar_desarrollo(request):
             desarrollo.observaciones_adicionales = observaciones_adicionales
             desarrollo.recomendaciones_personales = recomendaciones_personales
             desarrollo.save()
+
+            # --- FIX: Recalcular tendencia del mes siguiente si existe ---
+            from .services import GeneradorEvaluacionMensual
+            from dateutil.relativedelta import relativedelta
+            
+            fecha_mes_siguiente_inicio = desarrollo.fecha_fin_mes + relativedelta(days=1)
+            try:
+                desarrollo_siguiente = DesarrolloNino.objects.get(
+                    nino=desarrollo.nino,
+                    fecha_fin_mes__year=fecha_mes_siguiente_inicio.year,
+                    fecha_fin_mes__month=fecha_mes_siguiente_inicio.month
+                )
+                GeneradorEvaluacionMensual(desarrollo_siguiente).run(only_tendencia=True)
+            except DesarrolloNino.DoesNotExist:
+                pass # No hay mes siguiente, no hacemos nada.
+
             messages.success(request, f'Las observaciones para {desarrollo.nino.nombres} se guardaron exitosamente.')
             
             return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={desarrollo.nino.id}')
@@ -707,9 +691,23 @@ def registrar_desarrollo(request):
             fecha_fin_mes=fecha_fin_mes
         )
         # Ejecutar el generador automático (ya se ejecuta en save, pero aseguramos refresco)
-        from .services import GeneradorEvaluacionMensual
-        GeneradorEvaluacionMensual(desarrollo).run()
         desarrollo.refresh_from_db()
+
+        # --- FIX: Recalcular tendencia del mes siguiente si existe ---
+        from .services import GeneradorEvaluacionMensual
+        from dateutil.relativedelta import relativedelta
+
+        fecha_mes_siguiente_inicio = desarrollo.fecha_fin_mes + relativedelta(days=1)
+        try:
+            desarrollo_siguiente = DesarrolloNino.objects.get(
+                nino=desarrollo.nino,
+                fecha_fin_mes__year=fecha_mes_siguiente_inicio.year,
+                fecha_fin_mes__month=fecha_mes_siguiente_inicio.month
+            )
+            GeneradorEvaluacionMensual(desarrollo_siguiente).run(only_tendencia=True)
+        except DesarrolloNino.DoesNotExist:
+            pass # No hay mes siguiente, no hacemos nada.
+
         # Calcular conteos para mostrar en la plantilla
         seguimientos_mes_count = SeguimientoDiario.objects.filter(
             nino=nino,
@@ -745,8 +743,17 @@ def registrar_desarrollo(request):
             
             # Si existe un desarrollo, lo mostramos directamente
             desarrollo_existente = DesarrolloNino.objects.get(nino_id=nino_id_get, fecha_fin_mes=fecha_fin_mes)
-            seguimientos_mes_count = SeguimientoDiario.objects.filter(nino=desarrollo_existente.nino, fecha__year=fecha_fin_mes.year, fecha__month=fecha_fin_mes.month).count()
-            novedades_mes_count = Novedad.objects.filter(nino=desarrollo_existente.nino, fecha__year=fecha_fin_mes.year, fecha__month=fecha_fin_mes.month).count()
+            # --- FIX: Calcular y pasar los contadores a la plantilla ---
+            seguimientos_mes_count = SeguimientoDiario.objects.filter(
+                nino=desarrollo_existente.nino, 
+                fecha__year=fecha_fin_mes.year, 
+                fecha__month=fecha_fin_mes.month
+            ).count()
+            novedades_mes_count = Novedad.objects.filter(
+                nino=desarrollo_existente.nino, 
+                fecha__year=fecha_fin_mes.year, 
+                fecha__month=fecha_fin_mes.month
+            ).count()
             
             return render(request, 'madre/desarrollo_form.html', {
                 'desarrollo': desarrollo_existente, 

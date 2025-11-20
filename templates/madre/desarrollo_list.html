@@ -328,6 +328,36 @@
     font-size: 16px;
     font-weight: 500;
   }
+
+  /* --- NUEVO: Estilo para el banner informativo --- */
+  .info-banner-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
+    margin-bottom: 20px;
+  }
+
+  .info-banner {
+    max-width: 800px;
+    width: 100%;
+    background: linear-gradient(135deg, #f3e7ff, #e8d8f9);
+    color: #5e3370;
+    border: 1px solid #d1b3e0;
+    font-size: 16px;
+    font-weight: 400;
+    text-align: left;
+    border-radius: 16px;
+    padding: 20px 25px;
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .info-banner i {
+    font-size: 26px;
+    color: #7a3eb1;
+  }
 </style>
 <body>
   <header>
@@ -364,7 +394,12 @@
             <br><small style="font-size: 18px; color: #555;">Seleccione un niño</small>
         {% endif %}
     </h1>
-
+    <div class="info-banner-container">
+      <div class="info-banner">
+        <i class="fas fa-info-circle"></i>
+        <span>El módulo de <b>Desarrollo Infantil</b> resume la información de los <b>seguimientos diarios</b>, permitiendo reflejar el <b>progreso mensual</b> del niño acorde a la planeación educativa.</span>
+      </div>
+    </div>
     {% if messages %} 
       {% for message in messages %}
         <div class="mensaje-{{ message.tags }}" id="mensajeNotificacion">
@@ -372,7 +407,7 @@
         </div>
       {% endfor %}
     {% endif %}
-
+        
     <div class="filtros-y-botones">
       <form method="get" class="filtros-form">
         {% if nino_id_filtro %}
@@ -407,10 +442,9 @@
         data-mejorar="{{ desarrollo.aspectos_a_mejorar }}"
         data-alertas="{{ desarrollo.alertas_mes }}"
         data-conclusion="{{ desarrollo.conclusion_general }}"
-        data-promedio="{{ desarrollo.valoracion_promedio_mes|default:'N/A' }}"
       >
-        <span class="badge-promedio">Promedio: {{ desarrollo.valoracion_promedio_mes|floatformat:2|default:'N/A' }}</span>
-        <i class="fas fa-chart-line card-icon"></i>
+        <span class="badge-promedio">Logro: {{ desarrollo.logro_mes|default:'N/A' }}</span>
+        <i class="fas fa-seedling card-icon"></i>
         <div class="card-header">
           <h3>{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}</h3>
           <span class="fecha">{{ desarrollo.fecha_fin_mes|date:"F Y" }}</span>
@@ -422,7 +456,11 @@
         </div>
         <div class="card-footer acciones">
           <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-          <a href="{% url 'desarrollo:editar_desarrollo' desarrollo.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
+          <!-- FIX: El botón de editar ahora apunta a la vista unificada 'registrar_desarrollo' -->
+          <a href="{% url 'desarrollo:registrar_desarrollo' %}?nino={{ desarrollo.nino.id }}&mes={{ desarrollo.fecha_fin_mes|date:'Y-m' }}" 
+             class="btn-accion btn-azul" 
+             title="Editar">
+             <i class="fas fa-pen"></i></a>
           <a href="{% url 'desarrollo:eliminar_desarrollo' desarrollo.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este registro? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
         </div>
       </div>

@@ -11,7 +11,7 @@ urlpatterns = [
     path('registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),  # <-- AGREGADO
     path('listado/', views.listar_desarrollos, name='listar_desarrollos'),
     path('ver/<int:id>/', views.ver_desarrollo, name='ver_desarrollo'),
-    path('editar/<int:id>/', views.editar_desarrollo, name='editar_desarrollo'),
+    path('editar/<int:id>/', views.registrar_desarrollo, name='editar_desarrollo'),
     path('eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
     
     # --- URL para el Padre de Familia ---

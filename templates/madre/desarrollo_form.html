@@ -138,7 +138,23 @@
     }
 
 
-    select, input[type="date"], textarea {
+    input[type="month"] {
+      width: 75%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #fff;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus{
+      border-color: #9B59B6;
+      outline: none;
+      background-color: #f0f8ff;
+    }
+
+    select, textarea {
       width: 100%;
       padding: 12px;
       font-size: 16px;
@@ -192,8 +208,17 @@
     .botones:hover {
       background-color: #8e44ad;
     }
-
-
+  
+  input[type="text"][value="{{ nino_preseleccionado.nombres }} {{ nino_preseleccionado.apellidos }}"], 
+  select[name="nino"] {
+    width: 95%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #fff;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+  }
     .mensaje-exito {
       background-color: #4CAF50;
       color: white;
@@ -302,7 +327,7 @@
         <div class="form-grid">
           {% if nino_preseleccionado %}
             <div class="form-group">
-              <h4>Niño/a</h4>
+              <h4>Niño/a<span class="required-star">*</span></h4>
               <input type="text" value="{{ nino_preseleccionado.nombres }} {{ nino_preseleccionado.apellidos }}" disabled>
               <input type="hidden" name="nino" value="{{ nino_preseleccionado.id }}">
             </div>
@@ -324,7 +349,7 @@
           </div>
         </div>
         <!-- Eliminar el botón de generar resumen automático -->
-        <button class="botones" type="submit" id="generarResumenBtn"><i class="fas fa-cogs"></i> Generar/Ver Resumen</button>
+        <button class="botones" type="submit" id="generarResumenBtn"><i class="fas fa-cogs"></i> Generar Desarrollo</button>
         {% else %}
         <!-- Paso 2: Mostrar resumen generado y campos manuales -->
         <input type="hidden" name="desarrollo_id" value="{{ desarrollo.id }}">
@@ -348,8 +373,8 @@
         <hr>
         <h4>Valoración general del mes</h4>
         <div class="form-group">
-          <label>Promedio de valoración diaria:</label>
-          <input type="text" value="{{ desarrollo.valoracion_promedio_mes|default:'-' }}" disabled>
+          <label>Logro del mes:</label>
+          <input type="text" value="{{ desarrollo.logro_mes|default:'-' }}" disabled>
         </div>
         <div class="form-group">
           <label>Tendencia:</label>

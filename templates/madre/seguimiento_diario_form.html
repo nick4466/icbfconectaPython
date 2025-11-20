@@ -138,7 +138,23 @@
       gap: 8px;
     }
 
-    select, input[type="date"], textarea {
+    input[type="date"] {
+      width: 80%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #fff;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus, {
+      border-color: #9B59B6;
+      outline: none;
+      background-color: #f0f8ff;
+    }
+
+    select, textarea {
       width: 100%;
       padding: 12px;
       font-size: 16px;
@@ -148,7 +164,7 @@
       transition: border-color 0.3s ease;
     }
 
-    select:focus, input:focus, textarea:focus {
+    select:focus, textarea:focus {
       border-color: #9B59B6;
       outline: none;
       background-color: #f0f8ff;
