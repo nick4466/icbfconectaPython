@@ -367,33 +367,33 @@
         <h4>Evaluación por áreas del desarrollo</h4>
         <div class="form-group">
           <label>Cognitivo:</label>
-          <textarea readonly>{{ desarrollo.evaluacion_cognitiva }}</textarea>
+          <textarea name="evaluacion_cognitiva">{{ desarrollo.evaluacion_cognitiva|default_if_none:'' }}</textarea>
         </div>
         <div class="form-group">
           <label>Comunicativo / Lenguaje:</label>
-          <textarea readonly>{{ desarrollo.evaluacion_comunicativa }}</textarea>
+          <textarea name="evaluacion_comunicativa">{{ desarrollo.evaluacion_comunicativa|default_if_none:'' }}</textarea>
         </div>
         <div class="form-group">
           <label>Socioemocional:</label>
-          <textarea readonly>{{ desarrollo.evaluacion_socio_afectiva }}</textarea>
+          <textarea name="evaluacion_socio_afectiva">{{ desarrollo.evaluacion_socio_afectiva|default_if_none:'' }}</textarea>
         </div>
         <div class="form-group">
           <label>Corporal / Motricidad:</label>
-          <textarea readonly>{{ desarrollo.evaluacion_corporal }}</textarea>
+          <textarea name="evaluacion_corporal">{{ desarrollo.evaluacion_corporal|default_if_none:'' }}</textarea>
         </div>
         <div class="form-group">
           <label>Autonomía:</label>
-          <textarea readonly>{{ desarrollo.evaluacion_autonomia }}</textarea>
+          <textarea name="evaluacion_autonomia">{{ desarrollo.evaluacion_autonomia|default_if_none:'' }}</textarea>
         </div>
         <hr>
         <h4>Fortalezas del mes</h4>
-        <textarea readonly>{{ desarrollo.fortalezas_mes }}</textarea>
+        <textarea name="fortalezas_mes">{{ desarrollo.fortalezas_mes|default_if_none:'' }}</textarea>
         <h4>Aspectos por mejorar</h4>
-        <textarea readonly>{{ desarrollo.aspectos_a_mejorar }}</textarea>
+        <textarea name="aspectos_a_mejorar">{{ desarrollo.aspectos_a_mejorar|default_if_none:'' }}</textarea>
         <h4>Alertas del mes</h4>
-        <textarea readonly>{{ desarrollo.alertas_mes }}</textarea>
+        <textarea name="alertas_mes">{{ desarrollo.alertas_mes|default_if_none:'' }}</textarea>
         <h4>Conclusión general</h4>
-        <textarea readonly>{{ desarrollo.conclusion_general }}</textarea>
+        <textarea name="conclusion_general">{{ desarrollo.conclusion_general|default_if_none:'' }}</textarea>
         <hr>
         <h4>Observaciones finales (opcional)</h4>
         <textarea name="observaciones_adicionales" placeholder="Observaciones adicionales">{{ desarrollo.observaciones_adicionales|default_if_none:'' }}</textarea>

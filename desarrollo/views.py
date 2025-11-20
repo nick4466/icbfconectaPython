@@ -189,15 +189,19 @@ def ver_desarrollo(request, id):
 
     desarrollo = get_object_or_404(DesarrolloNino, id=id)
 
-    # Seguridad
+    # --- Lógica de Seguridad (sin cambios) ---
     if request.user.rol.nombre_rol == 'madre_comunitaria':
         if desarrollo.nino.hogar.madre.usuario != request.user:
             return redirect('desarrollo:listar_desarrollos')
     elif request.user.rol.nombre_rol == 'padre':
         if desarrollo.nino.padre.usuario != request.user:
             return redirect('padre_dashboard')
-
-    return render(request, 'madre/desarrollo_detail.html', {'desarrollo': desarrollo})
+    
+    # --- CORRECCIÓN ---
+    # Redirigir a la vista de registro/edición que ya maneja la visualización.
+    # Esto evita el error TemplateDoesNotExist y reutiliza la lógica existente.
+    mes_str = desarrollo.fecha_fin_mes.strftime('%Y-%m')
+    return redirect(reverse('desarrollo:registrar_desarrollo') + f'?nino={desarrollo.nino.id}&mes={mes_str}')
 
 
 @login_required
@@ -655,12 +659,24 @@ def registrar_desarrollo(request):
 
         # Si ya existe un desarrollo generado (edición de campos manuales)
         if desarrollo_id:
-            desarrollo = get_object_or_404(DesarrolloNino, id=desarrollo_id)
+            desarrollo = get_object_or_404(DesarrolloNino, id=desarrollo_id, nino__hogar=hogar_madre)
+            
+            # Actualizar campos de texto editables
+            desarrollo.evaluacion_cognitiva = request.POST.get('evaluacion_cognitiva')
+            desarrollo.evaluacion_comunicativa = request.POST.get('evaluacion_comunicativa')
+            desarrollo.evaluacion_socio_afectiva = request.POST.get('evaluacion_socio_afectiva')
+            desarrollo.evaluacion_corporal = request.POST.get('evaluacion_corporal')
+            desarrollo.evaluacion_autonomia = request.POST.get('evaluacion_autonomia')
+            desarrollo.fortalezas_mes = request.POST.get('fortalezas_mes')
+            desarrollo.aspectos_a_mejorar = request.POST.get('aspectos_a_mejorar')
+            desarrollo.alertas_mes = request.POST.get('alertas_mes')
+            desarrollo.conclusion_general = request.POST.get('conclusion_general')
+
             desarrollo.observaciones_adicionales = observaciones_adicionales
             desarrollo.recomendaciones_personales = recomendaciones_personales
-            desarrollo.save(update_fields=['observaciones_adicionales', 'recomendaciones_personales'])
+            desarrollo.save()
             messages.success(request, f'Las observaciones para {desarrollo.nino.nombres} se guardaron exitosamente.')
-            # Redirigir al listado con el niño preseleccionado
+            
             return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={desarrollo.nino.id}')
 
         if not nino_id or not mes_str:
@@ -671,7 +687,6 @@ def registrar_desarrollo(request):
             })
         try:
             year, month = map(int, mes_str.split('-'))
-            import calendar
             last_day = calendar.monthrange(year, month)[1]
             fecha_fin_mes = datetime(year, month, last_day).date()
         except Exception:
@@ -706,12 +721,12 @@ def registrar_desarrollo(request):
             fecha__year=fecha_fin_mes.year,
             fecha__month=fecha_fin_mes.month
         ).count()
+        
         # Mostrar el formulario con los campos automáticos y permitir editar los manuales
         return render(request, 'madre/desarrollo_form.html', {
             'titulo_form': f'Registrar Desarrollo Mensual para {nino.nombres}',
             'ninos': ninos_del_hogar,
             'desarrollo': desarrollo,
-            'edit_mode': True,
             'form_action': reverse('desarrollo:registrar_desarrollo'),
             'seguimientos_mes_count': seguimientos_mes_count,
             'novedades_mes_count': novedades_mes_count,
@@ -730,7 +745,16 @@ def registrar_desarrollo(request):
             
             # Si existe un desarrollo, lo mostramos directamente
             desarrollo_existente = DesarrolloNino.objects.get(nino_id=nino_id_get, fecha_fin_mes=fecha_fin_mes)
-            return render(request, 'madre/desarrollo_form.html', {'desarrollo': desarrollo_existente, 'titulo_form': 'Ver Desarrollo Mensual'})
+            seguimientos_mes_count = SeguimientoDiario.objects.filter(nino=desarrollo_existente.nino, fecha__year=fecha_fin_mes.year, fecha__month=fecha_fin_mes.month).count()
+            novedades_mes_count = Novedad.objects.filter(nino=desarrollo_existente.nino, fecha__year=fecha_fin_mes.year, fecha__month=fecha_fin_mes.month).count()
+            
+            return render(request, 'madre/desarrollo_form.html', {
+                'desarrollo': desarrollo_existente, 
+                'titulo_form': f'Editar Desarrollo Mensual para {desarrollo_existente.nino.nombres}',
+                'seguimientos_mes_count': seguimientos_mes_count,
+                'novedades_mes_count': novedades_mes_count,
+                'form_action': reverse('desarrollo:registrar_desarrollo'),
+            })
         except (DesarrolloNino.DoesNotExist, ValueError):
             pass # Si no existe o el mes es inválido, continuamos para mostrar el form de creación
 
