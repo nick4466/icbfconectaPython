@@ -298,9 +298,11 @@
         </div>
 
         <div class="acciones-lista">
-          <a href="#" class="btn-accion purple"><i class="fas fa-exclamation-circle"></i> Novedad</a>
+          <a href="{% url 'desarrollo:listar_seguimientos' %}?nino={{ nino.id }}" class="btn-accion purple"><i class="fas fa-clipboard-check"></i> Seguimiento</a>
           <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino.id }}" class="btn-accion blue"><i class="fas fa-chart-line"></i> Desarrollo</a>
+          <a href="" class="btn-accion yellow"><i class="fas fa-edit"></i> Novedades</a>
           <a href="{% url 'desarrollo:reporte_resumen' nino.id %}" class="btn-accion green"><i class="fas fa-file-alt"></i> Reporte</a>
+          
         </div>
 
       </div>
