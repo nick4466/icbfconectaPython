@@ -315,6 +315,20 @@
     .pagination .disabled { color: #ccc; border-color: #ddd; background-color: #f8f9fa; }
   </style>
 </head>
+<style>
+  /* Estilo personalizado para los mensajes de advertencia */
+  .mensaje-warning {
+    background-color: #e5d5f5; /* Un lavanda suave */
+    color: #5e3370; /* Texto morado oscuro */
+    border: 1px solid #c3a3e0;
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+</style>
 <body>
   <header>
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
@@ -342,9 +356,16 @@
   </header>
 
   <div class="tabla-registros">
-    <h1>Desarrollo Infantil</h1>
+    <h1>
+        Desarrollo Infantil
+        {% if nino_filtrado %}
+            <br><small style="font-size: 18px; color: #555;">de {{ nino_filtrado.nombres }} {{ nino_filtrado.apellidos }}</small>
+        {% else %}
+            <br><small style="font-size: 18px; color: #555;">Seleccione un niño</small>
+        {% endif %}
+    </h1>
 
-    {% if messages %}
+    {% if messages %} 
       {% for message in messages %}
         <div class="mensaje-{{ message.tags }}" id="mensajeNotificacion">
           {{ message }}
@@ -354,31 +375,19 @@
 
     <div class="filtros-y-botones">
       <form method="get" class="filtros-form">
-        <select name="nino">
-          <option value="">Todos</option>
-          {% for nino in ninos %}
-            <option value="{{ nino.id }}" {% if nino_id_filtro == nino.id|stringformat:"s" %}selected{% endif %}>
-              {{ nino.nombres }} {{ nino.apellidos }}
-            </option>
-          {% endfor %}
-        </select>
-        <input type="month" name="mes" value="{{ mes_filtro }}">
-        <button type="submit"><i class="fas fa-filter"></i> Filtrar</button>
         {% if nino_id_filtro %}
-          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino_id_filtro }}" style="margin-left: 5px;">Limpiar Mes</a>
-        {% else %}
-          <a href="{% url 'desarrollo:listar_desarrollos' %}" style="margin-left: 5px;">Limpiar Filtros</a>
+          <input type="hidden" name="nino" value="{{ nino_id_filtro }}">
         {% endif %}
+        <label for="mes">Mes:</label>
+        <input type="month" id="mes" name="mes" value="{{ mes_filtro }}">
+        <button type="submit"><i class="fas fa-search"></i> Filtrar</button>
+        <a href="{% url 'desarrollo:listar_desarrollos' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-volver" style="margin-left: 5px;">Limpiar Filtro</a>
       </form>
 
       <div>
         <a href="{% url 'gestion_ninos' %}" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a Gestión</a>
-        {% if nino_id_filtro %}
-        <a href="{% url 'desarrollo:registrar_desarrollo' %}?nino={{ nino_id_filtro }}" class="btn-agregar">
-        {% else %}
-        <a href="{% url 'desarrollo:registrar_desarrollo' %}" class="btn-agregar">
-        {% endif %}
-          <i class="fas fa-plus"></i> Agregar Registro
+        <a href="{% url 'desarrollo:registrar_desarrollo' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-agregar">
+          <i class="fas fa-plus"></i> Añadir Registro
         </a>
       </div>
     </div>

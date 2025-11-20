@@ -58,9 +58,16 @@ def listar_desarrollos(request):
     # --- Lógica de Filtrado Mejorada ---
     nino_id_filtro = request.GET.get('nino', '')
     mes_filtro = request.GET.get('mes', '') # YYYY-MM
+    nino_filtrado = None  # Inicializamos la variable
 
     if nino_id_filtro:
         desarrollos = desarrollos.filter(nino__id=nino_id_filtro)
+        try:
+            # Obtenemos el objeto del niño para pasarlo a la plantilla
+            nino_filtrado = Nino.objects.get(id=nino_id_filtro, hogar=hogar_madre)
+        except Nino.DoesNotExist:
+            # Si el niño no existe o no pertenece al hogar, no hacemos nada
+            pass
 
     if mes_filtro:
         try:
@@ -119,6 +126,7 @@ def listar_desarrollos(request):
         'ninos': ninos_del_hogar,
         'nino_id_filtro': nino_id_filtro,
         'mes_filtro': mes_filtro,
+        'nino_filtrado': nino_filtrado, # Pasamos el objeto del niño a la plantilla
         'filtros': filtros,
     })
 
@@ -153,8 +161,9 @@ def generar_evaluacion_mensual(request):
             return redirect('desarrollo:generar_evaluacion')
 
         # Validar que no exista ya una evaluación para ese niño y mes
+        nino = get_object_or_404(Nino, id=nino_id)
         if DesarrolloNino.objects.filter(nino_id=nino_id, fecha_fin_mes=fecha_fin_mes).exists():
-            messages.warning(request, "Ya existe una evaluación para el niño y el mes seleccionados.")
+            messages.warning(request, f"Ya existe una evaluación para {nino.nombres} en el mes seleccionado.")
             return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino_id}')
 
         # Crear la instancia. El método save() llamará al servicio de generación automática.
@@ -650,10 +659,10 @@ def registrar_desarrollo(request):
             desarrollo.observaciones_adicionales = observaciones_adicionales
             desarrollo.recomendaciones_personales = recomendaciones_personales
             desarrollo.save(update_fields=['observaciones_adicionales', 'recomendaciones_personales'])
-            messages.success(request, 'Desarrollo registrado exitosamente.')
-            return redirect('desarrollo:listar_desarrollos')
+            messages.success(request, f'Las observaciones para {desarrollo.nino.nombres} se guardaron exitosamente.')
+            # Redirigir al listado con el niño preseleccionado
+            return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={desarrollo.nino.id}')
 
-        # Si es la primera vez (generar automático)
         if not nino_id or not mes_str:
             messages.error(request, 'Debes seleccionar un niño y un mes.')
             return render(request, 'madre/desarrollo_form.html', {
@@ -671,11 +680,12 @@ def registrar_desarrollo(request):
                 'titulo_form': 'Registrar Desarrollo Mensual',
                 'ninos': ninos_del_hogar,
             })
+        nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
         # Validar que no exista ya un desarrollo para ese niño y mes
         if DesarrolloNino.objects.filter(nino_id=nino_id, fecha_fin_mes=fecha_fin_mes).exists():
-            messages.warning(request, 'Ya existe un desarrollo para ese niño y mes.')
-            return redirect('desarrollo:listar_desarrollos')
-        nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
+            mes_nombre = fecha_fin_mes.strftime("%B de %Y").capitalize()
+            messages.warning(request, f'Ya existe una evaluación de desarrollo para {nino.nombres} en el mes de {mes_nombre}.')
+            return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino_id}')
         # Crear la instancia (sin campos manuales)
         desarrollo = DesarrolloNino.objects.create(
             nino=nino,
@@ -708,7 +718,27 @@ def registrar_desarrollo(request):
         })
 
     # GET: mostrar formulario de selección de niño y mes
+    nino_preseleccionado = None
+    nino_id_get = request.GET.get('nino')
+    mes_get = request.GET.get('mes')
+
+    if nino_id_get and mes_get:
+        try:
+            year, month = map(int, mes_get.split('-'))
+            last_day = calendar.monthrange(year, month)[1]
+            fecha_fin_mes = datetime(year, month, last_day).date()
+            
+            # Si existe un desarrollo, lo mostramos directamente
+            desarrollo_existente = DesarrolloNino.objects.get(nino_id=nino_id_get, fecha_fin_mes=fecha_fin_mes)
+            return render(request, 'madre/desarrollo_form.html', {'desarrollo': desarrollo_existente, 'titulo_form': 'Ver Desarrollo Mensual'})
+        except (DesarrolloNino.DoesNotExist, ValueError):
+            pass # Si no existe o el mes es inválido, continuamos para mostrar el form de creación
+
+    if nino_id_get:
+        nino_preseleccionado = get_object_or_404(Nino, id=nino_id_get, hogar=hogar_madre)
+
     return render(request, 'madre/desarrollo_form.html', {
         'titulo_form': 'Registrar Desarrollo Mensual',
         'ninos': ninos_del_hogar,
+        'nino_preseleccionado': nino_preseleccionado,
     })
