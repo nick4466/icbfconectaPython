@@ -1,0 +1,317 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ titulo_form }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondito.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+
+    header img {
+      height: 60px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav ul li a, nav ul li button {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    nav ul li a:hover, nav ul li button:hover {
+      background-color: #f3c1e5;
+    }
+    nav ul .dropdown { position: relative; }
+    nav ul .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.98);
+      min-width: 200px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 8px;
+      padding: 8px 0;
+    }
+    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
+    nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
+    nav ul .dropdown:hover .dropdown-content { display: block; }
+
+    .main-title {
+      text-align: center;
+      margin-top: 20px;
+      padding: 20px;
+      font-size: 30px;
+      font-weight: bold;
+      color: #7a3eb1;
+      background-color: #f3c4ffb3;
+      margin: 20px auto;
+      width: 80%;
+      border-radius: 10px;
+    }
+
+    .contenedor {
+      max-width: 900px;
+      margin: 30px auto;
+      background-color: rgba(255, 255, 255, 0.95);
+      border-radius: 14px;
+      padding: 30px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    h4 {
+      font-size: 18px;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      color: #5e3370;
+    }
+/* Estilo para el campo "Planeación del Día" */
+input[type="text"][value="{{ planeacion.nombre_experiencia|default:'No hay planeación' }}"] {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Estilo para el campo "Niño/a a registrar seguimiento" */
+input[type="text"][value="{{ nino_preseleccionado.nombres }} {{ nino_preseleccionado.apellidos }}"], 
+select[name="nino"] {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fff;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Estilo cuando el campo es enfocado (focus) */
+input[type="text"]:focus, select:focus {
+  border-color: #9B59B6; /* Color morado que coincide con el resto del diseño */
+  outline: none;
+  background-color: #f0f8ff; /* Fondo suave */
+}
+
+    .card {
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 14px;
+      padding: 30px;
+      backdrop-filter: blur(3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+      border-left: 8px solid #9B59B6;
+    }
+
+    .card h2 {
+      color: #9B59B6;
+      margin-bottom: 25px;
+      font-size: 27px;
+      text-align: center;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    select, input[type="date"], textarea, input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #fff;
+      transition: border-color 0.3s ease;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: #9B59B6;
+      outline: none;
+      background-color: #f0f8ff;
+    }
+
+    textarea { resize: vertical; min-height: 100px; }
+
+    .botones {
+      display: block;
+      width: 100%;
+      background-color: #9B59B6;
+      color: white;
+      border: none;
+      padding: 15px 20px;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      align-self: center;
+      margin-top: 20px;
+    }
+
+    .botones:hover { background-color: #8e44ad; }
+
+    .error-container {
+      color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb;
+      padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold;
+    }
+
+    .required-star { color: #e74c3c; font-weight: bold; margin-left: 5px; }
+
+    .rating-stars {
+      display: flex; flex-direction: row-reverse; justify-content: center; margin-bottom: 15px;
+    }
+    .rating-stars input[type="radio"] { display: none; }
+    .rating-stars label { font-size: 2.5rem; color: #ddd; cursor: pointer; transition: color 0.2s; }
+    .rating-stars input[type="radio"]:checked ~ label,
+    .rating-stars label:hover,
+    .rating-stars label:hover ~ label { color: #f5b301; }
+    .rating-stars input[type="radio"]:checked ~ label:hover,
+    .rating-stars input[type="radio"]:checked ~ label:hover ~ label { color: #f5b301; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
+    <nav>
+      <ul>
+        <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
+        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
+        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
+        <li class="dropdown">
+          <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
+          <div class="dropdown-content">
+            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+          </div>
+        </li>
+        <li>
+            <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+            </form>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="main-title">ICBF - CONECTA | {{ titulo_form }}</div>
+
+  <div class="contenedor">
+    {% if error %}
+    <div class="error-container">{{ error }}</div>
+    {% endif %}
+
+    <div class="card">
+      <h2><i class="fas fa-edit"></i> {{ titulo_form }}</h2>
+      <p style="text-align: center; color: #555; margin-top: -15px; margin-bottom: 25px;">Los campos con <span class="required-star">*</span> son obligatorios.</p>
+
+      <form method="post" action="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}">
+          {% csrf_token %}
+
+          <div class="form-grid">
+            <div class="form-group">
+              <h4>Niño/a</h4>
+              <input type="text" value="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}" disabled>
+            </div>
+            <div class="form-group">
+              <h4>Fecha del Seguimiento</h4>
+              <input type="date" value="{{ seguimiento.fecha|date:'Y-m-d' }}" disabled>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <h4>¿Cómo participó el niño/a en la actividad?<span class="required-star">*</span></h4>
+            <select name="participacion" required>
+              <option value="alta" {% if seguimiento.participacion == 'alta' %}selected{% endif %}>Alta</option>
+              <option value="media" {% if seguimiento.participacion == 'media' %}selected{% endif %}>Media</option>
+              <option value="baja" {% if seguimiento.participacion == 'baja' %}selected{% endif %}>Baja</option>
+              <option value="no_aplica" {% if seguimiento.participacion == 'no_aplica' %}selected{% endif %}>No Aplica</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <h4>Comportamiento, interés y nivel de logro<span class="required-star">*</span></h4>
+            <select name="comportamiento_logro" required>
+              <option value="excelente" {% if seguimiento.comportamiento_logro == 'excelente' %}selected{% endif %}>Excelente</option>
+              <option value="bueno" {% if seguimiento.comportamiento_logro == 'bueno' %}selected{% endif %}>Bueno</option>
+              <option value="regular" {% if seguimiento.comportamiento_logro == 'regular' %}selected{% endif %}>Regular</option>
+              <option value="bajo" {% if seguimiento.comportamiento_logro == 'bajo' %}selected{% endif %}>Bajo</option>
+              <option value="dificultad" {% if seguimiento.comportamiento_logro == 'dificultad' %}selected{% endif %}>Presentó Dificultad</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <h4>Observaciones del educador</h4>
+            <textarea name="observaciones" placeholder="Observaciones adicionales (opcional)">{{ seguimiento.observaciones|default_if_none:'' }}</textarea>
+          </div>
+
+          <div class="form-group">
+            <h4>Valoración del día<span class="required-star">*</span></h4>
+            <div class="rating-stars">
+              <input type="radio" id="valoracion-5" name="valoracion" value="5" {% if seguimiento.valoracion == 5 %}checked{% endif %} required><label for="valoracion-5">★</label>
+              <input type="radio" id="valoracion-4" name="valoracion" value="4" {% if seguimiento.valoracion == 4 %}checked{% endif %}><label for="valoracion-4">★</label>
+              <input type="radio" id="valoracion-3" name="valoracion" value="3" {% if seguimiento.valoracion == 3 %}checked{% endif %}><label for="valoracion-3">★</label>
+              <input type="radio" id="valoracion-2" name="valoracion" value="2" {% if seguimiento.valoracion == 2 %}checked{% endif %}><label for="valoracion-2">★</label>
+              <input type="radio" id="valoracion-1" name="valoracion" value="1" {% if seguimiento.valoracion == 1 %}checked{% endif %}><label for="valoracion-1">★</label>
+            </div>
+          </div>
+
+          <button class="botones" type="submit"><i class="fas fa-save"></i> Guardar Cambios</button>
+      </form>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="{% url 'desarrollo:listar_seguimientos' %}?nino={{ seguimiento.nino.id }}" style="color: #555; text-decoration: none;">
+          ← Volver al listado de seguimientos
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -22,5 +22,6 @@ urlpatterns = [
     # --- 💡 NUEVO: URLs para Seguimiento Diario ---
     path('seguimiento/registrar/', views.registrar_seguimiento_diario, name='registrar_seguimiento'),
     path('seguimiento/listado/', views.listar_seguimientos, name='listar_seguimientos'),
+    path('seguimiento/editar/<int:id>/', views.editar_seguimiento_diario, name='editar_seguimiento'),
     path('seguimiento/eliminar/<int:id>/', views.eliminar_seguimiento, name='eliminar_seguimiento'),
 ]

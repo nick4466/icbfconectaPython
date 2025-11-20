@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from .models import DesarrolloNino, SeguimientoDiario
 from planeaciones.models import Planeacion as PlaneacionModel
 from novedades.models import Novedad
@@ -141,8 +142,9 @@ def registrar_desarrollo(request):
             dimension_corporal=corporal,
         )
 
+        messages.success(request, f"¡El registro de desarrollo para {DesarrolloNino.objects.get(id=DesarrolloNino.objects.last().id).nino.nombres} ha sido guardado exitosamente!")
         redirect_url = reverse('desarrollo:listar_desarrollos')
-        return redirect(f'{redirect_url}?nino={nino_id}&exito=1')
+        return redirect(f'{redirect_url}?nino={nino_id}')
 
     # ----- CARGA INICIAL DEL FORMULARIO -----
     return render(request, 'madre/desarrollo_form.html', {
@@ -333,8 +335,9 @@ def editar_desarrollo(request, id):
 
         desarrollo.save()
 
+        messages.success(request, f"¡El registro de desarrollo para {desarrollo.nino.nombres} ha sido actualizado exitosamente!")
         redirect_url = reverse('desarrollo:listar_desarrollos')
-        return redirect(f'{redirect_url}?nino={desarrollo.nino.id}&exito=1')
+        return redirect(f'{redirect_url}?nino={desarrollo.nino.id}')
 
     return render(request, 'madre/desarrollo_form.html', {
         'desarrollo': desarrollo,
@@ -357,6 +360,7 @@ def eliminar_desarrollo(request, id):
 
     nino_id = desarrollo.nino.id
     desarrollo.delete()
+    messages.error(request, "¡El registro de desarrollo ha sido eliminado correctamente!")
     
     return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino_id}')
 
@@ -554,12 +558,15 @@ def registrar_seguimiento_diario(request):
             })
 
         # 3. Validar que no exista un seguimiento duplicado
-        # 3. Validar seguimiento duplicado
         if SeguimientoDiario.objects.filter(nino=nino, fecha=fecha_obj).exists():
             return render(request, 'madre/seguimiento_diario_form.html', {
                 'error': f"Ya existe un seguimiento para {nino.nombres} en esta fecha.",
                 'fecha_filtro': fecha_str,
                 'planeacion': planeacion_del_dia,
+                # FIX: Pasar el niño preseleccionado para que el botón "volver" funcione
+                'nino_preseleccionado': nino,
+                'paso': 'registrar_datos', # Para mantener la vista del formulario
+                'ninos_para_seleccionar': [nino], # Para que el select no falle
             })
         # Crear el registro de seguimiento
         # Crear el registro
@@ -572,9 +579,9 @@ def registrar_seguimiento_diario(request):
             observaciones=request.POST.get('observaciones'),
             valoracion=request.POST.get('valoracion')
         )
-        # Redirigir a la lista de seguimientos del niño específico
+        messages.success(request, f"¡Seguimiento para {nino.nombres} registrado correctamente!")
         redirect_url = reverse('desarrollo:listar_seguimientos')
-        return redirect(f'{redirect_url}?nino={nino_id}')
+        return redirect(f'{redirect_url}?nino={nino_id}&exito=1')
 
     # --- Lógica para mostrar el formulario (GET) ---
     fecha_str = request.GET.get('fecha')
@@ -612,6 +619,13 @@ def registrar_seguimiento_diario(request):
         if not asistencia:
             context['error'] = f"No se puede registrar seguimiento: Aún no se ha registrado la asistencia de {nino_obj.nombres} para el día {fecha_str}."
             return render(request, 'madre/seguimiento_diario_form.html', context) # Detiene y muestra el error
+
+        # FIX: Validar si ya existe un seguimiento para este niño en esta fecha
+        if SeguimientoDiario.objects.filter(nino=nino_obj, fecha=fecha_obj).exists():
+            context['error'] = f"Ya existe un seguimiento registrado para {nino_obj.nombres} en la fecha {fecha_str}."
+            # No mostramos el formulario de registro si ya existe.
+            return render(request, 'madre/seguimiento_diario_form.html', context)
+
         
         if asistencia.estado != 'Presente':
             context['error'] = f"No se puede registrar seguimiento: El niño {nino_obj.nombres} fue registrado como '{asistencia.estado}' el día {fecha_str}."
@@ -683,6 +697,42 @@ def listar_seguimientos(request):
     })
 
 @login_required
+def editar_seguimiento_diario(request, id):
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
+
+    seguimiento = get_object_or_404(SeguimientoDiario, id=id)
+
+    # Verificación de seguridad: la madre solo puede editar registros de su hogar.
+    if seguimiento.nino.hogar.madre.usuario != request.user:
+        messages.error(request, "No tienes permiso para editar este seguimiento.")
+        return redirect('desarrollo:listar_seguimientos')
+
+    if request.method == 'POST':
+        # Actualizar los campos del seguimiento con los datos del formulario
+        seguimiento.participacion = request.POST.get('participacion')
+        seguimiento.comportamiento_logro = request.POST.get('comportamiento_logro')
+        seguimiento.observaciones = request.POST.get('observaciones', '').strip()
+        seguimiento.valoracion = request.POST.get('valoracion')
+
+        # Validación simple para campos obligatorios
+        if not all([seguimiento.participacion, seguimiento.comportamiento_logro, seguimiento.valoracion]):
+            return render(request, 'madre/editar_seguimiento_diario.html', {
+                'error': "Error: Debes completar todos los campos obligatorios.",
+                'seguimiento': seguimiento,
+                'titulo_form': 'Editar Seguimiento Diario',
+            })
+
+        seguimiento.save()
+        messages.success(request, f"El seguimiento para {seguimiento.nino.nombres} del {seguimiento.fecha.strftime('%d-%m-%Y')} ha sido actualizado exitosamente.")
+        return redirect(reverse('desarrollo:listar_seguimientos') + f'?nino={seguimiento.nino.id}')
+
+    return render(request, 'madre/editar_seguimiento_diario.html', {
+        'seguimiento': seguimiento,
+        'titulo_form': 'Editar Seguimiento Diario',
+    })
+
+@login_required
 def eliminar_seguimiento(request, id):
     if request.user.rol.nombre_rol != 'madre_comunitaria':
         return redirect('role_redirect')
@@ -696,6 +746,7 @@ def eliminar_seguimiento(request, id):
     nino_id = seguimiento.nino.id
     fecha_seguimiento = seguimiento.fecha.strftime('%Y-%m-%d')
     seguimiento.delete()
+    messages.error(request, f"El seguimiento del {fecha_seguimiento} para {seguimiento.nino.nombres} ha sido eliminado.")
     
     # Redirigir a la lista de seguimientos del niño específico
     redirect_url = reverse('desarrollo:listar_seguimientos')

@@ -137,8 +137,18 @@
     .display-stars { color: #f5b301; font-size: 1.2rem; }
     .display-stars .inactive { color: #ddd; }
 
-    .mensaje-exito {
+    .mensaje-success {
       background-color: #4CAF50;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      transition: opacity 0.5s ease;
+    }
+    .mensaje-error {
+      background-color: #dc3545; /* Rojo */
       color: white;
       padding: 15px;
       text-align: center;
@@ -181,16 +191,25 @@
       {% if nino_filtrado %}<br><small style="font-size: 18px; color: #555;">de {{ nino_filtrado.nombres }} {{ nino_filtrado.apellidos }}</small>{% endif %}
     </h1>
 
-    {% if request.GET.exito %}
-    <div class="mensaje-exito" id="mensajeExito">¡Seguimiento registrado correctamente!</div>
+    {% if messages %}
+      {% for message in messages %}
+        <div class="mensaje-{{ message.tags }}" id="mensajeNotificacion">
+          {{ message }}
+        </div>
+      {% endfor %}
     {% endif %}
 
     <div class="filtros-y-botones">
       <form method="get" class="filtros-form">
+        {% if nino_id_filtro %}
+          <!-- FIX: Campo oculto para mantener el filtro del niño al filtrar por fecha -->
+          <input type="hidden" name="nino" value="{{ nino_id_filtro }}">
+        {% endif %}
         <label for="fecha_filtro">Fecha:</label>
         <input type="date" id="fecha_filtro" name="fecha" value="{{ fecha_filtro }}">
         <button type="submit"><i class="fas fa-filter"></i> Filtrar</button>
-        <a href="{% url 'desarrollo:listar_seguimientos' %}" class="btn-volver" style="margin-left: 5px;">Limpiar Filtro</a>
+        <!-- FIX: El botón de limpiar ahora respeta si se está filtrando por un niño -->
+        <a href="{% url 'desarrollo:listar_seguimientos' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-volver" style="margin-left: 5px;">Limpiar Filtro</a>
       </form>
 
       <div>
@@ -235,7 +254,7 @@
             </td>
             <td class="acciones">
               <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-              <!-- No hay editar para seguimiento diario, solo eliminar -->
+              <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
               <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
             </td>
           </tr>
@@ -307,11 +326,11 @@
     });
 
     // Ocultar el mensaje de éxito después de 5 segundos
-    const mensajeExito = document.getElementById('mensajeExito');
-    if (mensajeExito) {
+    const mensajeNotificacion = document.getElementById('mensajeNotificacion');
+    if (mensajeNotificacion) {
       setTimeout(() => {
-        mensajeExito.style.opacity = '0';
-        setTimeout(() => { mensajeExito.style.display = 'none'; }, 500);
+        mensajeNotificacion.style.opacity = '0';
+        setTimeout(() => { mensajeNotificacion.style.display = 'none'; }, 500);
       }, 5000);
     }
   </script>

@@ -143,8 +143,18 @@
       --primary-color: #9B59B6;
       --star-color: #f5b301;
     }
-    .mensaje-exito {
+    .mensaje-success {
       background-color: #4CAF50;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      transition: opacity 0.5s ease;
+    }
+    .mensaje-error {
+      background-color: #dc3545; /* Rojo */
       color: white;
       padding: 15px;
       text-align: center;
@@ -334,8 +344,12 @@
   <div class="tabla-registros">
     <h1>Desarrollo Infantil</h1>
 
-    {% if request.GET.exito %}
-    <div class="mensaje-exito" id="mensajeExito">¡Registro guardado exitosamente!</div>
+    {% if messages %}
+      {% for message in messages %}
+        <div class="mensaje-{{ message.tags }}" id="mensajeNotificacion">
+          {{ message }}
+        </div>
+      {% endfor %}
     {% endif %}
 
     <div class="filtros-y-botones">
@@ -512,11 +526,11 @@
     });
 
     // Ocultar el mensaje de éxito después de 5 segundos
-    const mensajeExito = document.getElementById('mensajeExito');
-    if (mensajeExito) {
+    const mensajeNotificacion = document.getElementById('mensajeNotificacion');
+    if (mensajeNotificacion) {
       setTimeout(() => {
-        mensajeExito.style.opacity = '0';
-        setTimeout(() => { mensajeExito.style.display = 'none'; }, 500);
+        mensajeNotificacion.style.opacity = '0';
+        setTimeout(() => { mensajeNotificacion.style.display = 'none'; }, 500);
       }, 5000);
     }
   </script>
