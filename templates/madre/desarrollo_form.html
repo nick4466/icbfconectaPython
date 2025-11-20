@@ -286,7 +286,6 @@
   </header>
 
   <div class="main-title">ICBF - CONECTA | {{ titulo_form }}</div>
-
   <div class="contenedor">
     {% if request.GET.exito %}
     <div class="mensaje-exito" id="mensajeExito">¡Registro guardado exitosamente!</div>
@@ -294,114 +293,108 @@
     {% if error %}
     <p style="color: red; text-align: center;">{{ error }}</p>
     {% endif %}
-
-    <!-- Contenedor para mensajes de error de JavaScript -->
-    <div id="js-error-container"></div>
-
     <div class="card">
       <h2><i class="fas fa-file-alt"></i> {{ titulo_form }}</h2>
-      <p style="text-align: center; color: #555; margin-top: -15px; margin-bottom: 25px;">Los campos con <span class="required-star">*</span> son obligatorios.</p>
-
-      <form method="post" action="{{ form_action }}" id="desarrolloForm">
+      <form method="post" action="{{ form_action|default:'' }}" id="desarrolloForm">
         {% csrf_token %}
+        {% if not desarrollo %}
+        <!-- Paso 1: Selección de niño y mes -->
         <div class="form-grid">
           <div class="form-group">
-            <h4>Nombres y Apellidos del niño<span class="required-star">*</span></h4>
-            {% if nino_id_preseleccionado %}
+            <h4>Niño/a<span class="required-star">*</span></h4>
+            <select name="nino" required>
+              <option value="">-- Selecciona un niño/a --</option>
               {% for nino in ninos %}
-                {% if nino.id|stringformat:"s" == nino_id_preseleccionado %}
-                  <input type="text" value="{{ nino.nombres }} {{ nino.apellidos }}" disabled>
-                  <input type="hidden" name="nino" value="{{ nino.id }}">
-                {% endif %}
+              <option value="{{ nino.id }}">{{ nino.nombres }} {{ nino.apellidos }}</option>
               {% endfor %}
-            {% elif desarrollo %}
-              <input type="text" value="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}" disabled>
-              <input type="hidden" name="nino" value="{{ desarrollo.nino.id }}">
-            {% else %}
-              <select name="nino" required>
-                <option value="">-- Seleccionar Nombre y Apellidos del niño --</option>
-                {% for nino in ninos %}
-                <option value="{{ nino.id }}" {% if nino_id_preseleccionado == nino.id|stringformat:"s" %}selected{% endif %}>
-                  {{ nino.nombres }} {{ nino.apellidos }}
-                </option>
-                {% endfor %}
-              </select>
-            {% endif %}
+            </select>
           </div>
           <div class="form-group">
-            <h4>Fecha de Fin de Mes del Registro<span class="required-star">*</span></h4>
-            <input type="date" name="fecha_registro" value="{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}" required>
+            <h4>Mes a evaluar<span class="required-star">*</span></h4>
+            <input type="month" name="mes" required>
           </div>
         </div>
-
-        <div class="form-grid">
-          <div class="dimension-card">
-            <h2>Dimensión Cognitiva<span class="required-star">*</span></h2>
-            <div class="rating-stars">
-              <input type="radio" id="cognitiva-5" name="rating_cognitiva" value="5" {% if desarrollo.rating_cognitiva == 5 %}checked{% endif %} required><label for="cognitiva-5">★</label>
-              <input type="radio" id="cognitiva-4" name="rating_cognitiva" value="4" {% if desarrollo.rating_cognitiva == 4 %}checked{% endif %}><label for="cognitiva-4">★</label>
-              <input type="radio" id="cognitiva-3" name="rating_cognitiva" value="3" {% if desarrollo.rating_cognitiva == 3 %}checked{% endif %}><label for="cognitiva-3">★</label>
-              <input type="radio" id="cognitiva-2" name="rating_cognitiva" value="2" {% if desarrollo.rating_cognitiva == 2 %}checked{% endif %}><label for="cognitiva-2">★</label>
-              <input type="radio" id="cognitiva-1" name="rating_cognitiva" value="1" {% if desarrollo.rating_cognitiva == 1 %}checked{% endif %}><label for="cognitiva-1">★</label>
-            </div>
-            <div class="rating-labels"><span>Malo</span><span>Regular</span><span>Bueno</span><span>Muy Bueno</span><span>Excelente</span></div>
-            <h4>Observación:</h4>
-            <textarea name="dimension_cognitiva" placeholder="Opcional: Detalles de la dimensión cognitiva">{{ desarrollo.dimension_cognitiva|default_if_none:'' }}</textarea>
-          </div>
-
-          <div class="dimension-card">
-            <h2>Dimensión Comunicativa<span class="required-star">*</span></h2>
-            <div class="rating-stars">
-              <input type="radio" id="comunicativa-5" name="rating_comunicativa" value="5" {% if desarrollo.rating_comunicativa == 5 %}checked{% endif %} required><label for="comunicativa-5">★</label>
-              <input type="radio" id="comunicativa-4" name="rating_comunicativa" value="4" {% if desarrollo.rating_comunicativa == 4 %}checked{% endif %}><label for="comunicativa-4">★</label>
-              <input type="radio" id="comunicativa-3" name="rating_comunicativa" value="3" {% if desarrollo.rating_comunicativa == 3 %}checked{% endif %}><label for="comunicativa-3">★</label>
-              <input type="radio" id="comunicativa-2" name="rating_comunicativa" value="2" {% if desarrollo.rating_comunicativa == 2 %}checked{% endif %}><label for="comunicativa-2">★</label>
-              <input type="radio" id="comunicativa-1" name="rating_comunicativa" value="1" {% if desarrollo.rating_comunicativa == 1 %}checked{% endif %}><label for="comunicativa-1">★</label>
-            </div>
-            <div class="rating-labels"><span>Malo</span><span>Regular</span><span>Bueno</span><span>Muy Bueno</span><span>Excelente</span></div>
-            <h4>Observación:</h4>
-            <textarea name="dimension_comunicativa" placeholder="Opcional: Detalles de la dimensión comunicativa">{{ desarrollo.dimension_comunicativa|default_if_none:'' }}</textarea>
-          </div>
-
-          <div class="dimension-card">
-            <h2>Dimensión Socio-Afectiva<span class="required-star">*</span></h2>
-            <div class="rating-stars">
-              <input type="radio" id="socio_afectiva-5" name="rating_socio_afectiva" value="5" {% if desarrollo.rating_socio_afectiva == 5 %}checked{% endif %} required><label for="socio_afectiva-5">★</label>
-              <input type="radio" id="socio_afectiva-4" name="rating_socio_afectiva" value="4" {% if desarrollo.rating_socio_afectiva == 4 %}checked{% endif %}><label for="socio_afectiva-4">★</label>
-              <input type="radio" id="socio_afectiva-3" name="rating_socio_afectiva" value="3" {% if desarrollo.rating_socio_afectiva == 3 %}checked{% endif %}><label for="socio_afectiva-3">★</label>
-              <input type="radio" id="socio_afectiva-2" name="rating_socio_afectiva" value="2" {% if desarrollo.rating_socio_afectiva == 2 %}checked{% endif %}><label for="socio_afectiva-2">★</label>
-              <input type="radio" id="socio_afectiva-1" name="rating_socio_afectiva" value="1" {% if desarrollo.rating_socio_afectiva == 1 %}checked{% endif %}><label for="socio_afectiva-1">★</label>
-            </div>
-            <div class="rating-labels"><span>Malo</span><span>Regular</span><span>Bueno</span><span>Muy Bueno</span><span>Excelente</span></div>
-            <h4>Observación:</h4>
-            <textarea name="dimension_socio_afectiva" placeholder="Opcional: Detalles de la dimensión socio afectiva">{{ desarrollo.dimension_socio_afectiva|default_if_none:'' }}</textarea>
-          </div>
-
-          <div class="dimension-card">
-            <h2>Dimensión Corporal<span class="required-star">*</span></h2>
-            <div class="rating-stars">
-              <input type="radio" id="corporal-5" name="rating_corporal" value="5" {% if desarrollo.rating_corporal == 5 %}checked{% endif %} required><label for="corporal-5">★</label>
-              <input type="radio" id="corporal-4" name="rating_corporal" value="4" {% if desarrollo.rating_corporal == 4 %}checked{% endif %}><label for="corporal-4">★</label>
-              <input type="radio" id="corporal-3" name="rating_corporal" value="3" {% if desarrollo.rating_corporal == 3 %}checked{% endif %}><label for="corporal-3">★</label>
-              <input type="radio" id="corporal-2" name="rating_corporal" value="2" {% if desarrollo.rating_corporal == 2 %}checked{% endif %}><label for="corporal-2">★</label>
-              <input type="radio" id="corporal-1" name="rating_corporal" value="1" {% if desarrollo.rating_corporal == 1 %}checked{% endif %}><label for="corporal-1">★</label>
-            </div>
-            <div class="rating-labels"><span>Malo</span><span>Regular</span><span>Bueno</span><span>Muy Bueno</span><span>Excelente</span></div>
-            <h4>Observación:</h4>
-            <textarea name="dimension_corporal" placeholder="Opcional: Detalles de la dimensión corporal">{{ desarrollo.dimension_corporal|default_if_none:'' }}</textarea>
-          </div>
+        <!-- Eliminar el botón de generar resumen automático -->
+        <button class="botones" type="submit" id="generarResumenBtn"><i class="fas fa-cogs"></i> Generar/Ver Resumen</button>
+        {% else %}
+        <!-- Paso 2: Mostrar resumen generado y campos manuales -->
+        <input type="hidden" name="desarrollo_id" value="{{ desarrollo.id }}">
+        <div class="form-group">
+          <br>
+          <label><b>Niño/a:</b></label>
+          <input type="text" value="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}" disabled>
         </div>
-
+        <div class="form-group">
+          <label><b>Mes evaluado:</b></label>
+          <input type="text" value="{{ desarrollo.fecha_fin_mes|date:'F Y' }}" disabled>
+        </div>
+        <div class="form-group">
+          <label><b>Cantidad de seguimientos registrados:</b></label>
+          <input type="text" value="{{ seguimientos_mes_count|default:'-' }}" disabled>
+        </div>
+        <div class="form-group">
+          <label><b>Cantidad de novedades del mes:</b></label>
+          <input type="text" value="{{ novedades_mes_count|default:'-' }}" disabled>
+        </div>
+        <hr>
+        <h4>Valoración general del mes</h4>
+        <div class="form-group">
+          <label>Promedio de valoración diaria:</label>
+          <input type="text" value="{{ desarrollo.valoracion_promedio_mes|default:'-' }}" disabled>
+        </div>
+        <div class="form-group">
+          <label>Tendencia:</label>
+          <input type="text" value="{{ desarrollo.get_tendencia_valoracion_display|default:desarrollo.tendencia_valoracion|default:'-' }}" disabled>
+        </div>
+        <div class="form-group">
+          <label>Participación más frecuente:</label>
+          <input type="text" value="{{ desarrollo.participacion_frecuente|default:'-' }}" disabled>
+        </div>
+        <div class="form-group">
+          <label>Comportamiento más frecuente:</label>
+          <input type="text" value="{{ desarrollo.comportamiento_frecuente|default:'-' }}" disabled>
+        </div>
+        <hr>
+        <h4>Evaluación por áreas del desarrollo</h4>
+        <div class="form-group">
+          <label>Cognitivo:</label>
+          <textarea readonly>{{ desarrollo.evaluacion_cognitiva }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Comunicativo / Lenguaje:</label>
+          <textarea readonly>{{ desarrollo.evaluacion_comunicativa }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Socioemocional:</label>
+          <textarea readonly>{{ desarrollo.evaluacion_socio_afectiva }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Corporal / Motricidad:</label>
+          <textarea readonly>{{ desarrollo.evaluacion_corporal }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Autonomía:</label>
+          <textarea readonly>{{ desarrollo.evaluacion_autonomia }}</textarea>
+        </div>
+        <hr>
+        <h4>Fortalezas del mes</h4>
+        <textarea readonly>{{ desarrollo.fortalezas_mes }}</textarea>
+        <h4>Aspectos por mejorar</h4>
+        <textarea readonly>{{ desarrollo.aspectos_a_mejorar }}</textarea>
+        <h4>Alertas del mes</h4>
+        <textarea readonly>{{ desarrollo.alertas_mes }}</textarea>
+        <h4>Conclusión general</h4>
+        <textarea readonly>{{ desarrollo.conclusion_general }}</textarea>
+        <hr>
+        <h4>Observaciones finales (opcional)</h4>
+        <textarea name="observaciones_adicionales" placeholder="Observaciones adicionales">{{ desarrollo.observaciones_adicionales|default_if_none:'' }}</textarea>
+        <h4>Recomendaciones personales (opcional)</h4>
+        <textarea name="recomendaciones_personales" placeholder="Recomendaciones personales">{{ desarrollo.recomendaciones_personales|default_if_none:'' }}</textarea>
         <button class="botones" type="submit"><i class="fas fa-save"></i> Guardar Registro</button>
+        {% endif %}
       </form>
       <div style="text-align: center; margin-top: 20px;">
-        {% if desarrollo %}
-          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ desarrollo.nino.id }}" style="color: #555; text-decoration: none;">← Volver al listado</a>
-        {% elif nino_id_preseleccionado %}
-          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino_id_preseleccionado|stringformat:'s' }}" style="color: #555; text-decoration: none;">← Volver al listado</a>
-        {% else %}
-          <a href="{% url 'desarrollo:listar_desarrollos' %}" style="color: #555; text-decoration: none;">← Volver al listado</a>
-        {% endif %}
+        <a href="{% url 'desarrollo:listar_desarrollos' %}" style="color: #555; text-decoration: none;">← Volver al listado</a>
       </div>
     </div>
   </div>
@@ -409,75 +402,46 @@
   <div id="fechasExistentesJson" style="display:none">{{ fechas_existentes_por_nino|safe }}</div>
 
   <script>
-  // Mostrar y ocultar mensaje de éxito
-  const mensajeExito = document.getElementById('mensajeExito');
-  if (mensajeExito) {
-    setTimeout(() => {
-      mensajeExito.style.display = 'none';
-    }, 5000);
-  }
+    // Mostrar y ocultar mensaje de éxito
+    const mensajeExito = document.getElementById('mensajeExito');
+    if (mensajeExito) {
+      setTimeout(() => {
+        mensajeExito.style.display = 'none';
+      }, 5000);
+    }
 
-  // ---- FUNCIÓN PARA MOSTRAR ERRORES EN LA PÁGINA ----
-  function mostrarError(mensaje) {
-    const errorContainer = document.getElementById('js-error-container');
-    // Limpiar errores anteriores
-    errorContainer.innerHTML = '';
+    // Recargar la página con los filtros de niño y mes para ver un informe existente
+    document.addEventListener('DOMContentLoaded', function() {
+      const ninoSelect = document.querySelector('select[name="nino"]');
+      const mesInput = document.querySelector('input[name="mes"]');
+      const generarBtn = document.getElementById('generarResumenBtn');
+      
+      // Convertimos el JSON de fechas existentes en un objeto de JavaScript
+      const fechasExistentesDiv = document.getElementById('fechasExistentesJson');
+      const fechasExistentesPorNino = fechasExistentesDiv ? JSON.parse(fechasExistentesDiv.textContent || '{}') : {};
 
-    // Crear y añadir el nuevo mensaje de error
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-container'; // Usamos una clase para estilizarlo
-    errorDiv.textContent = mensaje;
-    errorContainer.appendChild(errorDiv);
+      function verificarYRecargar() {
+        const ninoId = ninoSelect.value;
+        const mesValue = mesInput.value; // YYYY-MM
 
-    // Hacer scroll para que el usuario vea el mensaje
-    errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-
-  // ---- VALIDACIÓN FRONTEND ----
-  const form = document.getElementById('desarrolloForm');
-  if (form) {
-    form.addEventListener('submit', function (event) {
-      const ninoInput = document.querySelector('select[name="nino"], input[name="nino"]');
-      const fechaInput = document.querySelector('[name="fecha_registro"]');
-      const ratings = [
-        'rating_cognitiva',
-        'rating_comunicativa',
-        'rating_socio_afectiva',
-        'rating_corporal'
-      ];
-      let allRatingsChecked = true;
-      for (const name of ratings) {
-        if (!document.querySelector(`input[name="${name}"]:checked`)) {
-          allRatingsChecked = false;
-          break;
+        if (ninoId && mesValue) {
+          // Verificamos si el mes seleccionado existe para el niño seleccionado
+          const fechasDelNino = fechasExistentesPorNino[ninoId] || [];
+          if (fechasDelNino.includes(mesValue)) {
+            // Si existe, recargamos la página para mostrar el informe
+            const url = new URL(window.location.href);
+            url.searchParams.set('nino', ninoId);
+            url.searchParams.set('mes', mesValue);
+            window.location.href = url.toString();
+          }
+          // Si no existe, no hacemos nada, permitiendo al usuario hacer clic en "Generar"
         }
       }
 
-      // Validación principal de campos obligatorios
-      if (!ninoInput || !ninoInput.value || !fechaInput || !fechaInput.value || !allRatingsChecked) {
-        event.preventDefault();
-        mostrarError('Todos los campos son obligatorios. Por favor, completa el niño, la fecha y las 4 calificaciones de estrellas.');
-        return;
-      }
-
-      // ---- VALIDACIÓN DE FECHAS DUPLICADAS ----
-      try {
-        const fechasExistentes = JSON.parse(document.getElementById('fechasExistentesJson').textContent);
-        const ninoId = ninoInput ? ninoInput.value : null;
-        const fechaSeleccionada = fechaInput.value;
-        const fechasDelNino = fechasExistentes[ninoId] || [];
-        const fechaActual = "{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}";
-        const fechasSinActual = fechasDelNino.filter(f => f !== fechaActual);
-        if (fechasSinActual.includes(fechaSeleccionada)) {
-          event.preventDefault();
-          mostrarError('❌ Ya existe un desarrollo registrado este mes para este niño. Selecciona otra fecha.');
-        }
-      } catch (e) {
-        // Si no existe el JSON, no validar fechas duplicadas
-      }
+      if (ninoSelect) ninoSelect.addEventListener('change', verificarYRecargar);
+      if (mesInput) mesInput.addEventListener('change', verificarYRecargar);
     });
-  }
-</script>
+  </script>
 
 
 </body>

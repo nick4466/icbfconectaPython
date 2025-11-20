@@ -7,33 +7,72 @@ class DesarrolloNino(models.Model):
     nino = models.ForeignKey(Nino, on_delete=models.CASCADE, related_name='desarrollos')
     fecha_fin_mes = models.DateField()
     
-    # --- Calificaciones con Estrellas ---
-    rating_cognitiva = models.PositiveSmallIntegerField(
-        verbose_name="Rating Dimensión Cognitiva",
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        null=True, blank=True
+    # --- 2. Valoración General del Mes (Automática) ---
+    valoracion_promedio_mes = models.FloatField(
+        verbose_name="Valoración Promedio del Mes",
+        null=True, blank=True,
+        help_text="Promedio de las valoraciones diarias (1-5 estrellas) de los seguimientos."
     )
-    rating_comunicativa = models.PositiveSmallIntegerField(
-        verbose_name="Rating Dimensión Comunicativa",
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        null=True, blank=True
+    tendencia_valoracion = models.CharField(
+        max_length=10,
+        choices=[('mejora', 'Mejora'), ('baja', 'Baja'), ('mantiene', 'Se Mantiene')],
+        verbose_name="Tendencia de Valoración",
+        null=True, blank=True,
+        help_text="Comparación con el promedio del mes anterior."
     )
-    rating_socio_afectiva = models.PositiveSmallIntegerField(
-        verbose_name="Rating Dimensión Socio-afectiva",
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        null=True, blank=True
+    participacion_frecuente = models.CharField(
+        max_length=50, verbose_name="Participación Más Frecuente", null=True, blank=True
     )
-    rating_corporal = models.PositiveSmallIntegerField(
-        verbose_name="Rating Dimensión Corporal",
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-        null=True, blank=True
+    comportamiento_frecuente = models.CharField(
+        max_length=50, verbose_name="Comportamiento Más Frecuente", null=True, blank=True
     )
 
-    # Dimensiones del desarrollo
-    dimension_cognitiva = models.TextField(verbose_name="Dimensión Cognitiva", null=True, blank=True)
-    dimension_comunicativa = models.TextField(verbose_name="Dimensión Comunicativa", null=True, blank=True)
-    dimension_socio_afectiva = models.TextField(verbose_name="Dimensión Socio-afectiva", null=True, blank=True)
-    dimension_corporal = models.TextField(verbose_name="Dimensión Corporal", null=True, blank=True)
+    # --- 3. Evaluación por Áreas del Desarrollo (Automática) ---
+    evaluacion_cognitiva = models.TextField(verbose_name="Evaluación Cognitiva", null=True, blank=True)
+    evaluacion_comunicativa = models.TextField(verbose_name="Evaluación Comunicativa / Lenguaje", null=True, blank=True)
+    evaluacion_socio_afectiva = models.TextField(verbose_name="Evaluación Socio-afectiva", null=True, blank=True)
+    evaluacion_corporal = models.TextField(verbose_name="Evaluación Corporal / Motricidad", null=True, blank=True)
+    evaluacion_autonomia = models.TextField(verbose_name="Evaluación Autonomía", null=True, blank=True)
+
+    # --- 4. Fortalezas del Mes (Automática) ---
+    fortalezas_mes = models.TextField(
+        verbose_name="Fortalezas del Mes",
+        null=True, blank=True,
+        help_text="Lista generada automáticamente de aspectos positivos."
+    )
+
+    # --- 5. Aspectos por Mejorar (Automáticos) ---
+    aspectos_a_mejorar = models.TextField(
+        verbose_name="Aspectos por Mejorar",
+        null=True, blank=True,
+        help_text="Lista generada automáticamente de áreas de oportunidad."
+    )
+
+    # --- 6. Alertas del Mes (Automáticas) ---
+    alertas_mes = models.TextField(
+        verbose_name="Alertas del Mes",
+        null=True, blank=True,
+        help_text="Alertas automáticas sobre inasistencias, valoraciones bajas o novedades."
+    )
+
+    # --- 7. Conclusión General (Automática) ---
+    conclusion_general = models.TextField(
+        verbose_name="Conclusión General del Desarrollo",
+        null=True, blank=True,
+        help_text="Resumen automático del progreso y estado general del niño en el mes."
+    )
+
+    # --- 8. Campos Manuales (Opcionales) ---
+    observaciones_adicionales = models.TextField(
+        verbose_name="Observaciones Adicionales del Educador",
+        blank=True, null=True,
+        help_text="Espacio para notas o comentarios manuales del educador."
+    )
+    recomendaciones_personales = models.TextField(
+        verbose_name="Recomendaciones Personales",
+        blank=True, null=True,
+        help_text="Recomendaciones específicas para la familia o el seguimiento."
+    )
 
     def __str__(self):
         return f"Desarrollo de {self.nino.nombres} para {self.fecha_fin_mes.strftime('%B %Y')}"
@@ -41,10 +80,28 @@ class DesarrolloNino(models.Model):
     class Meta:
         verbose_name = "Desarrollo del Niño"
         verbose_name_plural = "Desarrollos de los Niños"
-        ordering = ['-fecha_fin_mes']
+        ordering = ['-fecha_fin_mes', 'nino']
+        unique_together = ('nino', 'fecha_fin_mes')
+
+    def save(self, *args, **kwargs):
+        # La generación automática se llama antes de guardar.
+        # Se puede añadir una condición para que solo se ejecute una vez
+        # o si ciertos campos están vacíos.
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        if is_new: # Solo se genera la primera vez que se crea el informe
+            from .services import GeneradorEvaluacionMensual
+            GeneradorEvaluacionMensual(self).run()
+    
+    def get_participacion_frecuente_display(self):
+        return dict(SeguimientoDiario.PARTICIPACION_CHOICES).get(self.participacion_frecuente, self.participacion_frecuente)
+
+    def get_comportamiento_frecuente_display(self):
+        return dict(SeguimientoDiario.COMPORTAMIENTO_CHOICES).get(self.comportamiento_frecuente, self.comportamiento_frecuente)
+
 
 # ------------------------
-# 💡 NUEVO: Seguimiento Diario
+# 💡 SEGUIMIENTO DIARIO (Existente)
 # ------------------------
 class SeguimientoDiario(models.Model):
     nino = models.ForeignKey(Nino, on_delete=models.CASCADE, related_name='seguimientos_diarios')
@@ -89,5 +146,7 @@ class SeguimientoDiario(models.Model):
     class Meta:
         verbose_name = "Seguimiento Diario"
         verbose_name_plural = "Seguimientos Diarios"
-        unique_together = ('nino', 'fecha')
+        unique_together = ('nino', 'fecha') # Asegura un solo seguimiento por niño y día
         ordering = ['-fecha', 'nino']
+
+ 

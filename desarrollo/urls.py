@@ -7,11 +7,13 @@ app_name = 'desarrollo'
 
 urlpatterns = [
     # --- URLs para la Madre Comunitaria ---
-    path('registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),
+    path('generar/', views.generar_evaluacion_mensual, name='generar_evaluacion'),
+    path('registrar/', views.registrar_desarrollo, name='registrar_desarrollo'),  # <-- AGREGADO
     path('listado/', views.listar_desarrollos, name='listar_desarrollos'),
+    path('ver/<int:id>/', views.ver_desarrollo, name='ver_desarrollo'),
     path('editar/<int:id>/', views.editar_desarrollo, name='editar_desarrollo'),
     path('eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
-
+    
     # --- URL para el Padre de Familia ---
     path('ver/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
 
