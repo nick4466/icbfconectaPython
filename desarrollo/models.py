@@ -25,6 +25,11 @@ class DesarrolloNino(models.Model):
     participacion_frecuente = models.CharField(
         max_length=50, verbose_name="Participación Más Frecuente", null=True, blank=True
     )
+    porcentaje_asistencia = models.PositiveSmallIntegerField(
+        verbose_name="Porcentaje de Asistencia Mensual",
+        null=True, blank=True,
+        help_text="Porcentaje de días presentes sobre los días hábiles del mes."
+    )
     comportamiento_frecuente = models.CharField(
         max_length=50, verbose_name="Comportamiento Más Frecuente", null=True, blank=True
     )

@@ -53,7 +53,7 @@
       border-radius: 8px;
       padding: 8px 0;
     }
-    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
+    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none, display: block; }
     nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
     nav ul .dropdown:hover .dropdown-content { display: block; }
 
@@ -125,11 +125,21 @@
       width: 80%; max-width: 600px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
       animation: zoomIn 0.3s ease; max-height: 80vh; overflow-y: auto;
     }
+    .modal-contenido::-webkit-scrollbar { width: 8px; }
+    .modal-contenido::-webkit-scrollbar-thumb { background-color: #c3a3e0; border-radius: 4px; }
+    .modal-contenido::-webkit-scrollbar-track { background-color: #f1f1f1; }
+
     @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .cerrar-modal { float: right; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; }
     .cerrar-modal:hover { color: #000; }
     .modal-contenido h2 { margin-top: 0; color: #7a3eb1; }
     .modal-contenido p { margin: 12px 0; font-size: 16px; line-height: 1.5; }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 25px; margin-top: 15px; }
+    .modal-item { display: flex; flex-direction: column; }
+    .modal-item strong { color: #5e3370; font-size: 15px; margin-bottom: 4px; }
+    .modal-item span { font-size: 16px; }
+    .modal-item.full-width { grid-column: 1 / -1; }
+    .modal-item blockquote { margin: 5px 0 0 0; padding: 10px 15px; background-color: #f8f6fa; border-left: 4px solid #c3a3e0; border-radius: 4px; font-style: italic; color: #333; }
   </style>
   <style>
     .display-stars { color: #f5b301; font-size: 1.2rem; }
@@ -372,14 +382,12 @@
           <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
           <div class="dropdown-content">
             <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
-          </div>
-        </li>
-        <li>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar <br> Contraseña</a>
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}
                 <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
             </form>
+          </div>
         </li>
       </ul>
     </nav>
@@ -433,15 +441,15 @@
         data-nino="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}"
         data-tutor="{{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}"
         data-fecha="{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}"
-        data-cognitiva="{{ desarrollo.evaluacion_cognitiva }}"
-        data-comunicativa="{{ desarrollo.evaluacion_comunicativa }}"
-        data-socioafectiva="{{ desarrollo.evaluacion_socio_afectiva }}"
-        data-corporal="{{ desarrollo.evaluacion_corporal }}"
-        data-autonomia="{{ desarrollo.evaluacion_autonomia }}"
-        data-fortalezas="{{ desarrollo.fortalezas_mes }}"
-        data-mejorar="{{ desarrollo.aspectos_a_mejorar }}"
-        data-alertas="{{ desarrollo.alertas_mes }}"
-        data-conclusion="{{ desarrollo.conclusion_general }}"
+        data-eval-cognitiva="{{ desarrollo.evaluacion_cognitiva|default_if_none:''|escapejs }}"
+        data-eval-comunicativa="{{ desarrollo.evaluacion_comunicativa|default_if_none:''|escapejs }}"
+        data-eval-socioafectiva="{{ desarrollo.evaluacion_socio_afectiva|default_if_none:''|escapejs }}"
+        data-eval-corporal="{{ desarrollo.evaluacion_corporal|default_if_none:''|escapejs }}"
+        data-autonomia="{{ desarrollo.evaluacion_autonomia|default_if_none:''|escapejs }}"
+        data-fortalezas="{{ desarrollo.fortalezas_mes|default_if_none:''|escapejs }}"
+        data-mejorar="{{ desarrollo.aspectos_a_mejorar|default_if_none:''|escapejs }}"
+        data-alertas="{{ desarrollo.alertas_mes|default_if_none:''|escapejs }}"
+        data-conclusion="{{ desarrollo.conclusion_general|default_if_none:''|escapejs }}"
       >
         <span class="badge-promedio">Logro: {{ desarrollo.logro_mes|default:'N/A' }}</span>
         <i class="fas fa-seedling card-icon"></i>
@@ -452,6 +460,7 @@
         <div class="card-body">
           <p><i class="fas fa-chart-line"></i> <strong>Tendencia:</strong> {{ desarrollo.get_tendencia_valoracion_display|default:'-' }}</p>
           <p><i class="fas fa-tasks"></i> <strong>Participación:</strong> {{ desarrollo.participacion_frecuente|default:'-' }}</p>
+          <p><i class="fas fa-calendar-check"></i> <strong>Asistencia:</strong> {{ desarrollo.porcentaje_asistencia|default:'N/A' }}%</p>
           <p><i class="fas fa-smile"></i> <strong>Comportamiento:</strong> {{ desarrollo.comportamiento_frecuente|default:'-' }}</p>
         </div>
         <div class="card-footer acciones">
@@ -498,26 +507,38 @@
   <div id="modalDetalles" class="modal">
     <div class="modal-contenido">
       <span class="cerrar-modal">&times;</span>
-      <h2>Detalles del Registro</h2>
-      <p><strong>Niño:</strong> <span id="modal-nino"></span></p>
-      <p><strong>Tutor:</strong> <span id="modal-tutor"></span></p>
-      <p><strong>Mes Evaluado:</strong> <span id="modal-fecha"></span></p>
+      <h2 style="text-align: center;">Detalles del Desarrollo Mensual</h2>
+      <div class="modal-grid">
+        <div class="modal-item"><strong>Niño/a:</strong> <span id="modal-nino"></span></div>
+        <div class="modal-item"><strong>Mes Evaluado:</strong> <span id="modal-fecha"></span></div>
+      </div>
       <hr>
-      <div class="dimension-block">
-        <p><strong>Evaluación Cognitiva:</strong></p>
-        <p><span id="modal-cognitiva"></span></p>
+      <h3 style="color: #7a3eb1; margin-top: 20px; margin-bottom: 15px;">Evaluación por Dimensiones</h3>
+      <div class="modal-grid">
+        <div class="modal-item"><strong>Cognitiva:</strong> <span id="modal-cognitiva"></span></div>
+        <div class="modal-item"><strong>Comunicativa:</strong> <span id="modal-comunicativa"></span></div>
+        <div class="modal-item"><strong>Socio-Afectiva:</strong> <span id="modal-socioafectiva"></span></div>
+        <div class="modal-item"><strong>Corporal:</strong> <span id="modal-corporal"></span></div>
+        <div class="modal-item full-width"><strong>Autonomía e Independencia:</strong> <span id="modal-autonomia"></span></div>
       </div>
-      <div class="dimension-block">
-        <p><strong>Evaluación Comunicativa:</strong></p>
-        <p><span id="modal-comunicativa"></span></p>
-      </div>
-      <div class="dimension-block">
-        <p><strong>Evaluación Socio-Afectiva:</strong></p>
-        <p><span id="modal-socioafectiva"></span></p>
-      </div>
-      <div class="dimension-block">
-        <p><strong>Evaluación Corporal:</strong></p>
-        <p><span id="modal-corporal"></span></p>
+      <hr>
+      <div class="modal-grid">
+        <div class="modal-item full-width">
+          <strong>Fortalezas del Mes:</strong>
+          <blockquote id="modal-fortalezas"></blockquote>
+        </div>
+        <div class="modal-item full-width">
+          <strong>Aspectos a Mejorar:</strong>
+          <blockquote id="modal-mejorar"></blockquote>
+        </div>
+        <div class="modal-item full-width">
+          <strong>Alertas o Novedades:</strong>
+          <blockquote id="modal-alertas"></blockquote>
+        </div>
+        <div class="modal-item full-width">
+          <strong>Conclusión General:</strong>
+          <blockquote id="modal-conclusion"></blockquote>
+        </div>
       </div>
     </div>
   </div>
@@ -538,30 +559,29 @@
       }
     };
 
-    function renderStars(container, rating) {
-      let starsHTML = '';
-      const totalStars = 5;
-      const numRating = parseInt(rating, 10);
-      for (let i = 1; i <= totalStars; i++) {
-        starsHTML += (i <= numRating) ? '★' : '<span class="inactive">★</span>';
-      }
-      container.innerHTML = starsHTML;
-    }
-
     document.querySelectorAll('.ver-detalles').forEach(button => {
       button.addEventListener('click', function() {
         const card = this.closest('.desarrollo-card');
-        
+        function mostrarDimension(valor) {
+          if (!valor || valor.trim() === '' || valor.trim().toLowerCase() === 'no registrado') {
+            return 'Sin información registrada';
+          }
+          // Decodifica cualquier secuencia \uXXXX a su carácter real
+          return valor.replace(/\\u([0-9a-fA-F]{4})/g, function(match, grp) {
+            return String.fromCharCode(parseInt(grp, 16));
+          });
+        }
         document.getElementById('modal-nino').textContent = card.dataset.nino;
-        document.getElementById('modal-tutor').textContent = card.dataset.tutor;
         document.getElementById('modal-fecha').textContent = card.dataset.fecha;
-        document.getElementById('modal-cognitiva').textContent = card.dataset.cognitiva;
-        document.getElementById('modal-comunicativa').textContent = card.dataset.comunicativa;
-        document.getElementById('modal-socioafectiva').textContent = card.dataset.socioafectiva;
-        document.getElementById('modal-corporal').textContent = card.dataset.corporal;
-
-        // Aquí podrías añadir más campos al modal si lo deseas, como fortalezas, alertas, etc.
-        
+        document.getElementById('modal-cognitiva').textContent = mostrarDimension(card.dataset.evalCognitiva);
+        document.getElementById('modal-comunicativa').textContent = mostrarDimension(card.dataset.evalComunicativa);
+        document.getElementById('modal-socioafectiva').textContent = mostrarDimension(card.dataset.evalSocioafectiva);
+        document.getElementById('modal-corporal').textContent = mostrarDimension(card.dataset.evalCorporal);
+        document.getElementById('modal-autonomia').textContent = mostrarDimension(card.dataset.autonomia);
+        document.getElementById('modal-fortalezas').textContent = mostrarDimension(card.dataset.fortalezas);
+        document.getElementById('modal-mejorar').textContent = mostrarDimension(card.dataset.mejorar);
+        document.getElementById('modal-alertas').textContent = mostrarDimension(card.dataset.alertas);
+        document.getElementById('modal-conclusion').textContent = mostrarDimension(card.dataset.conclusion);
         modal.style.display = 'flex';
       });
     });
