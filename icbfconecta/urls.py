@@ -81,6 +81,10 @@ urlpatterns = [
     # --- CRUD Niños (Matrícula) ---
     path('buscar-padre/', views.buscar_padre_por_documento, name='buscar_padre'), # <-- NUEVA RUTA AJAX
     path('ninos/matricular/', views.matricular_nino, name='matricular_nino'),
+    # --- 🆕 NUEVAS RUTAS PARA MEJORAS DE MATRÍCULA ---
+    path('ninos/matricular-a-padre-existente/', views.matricular_nino_a_padre_existente, name='matricular_a_padre_existente'),
+    path('ninos/cambiar-padre/', views.cambiar_padre_de_nino, name='cambiar_padre_nino'),
+    path('ajax/buscar-padre-existente/', views.buscar_padre_ajax, name='buscar_padre_ajax'),
     path('ninos/', views.listar_ninos, name='listar_ninos'), # Para listar los niños del hogar
     path('ninos/<int:id>/ver/', views.ver_ficha_nino, name='ver_ficha_nino'),
     path('ninos/<int:id>/editar/', views.editar_nino, name='editar_nino'),

@@ -75,6 +75,65 @@
     .btn-agregar:hover { background-color: #8e44ad; }
     .btn-reporte { background-color: #5e3370; }
     .btn-reporte:hover { background-color: #3d2350; }
+    
+    /* Estilos para el nuevo botón de cambiar asignación */
+    .btn-cambiar {
+      background-color: #fd7e14;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-cambiar:hover { background-color: #e76500; }
+    
+    /* Estilos para el dropdown de matrícula */
+    .dropdown-matricula {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .btn-dropdown {
+      position: relative;
+    }
+    
+    .dropdown-matricula-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      min-width: 220px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      border-radius: 8px;
+      z-index: 1000;
+      top: 100%;
+      left: 0;
+      overflow: hidden;
+      border: 1px solid #ddd;
+    }
+    
+    .dropdown-matricula-content a {
+      color: #333;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+      transition: background-color 0.3s;
+      font-size: 14px;
+    }
+    
+    .dropdown-matricula-content a:hover {
+      background-color: #f3c1e5;
+      color: #5e3370;
+    }
+    
+    .dropdown-matricula:hover .dropdown-matricula-content {
+      display: block;
+    }
     table { width: 100%; border-collapse: collapse; font-size: 16px; background-color: white; border-radius: 10px; overflow: hidden; }
     thead { background-color: #f3c1e5; color: #5e3370; }
     th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
@@ -157,7 +216,14 @@
     <h1>Niños de mi Hogar Comunitario</h1>
     <div class="filtros-y-botones">
       <div class="btn-group">
-        <a href="{% url 'matricular_nino' %}" class="btn-agregar"><i class="fas fa-plus"></i> Matricular Nuevo Niño</a>
+        <div class="dropdown-matricula">
+          <a href="#" class="btn-agregar btn-dropdown"><i class="fas fa-plus"></i> Matricular Niño <i class="fas fa-chevron-down"></i></a>
+          <div class="dropdown-matricula-content">
+            <a href="{% url 'matricular_nino' %}"><i class="fas fa-user-plus"></i> Padre y Niño Nuevo</a>
+            <a href="{% url 'matricular_a_padre_existente' %}"><i class="fas fa-search"></i> Niño a Padre Existente</a>
+          </div>
+        </div>
+        <a href="{% url 'cambiar_padre_nino' %}" class="btn-cambiar"><i class="fas fa-exchange-alt"></i> Cambiar Asignación</a>
         <a href="#" class="btn-reporte"><i class="fas fa-file-pdf"></i> Generar Reporte PDF</a>
       </div>
     </div>

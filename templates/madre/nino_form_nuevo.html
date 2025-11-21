@@ -230,9 +230,67 @@
     
     .full-width { grid-column: 1 / -1; }
     
+    /* Estilos para checkboxes de discapacidad */
+    .discapacidad-checkboxes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px;
+    }
+    
+    .discapacidad-checkboxes label {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: normal;
+      font-size: 13px;
+      background-color: white;
+    }
+    
+    .discapacidad-checkboxes label:hover {
+      background-color: #f8f9fa;
+      border-color: #7a3eb1;
+    }
+    
+    .discapacidad-checkboxes input[type="checkbox"] {
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+      accent-color: #7a3eb1;
+    }
+    
+    .discapacidad-checkboxes label:has(input:checked) {
+      background-color: #f3e5f5;
+      border-color: #7a3eb1;
+      color: #7a3eb1;
+      font-weight: 500;
+    }
+    
+    /* Estilo para el campo de ocupación */
+    #otra-ocupacion-group {
+      border-left: 3px solid #7a3eb1;
+      padding-left: 15px;
+      margin-top: 10px;
+      background-color: #f8f9fa;
+      border-radius: 0 6px 6px 0;
+    }
+    
+    /* Estilo para el campo de otro país */
+    #otro-pais-group {
+      border-left: 3px solid #17a2b8;
+      padding-left: 15px;
+      margin-top: 10px;
+      background-color: #f0f9ff;
+      border-radius: 0 6px 6px 0;
+    }
+    
     @media (max-width: 768px) {
       .container { padding: 20px; }
       .form-grid { grid-template-columns: 1fr; }
+      .discapacidad-checkboxes { grid-template-columns: 1fr; }
       h1 { font-size: 24px; }
       header { flex-direction: column; align-items: flex-start; }
       nav ul { flex-direction: column; gap: 10px; }
@@ -408,6 +466,18 @@
             {% endfor %}
           </div>
 
+          <!-- Otra Ocupación (campo condicional) -->
+          <div class="form-group" id="otra-ocupacion-group" style="display:none;">
+            <label for="{{ padre_form.otra_ocupacion.id_for_label }}">
+              Especifique la ocupación
+              {% if padre_form.otra_ocupacion.field.required %}<span class="required">*</span>{% endif %}
+            </label>
+            {{ padre_form.otra_ocupacion }}
+            {% for error in padre_form.otra_ocupacion.errors %}
+              <div class="error-list">{{ error }}</div>
+            {% endfor %}
+          </div>
+
           <!-- Estrato -->
           <div class="form-group">
             <label for="{{ padre_form.estrato.id_for_label }}">
@@ -472,6 +542,26 @@
             </div>
             <div id="preview-doc-padre" style="margin-top:10px;"></div>
             {% for error in padre_form.documento_identidad_img.errors %}
+              <div class="error-list">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Clasificación SISBEN (archivo) -->
+          <div class="form-group full-width">
+            <label for="{{ padre_form.clasificacion_sisben.id_for_label }}">
+              Foto Clasificación SISBEN
+              {% if padre_form.clasificacion_sisben.field.required %}<span class="required">*</span>{% endif %}
+            </label>
+            <div class="file-group" onclick="document.getElementById('{{ padre_form.clasificacion_sisben.id_for_label }}').click();">
+              <label class="file-label" for="{{ padre_form.clasificacion_sisben.id_for_label }}">
+                <i class="fas fa-id-card"></i><br>
+                Subir Foto de Clasificación SISBEN<br>
+                <span class="file-info">(Imagen o PDF)</span>
+              </label>
+              {{ padre_form.clasificacion_sisben }}
+            </div>
+            <div id="preview-sisben" style="margin-top:10px;"></div>
+            {% for error in padre_form.clasificacion_sisben.errors %}
               <div class="error-list">{{ error }}</div>
             {% endfor %}
           </div>
@@ -546,14 +636,26 @@
             {% endfor %}
           </div>
 
-          <!-- Nacionalidad -->
+          <!-- País de Nacimiento -->
           <div class="form-group">
             <label for="{{ nino_form.nacionalidad.id_for_label }}">
-              Nacionalidad
+              ¿En qué país nació?
               {% if nino_form.nacionalidad.field.required %}<span class="required">*</span>{% endif %}
             </label>
             {{ nino_form.nacionalidad }}
             {% for error in nino_form.nacionalidad.errors %}
+              <div class="error-list">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Otro País (campo condicional) -->
+          <div class="form-group" id="otro-pais-group" style="display:none;">
+            <label for="{{ nino_form.otro_pais.id_for_label }}">
+              Especifique el país
+              {% if nino_form.otro_pais.field.required %}<span class="required">*</span>{% endif %}
+            </label>
+            {{ nino_form.otro_pais }}
+            {% for error in nino_form.otro_pais.errors %}
               <div class="error-list">{{ error }}</div>
             {% endfor %}
           </div>
@@ -569,39 +671,43 @@
             {% endfor %}
           </div>
 
-          <!-- Fecha de Ingreso -->
-          <div class="form-group">
-            <label for="{{ nino_form.fecha_ingreso.id_for_label }}">
-              Fecha de Ingreso al Hogar
-              {% if nino_form.fecha_ingreso.field.required %}<span class="required">*</span>{% endif %}
-            </label>
-            {{ nino_form.fecha_ingreso }}
-            {% for error in nino_form.fecha_ingreso.errors %}
-              <div class="error-list">{{ error }}</div>
-            {% endfor %}
+          <!-- Nota informativa sobre fecha de ingreso -->
+          <div class="alert-info" style="margin: 20px 0; padding: 12px 15px; background-color: #e8f4f8; border-left: 4px solid #17a2b8; border-radius: 4px;">
+            <i class="fas fa-info-circle" style="color: #17a2b8; margin-right: 8px;"></i>
+            <strong>Información:</strong> La fecha de ingreso al hogar se registrará automáticamente al completar la matrícula ({{ "now"|date:"d/m/Y" }}).
           </div>
+
           <!-- ¿Tiene discapacidad? -->
-          <div class="form-group">
+          <div class="form-group full-width">
             <label for="{{ nino_form.tiene_discapacidad.id_for_label }}">
               ¿Tiene alguna discapacidad?
             </label>
-            {{ nino_form.tiene_discapacidad }}
+            <div style="margin-top: 8px;">
+              {{ nino_form.tiene_discapacidad }}
+              <label for="{{ nino_form.tiene_discapacidad.id_for_label }}" style="margin-left: 8px; font-weight: normal;">Sí</label>
+            </div>
             {% for error in nino_form.tiene_discapacidad.errors %}
               <div class="error-list">{{ error }}</div>
             {% endfor %}
           </div>
-          <div class="form-group" id="tipos-discapacidad-group" style="display:none;">
+          
+          <!-- Tipos de discapacidad -->
+          <div class="form-group full-width" id="tipos-discapacidad-group" style="display:none;">
             <label for="{{ nino_form.tipos_discapacidad.id_for_label }}">
-              Tipo(s) de Discapacidad
+              Seleccione el(los) tipo(s) de discapacidad:
             </label>
-            {{ nino_form.tipos_discapacidad }}
+            <div class="discapacidad-checkboxes" style="margin-top: 10px;">
+              {{ nino_form.tipos_discapacidad }}
+            </div>
             {% for error in nino_form.tipos_discapacidad.errors %}
               <div class="error-list">{{ error }}</div>
             {% endfor %}
           </div>
-          <div class="form-group" id="otra-discapacidad-group" style="display:none;">
+          
+          <!-- Campo para otra discapacidad -->
+          <div class="form-group full-width" id="otra-discapacidad-group" style="display:none;">
             <label for="{{ nino_form.otra_discapacidad.id_for_label }}">
-              Otra discapacidad (especifique)
+              Especifique la otra discapacidad:
             </label>
             {{ nino_form.otra_discapacidad }}
             {% for error in nino_form.otra_discapacidad.errors %}
@@ -666,6 +772,26 @@
             </div>
             <div id="preview-eps" style="margin-top:10px;"></div>
             {% for error in nino_form.certificado_eps.errors %}
+              <div class="error-list">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <!-- Registro Civil (archivo) -->
+          <div class="form-group full-width">
+            <label for="{{ nino_form.registro_civil_img.id_for_label }}">
+              Foto Registro Civil
+              {% if nino_form.registro_civil_img.field.required %}<span class="required">*</span>{% endif %}
+            </label>
+            <div class="file-group" onclick="document.getElementById('{{ nino_form.registro_civil_img.id_for_label }}').click();">
+              <label class="file-label" for="{{ nino_form.registro_civil_img.id_for_label }}">
+                <i class="fas fa-file-alt"></i><br>
+                Subir Foto del Registro Civil<br>
+                <span class="file-info">(Imagen o PDF)</span>
+              </label>
+              {{ nino_form.registro_civil_img }}
+            </div>
+            <div id="preview-registro-civil" style="margin-top:10px;"></div>
+            {% for error in nino_form.registro_civil_img.errors %}
               <div class="error-list">{{ error }}</div>
             {% endfor %}
           </div>
@@ -845,10 +971,16 @@
                         var carnetInput = document.getElementById("{{ nino_form.carnet_vacunacion.id_for_label }}");
                         var epsInput = document.getElementById("{{ nino_form.certificado_eps.id_for_label }}");
                         var docPadreInput = document.getElementById("{{ padre_form.documento_identidad_img.id_for_label }}");
+                        var sisbenInput = document.getElementById("{{ padre_form.clasificacion_sisben.id_for_label }}");
+                        var registroCivilInput = document.getElementById("{{ nino_form.registro_civil_img.id_for_label }}");
+                        
                         if (fotoInput) fotoInput.addEventListener('change', function(){ showPreview(this, 'preview-foto'); document.getElementById('file-upload-message').style.display='block'; document.getElementById('file-upload-message').innerHTML='<span style="color:#28a745;font-weight:600;">Foto cargada correctamente</span>'; });
                         if (carnetInput) carnetInput.addEventListener('change', function(){ showPreview(this, 'preview-carnet'); document.getElementById('file-upload-message').style.display='block'; document.getElementById('file-upload-message').innerHTML='<span style=\"color:#28a745;font-weight:600;\">Carné cargado correctamente</span>'; });
                         if (epsInput) epsInput.addEventListener('change', function(){ showPreview(this, 'preview-eps'); document.getElementById('file-upload-message').style.display='block'; document.getElementById('file-upload-message').innerHTML='<span style=\"color:#28a745;font-weight:600;\">Certificado EPS cargado correctamente</span>'; });
                         if (docPadreInput) docPadreInput.addEventListener('change', function(){ showPreview(this, 'preview-doc-padre'); document.getElementById('file-upload-message').style.display='block'; document.getElementById('file-upload-message').innerHTML='<span style=\"color:#28a745;font-weight:600;\">Documento del padre cargado correctamente</span>'; });
+                        if (sisbenInput) sisbenInput.addEventListener('change', function(){ showPreview(this, 'preview-sisben'); document.getElementById('file-upload-message').style.display='block'; document.getElementById('file-upload-message').innerHTML='<span style=\"color:#28a745;font-weight:600;\">Clasificación SISBEN cargada correctamente</span>'; });
+                        if (registroCivilInput) registroCivilInput.addEventListener('change', function(){ showPreview(this, 'preview-registro-civil'); document.getElementById('file-upload-message').style.display='block'; document.getElementById('file-upload-message').innerHTML='<span style=\"color:#28a745;font-weight:600;\">Registro Civil cargado correctamente</span>'; });
+                        
                         // Validación al enviar
                         var form = document.querySelector('form');
                         if (form) {
@@ -857,66 +989,151 @@
                       });
                     </script>
                 <script>
+                  // Función para manejar el campo de país de nacimiento
+                  function toggleOtroPais() {
+                    var paisSelect = document.getElementById("id_nino-nacionalidad");
+                    var otroPaisGroup = document.getElementById("otro-pais-group");
+                    var otroPaisInput = document.getElementById("id_nino-otro_pais");
+                    
+                    if (paisSelect && otroPaisGroup) {
+                      if (paisSelect.value === 'otro') {
+                        otroPaisGroup.style.display = "block";
+                        if (otroPaisInput) {
+                          otroPaisInput.setAttribute('required', 'required');
+                        }
+                      } else {
+                        otroPaisGroup.style.display = "none";
+                        if (otroPaisInput) {
+                          otroPaisInput.removeAttribute('required');
+                          otroPaisInput.value = ''; // Limpiar el campo
+                        }
+                      }
+                    }
+                  }
+                  
+                  // Event listener para el campo país de nacimiento
+                  document.addEventListener("DOMContentLoaded", function() {
+                    var paisSelect = document.getElementById("id_nino-nacionalidad");
+                    if (paisSelect) {
+                      paisSelect.addEventListener("change", toggleOtroPais);
+                      // Ejecutar al cargar para establecer el estado inicial
+                      toggleOtroPais();
+                    }
+                  });
+                </script>
+                <script>
+                  // Función para manejar el campo de ocupación
+                  function toggleOtraOcupacion() {
+                    var ocupacionSelect = document.getElementById("id_padre-ocupacion");
+                    var otraOcupacionGroup = document.getElementById("otra-ocupacion-group");
+                    var otraOcupacionInput = document.getElementById("id_padre-otra_ocupacion");
+                    
+                    if (ocupacionSelect && otraOcupacionGroup) {
+                      if (ocupacionSelect.value === 'otro') {
+                        otraOcupacionGroup.style.display = "block";
+                        if (otraOcupacionInput) {
+                          otraOcupacionInput.setAttribute('required', 'required');
+                        }
+                      } else {
+                        otraOcupacionGroup.style.display = "none";
+                        if (otraOcupacionInput) {
+                          otraOcupacionInput.removeAttribute('required');
+                          otraOcupacionInput.value = ''; // Limpiar el campo
+                        }
+                      }
+                    }
+                  }
+                  
+                  // Event listener para el campo ocupación
+                  document.addEventListener("DOMContentLoaded", function() {
+                    var ocupacionSelect = document.getElementById("id_padre-ocupacion");
+                    if (ocupacionSelect) {
+                      ocupacionSelect.addEventListener("change", toggleOtraOcupacion);
+                      // Ejecutar al cargar para establecer el estado inicial
+                      toggleOtraOcupacion();
+                    }
+                  });
+                </script>
+                <script>
+                  // Función para manejar la lógica de discapacidades
                   function toggleDiscapacidadFields() {
                     var tieneDiscapacidad = document.getElementById("id_nino-tiene_discapacidad");
                     var tiposGroup = document.getElementById("tipos-discapacidad-group");
                     var otraGroup = document.getElementById("otra-discapacidad-group");
-                    var select = document.getElementById("id_nino-tipos_discapacidad_select");
+                    
                     if (tieneDiscapacidad && tieneDiscapacidad.checked) {
                       tiposGroup.style.display = "block";
-                      if (select && select.value === "otro") {
-                        otraGroup.style.display = "block";
-                      } else {
-                        otraGroup.style.display = "none";
-                      }
+                      
+                      // Verificar si algún checkbox "Otra" está seleccionado
+                      var checkboxes = document.querySelectorAll('input[name="nino-tipos_discapacidad"]');
+                      var otraSelected = false;
+                      
+                      checkboxes.forEach(function(checkbox) {
+                        var label = document.querySelector('label[for="' + checkbox.id + '"]');
+                        if (label && label.textContent.trim().toLowerCase().includes('otra') && checkbox.checked) {
+                          otraSelected = true;
+                        }
+                      });
+                      
+                      otraGroup.style.display = otraSelected ? "block" : "none";
                     } else {
                       tiposGroup.style.display = "none";
                       otraGroup.style.display = "none";
+                      
+                      // Limpiar selecciones cuando se desmarca "tiene discapacidad"
+                      var checkboxes = document.querySelectorAll('input[name="nino-tipos_discapacidad"]');
+                      checkboxes.forEach(function(checkbox) {
+                        checkbox.checked = false;
+                      });
+                      var otraInput = document.getElementById("id_nino-otra_discapacidad");
+                      if (otraInput) {
+                        otraInput.value = '';
+                      }
                     }
                   }
+                  
+                  // Función para manejar cambios en los checkboxes de tipos de discapacidad
+                  function handleTipoDiscapacidadChange() {
+                    var checkboxes = document.querySelectorAll('input[name="nino-tipos_discapacidad"]');
+                    var otraSelected = false;
+                    
+                    checkboxes.forEach(function(checkbox) {
+                      var label = document.querySelector('label[for="' + checkbox.id + '"]');
+                      if (label && label.textContent.trim().toLowerCase().includes('otra') && checkbox.checked) {
+                        otraSelected = true;
+                      }
+                    });
+                    
+                    var otraGroup = document.getElementById("otra-discapacidad-group");
+                    otraGroup.style.display = otraSelected ? "block" : "none";
+                    
+                    // Limpiar campo "otra" si no está seleccionado
+                    if (!otraSelected) {
+                      var otraInput = document.getElementById("id_nino-otra_discapacidad");
+                      if (otraInput) {
+                        otraInput.value = '';
+                      }
+                    }
+                  }
+                  
+                  // Inicialización cuando el DOM está listo
                   document.addEventListener("DOMContentLoaded", function() {
                     var tieneDiscapacidad = document.getElementById("id_nino-tiene_discapacidad");
-                    var select = document.getElementById("id_nino-tipos_discapacidad_select");
+                    
                     if (tieneDiscapacidad) {
                       tieneDiscapacidad.addEventListener("change", toggleDiscapacidadFields);
                     }
-                    if (select) {
-                      select.addEventListener("change", toggleDiscapacidadFields);
-                    }
+                    
+                    // Agregar listeners a todos los checkboxes de tipos de discapacidad
+                    var checkboxes = document.querySelectorAll('input[name="nino-tipos_discapacidad"]');
+                    checkboxes.forEach(function(checkbox) {
+                      checkbox.addEventListener("change", handleTipoDiscapacidadChange);
+                    });
+                    
+                    // Ejecutar la función inicial para establecer el estado correcto
                     toggleDiscapacidadFields();
                   });
                 </script>
-            <script>
-              // Mostrar/ocultar campos de discapacidad según selección
-              function toggleDiscapacidadFields() {
-                var tieneDiscapacidad = document.getElementById("id_nino-tiene_discapacidad");
-                var tiposGroup = document.getElementById("tipos-discapacidad-group");
-                var otraGroup = document.getElementById("otra-discapacidad-group");
-                var select = document.getElementById("id_nino-tipos_discapacidad_select");
-                if (tieneDiscapacidad && tieneDiscapacidad.checked) {
-                  tiposGroup.style.display = "block";
-                  if (select && select.value === "otro") {
-                    otraGroup.style.display = "block";
-                  } else {
-                    otraGroup.style.display = "none";
-                  }
-                } else {
-                  tiposGroup.style.display = "none";
-                  otraGroup.style.display = "none";
-                }
-              }
-              document.addEventListener("DOMContentLoaded", function() {
-                var tieneDiscapacidad = document.getElementById("id_nino-tiene_discapacidad");
-                var select = document.getElementById("id_nino-tipos_discapacidad_select");
-                if (tieneDiscapacidad) {
-                  tieneDiscapacidad.addEventListener("change", toggleDiscapacidadFields);
-                }
-                if (select) {
-                  select.addEventListener("change", toggleDiscapacidadFields);
-                }
-                toggleDiscapacidadFields();
-              });
-            </script>
         <a href="{% url 'listar_ninos' %}" class="btn btn-cancel">Cancelar</a>
         <button type="submit" class="btn btn-submit">
           {% if modo_edicion %}

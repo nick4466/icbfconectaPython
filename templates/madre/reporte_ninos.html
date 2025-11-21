@@ -22,22 +22,44 @@
         <table class="info-table">
             <tr><th>Nombre</th><td>{{ nino.nombres }} {{ nino.apellidos }}</td></tr>
             <tr><th>Documento</th><td>{{ nino.documento }}</td></tr>
-            <tr><th>Fecha de Nacimiento</th><td>{{ nino.fecha_nacimiento }}</td></tr>
-            <tr><th>Género</th><td>{{ nino.genero }}</td></tr>
-            <tr><th>RH</th><td>{{ nino.tipo_sangre }}</td></tr>
-            <tr><th>Discapacidad</th><td>{{ nino.tiene_discapacidad|yesno:"Sí,No" }}</td></tr>
-            <tr><th>Parentesco con Tutor</th><td>{{ nino.parentesco }}</td></tr>
+            <tr><th>Fecha de Nacimiento</th><td>{{ nino.fecha_nacimiento|date:"d/m/Y" }}</td></tr>
+            <tr><th>País de Nacimiento</th><td>{% if nino.nacionalidad == 'otro' %}{{ nino.otro_pais }}{% else %}{{ nino.get_nacionalidad_display }}{% endif %}</td></tr>
+            <tr><th>Género</th><td>{{ nino.get_genero_display|capfirst }}</td></tr>
+            <tr><th>Tipo de Sangre (RH)</th><td>{{ nino.tipo_sangre|default:"No especificado" }}</td></tr>
+            <tr><th>Fecha de Ingreso al Hogar</th><td><strong>{{ nino.fecha_ingreso|date:"d/m/Y" }}</strong></td></tr>
+            <tr><th>Parentesco con Tutor</th><td>{{ nino.get_parentesco_display|capfirst }}</td></tr>
+            <tr><th>Tiene Discapacidad</th><td>{{ nino.tiene_discapacidad|yesno:"Sí,No" }}</td></tr>
+            {% if nino.tiene_discapacidad %}
+            <tr><th>Tipos de Discapacidad</th><td>
+                {% for discapacidad in nino.tipos_discapacidad.all %}
+                    {{ discapacidad.nombre }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                {% if nino.otra_discapacidad %}
+                    {% if nino.tipos_discapacidad.all %}, {% endif %}{{ nino.otra_discapacidad }}
+                {% endif %}
+            </td></tr>
+            {% endif %}
         </table>
     </div>
     <div class="section">
         <h2>Datos del Padre/Tutor</h2>
         <table class="info-table">
             <tr><th>Nombre</th><td>{{ padre.usuario.nombres }} {{ padre.usuario.apellidos }}</td></tr>
+            <tr><th>Tipo de Documento</th><td>{{ padre.usuario.get_tipo_documento_display }}</td></tr>
             <tr><th>Documento</th><td>{{ padre.usuario.documento }}</td></tr>
-            <tr><th>Correo</th><td>{{ padre.usuario.correo }}</td></tr>
+            <tr><th>Correo Electrónico</th><td>{{ padre.usuario.correo }}</td></tr>
             <tr><th>Teléfono</th><td>{{ padre.usuario.telefono }}</td></tr>
             <tr><th>Dirección</th><td>{{ padre.usuario.direccion }}</td></tr>
-            <tr><th>Ocupación</th><td>{{ padre.ocupacion }}</td></tr>
+            <tr><th>Ocupación</th><td>
+                {% if padre.ocupacion == 'otro' %}
+                    {{ padre.otra_ocupacion }}
+                {% else %}
+                    {{ padre.get_ocupacion_display }}
+                {% endif %}
+            </td></tr>
+            {% if padre.estrato %}
+            <tr><th>Estrato</th><td>{{ padre.estrato }}</td></tr>
+            {% endif %}
         </table>
         <div style="font-size:15px;color:#5e3370;margin-top:10px;">
             <b>El padre/tutor puede ingresar al sistema con su documento como usuario y contraseña.</b>

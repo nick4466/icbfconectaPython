@@ -204,6 +204,16 @@ class NinoForm(forms.ModelForm):
         required=False,
         widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
     )
+    registro_civil_img = forms.FileField(
+        label="Foto Registro Civil",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+    )
+    otro_pais = forms.CharField(
+        label="Especifique otro país",
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'Escriba el país de nacimiento...'})
+    )
     tipo_sangre = forms.ChoiceField(
         choices=Nino.TIPO_SANGRE_CHOICES,
         label="Tipo de Sangre",
@@ -232,13 +242,16 @@ class NinoForm(forms.ModelForm):
     class Meta:
         model = Nino
         fields = [
-            'nombres', 'apellidos', 'documento', 'fecha_nacimiento', 'genero', 'nacionalidad', 'fecha_ingreso',
+            'nombres', 'apellidos', 'documento', 'fecha_nacimiento', 'genero', 'nacionalidad', 'otro_pais',
             'tipo_sangre', 'parentesco', 'tiene_discapacidad', 'tipos_discapacidad', 'otra_discapacidad',
-            'foto', 'carnet_vacunacion', 'certificado_eps'
+            'foto', 'carnet_vacunacion', 'certificado_eps', 'registro_civil_img'
         ]
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_ingreso': forms.DateInput(attrs={'type': 'date'}),
+            'nacionalidad': forms.Select(attrs={'class': 'nacionalidad-select'}),
+        }
+        labels = {
+            'nacionalidad': '¿En qué país nació?',
         }
 
     def clean(self):
@@ -246,9 +259,17 @@ class NinoForm(forms.ModelForm):
         tiene_discapacidad = cleaned_data.get('tiene_discapacidad')
         tipos_discapacidad = cleaned_data.get('tipos_discapacidad')
         otra_discapacidad = cleaned_data.get('otra_discapacidad')
+        nacionalidad = cleaned_data.get('nacionalidad')
+        otro_pais = cleaned_data.get('otro_pais')
+        
         if tiene_discapacidad:
             if not tipos_discapacidad and not otra_discapacidad:
                 self.add_error('tipos_discapacidad', 'Seleccione al menos un tipo de discapacidad o especifique otra.')
+                
+        # Validar que si selecciona "otro" país, debe especificarlo
+        if nacionalidad == 'otro' and not otro_pais:
+            self.add_error('otro_pais', 'Debe especificar el país cuando selecciona "Otro país".')
+            
         return cleaned_data
 
 
@@ -270,7 +291,41 @@ class PadreForm(forms.ModelForm):
     direccion = forms.CharField(max_length=100, label="Dirección", required=False)
     
     # Campos de Padre (perfil)
-    ocupacion = forms.CharField(max_length=50, required=True, label="Ocupación")
+    OCUPACION_CHOICES = [
+        ('', '-- Seleccione una ocupación --'),
+        ('empleado_publico', 'Empleado Público'),
+        ('empleado_privado', 'Empleado Privado'),
+        ('independiente', 'Trabajador Independiente'),
+        ('comerciante', 'Comerciante'),
+        ('agricultor', 'Agricultor'),
+        ('constructor', 'Constructor/Albañil'),
+        ('conductor', 'Conductor'),
+        ('docente', 'Docente/Educador'),
+        ('salud', 'Profesional de la Salud'),
+        ('servicios', 'Servicios (Limpieza, Seguridad, etc.)'),
+        ('domestico', 'Trabajador Doméstico'),
+        ('estudiante', 'Estudiante'),
+        ('pensionado', 'Pensionado'),
+        ('desempleado', 'Desempleado'),
+        ('ama_casa', 'Ama de Casa'),
+        ('vendedor', 'Vendedor'),
+        ('mecanico', 'Mecánico'),
+        ('artesano', 'Artesano'),
+        ('otro', 'Otro')
+    ]
+    
+    ocupacion = forms.ChoiceField(
+        choices=OCUPACION_CHOICES,
+        label="Ocupación",
+        required=True,
+        widget=forms.Select(attrs={'class': 'ocupacion-select'})
+    )
+    otra_ocupacion = forms.CharField(
+        max_length=50, 
+        required=False, 
+        label="Especifique otra ocupación",
+        widget=forms.TextInput(attrs={'placeholder': 'Escriba la ocupación...'})
+    )
     estrato = forms.IntegerField(
         label="Estrato",
         required=False,
@@ -299,6 +354,11 @@ class PadreForm(forms.ModelForm):
         required=False,
         widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
     )
+    clasificacion_sisben = forms.FileField(
+        label="Foto Clasificación SISBEN",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+    )
 
     class Meta:
         model = Usuario
@@ -323,6 +383,137 @@ class PadreForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         documento = cleaned_data.get('documento')
+        ocupacion = cleaned_data.get('ocupacion')
+        otra_ocupacion = cleaned_data.get('otra_ocupacion')
+        
         if not documento or not str(documento).isdigit():
             self.add_error('documento', 'El documento debe ser un número válido.')
+            
+        # Validar que si selecciona "otro", debe especificar la ocupación
+        if ocupacion == 'otro' and not otra_ocupacion:
+            self.add_error('otra_ocupacion', 'Debe especificar la ocupación cuando selecciona "Otro".')
+            
         return cleaned_data
+
+
+# ----------------------------------------------------
+# 🆕 NUEVOS FORMULARIOS PARA MEJORAS DE MATRÍCULA
+# ----------------------------------------------------
+
+class NinoSoloForm(forms.ModelForm):
+    """Formulario solo para el niño cuando se asigna a un padre existente"""
+    foto = forms.ImageField(
+        label="Foto del Niño",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*'})
+    )
+    carnet_vacunacion = forms.FileField(
+        label="Carné de Vacunación",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+    )
+    certificado_eps = forms.FileField(
+        label="Certificado EPS/Afiliación",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+    )
+    registro_civil_img = forms.FileField(
+        label="Foto Registro Civil",
+        required=False,
+        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+    )
+    otro_pais = forms.CharField(
+        label="Especifique otro país",
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'Escriba el país de nacimiento...'})
+    )
+    tipo_sangre = forms.ChoiceField(
+        choices=Nino.TIPO_SANGRE_CHOICES,
+        label="Tipo de Sangre",
+        required=False
+    )
+    parentesco = forms.ChoiceField(
+        choices=Nino.PARENTESCO_CHOICES,
+        label="Parentesco con el Niño",
+        required=True
+    )
+    tiene_discapacidad = forms.BooleanField(
+        label="¿Tiene alguna discapacidad?",
+        required=False
+    )
+    tipos_discapacidad = forms.ModelMultipleChoiceField(
+        queryset=Discapacidad.objects.all(),
+        label="Tipo(s) de Discapacidad",
+        required=False,
+        widget=forms.CheckboxSelectMultiple
+    )
+    otra_discapacidad = forms.CharField(
+        label="Otra discapacidad (especifique)",
+        required=False
+    )
+
+    class Meta:
+        model = Nino
+        fields = [
+            'nombres', 'apellidos', 'documento', 'fecha_nacimiento', 'genero', 'nacionalidad', 'otro_pais',
+            'tipo_sangre', 'parentesco', 'tiene_discapacidad', 'tipos_discapacidad', 'otra_discapacidad',
+            'foto', 'carnet_vacunacion', 'certificado_eps', 'registro_civil_img'
+        ]
+        widgets = {
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+            'nacionalidad': forms.Select(attrs={'class': 'nacionalidad-select'}),
+        }
+        labels = {
+            'nacionalidad': '¿En qué país nació?',
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tiene_discapacidad = cleaned_data.get('tiene_discapacidad')
+        tipos_discapacidad = cleaned_data.get('tipos_discapacidad')
+        otra_discapacidad = cleaned_data.get('otra_discapacidad')
+        nacionalidad = cleaned_data.get('nacionalidad')
+        otro_pais = cleaned_data.get('otro_pais')
+        
+        if tiene_discapacidad:
+            if not tipos_discapacidad and not otra_discapacidad:
+                self.add_error('tipos_discapacidad', 'Seleccione al menos un tipo de discapacidad o especifique otra.')
+                
+        # Validar que si selecciona "otro" país, debe especificarlo
+        if nacionalidad == 'otro' and not otro_pais:
+            self.add_error('otro_pais', 'Debe especificar el país cuando selecciona "Otro país".')
+            
+        return cleaned_data
+
+
+class BuscarPadreForm(forms.Form):
+    """Formulario para buscar un padre por documento"""
+    documento = forms.CharField(
+        label="Documento del Padre",
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Ingrese el documento del padre...',
+            'class': 'buscar-padre-documento'
+        })
+    )
+    
+    def clean_documento(self):
+        documento = self.cleaned_data.get('documento')
+        if not documento or not documento.isdigit():
+            raise forms.ValidationError('El documento debe ser un número válido.')
+        return documento
+
+
+class CambiarPadreForm(forms.Form):
+    """Formulario para seleccionar niño y cambiar su padre"""
+    nino = forms.ModelChoiceField(
+        queryset=Nino.objects.none(),  # Se configurará dinámicamente
+        label="Seleccionar Niño",
+        empty_label="-- Seleccione el niño --",
+        widget=forms.Select(attrs={'class': 'nino-select'})
+    )
+    
+    def __init__(self, hogar=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hogar:
+            self.fields['nino'].queryset = Nino.objects.filter(hogar=hogar).order_by('nombres', 'apellidos')

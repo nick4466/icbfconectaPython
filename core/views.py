@@ -9,7 +9,7 @@ from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional
 from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
-from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm, AdminForm
+from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm, AdminForm, NinoSoloForm, BuscarPadreForm, CambiarPadreForm
 from desarrollo.models import DesarrolloNino
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -160,14 +160,17 @@ def matricular_nino(request):
                     # Buscar o crear el perfil del padre
                     padre_obj, _ = Padre.objects.get_or_create(usuario=usuario_padre)
                     padre_obj.ocupacion = padre_form.cleaned_data.get('ocupacion', '')
+                    padre_obj.otra_ocupacion = padre_form.cleaned_data.get('otra_ocupacion', '')
                     padre_obj.estrato = padre_form.cleaned_data.get('estrato')
                     padre_obj.telefono_contacto_emergencia = padre_form.cleaned_data.get('telefono_contacto_emergencia', '')
                     padre_obj.nombre_contacto_emergencia = padre_form.cleaned_data.get('nombre_contacto_emergencia', '')
                     padre_obj.situacion_economica_hogar = padre_form.cleaned_data.get('situacion_economica_hogar', '')
                     
-                    # Guardar el archivo de documento si se proporciona
+                    # Guardar archivos del padre si se proporcionan
                     if 'documento_identidad_img' in request.FILES:
                         padre_obj.documento_identidad_img = request.FILES['documento_identidad_img']
+                    if 'clasificacion_sisben' in request.FILES:
+                        padre_obj.clasificacion_sisben = request.FILES['clasificacion_sisben']
                     
                     padre_obj.save()
 
@@ -180,6 +183,7 @@ def matricular_nino(request):
                     nino.parentesco = nino_form.cleaned_data.get('parentesco')
                     nino.tiene_discapacidad = nino_form.cleaned_data.get('tiene_discapacidad', False)
                     nino.otra_discapacidad = nino_form.cleaned_data.get('otra_discapacidad', '')
+                    nino.otro_pais = nino_form.cleaned_data.get('otro_pais', '')
                     nino.save()
                     # ManyToMany: tipos_discapacidad
                     if nino.tiene_discapacidad:
@@ -193,6 +197,8 @@ def matricular_nino(request):
                         nino.carnet_vacunacion = request.FILES['nino-carnet_vacunacion']
                     if 'nino-certificado_eps' in request.FILES:
                         nino.certificado_eps = request.FILES['nino-certificado_eps']
+                    if 'nino-registro_civil_img' in request.FILES:
+                        nino.registro_civil_img = request.FILES['nino-registro_civil_img']
                     nino.save()
                     
                     messages.success(request, f'Niño {nino.nombres} matriculado correctamente.')
@@ -1098,30 +1104,66 @@ def editar_nino(request, id):
     usuario_padre = nino.padre.usuario if nino.padre else None
     perfil_padre = nino.padre if nino.padre else None
     if request.method == 'POST':
-        # Se instancian los formularios con los datos del POST y las instancias de los modelos
-        nino_form = NinoForm(request.POST, instance=nino, prefix='nino')
-        padre_form = PadreForm(request.POST, instance=usuario_padre, prefix='padre')
+        # Se instancian los formularios con los datos del POST, FILES y las instancias de los modelos
+        nino_form = NinoForm(request.POST, request.FILES, instance=nino, prefix='nino')
+        padre_form = PadreForm(request.POST, request.FILES, instance=usuario_padre, prefix='padre')
 
         if nino_form.is_valid() and padre_form.is_valid():
             # 💡 VALIDACIÓN: Verificar si el nuevo documento o correo ya existen en otro usuario.
             documento = padre_form.cleaned_data.get('documento')
-            email = padre_form.cleaned_data.get('email')
+            correo = padre_form.cleaned_data.get('correo')
             
-            if Usuario.objects.filter(Q(documento=documento) | Q(email=email)).exclude(id=usuario_padre.id).exists():
+            if Usuario.objects.filter(Q(documento=documento) | Q(correo=correo)).exclude(id=usuario_padre.id).exists():
                 messages.error(request, 'El documento o correo electrónico ingresado ya pertenece a otro usuario.')
             else:
-                # Si no hay duplicados, proceder a guardar.
-                nino_form.save()
-                # Guardar datos del Usuario y del perfil Padre
-                usuario_actualizado = padre_form.save(commit=False)
-                usuario_actualizado.save()
+                try:
+                    with transaction.atomic():
+                        # Guardar el niño con archivos
+                        nino_actualizado = nino_form.save(commit=False)
+                        # Actualizar campos personalizados
+                        nino_actualizado.otro_pais = nino_form.cleaned_data.get('otro_pais', '')
+                        # Manejar archivos del niño
+                        if 'nino-foto' in request.FILES:
+                            nino_actualizado.foto = request.FILES['nino-foto']
+                        if 'nino-carnet_vacunacion' in request.FILES:
+                            nino_actualizado.carnet_vacunacion = request.FILES['nino-carnet_vacunacion']
+                        if 'nino-certificado_eps' in request.FILES:
+                            nino_actualizado.certificado_eps = request.FILES['nino-certificado_eps']
+                        if 'nino-registro_civil_img' in request.FILES:
+                            nino_actualizado.registro_civil_img = request.FILES['nino-registro_civil_img']
+                        nino_actualizado.save()
+                        
+                        # ManyToMany: tipos_discapacidad
+                        if nino_actualizado.tiene_discapacidad:
+                            nino_actualizado.tipos_discapacidad.set(nino_form.cleaned_data.get('tipos_discapacidad'))
+                        else:
+                            nino_actualizado.tipos_discapacidad.clear()
 
-                if perfil_padre:
-                    perfil_padre.ocupacion = padre_form.cleaned_data['ocupacion']
-                    perfil_padre.save()
+                        # Guardar datos del Usuario del padre
+                        usuario_actualizado = padre_form.save(commit=False)
+                        usuario_actualizado.save()
 
-                messages.success(request, '¡La información del niño y su tutor ha sido actualizada!')
-                return redirect('listar_ninos')
+                        # Actualizar el perfil del padre con archivos
+                        if perfil_padre:
+                            perfil_padre.ocupacion = padre_form.cleaned_data.get('ocupacion', '')
+                            perfil_padre.otra_ocupacion = padre_form.cleaned_data.get('otra_ocupacion', '')
+                            perfil_padre.estrato = padre_form.cleaned_data.get('estrato')
+                            perfil_padre.telefono_contacto_emergencia = padre_form.cleaned_data.get('telefono_contacto_emergencia', '')
+                            perfil_padre.nombre_contacto_emergencia = padre_form.cleaned_data.get('nombre_contacto_emergencia', '')
+                            perfil_padre.situacion_economica_hogar = padre_form.cleaned_data.get('situacion_economica_hogar', '')
+                            
+                            # Manejar archivos del padre
+                            if 'padre-documento_identidad_img' in request.FILES:
+                                perfil_padre.documento_identidad_img = request.FILES['padre-documento_identidad_img']
+                            if 'padre-clasificacion_sisben' in request.FILES:
+                                perfil_padre.clasificacion_sisben = request.FILES['padre-clasificacion_sisben']
+                            
+                            perfil_padre.save()
+
+                        messages.success(request, '¡La información del niño y su tutor ha sido actualizada!')
+                        return redirect('listar_ninos')
+                except Exception as e:
+                    messages.error(request, f"Ocurrió un error inesperado: {e}")
 
         else:
             messages.error(request, 'Por favor, corrige los errores en el formulario.')
@@ -1138,13 +1180,22 @@ def editar_nino(request, id):
         }
         if perfil_padre:
             initial_data_padre['ocupacion'] = perfil_padre.ocupacion
+            initial_data_padre['otra_ocupacion'] = perfil_padre.otra_ocupacion
         
         padre_form = PadreForm(instance=usuario_padre, prefix='padre', initial=initial_data_padre)
 
-    return render(request, 'madre/nino_form.html', {
+    # Obtener el hogar de la madre para el template
+    try:
+        madre_profile = request.user.madre_profile
+        hogar_madre = HogarComunitario.objects.get(madre=madre_profile)
+    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
+        hogar_madre = nino.hogar  # Usar el hogar del niño como fallback
+
+    return render(request, 'madre/nino_form_nuevo.html', {
         'nino_form': nino_form,
         'padre_form': padre_form,
         'nino': nino, # Se pasa el objeto nino para acceder a datos no editables en la plantilla
+        'hogar_madre': hogar_madre,
         'modo_edicion': True,
         'titulo_form': 'Editar Información del Niño'
     })
@@ -1299,3 +1350,225 @@ def cargar_ciudades(request):
         return JsonResponse(data, safe=False)
     except Exception:
         return JsonResponse([], safe=False)
+
+
+# ----------------------------------------------------
+# 🆕 NUEVAS VISTAS PARA MEJORAS DE MATRÍCULA
+# ----------------------------------------------------
+
+@login_required
+def matricular_nino_a_padre_existente(request):
+    """Matricular un niño nuevo a un padre que ya existe en el sistema"""
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, 'Solo las madres comunitarias pueden matricular niños.')
+        return redirect('home')
+
+    # Obtener el hogar de la madre logueada
+    try:
+        madre_profile = request.user.madre_profile
+        hogar_madre = HogarComunitario.objects.get(madre=madre_profile)
+    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
+        messages.error(request, 'No tienes un hogar comunitario asignado.')
+        return redirect('madre_dashboard')
+
+    if request.method == 'POST':
+        buscar_form = BuscarPadreForm(request.POST, prefix='buscar')
+        nino_form = NinoSoloForm(request.POST, request.FILES, prefix='nino')
+        
+        # Verificar si se ha encontrado un padre
+        padre_id = request.POST.get('padre_seleccionado')
+        
+        if padre_id and nino_form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Obtener el padre seleccionado
+                    padre_obj = get_object_or_404(Padre, id=padre_id)
+                    
+                    # Crear el niño y asociarlo al padre
+                    nino = nino_form.save(commit=False)
+                    nino.hogar = hogar_madre
+                    nino.padre = padre_obj
+                    nino.tipo_sangre = nino_form.cleaned_data.get('tipo_sangre')
+                    nino.parentesco = nino_form.cleaned_data.get('parentesco')
+                    nino.tiene_discapacidad = nino_form.cleaned_data.get('tiene_discapacidad', False)
+                    nino.otra_discapacidad = nino_form.cleaned_data.get('otra_discapacidad', '')
+                    nino.otro_pais = nino_form.cleaned_data.get('otro_pais', '')
+                    nino.save()
+                    
+                    # ManyToMany: tipos_discapacidad
+                    if nino.tiene_discapacidad:
+                        nino.tipos_discapacidad.set(nino_form.cleaned_data.get('tipos_discapacidad'))
+                    else:
+                        nino.tipos_discapacidad.clear()
+                    
+                    messages.success(request, f'Niño {nino.nombres} matriculado correctamente al padre {padre_obj.usuario.get_full_name()}.')
+                    return redirect('listar_ninos')
+                    
+            except Exception as e:
+                messages.error(request, f"Ocurrió un error inesperado: {e}")
+        else:
+            if not padre_id:
+                messages.error(request, 'Debe buscar y seleccionar un padre antes de continuar.')
+            if not nino_form.is_valid():
+                messages.error(request, 'Por favor corrige los errores en el formulario del niño.')
+    else:
+        buscar_form = BuscarPadreForm(prefix='buscar')
+        nino_form = NinoSoloForm(prefix='nino')
+
+    return render(request, 'madre/matricular_a_padre_existente.html', {
+        'hogar_madre': hogar_madre,
+        'buscar_form': buscar_form,
+        'nino_form': nino_form,
+    })
+
+
+@login_required
+def buscar_padre_ajax(request):
+    """Vista AJAX para buscar padre por documento en matriculación a padre existente"""
+    documento = request.GET.get('documento', '').strip()
+    data = {'encontrado': False, 'padre': None}
+
+    if documento:
+        try:
+            # Buscar usuario con rol de padre
+            usuario_padre = Usuario.objects.filter(
+                documento=documento, 
+                rol__nombre_rol='padre',
+                is_active=True
+            ).first()
+            
+            if usuario_padre:
+                try:
+                    padre_profile = Padre.objects.get(usuario=usuario_padre)
+                    data.update({
+                        'encontrado': True,
+                        'padre': {
+                            'id': padre_profile.id,
+                            'nombres': usuario_padre.nombres,
+                            'apellidos': usuario_padre.apellidos,
+                            'documento': usuario_padre.documento,
+                            'correo': usuario_padre.correo,
+                            'telefono': usuario_padre.telefono,
+                            'direccion': usuario_padre.direccion,
+                            'ocupacion': padre_profile.get_ocupacion_display() if padre_profile.ocupacion else 'No especificada'
+                        }
+                    })
+                except Padre.DoesNotExist:
+                    data['mensaje'] = 'Usuario encontrado pero sin perfil de padre completo.'
+            else:
+                data['mensaje'] = 'No se encontró un padre con ese documento.'
+        except Exception as e:
+            data['error'] = f'Error en la búsqueda: {str(e)}'
+
+    return JsonResponse(data)
+
+
+@login_required
+def cambiar_padre_de_nino(request):
+    """Cambiar la asignación de padre de un niño existente"""
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, 'Solo las madres comunitarias pueden cambiar asignaciones.')
+        return redirect('home')
+
+    # Obtener el hogar de la madre logueada
+    try:
+        madre_profile = request.user.madre_profile
+        hogar_madre = HogarComunitario.objects.get(madre=madre_profile)
+    except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
+        messages.error(request, 'No tienes un hogar comunitario asignado.')
+        return redirect('madre_dashboard')
+
+    if request.method == 'POST':
+        cambiar_form = CambiarPadreForm(hogar=hogar_madre, data=request.POST, prefix='cambiar')
+        buscar_form = BuscarPadreForm(request.POST, prefix='buscar')
+        padre_form = PadreForm(request.POST, request.FILES, prefix='padre')
+        
+        # Verificar qué acción se está realizando
+        accion = request.POST.get('accion')
+        nino_id = request.POST.get('nino_seleccionado')
+        nuevo_padre_id = request.POST.get('nuevo_padre_id')
+        
+        if accion == 'cambiar_existente' and nino_id and nuevo_padre_id:
+            # Cambiar a padre existente
+            try:
+                with transaction.atomic():
+                    nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
+                    nuevo_padre = get_object_or_404(Padre, id=nuevo_padre_id)
+                    padre_anterior = nino.padre
+                    
+                    nino.padre = nuevo_padre
+                    nino.save()
+                    
+                    messages.success(request, 
+                        f'El niño {nino.nombres} {nino.apellidos} ha sido asignado correctamente '
+                        f'del padre {padre_anterior.usuario.get_full_name()} '
+                        f'al padre {nuevo_padre.usuario.get_full_name()}.'
+                    )
+                    return redirect('listar_ninos')
+            except Exception as e:
+                messages.error(request, f"Error al cambiar padre: {e}")
+                
+        elif accion == 'cambiar_nuevo' and nino_id and padre_form.is_valid():
+            # Cambiar a nuevo padre
+            try:
+                with transaction.atomic():
+                    nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
+                    padre_anterior = nino.padre
+                    
+                    # Crear nuevo usuario padre
+                    rol_padre = Rol.objects.get(nombre_rol='padre')
+                    doc_padre = padre_form.cleaned_data['documento']
+                    tipo_doc = padre_form.cleaned_data['tipo_documento']
+                    
+                    usuario_padre, created = Usuario.objects.get_or_create(
+                        documento=doc_padre,
+                        rol=rol_padre,
+                        defaults={
+                            'tipo_documento': tipo_doc,
+                            'nombres': padre_form.cleaned_data['nombres'],
+                            'apellidos': padre_form.cleaned_data['apellidos'],
+                            'correo': padre_form.cleaned_data['correo'],
+                            'telefono': padre_form.cleaned_data['telefono'],
+                            'direccion': padre_form.cleaned_data.get('direccion', ''),
+                        }
+                    )
+
+                    if created:
+                        usuario_padre.set_password(str(doc_padre))
+                        usuario_padre.save()
+
+                    # Crear perfil del padre
+                    padre_obj, _ = Padre.objects.get_or_create(usuario=usuario_padre)
+                    padre_obj.ocupacion = padre_form.cleaned_data.get('ocupacion', '')
+                    padre_obj.otra_ocupacion = padre_form.cleaned_data.get('otra_ocupacion', '')
+                    padre_obj.estrato = padre_form.cleaned_data.get('estrato')
+                    padre_obj.telefono_contacto_emergencia = padre_form.cleaned_data.get('telefono_contacto_emergencia', '')
+                    padre_obj.nombre_contacto_emergencia = padre_form.cleaned_data.get('nombre_contacto_emergencia', '')
+                    padre_obj.situacion_economica_hogar = padre_form.cleaned_data.get('situacion_economica_hogar', '')
+                    padre_obj.save()
+                    
+                    # Actualizar niño
+                    nino.padre = padre_obj
+                    nino.save()
+                    
+                    messages.success(request, 
+                        f'El niño {nino.nombres} {nino.apellidos} ha sido asignado correctamente '
+                        f'del padre {padre_anterior.usuario.get_full_name()} '
+                        f'al nuevo padre {padre_obj.usuario.get_full_name()}.'
+                    )
+                    return redirect('listar_ninos')
+            except Exception as e:
+                messages.error(request, f"Error al cambiar padre: {e}")
+        else:
+            messages.error(request, 'Datos incompletos para realizar el cambio.')
+    else:
+        cambiar_form = CambiarPadreForm(hogar=hogar_madre, prefix='cambiar')
+        buscar_form = BuscarPadreForm(prefix='buscar')
+        padre_form = PadreForm(prefix='padre')
+
+    return render(request, 'madre/cambiar_padre_nino.html', {
+        'hogar_madre': hogar_madre,
+        'cambiar_form': cambiar_form,
+        'buscar_form': buscar_form,
+        'padre_form': padre_form,
+    })

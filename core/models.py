@@ -143,15 +143,40 @@ class Usuario(AbstractUser):
 # Padre o Tutor
 # ------------------------
 class Padre(models.Model):
+    OCUPACION_CHOICES = [
+        ('', '-- Seleccione una ocupación --'),
+        ('empleado_publico', 'Empleado Público'),
+        ('empleado_privado', 'Empleado Privado'),
+        ('independiente', 'Trabajador Independiente'),
+        ('comerciante', 'Comerciante'),
+        ('agricultor', 'Agricultor'),
+        ('constructor', 'Constructor/Albañil'),
+        ('conductor', 'Conductor'),
+        ('docente', 'Docente/Educador'),
+        ('salud', 'Profesional de la Salud'),
+        ('servicios', 'Servicios (Limpieza, Seguridad, etc.)'),
+        ('domestico', 'Trabajador Doméstico'),
+        ('estudiante', 'Estudiante'),
+        ('pensionado', 'Pensionado'),
+        ('desempleado', 'Desempleado'),
+        ('ama_casa', 'Ama de Casa'),
+        ('vendedor', 'Vendedor'),
+        ('mecanico', 'Mecánico'),
+        ('artesano', 'Artesano'),
+        ('otro', 'Otro')
+    ]
 
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='padre_profile')
-    ocupacion = models.CharField(max_length=50, null=True, blank=True)
+    ocupacion = models.CharField(max_length=50, choices=OCUPACION_CHOICES, null=True, blank=True)
+    otra_ocupacion = models.CharField(max_length=50, null=True, blank=True)
     estrato = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(6)])
 
     telefono_contacto_emergencia = models.CharField(max_length=20, null=True, blank=True)
     nombre_contacto_emergencia = models.CharField(max_length=100, null=True, blank=True)
     situacion_economica_hogar = models.CharField(max_length=100, null=True, blank=True)
-    documento_identidad_img = models.CharField(max_length=255, null=True, blank=True)
+    documento_identidad_img = models.FileField(max_length=255, null=True, blank=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    clasificacion_sisben = models.FileField(max_length=50, null=True, blank=True)
 
     class Meta:
         db_table = 'padres'
@@ -312,13 +337,54 @@ class Nino(models.Model):
     tiene_discapacidad = models.BooleanField(default=False)
     tipos_discapacidad = models.ManyToManyField('Discapacidad', blank=True)
     otra_discapacidad = models.CharField(max_length=100, null=True, blank=True)
-    nacionalidad = models.CharField(max_length=50, null=True, blank=True)
-    fecha_ingreso = models.DateField(null=True, blank=True)
+    
+    PAIS_NACIMIENTO_CHOICES = [
+        ('', '-- Seleccione el país de nacimiento --'),
+        ('colombia', 'Colombia'),
+        ('venezuela', 'Venezuela'),
+        ('ecuador', 'Ecuador'),
+        ('peru', 'Perú'),
+        ('panama', 'Panamá'),
+        ('brasil', 'Brasil'),
+        ('argentina', 'Argentina'),
+        ('chile', 'Chile'),
+        ('bolivia', 'Bolivia'),
+        ('paraguay', 'Paraguay'),
+        ('uruguay', 'Uruguay'),
+        ('mexico', 'México'),
+        ('costa_rica', 'Costa Rica'),
+        ('nicaragua', 'Nicaragua'),
+        ('honduras', 'Honduras'),
+        ('guatemala', 'Guatemala'),
+        ('el_salvador', 'El Salvador'),
+        ('cuba', 'Cuba'),
+        ('republica_dominicana', 'República Dominicana'),
+        ('haiti', 'Haití'),
+        ('estados_unidos', 'Estados Unidos'),
+        ('canada', 'Canadá'),
+        ('espana', 'España'),
+        ('italia', 'Italia'),
+        ('francia', 'Francia'),
+        ('alemania', 'Alemania'),
+        ('otro', 'Otro país')
+    ]
+    
+    nacionalidad = models.CharField(
+        max_length=50, 
+        choices=PAIS_NACIMIENTO_CHOICES,
+        null=True, 
+        blank=True,
+        verbose_name="País de nacimiento"
+    )
+    otro_pais = models.CharField(max_length=50, null=True, blank=True, verbose_name="Otro país (especifique)")
+    fecha_ingreso = models.DateField(auto_now_add=True, verbose_name="Fecha de ingreso al hogar")
     hogar = models.ForeignKey(HogarComunitario, on_delete=models.PROTECT, related_name='ninos')
     padre = models.ForeignKey(Padre, on_delete=models.CASCADE, related_name='ninos')
     foto = models.FileField(upload_to='ninos/fotos/', null=True, blank=True)
     carnet_vacunacion = models.FileField(upload_to='ninos/vacunacion/', null=True, blank=True)
     certificado_eps = models.FileField(upload_to='ninos/eps/', null=True, blank=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    registro_civil_img = models.FileField(upload_to='ninos/registro_civil/', null=True, blank=True)
 
     class Meta:
         db_table = 'ninos'
