@@ -31,7 +31,7 @@ class GeneradorEvaluacionMensual:
         Si save_instance=False, solo ejecuta la lógica pero no guarda el objeto.
         """
         if only_tendencia:
-            self._generar_valoracion_general()  # Solo tendencia y participaciones
+            self._generar_valoracion_general(only_asistencia=True)  # Solo asistencia
             if save_instance:
                 self.evaluacion.save(run_generator=False) # Guardar sin volver a llamar al generador
             return
@@ -65,7 +65,7 @@ class GeneradorEvaluacionMensual:
             fecha__lte=self.fecha_fin_mes
         )
 
-    def _generar_valoracion_general(self):
+    def _generar_valoracion_general(self, only_asistencia=False):
         if not self.seguimientos_mes.exists():
             return
 
@@ -128,6 +128,9 @@ class GeneradorEvaluacionMensual:
         else:
             # Si no hay registros de asistencia, no se puede calcular.
             self.evaluacion.porcentaje_asistencia = None
+
+        if only_asistencia:
+            return
 
     def _generar_evaluacion_por_areas(self):
         # Esta es una implementación simplificada. Se puede expandir con análisis de texto más avanzado.

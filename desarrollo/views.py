@@ -274,7 +274,7 @@ def generar_reporte(request):
 @login_required
 def reporte_resumen(request, nino_id):
     nino = get_object_or_404(Nino, id=nino_id)
-    
+
     # Asegurarse de que la madre solo pueda ver niños de su hogar
     if not request.user.is_staff:
         try:
@@ -284,13 +284,32 @@ def reporte_resumen(request, nino_id):
         except HogarComunitario.DoesNotExist:
             return redirect('gestion_ninos')
 
-    desarrollos = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes')
-    novedades = Novedad.objects.filter(nino=nino).order_by('-fecha')
+    # --- Lógica de Filtrado ---
+    fecha_inicio_str = request.GET.get('fecha_inicio')
+    fecha_fin_str = request.GET.get('fecha_fin')
+
+    # Obtener todos los registros
+    seguimientos_query = SeguimientoDiario.objects.filter(nino=nino)
+    novedades = Novedad.objects.filter(nino=nino)
+    desarrollos = DesarrolloNino.objects.filter(nino=nino)
+
+    # Aplicar filtro de fecha de inicio si existe
+    if fecha_inicio_str:
+        seguimientos_query = seguimientos_query.filter(fecha__gte=fecha_inicio_str)
+        novedades = novedades.filter(fecha__gte=fecha_inicio_str)
+        desarrollos = desarrollos.filter(fecha_fin_mes__gte=fecha_inicio_str)
+
+    # Aplicar filtro de fecha de fin si existe
+    if fecha_fin_str:
+        seguimientos_query = seguimientos_query.filter(fecha__lte=fecha_fin_str)
+        novedades = novedades.filter(fecha__lte=fecha_fin_str)
+        desarrollos = desarrollos.filter(fecha_fin_mes__lte=fecha_fin_str)
 
     context = {
         'nino': nino,
-        'desarrollos': desarrollos,
-        'novedades': novedades,
+        'desarrollos': desarrollos.order_by('-fecha_fin_mes'),
+        'novedades': novedades.order_by('-fecha'),
+        'seguimientos': seguimientos_query.order_by('-fecha'),
     }
     return render(request, 'reporte/reporte_resumen.html', context)
 
@@ -318,6 +337,7 @@ def generar_reporte_pdf(request, nino_id):
     # Base de consultas vacías
     desarrollos = DesarrolloNino.objects.none()
     novedades = Novedad.objects.none()
+    seguimientos = SeguimientoDiario.objects.none()
 
     # Aplicar tipo de reporte
     if tipo_reporte in ['ambos', 'desarrollo']:
@@ -326,15 +346,25 @@ def generar_reporte_pdf(request, nino_id):
     if tipo_reporte in ['ambos', 'novedades']:
         novedades = Novedad.objects.filter(nino=nino)
 
+    if tipo_reporte in ['ambos', 'seguimiento']:
+        seguimientos = SeguimientoDiario.objects.filter(nino=nino)
+
     # Aplicar filtros de fecha de forma SEGURA
     if fecha_inicio:
         desarrollos = desarrollos.filter(fecha_fin_mes__gte=fecha_inicio)
         novedades = novedades.filter(fecha__gte=fecha_inicio)
+        seguimientos = seguimientos.filter(fecha__gte=fecha_inicio)
 
     if fecha_fin:
         desarrollos = desarrollos.filter(fecha_fin_mes__lte=fecha_fin)
         novedades = novedades.filter(fecha__lte=fecha_fin)
-    
+        seguimientos = seguimientos.filter(fecha__lte=fecha_fin)
+
+    # --- CÁLCULO PARA LAS ESTRELLAS ---
+    seguimientos = list(seguimientos.order_by('fecha'))
+    for s in seguimientos:
+        s.valoracion_restante = 5 - (s.valoracion or 0)
+
     logo_url = request.build_absolute_uri(static('img/logoSinFondo.png'))
 
     # Renderizar plantilla HTML
@@ -343,11 +373,13 @@ def generar_reporte_pdf(request, nino_id):
         'nino': nino,
         'desarrollos': desarrollos.order_by('fecha_fin_mes'),
         'novedades': novedades.order_by('fecha'),
+        'seguimientos': seguimientos,  # Ya es lista con el atributo extra
         'tipo_reporte': tipo_reporte,
         'fecha_inicio': fecha_inicio_str or "N/A",
         'fecha_fin': fecha_fin_str or "N/A",
         'logo_url': logo_url,
-        'hogar_comunitario': nino.hogar, # Mover aquí
+        'hogar_comunitario': nino.hogar,
+        'usuario_generador': f"{request.user.nombres} {request.user.apellidos}".strip() or request.user.documento,
     }
     template = get_template(template_path)
     html = template.render(context)
