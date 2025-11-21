@@ -16,6 +16,8 @@ class NovedadForm(forms.ModelForm):
             'disposicion',
             'acuerdos',
             'observaciones',
+            'archivo_pdf',
+
         ]
         widgets = {
             'tipo': forms.Select(),

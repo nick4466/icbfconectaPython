@@ -12,6 +12,8 @@ class Novedad(models.Model):
     acuerdos = models.TextField(blank=True)
     observaciones = models.TextField(blank=True)
 
+    archivo_pdf = models.FileField(upload_to='novedades_pdfs/', blank=True, null=True)
+
     TIPOS_NOVEDAD = [
         ('a', 'Cambios en los estados de salud'),
         ('b', 'Cambios en el estado emocional'),

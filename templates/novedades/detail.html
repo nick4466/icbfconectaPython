@@ -132,22 +132,33 @@ nav ul {
     </nav>
   </header>
 
-  <h2 class="main-title">Detalle de Novedad</h2>
+
+
+  <h2 class="main-title">Detalle de Novedad por excusa medica</h2>
+
 
   <div class="detail-card">
     <ul>
-      <li><strong>Niño:</strong> {{ novedad.nino }}</li>
-      <li><strong>Fecha:</strong> {{ novedad.fecha }}</li>
-      <li><strong>Clase:</strong> {{ novedad.clase }}</li>
+
+
       <li><strong>Tipo:</strong> {{ novedad.get_tipo_display }}</li>
-      <li><strong>Docente:</strong> {{ novedad.docente }}</li>
       <li><strong>Descripción:</strong> {{ novedad.descripcion }}</li>
-      <li><strong>Causa:</strong> {{ novedad.causa }}</li>
-      <li><strong>Disposición:</strong> {{ novedad.disposicion }}</li>
-      <li><strong>Acuerdos:</strong> {{ novedad.acuerdos }}</li>
+      
+      
       <li><strong>Observaciones:</strong> {{ novedad.observaciones }}</li>
+
+       {% if novedad.archivo_pdf %}
+    <li>
+      <strong>Soporte PDF:</strong>
+      <a href="{{ novedad.archivo_pdf.url }}" target="_blank">Ver PDF</a> |
+      <a href="{{ novedad.archivo_pdf.url }}" download>Descargar PDF</a>
+    </li>
+  {% else %}
+    <li><strong>Soporte PDF:</strong> No se adjuntó archivo</li>
+  {% endif %}
+
     </ul>
-    <a href="{% url 'novedades_list' %}" class="btn-secondary">Volver al listado</a>
+    <a href="{% url 'historial_asistencia' novedad.nino.id %}" class="btn-secondary">Volver al listado</a>
   </div>
 
 </body>

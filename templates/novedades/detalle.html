@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Detalle de Novedad</title>
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+  <style>
+    .card {
+      max-width: 600px;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.9);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+      font-family: 'Roboto', sans-serif;
+    }
+    .card h2 {
+      color: #7a3eb1;
+      margin-bottom: 15px;
+    }
+    .card p {
+      font-size: 16px;
+      margin: 8px 0;
+    }
+    .volver {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 16px;
+      background-color: #9B59B6;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    .volver:hover { background-color: #8e44ad; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Detalle de Novedad</h2>
+    <p><strong>Niño:</strong> {{ novedad.nino.nombres }} {{ novedad.nino.apellidos }}</p>
+    <p><strong>Fecha:</strong> {{ novedad.fecha }}</p>
+    <p><strong>Tipo:</strong> {{ novedad.tipo }}</p>
+    <p><strong>Descripción:</strong> {{ novedad.descripcion }}</p>
+    <p><strong>Observaciones:</strong> {{ novedad.observaciones }}</p>
+
+     {% if novedad.archivo_pdf %}
+    <li>
+      <strong>Soporte PDF:</strong>
+      <a href="{{ novedad.archivo_pdf.url }}" target="_blank">Ver PDF</a> |
+      <a href="{{ novedad.archivo_pdf.url }}" download>Descargar PDF</a>
+    </li>
+  {% else %}
+    <li><strong>Soporte PDF:</strong> No se adjuntó archivo</li>
+  {% endif %}
+
+    <a href="{% url 'historial_asistencia' novedad.nino.id %}" class="volver">← Volver al historial</a>
+  </div>
+</body>
+</html>

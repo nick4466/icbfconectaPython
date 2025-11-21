@@ -106,7 +106,11 @@ urlpatterns = [
     #-----------------------------------------------juanito---------------------------------------------#
     # --- URLs de Asistencias no borrar please ultra importarte ;D #---
     path('asistencia/', include('asistencia.urls')),
+
     path('novedades/', include('novedades.urls')),
+
+    path('novedades/', include('novedades.urls', namespace='novedades')),
+
     
      # --- URLs de Correos Masivos ---
      path("correos/", include("correos.urls")),

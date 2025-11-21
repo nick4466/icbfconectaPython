@@ -1,6 +1,11 @@
 from django.urls import path
 from .views import novedades_list, novedades_create, novedades_edit, novedades_delete, novedades_detail
 
+from . import views
+from django.conf.urls.static import static
+from django.conf import settings
+
+app_name = 'novedades'
 urlpatterns = [
     path('', novedades_list, name='novedades_list'),
     path('nueva/', novedades_create, name='novedades_create'),
@@ -8,4 +13,7 @@ urlpatterns = [
     path('eliminar/<int:pk>/', novedades_delete, name='novedades_delete'),
     path('detalle/<int:pk>/', novedades_detail, name='novedades_detail'),
 
-]
+    path('detalle/<int:novedad_id>/', views.detalle_novedad, name='detalle'),
+    
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

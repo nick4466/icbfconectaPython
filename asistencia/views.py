@@ -3,25 +3,19 @@ from core.models import Nino, Asistencia
 from datetime import date
 from novedades.models import Novedad
 from django.http import JsonResponse
-
-
-from django.shortcuts import render, redirect, get_object_or_404
-from core.models import Nino, Asistencia
-from datetime import date
-from django.http import JsonResponse
+from django.core.serializers.json import DjangoJSONEncoder
+import json
 
 def asistencia_form(request):
     ninos = Nino.objects.all()
 
     if request.method == 'POST':
-        # ✅ Leer la fecha desde el formulario
         fecha_str = request.POST.get('fecha')
         fecha_hoy = date.fromisoformat(fecha_str) if fecha_str else date.today()
 
         for nino in ninos:
             estado = request.POST.get(f'nino_{nino.id}')
             if estado:
-                # ✅ Evita duplicados: actualiza si existe, crea si no
                 Asistencia.objects.update_or_create(
                     nino=nino,
                     fecha=fecha_hoy,
@@ -34,7 +28,6 @@ def asistencia_form(request):
             'mensaje': 'Asistencia registrada exitosamente ✅'
         })
 
-    # Si es GET, usar fecha de hoy por defecto
     fecha_hoy = date.today()
     return render(request, 'asistencia/asistencia_form.html', {
         'ninos': ninos,
@@ -45,6 +38,31 @@ def asistencia_form(request):
 def historial_asistencia(request, nino_id):
     nino = get_object_or_404(Nino, id=nino_id)
     historial = Asistencia.objects.filter(nino=nino).order_by('-fecha')
+
+    # Filtro por rango
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    if start_date and end_date:
+        historial = historial.filter(fecha__range=[start_date, end_date])
+
+    # Vincular novedad por fecha y niño
+    for asistencia in historial:
+        novedad = Novedad.objects.filter(nino=nino, fecha=asistencia.fecha).first()
+        asistencia.novedad_id = novedad.id if novedad else None
+
+    # Datos para calendario
+    eventos = [
+        {
+            "title": a.estado,
+            "start": a.fecha.strftime("%Y-%m-%d"),
+            "color": (
+                "#28a745" if a.estado == "Presente" else
+                "#dc3545" if a.estado == "Ausente" else
+                "#6f42c1"
+            )
+        }
+        for a in historial
+    ]
 
     total = historial.count()
     presentes = historial.filter(estado="Presente").count()
@@ -63,11 +81,10 @@ def historial_asistencia(request, nino_id):
         'porc_presentes': porcentaje(presentes),
         'porc_ausentes': porcentaje(ausentes),
         'porc_justificados': porcentaje(justificados),
+        'eventos_json': json.dumps(eventos, cls=DjangoJSONEncoder),
+        'start_date': start_date,
+        'end_date': end_date,
     })
-
-
-
-
 
 
 def crear_novedad_desde_asistencia(request):
@@ -77,17 +94,17 @@ def crear_novedad_desde_asistencia(request):
         tipo = request.POST.get('tipo')
         descripcion = request.POST.get('descripcion')
         observaciones = request.POST.get('observaciones')
+        archivo_pdf = request.FILES.get('archivo_pdf')
 
-        # Crear novedad
         Novedad.objects.create(
             nino_id=nino_id,
             fecha=fecha,
             tipo=tipo,
             descripcion=descripcion,
-            observaciones=observaciones
+            observaciones=observaciones,
+            archivo_pdf=archivo_pdf
         )
 
-        # Justificar asistencia: actualizar si existe, crear si no
         updated = Asistencia.objects.filter(nino_id=nino_id, fecha=fecha).update(estado="Justificado")
         if not updated:
             Asistencia.objects.create(nino_id=nino_id, fecha=fecha, estado="Justificado")

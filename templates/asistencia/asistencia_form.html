@@ -270,7 +270,10 @@
       <nav>
         <ul>
           <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-arrow-left"></i> Volver</a></li>
-          <li><a href="{% url 'novedades_list' %}">Reportar Novedad</a></li>
+
+          <li><a href="{% url 'novedades:novedades_list' %}">Reportar Novedad</a></li>
+
+
 
           <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
           
@@ -297,7 +300,8 @@
         <th>#</th>
         <th>Nombre Completo</th>
         <th>Asistencia</th>
-        <th>Calificar</th>
+
+        
         <th>Historial Asistencia</th>
       </tr>
     </thead>
@@ -321,11 +325,9 @@
   </td>
 
 
-        <td>
-          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino.id }}" class="btn-mini-historial">
-            Calificar
-          </a>
-        </td>
+
+        
+
         <td>
           <a href="{% url 'historial_asistencia' nino.id %}" class="btn-mini-historial">
             <i class="fas fa-history"></i> Ver
@@ -345,6 +347,7 @@
       <span class="close" onclick="cerrarModal()">&times;</span>
       <h2>Justificar Ausencia</h2>
       <form id="form-justificacion" method="post"> 
+      <form id="form-justificacion" method="post" enctype="multipart/form-data"> 
     {% csrf_token %}
     <input type="hidden" name="nino_id" id="modal-nino-id">
     <input type="hidden" name="fecha" id="modal-fecha">
@@ -363,6 +366,12 @@
 
     <label for="observaciones">Observaciones:</label>
     <textarea name="observaciones" rows="2"></textarea>
+
+
+
+      <label for="archivo_pdf">Adjuntar soporte (PDF):</label>
+  <input type="file" name="archivo_pdf" accept="application/pdf">
+
 
     <div style="margin-top: 10px; display: flex; justify-content: space-between;">
     <button type="button" class="btn-mini-green" onclick="guardarJustificacion()">Guardar Justificación</button>
@@ -418,6 +427,7 @@
   }
 
 
+
   function guardarJustificacion() {
     const form = document.getElementById("form-justificacion");
     const formData = new FormData(form);
@@ -445,6 +455,36 @@
     })
     .catch(error => console.error("Error:", error));
   }
+
+function guardarJustificacion() {
+  const form = document.getElementById("form-justificacion");
+  const formData = new FormData(form);
+  const csrftoken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  fetch("{% url 'crear_novedad_desde_asistencia' %}", {
+    method: "POST",
+    body: formData,
+    headers: {
+      "X-CSRFToken": csrftoken
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert("Justificación guardada <3");
+      cerrarModal();
+
+      // Actualizar visualmente el estado en la tabla
+      const ninoId = formData.get("nino_id");
+      document.querySelector(`#justificado-${ninoId}`).checked = true;
+    } else {
+      alert("Error al guardar la justificación ❌");
+    }
+  })
+  .catch(error => console.error("Error:", error));
+}
+
+
 
 
   function activarJustificado(ninoId) {

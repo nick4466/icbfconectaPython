@@ -237,7 +237,8 @@ nav ul {
   <h2 class="main-title">Listado de Novedades</h2>
 
   <div style="text-align: center; margin-bottom: 20px;">
-  <a href="{% url 'novedades_create' %}" class="btn btn-primary">Registrar nueva novedad</a>
+  <a href="{% url 'novedades:novedades_create' %}" class="btn btn-primary">Registrar nueva novedad</a>
+
 </div>
 
 
@@ -269,9 +270,9 @@ nav ul {
             <div class="menu-container">
               <button class="menu-trigger">⋯</button>
               <div class="menu-options">
-                <a href="{% url 'novedades_detail' novedad.pk %}">Ver</a>
-                <a href="{% url 'novedades_edit' novedad.pk %}">Editar</a>
-                <a href="{% url 'novedades_delete' novedad.pk %}" style="color: red;">Eliminar</a>
+                <a href="{% url 'novedades:novedades_detail' novedad.pk %}">Ver</a>
+                <a href="{% url 'novedades:novedades_edit' novedad.pk %}">Editar</a>
+                <a href="{% url 'novedades:novedades_delete' novedad.pk %}" style="color: red;">Eliminar</a>
               </div>
             </div>
           </td>

@@ -93,3 +93,10 @@ def nueva_novedad(request):
         form = NovedadForm(initial=initial)
 
     return render(request, 'novedades/nueva.html', {'form': form, 'nino': nino, 'fecha': fecha})
+
+
+
+def detalle_novedad(request, novedad_id):
+    novedad = get_object_or_404(Novedad, id=novedad_id)
+    return render(request, 'novedades/detalle.html', {'novedad': novedad})
+
