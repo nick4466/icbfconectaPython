@@ -42,7 +42,50 @@
     nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
 
     /* Estilos para el menú desplegable */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+
+    header img {
+      height: 60px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav ul li a, nav ul li button {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    nav ul li a:hover, nav ul li button:hover {
+      background-color: #f3c1e5;
+    }
+
+    /* Dropdown original */
     nav ul .dropdown { position: relative; }
+
     nav ul .dropdown-content {
       display: none;
       position: absolute;
@@ -53,13 +96,22 @@
       border-radius: 8px;
       padding: 8px 0;
     }
-<<<<<<< HEAD
-    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none, display: block; }
-=======
-    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
-    nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
-    nav ul .dropdown:hover .dropdown-content { display: block; }
+
+    nav ul .dropdown-content a {
+      color: #9B59B6;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+
+    nav ul .dropdown-content a:hover {
+      background-color: #f3c1e5;
+    }
+
+    nav ul .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
 
     .tabla-registros {
       max-width: 1100px; margin: 40px auto; background-color: rgba(255, 255, 255, 0.9);
@@ -129,27 +181,21 @@
       width: 80%; max-width: 600px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
       animation: zoomIn 0.3s ease; max-height: 80vh; overflow-y: auto;
     }
-<<<<<<< HEAD
     .modal-contenido::-webkit-scrollbar { width: 8px; }
     .modal-contenido::-webkit-scrollbar-thumb { background-color: #c3a3e0; border-radius: 4px; }
     .modal-contenido::-webkit-scrollbar-track { background-color: #f1f1f1; }
 
-=======
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
     @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .cerrar-modal { float: right; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; }
     .cerrar-modal:hover { color: #000; }
     .modal-contenido h2 { margin-top: 0; color: #7a3eb1; }
     .modal-contenido p { margin: 12px 0; font-size: 16px; line-height: 1.5; }
-<<<<<<< HEAD
     .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 25px; margin-top: 15px; }
     .modal-item { display: flex; flex-direction: column; }
     .modal-item strong { color: #5e3370; font-size: 15px; margin-bottom: 4px; }
     .modal-item span { font-size: 16px; }
     .modal-item.full-width { grid-column: 1 / -1; }
     .modal-item blockquote { margin: 5px 0 0 0; padding: 10px 15px; background-color: #f8f6fa; border-left: 4px solid #c3a3e0; border-radius: 4px; font-style: italic; color: #333; }
-=======
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
   </style>
   <style>
     .display-stars { color: #f5b301; font-size: 1.2rem; }
@@ -163,11 +209,7 @@
       --primary-color: #9B59B6;
       --star-color: #f5b301;
     }
-<<<<<<< HEAD
     .mensaje-success {
-=======
-    .mensaje-exito {
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
       background-color: #4CAF50;
       color: white;
       padding: 15px;
@@ -177,7 +219,6 @@
       font-size: 16px;
       transition: opacity 0.5s ease;
     }
-<<<<<<< HEAD
     .mensaje-error {
       background-color: #dc3545; /* Rojo */
       color: white;
@@ -318,138 +359,6 @@
       z-index: 2;
       border: 2px solid var(--card-accent, #9B59B6);
     }
-=======
-
-    /* === NUEVO DISEÑO DE CARDS === */
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px;
-  margin-top: 25px;
-}
-@media (max-width: 900px) {
-  .card-grid {
-    grid-template-columns: 1fr;
-  }
-}
-.desarrollo-card {
-  background: #f8f6fa;
-  border-radius: 18px;
-  padding: 24px 22px 18px 22px;
-  box-shadow: 0 2px 10px rgba(155,89,182,0.07);
-  display: flex;
-  flex-direction: column;
-  border: none;
-  position: relative;
-  overflow: hidden;
-  transition: box-shadow .2s, transform .2s;
-  min-height: 210px;
-  /* El color del borde izquierdo se ajusta por clase */
-  border-left: 10px solid var(--card-accent, #9B59B6);
-}
-.desarrollo-card:hover {
-  box-shadow: 0 8px 24px rgba(155,89,182,0.13);
-  transform: translateY(-4px) scale(1.01);
-}
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.card-header h3 {
-  font-size: 24px;
-  color: var(--card-accent, #7a3eb1);
-  font-weight: 900;
-  margin-bottom: 0;
-}
-.card-header .fecha {
-  font-size: 17px;
-  color: #444;
-  font-weight: 700;
-  margin-left: 0;
-  margin-top: 2px;
-}
-.card-body {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-.card-body p {
-  margin: 0;
-  font-size: 15px;
-  color: #444;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.dimension-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-  justify-content: flex-start;
-}
-.dimension-mini {
-  background: none;
-  border-radius: 6px;
-  padding: 0 6px;
-  font-size: 15px;
-  color: #7a3eb1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-}
-.display-stars {
-  color: #f5b301;
-  font-size: 1.2rem;
-  margin-left: 8px;
-}
-.display-stars .inactive {
-  color: #e0e0e0;
-}
-.card-footer {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  border-top: none;
-  padding-top: 0;
-}
-.card-icon {
-  position: absolute;
-  top: 12px;
-  right: 18px;
-  font-size: 60px;
-  color: var(--primary-color);
-  opacity: 0.06;
-  z-index: 0;
-}
-.card-accent-excelente { --card-accent: #7a3eb1; } /* morado moderno */
-.card-accent-muybueno { --card-accent: #5dade2; } /* azul suave */
-.card-accent-bueno { --card-accent: #48c9b0; } /* verde agua */
-.card-accent-regular { --card-accent: #f7ca18; } /* amarillo suave */
-.card-accent-malo { --card-accent: #e74c3c; } /* rojo coral */
-.card-accent-actual { background: #e5d5f5 !important; }
-.badge-promedio {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  background: #fff;
-  color: #7a3eb1;
-  font-weight: 700;
-  font-size: 14px;
-  border-radius: 16px;
-  padding: 4px 12px;
-  box-shadow: 0 2px 8px rgba(155,89,182,0.08);
-  z-index: 2;
-  border: 2px solid var(--card-accent, #9B59B6);
-}
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
     /* --- ESTILOS DE PAGINACIÓN --- */
     .pagination {
       display: flex;
@@ -472,7 +381,6 @@
     .pagination .disabled { color: #ccc; border-color: #ddd; background-color: #f8f9fa; }
   </style>
 </head>
-<<<<<<< HEAD
 <style>
   /* Estilo personalizado para los mensajes de advertencia */
   .mensaje-warning {
@@ -517,8 +425,6 @@
     color: #7a3eb1;
   }
 </style>
-=======
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
 <body>
   <header>
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
@@ -532,29 +438,18 @@
           <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
           <div class="dropdown-content">
             <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-<<<<<<< HEAD
             <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar <br> Contraseña</a>
-=======
-            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
-          </div>
-        </li>
-        <li>
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}
                 <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
             </form>
-<<<<<<< HEAD
           </div>
-=======
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
         </li>
       </ul>
     </nav>
   </header>
 
   <div class="tabla-registros">
-<<<<<<< HEAD
     <h1>
         Desarrollo Infantil
         {% if nino_filtrado %}
@@ -586,46 +481,12 @@
         <input type="month" id="mes" name="mes" value="{{ mes_filtro }}">
         <button type="submit"><i class="fas fa-search"></i> Filtrar</button>
         <a href="{% url 'desarrollo:listar_desarrollos' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-volver" style="margin-left: 5px;">Limpiar Filtro</a>
-=======
-    <h1>Desarrollo Infantil</h1>
-
-    {% if request.GET.exito %}
-    <div class="mensaje-exito" id="mensajeExito">¡Registro guardado exitosamente!</div>
-    {% endif %}
-
-    <div class="filtros-y-botones">
-      <form method="get" class="filtros-form">
-        <select name="nino">
-          <option value="">Todos</option>
-          {% for nino in ninos %}
-            <option value="{{ nino.id }}" {% if nino_id_filtro == nino.id|stringformat:"s" %}selected{% endif %}>
-              {{ nino.nombres }} {{ nino.apellidos }}
-            </option>
-          {% endfor %}
-        </select>
-        <input type="month" name="mes" value="{{ mes_filtro }}">
-        <button type="submit"><i class="fas fa-filter"></i> Filtrar</button>
-        {% if nino_id_filtro %}
-          <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino_id_filtro }}" style="margin-left: 5px;">Limpiar Mes</a>
-        {% else %}
-          <a href="{% url 'desarrollo:listar_desarrollos' %}" style="margin-left: 5px;">Limpiar Filtros</a>
-        {% endif %}
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
       </form>
 
       <div>
         <a href="{% url 'gestion_ninos' %}" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a Gestión</a>
-<<<<<<< HEAD
         <a href="{% url 'desarrollo:registrar_desarrollo' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-agregar">
           <i class="fas fa-plus"></i> Añadir Registro
-=======
-        {% if nino_id_filtro %}
-        <a href="{% url 'desarrollo:registrar_desarrollo' %}?nino={{ nino_id_filtro }}" class="btn-agregar">
-        {% else %}
-        <a href="{% url 'desarrollo:registrar_desarrollo' %}" class="btn-agregar">
-        {% endif %}
-          <i class="fas fa-plus"></i> Agregar Registro
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
         </a>
       </div>
     </div>
@@ -636,7 +497,6 @@
         data-nino="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}"
         data-tutor="{{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}"
         data-fecha="{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}"
-<<<<<<< HEAD
         data-eval-cognitiva="{{ desarrollo.evaluacion_cognitiva|default_if_none:''|escapejs }}"
         data-eval-comunicativa="{{ desarrollo.evaluacion_comunicativa|default_if_none:''|escapejs }}"
         data-eval-socioafectiva="{{ desarrollo.evaluacion_socio_afectiva|default_if_none:''|escapejs }}"
@@ -666,35 +526,6 @@
              class="btn-accion btn-azul" 
              title="Editar">
              <i class="fas fa-pen"></i></a>
-=======
-        data-cognitiva="{{ desarrollo.dimension_cognitiva }}"
-        data-comunicativa="{{ desarrollo.dimension_comunicativa }}"
-        data-socioafectiva="{{ desarrollo.dimension_socio_afectiva }}"
-        data-corporal="{{ desarrollo.dimension_corporal }}"
-        data-rating-cognitiva="{{ desarrollo.rating_cognitiva|default:0 }}"
-        data-rating-comunicativa="{{ desarrollo.rating_comunicativa|default:0 }}"
-        data-rating-socioafectiva="{{ desarrollo.rating_socio_afectiva|default:0 }}"
-        data-rating-corporal="{{ desarrollo.rating_corporal|default:0 }}"
-      >
-        <span class="badge-promedio">{{ desarrollo.badge }} ({{ desarrollo.promedio }})</span>
-        <i class="fas {{ desarrollo.icon }} card-icon"></i>
-        <div class="card-header">
-          <h3>{{ desarrollo.fecha_fin_mes|date:"d/M/Y" }}</h3>
-          <span class="fecha">{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}</span>
-        </div>
-        <div class="card-body">
-          <p><i class="fas fa-user"></i> <span style="font-weight:500">Tutor:</span> {{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}</p>
-          <div class="dimension-row">
-            <span class="dimension-mini"><strong>Cognitiva</strong> <span class="display-stars">{% for i in "12345" %}{% if forloop.counter <= desarrollo.rating_cognitiva %}★{% else %}<span class="inactive">★</span>{% endif %}{% endfor %}</span></span>
-            <span class="dimension-mini"><strong>Comunicativa</strong> <span class="display-stars">{% for i in "12345" %}{% if forloop.counter <= desarrollo.rating_comunicativa %}★{% else %}<span class="inactive">★</span>{% endif %}{% endfor %}</span></span>
-            <span class="dimension-mini"><strong>Socio-Afectiva</strong> <span class="display-stars">{% for i in "12345" %}{% if forloop.counter <= desarrollo.rating_socio_afectiva %}★{% else %}<span class="inactive">★</span>{% endif %}{% endfor %}</span></span>
-            <span class="dimension-mini"><strong>Corporal</strong> <span class="display-stars">{% for i in "12345" %}{% if forloop.counter <= desarrollo.rating_corporal %}★{% else %}<span class="inactive">★</span>{% endif %}{% endfor %}</span></span>
-          </div>
-        </div>
-        <div class="card-footer acciones">
-          <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-          <a href="{% url 'desarrollo:editar_desarrollo' desarrollo.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
           <a href="{% url 'desarrollo:eliminar_desarrollo' desarrollo.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este registro? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
         </div>
       </div>
@@ -732,7 +563,6 @@
   <div id="modalDetalles" class="modal">
     <div class="modal-contenido">
       <span class="cerrar-modal">&times;</span>
-<<<<<<< HEAD
       <h2 style="text-align: center;">Detalles del Desarrollo Mensual</h2>
       <div class="modal-grid">
         <div class="modal-item"><strong>Niño/a:</strong> <span id="modal-nino"></span></div>
@@ -765,28 +595,6 @@
           <strong>Conclusión General:</strong>
           <blockquote id="modal-conclusion"></blockquote>
         </div>
-=======
-      <h2>Detalles del Registro</h2>
-      <p><strong>Niño:</strong> <span id="modal-nino"></span></p>
-      <p><strong>Tutor:</strong> <span id="modal-tutor"></span></p>
-      <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
-      <hr>
-      <div class="dimension-block">
-        <p><strong>Dimensión Cognitiva:</strong> <span class="display-stars" id="modal-rating-cognitiva"></span></p>
-        <p><span id="modal-cognitiva"></span></p>
-      </div>
-      <div class="dimension-block">
-        <p><strong>Dimensión Comunicativa:</strong> <span class="display-stars" id="modal-rating-comunicativa"></span></p>
-        <p><span id="modal-comunicativa"></span></p>
-      </div>
-      <div class="dimension-block">
-        <p><strong>Dimensión Socio-Afectiva:</strong> <span class="display-stars" id="modal-rating-socioafectiva"></span></p>
-        <p><span id="modal-socioafectiva"></span></p>
-      </div>
-      <div class="dimension-block">
-        <p><strong>Dimensión Corporal:</strong> <span class="display-stars" id="modal-rating-corporal"></span></p>
-        <p><span id="modal-corporal"></span></p>
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
       </div>
     </div>
   </div>
@@ -807,7 +615,6 @@
       }
     };
 
-<<<<<<< HEAD
     document.querySelectorAll('.ver-detalles').forEach(button => {
       button.addEventListener('click', function() {
         const card = this.closest('.desarrollo-card');
@@ -831,54 +638,16 @@
         document.getElementById('modal-mejorar').textContent = mostrarDimension(card.dataset.mejorar);
         document.getElementById('modal-alertas').textContent = mostrarDimension(card.dataset.alertas);
         document.getElementById('modal-conclusion').textContent = mostrarDimension(card.dataset.conclusion);
-=======
-    function renderStars(container, rating) {
-      let starsHTML = '';
-      const totalStars = 5;
-      const numRating = parseInt(rating, 10);
-      for (let i = 1; i <= totalStars; i++) {
-        starsHTML += (i <= numRating) ? '★' : '<span class="inactive">★</span>';
-      }
-      container.innerHTML = starsHTML;
-    }
-
-    document.querySelectorAll('.ver-detalles').forEach(button => {
-      button.addEventListener('click', function() {
-        const card = this.closest('.desarrollo-card');
-        
-        document.getElementById('modal-nino').textContent = card.dataset.nino;
-        document.getElementById('modal-tutor').textContent = card.dataset.tutor;
-        document.getElementById('modal-fecha').textContent = card.dataset.fecha;
-        document.getElementById('modal-cognitiva').textContent = card.dataset.cognitiva;
-        document.getElementById('modal-comunicativa').textContent = card.dataset.comunicativa;
-        document.getElementById('modal-socioafectiva').textContent = card.dataset.socioafectiva;
-        document.getElementById('modal-corporal').textContent = card.dataset.corporal;
-
-        // Renderizar estrellas
-        renderStars(document.getElementById('modal-rating-cognitiva'), card.dataset.ratingCognitiva);
-        renderStars(document.getElementById('modal-rating-comunicativa'), card.dataset.ratingComunicativa);
-        renderStars(document.getElementById('modal-rating-socioafectiva'), card.dataset.ratingSocioafectiva);
-        renderStars(document.getElementById('modal-rating-corporal'), card.dataset.ratingCorporal);
-
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
         modal.style.display = 'flex';
       });
     });
 
     // Ocultar el mensaje de éxito después de 5 segundos
-<<<<<<< HEAD
     const mensajeNotificacion = document.getElementById('mensajeNotificacion');
     if (mensajeNotificacion) {
       setTimeout(() => {
         mensajeNotificacion.style.opacity = '0';
         setTimeout(() => { mensajeNotificacion.style.display = 'none'; }, 500);
-=======
-    const mensajeExito = document.getElementById('mensajeExito');
-    if (mensajeExito) {
-      setTimeout(() => {
-        mensajeExito.style.opacity = '0';
-        setTimeout(() => { mensajeExito.style.display = 'none'; }, 500);
->>>>>>> 8afe0bfd (calendario en historial de asistencia, filtro, estadisticas y bla bla)
       }, 5000);
     }
   </script>
