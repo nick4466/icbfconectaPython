@@ -8,6 +8,7 @@ from core.models import Nino, HogarComunitario, Padre, MadreComunitaria
 from django.utils import timezone
 from datetime import datetime
 from django.db.models import Q
+from dateutil.relativedelta import relativedelta
 from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
@@ -522,11 +523,11 @@ def listar_seguimientos(request):
     nino_filtrado = None
 
     # La consulta base siempre filtra por el hogar de la madre
-    seguimientos = SeguimientoDiario.objects.filter(nino__hogar=hogar_madre).select_related('nino')
+    seguimientos_query = SeguimientoDiario.objects.filter(nino__hogar=hogar_madre).select_related('nino').order_by('-fecha')
 
     # Si se especifica un niño, se convierte en el filtro principal
     if nino_id_filtro:
-        seguimientos = seguimientos.filter(nino__id=nino_id_filtro)
+        seguimientos_query = seguimientos_query.filter(nino__id=nino_id_filtro)
         try:
             nino_filtrado = Nino.objects.get(id=nino_id_filtro)
         except Nino.DoesNotExist:
@@ -536,15 +537,21 @@ def listar_seguimientos(request):
     if fecha_str:
         try:
             fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-            seguimientos = seguimientos.filter(fecha=fecha_obj)
+            seguimientos_query = seguimientos_query.filter(fecha=fecha_obj)
         except (ValueError, TypeError):
             fecha_str = None # Ignorar fecha inválida
     else:
         # Si no hay fecha, no se filtra por fecha, mostrando todos los seguimientos del niño (si aplica)
         fecha_str = None
 
+    # --- Paginación ---
+    paginator = Paginator(seguimientos_query, 4) # Mostrar 6 seguimientos por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+
     return render(request, 'madre/seguimiento_diario_list.html', {
-        'seguimientos': seguimientos.order_by('-fecha'),
+        'seguimientos': page_obj, # Pasamos el objeto de página a la plantilla
         'fecha_filtro': fecha_str,
         'nino_id_filtro': nino_id_filtro,
         'nino_filtrado': nino_filtrado,
@@ -606,145 +613,153 @@ def eliminar_seguimiento(request, id):
     redirect_url = reverse('desarrollo:listar_seguimientos')
     return redirect(f'{redirect_url}?nino={nino_id}')
 
+
 @login_required
 def registrar_desarrollo(request):
     if request.user.rol.nombre_rol != 'madre_comunitaria':
         return redirect('home')
     try:
-        hogar_madre = HogarComunitario.objects.get(madre__usuario=request.user)
+        madre_comunitaria = MadreComunitaria.objects.get(usuario=request.user)
+        hogar_madre = HogarComunitario.objects.get(madre=madre_comunitaria)
     except HogarComunitario.DoesNotExist:
         messages.error(request, 'No tienes un hogar asignado.')
         return redirect('home')
+    
     ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
 
     if request.method == 'POST':
-        # Paso 1: Selección de niño y mes
-        nino_id = request.POST.get('nino')
-        mes_str = request.POST.get('mes')  # Formato YYYY-MM
-        observaciones_adicionales = request.POST.get('observaciones_adicionales')
-        recomendaciones_personales = request.POST.get('recomendaciones_personales')
         desarrollo_id = request.POST.get('desarrollo_id')
-
-        # Si ya existe un desarrollo generado (edición de campos manuales)
-        if desarrollo_id:
-            desarrollo = get_object_or_404(DesarrolloNino, id=desarrollo_id, nino__hogar=hogar_madre)
-            
-            # Actualizar campos de texto editables
-            desarrollo.evaluacion_cognitiva = request.POST.get('evaluacion_cognitiva')
-            desarrollo.evaluacion_comunicativa = request.POST.get('evaluacion_comunicativa')
-            desarrollo.evaluacion_socio_afectiva = request.POST.get('evaluacion_socio_afectiva')
-            desarrollo.evaluacion_corporal = request.POST.get('evaluacion_corporal')
-            desarrollo.evaluacion_autonomia = request.POST.get('evaluacion_autonomia')
-            desarrollo.fortalezas_mes = request.POST.get('fortalezas_mes')
-            desarrollo.aspectos_a_mejorar = request.POST.get('aspectos_a_mejorar')
-            desarrollo.alertas_mes = request.POST.get('alertas_mes')
-            desarrollo.conclusion_general = request.POST.get('conclusion_general')
-
-            desarrollo.observaciones_adicionales = observaciones_adicionales
-            desarrollo.recomendaciones_personales = recomendaciones_personales
-            desarrollo.save()
-
-            # --- FIX: Recalcular tendencia del mes siguiente si existe ---
-            from .services import GeneradorEvaluacionMensual
-            from dateutil.relativedelta import relativedelta
-            
-            fecha_mes_siguiente_inicio = desarrollo.fecha_fin_mes + relativedelta(days=1)
-            try:
-                desarrollo_siguiente = DesarrolloNino.objects.get(
-                    nino=desarrollo.nino,
-                    fecha_fin_mes__year=fecha_mes_siguiente_inicio.year,
-                    fecha_fin_mes__month=fecha_mes_siguiente_inicio.month
-                )
-                GeneradorEvaluacionMensual(desarrollo_siguiente).run(only_tendencia=True)
-            except DesarrolloNino.DoesNotExist:
-                pass # No hay mes siguiente, no hacemos nada.
-
-            messages.success(request, f'Las observaciones para {desarrollo.nino.nombres} se guardaron exitosamente.')
-            
-            return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={desarrollo.nino.id}')
+        nino_id = request.POST.get('nino_hidden') or request.POST.get('nino')
+        mes_str = request.POST.get('mes_hidden') or request.POST.get('mes')
 
         if not nino_id or not mes_str:
-            messages.error(request, 'Debes seleccionar un niño y un mes.')
-            return render(request, 'madre/desarrollo_form.html', {
-                'titulo_form': 'Registrar Desarrollo Mensual',
-                'ninos': ninos_del_hogar,
-            })
+            messages.error(request, "Debes seleccionar un niño y un mes.")
+            return redirect('desarrollo:listar_desarrollos')
+
+        nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
         try:
             year, month = map(int, mes_str.split('-'))
             last_day = calendar.monthrange(year, month)[1]
             fecha_fin_mes = datetime(year, month, last_day).date()
-        except Exception:
-            messages.error(request, 'El formato del mes es inválido.')
+        except (ValueError, TypeError):
+            messages.error(request, "El formato del mes es inválido.")
+            return redirect('desarrollo:listar_desarrollos')
+
+        # --- ACCIÓN: GUARDAR (Crear o Actualizar) ---
+        # Esta acción se dispara si hay un 'desarrollo_id' (actualización) o si
+        # el formulario que se envía es el de "Guardar Registro" (creación).
+        # Usamos 'nino_hidden' como indicador de que estamos en el paso 2.
+        if 'nino_hidden' in request.POST:
+            from .services import GeneradorEvaluacionMensual
+
+            # Si hay ID, es una ACTUALIZACIÓN.
+            if desarrollo_id:
+                desarrollo = get_object_or_404(DesarrolloNino, id=desarrollo_id, nino=nino)
+                # Actualizar solo los campos manuales y los editables
+                desarrollo.evaluacion_cognitiva = request.POST.get('evaluacion_cognitiva', '')
+                desarrollo.evaluacion_comunicativa = request.POST.get('evaluacion_comunicativa', '')
+                desarrollo.evaluacion_socio_afectiva = request.POST.get('evaluacion_socio_afectiva', '')
+                desarrollo.evaluacion_corporal = request.POST.get('evaluacion_corporal', '')
+                desarrollo.evaluacion_autonomia = request.POST.get('evaluacion_autonomia', '')
+                desarrollo.fortalezas_mes = request.POST.get('fortalezas_mes', '')
+                desarrollo.aspectos_a_mejorar = request.POST.get('aspectos_a_mejorar', '')
+                desarrollo.alertas_mes = request.POST.get('alertas_mes', '')
+                desarrollo.conclusion_general = request.POST.get('conclusion_general', '')
+                desarrollo.observaciones_adicionales = request.POST.get('observaciones_adicionales', '')
+                desarrollo.recomendaciones_personales = request.POST.get('recomendaciones_personales', '')
+                
+                desarrollo.save(run_generator=False) # Guardar sin regenerar todo
+                messages.success(request, f'El registro de {nino.nombres} se actualizó exitosamente.')
+
+            # Si NO hay ID, es una CREACIÓN.
+            else:
+                # Validar que no exista ya uno para evitar duplicados si el usuario juega con el formulario
+                if DesarrolloNino.objects.filter(nino=nino, fecha_fin_mes=fecha_fin_mes).exists():
+                    messages.warning(request, f'Ya existe un registro para {nino.nombres} en este mes.')
+                    return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino.id}')
+                
+                # 1. Crear la instancia y guardarla. Esto ejecuta el generador automático.
+                desarrollo = DesarrolloNino.objects.create(nino=nino, fecha_fin_mes=fecha_fin_mes)
+                desarrollo.refresh_from_db() # Recargamos para tener los datos generados
+                
+                # 2. Actualizar la instancia con los datos del formulario (tus ediciones).
+                #    Esto sobreescribe los valores automáticos con tus valores.
+                desarrollo.evaluacion_cognitiva = request.POST.get('evaluacion_cognitiva', desarrollo.evaluacion_cognitiva)
+                desarrollo.evaluacion_comunicativa = request.POST.get('evaluacion_comunicativa', desarrollo.evaluacion_comunicativa)
+                desarrollo.evaluacion_socio_afectiva = request.POST.get('evaluacion_socio_afectiva', desarrollo.evaluacion_socio_afectiva)
+                desarrollo.evaluacion_corporal = request.POST.get('evaluacion_corporal', desarrollo.evaluacion_corporal)
+                desarrollo.evaluacion_autonomia = request.POST.get('evaluacion_autonomia', desarrollo.evaluacion_autonomia)
+                desarrollo.fortalezas_mes = request.POST.get('fortalezas_mes', desarrollo.fortalezas_mes)
+                desarrollo.aspectos_a_mejorar = request.POST.get('aspectos_a_mejorar', desarrollo.aspectos_a_mejorar)
+                desarrollo.alertas_mes = request.POST.get('alertas_mes', desarrollo.alertas_mes)
+                desarrollo.conclusion_general = request.POST.get('conclusion_general', desarrollo.conclusion_general)
+                desarrollo.observaciones_adicionales = request.POST.get('observaciones_adicionales', '')
+                desarrollo.recomendaciones_personales = request.POST.get('recomendaciones_personales', '')
+                
+                # 3. Guardar los cambios finales sin volver a ejecutar el generador.
+                desarrollo.save(run_generator=False)
+                messages.success(request, f'El registro para {nino.nombres} se guardó exitosamente.')
+
+            # Recalcular tendencia del mes siguiente en ambos casos (crear/actualizar)
+            fecha_mes_siguiente = desarrollo.fecha_fin_mes + relativedelta(months=1)
+            desarrollo_siguiente = DesarrolloNino.objects.filter(nino=nino, fecha_fin_mes__year=fecha_mes_siguiente.year, fecha_fin_mes__month=fecha_mes_siguiente.month).first()
+            if desarrollo_siguiente:
+                GeneradorEvaluacionMensual(desarrollo_siguiente).run(only_tendencia=True)
+
+            return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino.id}')
+
+        # --- ACCIÓN: GENERAR (Sin Guardar) ---
+        else:
+            # Validaciones antes de generar
+            if not SeguimientoDiario.objects.filter(nino=nino, fecha__year=fecha_fin_mes.year, fecha__month=fecha_fin_mes.month).exists():
+                messages.error(request, f'No se puede generar el informe para {nino.nombres} porque no tiene seguimientos diarios registrados en ese mes.')
+                return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino.id}')
+
+            # FIX: Esta validación debe ir DESPUÉS de la de seguimientos.
+            if DesarrolloNino.objects.filter(nino=nino, fecha_fin_mes=fecha_fin_mes).exists():
+                messages.error(request, f'Ya existe un registro para {nino.nombres} en este mes. Si desea modificarlo, por favor edítelo desde el listado.')
+                return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino.id}')
+
+            # Crear objeto EN MEMORIA (sin guardar)
+            desarrollo_preview = DesarrolloNino(nino=nino, fecha_fin_mes=fecha_fin_mes)
+            
+            # Ejecutar el generador en la instancia en memoria
+            from .services import GeneradorEvaluacionMensual
+            # El generador necesita una instancia, pero no la guardará si le decimos que no
+            generador = GeneradorEvaluacionMensual(desarrollo_preview)
+            generador.run(save_instance=False) # Método modificado para no guardar
+
+            # Contadores para la vista previa
+            seguimientos_count = generador.seguimientos_mes.count()
+            novedades_count = generador.novedades_mes.count()
+
+            # Renderizar el formulario con los datos generados, listo para ser guardado
             return render(request, 'madre/desarrollo_form.html', {
-                'titulo_form': 'Registrar Desarrollo Mensual',
+                'titulo_form': f'Revisar y Guardar Desarrollo para {nino.nombres}',
+                'desarrollo': desarrollo_preview, # El objeto sin ID
                 'ninos': ninos_del_hogar,
+                'form_action': reverse('desarrollo:registrar_desarrollo'),
+                'seguimientos_mes_count': seguimientos_count,
+                'novedades_mes_count': novedades_count,
             })
-        nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
-        # Validar que no exista ya un desarrollo para ese niño y mes
-        if DesarrolloNino.objects.filter(nino_id=nino_id, fecha_fin_mes=fecha_fin_mes).exists():
-            mes_nombre = fecha_fin_mes.strftime("%B de %Y").capitalize()
-            messages.warning(request, f'Ya existe una evaluación de desarrollo para {nino.nombres} en el mes de {mes_nombre}.')
-            return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino_id}')
-        # Crear la instancia (sin campos manuales)
-        desarrollo = DesarrolloNino.objects.create(
-            nino=nino,
-            fecha_fin_mes=fecha_fin_mes
-        )
-        # Ejecutar el generador automático (ya se ejecuta en save, pero aseguramos refresco)
-        desarrollo.refresh_from_db()
-
-        # --- FIX: Recalcular tendencia del mes siguiente si existe ---
-        from .services import GeneradorEvaluacionMensual
-        from dateutil.relativedelta import relativedelta
-
-        fecha_mes_siguiente_inicio = desarrollo.fecha_fin_mes + relativedelta(days=1)
-        try:
-            desarrollo_siguiente = DesarrolloNino.objects.get(
-                nino=desarrollo.nino,
-                fecha_fin_mes__year=fecha_mes_siguiente_inicio.year,
-                fecha_fin_mes__month=fecha_mes_siguiente_inicio.month
-            )
-            GeneradorEvaluacionMensual(desarrollo_siguiente).run(only_tendencia=True)
-        except DesarrolloNino.DoesNotExist:
-            pass # No hay mes siguiente, no hacemos nada.
-
-        # Calcular conteos para mostrar en la plantilla
-        seguimientos_mes_count = SeguimientoDiario.objects.filter(
-            nino=nino,
-            fecha__year=fecha_fin_mes.year,
-            fecha__month=fecha_fin_mes.month
-        ).count()
-        novedades_mes_count = Novedad.objects.filter(
-            nino=nino,
-            fecha__year=fecha_fin_mes.year,
-            fecha__month=fecha_fin_mes.month
-        ).count()
-        
-        # Mostrar el formulario con los campos automáticos y permitir editar los manuales
-        return render(request, 'madre/desarrollo_form.html', {
-            'titulo_form': f'Registrar Desarrollo Mensual para {nino.nombres}',
-            'ninos': ninos_del_hogar,
-            'desarrollo': desarrollo,
-            'form_action': reverse('desarrollo:registrar_desarrollo'),
-            'seguimientos_mes_count': seguimientos_mes_count,
-            'novedades_mes_count': novedades_mes_count,
-        })
 
     # GET: mostrar formulario de selección de niño y mes
     nino_preseleccionado = None
     nino_id_get = request.GET.get('nino')
     mes_get = request.GET.get('mes')
 
+    # Si vienen los parámetros, es para ver/editar un registro existente
     if nino_id_get and mes_get:
         try:
             year, month = map(int, mes_get.split('-'))
             last_day = calendar.monthrange(year, month)[1]
             fecha_fin_mes = datetime(year, month, last_day).date()
             
-            # Si existe un desarrollo, lo mostramos directamente
             desarrollo_existente = DesarrolloNino.objects.get(nino_id=nino_id_get, fecha_fin_mes=fecha_fin_mes)
-            # --- FIX: Calcular y pasar los contadores a la plantilla ---
-            seguimientos_mes_count = SeguimientoDiario.objects.filter(
+            
+            # Si se encuentra un registro, se renderiza el formulario en modo edición.
+            # Contadores para la vista de edición.
+            seguimientos_mes_count = SeguimientoDiario.objects.filter( 
                 nino=desarrollo_existente.nino, 
                 fecha__year=fecha_fin_mes.year, 
                 fecha__month=fecha_fin_mes.month
@@ -755,21 +770,25 @@ def registrar_desarrollo(request):
                 fecha__month=fecha_fin_mes.month
             ).count()
             
+            # Renderizar el formulario con el registro existente para edición
             return render(request, 'madre/desarrollo_form.html', {
                 'desarrollo': desarrollo_existente, 
-                'titulo_form': f'Editar Desarrollo Mensual para {desarrollo_existente.nino.nombres}',
+                'titulo_form': f'Editar Desarrollo para {desarrollo_existente.nino.nombres}',
                 'seguimientos_mes_count': seguimientos_mes_count,
                 'novedades_mes_count': novedades_mes_count,
                 'form_action': reverse('desarrollo:registrar_desarrollo'),
             })
         except (DesarrolloNino.DoesNotExist, ValueError):
-            pass # Si no existe o el mes es inválido, continuamos para mostrar el form de creación
+            # Si no existe, redirigimos para evitar errores, mostrando un mensaje.
+            messages.info(request, "No se encontró un registro para ese niño y mes. Puede generar uno nuevo.")
+            return redirect(reverse('desarrollo:registrar_desarrollo') + f'?nino={nino_id_get}')
 
     if nino_id_get:
         nino_preseleccionado = get_object_or_404(Nino, id=nino_id_get, hogar=hogar_madre)
 
     return render(request, 'madre/desarrollo_form.html', {
-        'titulo_form': 'Registrar Desarrollo Mensual',
+        'titulo_form': 'Generar Desarrollo Mensual',
         'ninos': ninos_del_hogar,
         'nino_preseleccionado': nino_preseleccionado,
+        'form_action': reverse('desarrollo:registrar_desarrollo'),
     })

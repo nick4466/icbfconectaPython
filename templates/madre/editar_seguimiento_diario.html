@@ -228,14 +228,12 @@ input[type="text"]:focus, select:focus {
           <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
           <div class="dropdown-content">
             <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
-          </div>
-        </li>
-        <li>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar <br> Contraseña</a>
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}
                 <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
             </form>
+          </div>
         </li>
       </ul>
     </nav>
@@ -249,7 +247,13 @@ input[type="text"]:focus, select:focus {
     {% endif %}
 
     <div class="card">
-      <h2><i class="fas fa-edit"></i> {{ titulo_form }}</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 style="margin: 0;"><i class="fas fa-edit"></i> {{ titulo_form }}</h2>
+        <a href="{% url 'desarrollo:listar_seguimientos' %}?nino={{ seguimiento.nino.id }}" class="botones" style="margin: 0; font-weight: bold; text-decoration: none; width: auto; padding: 10px 20px; font-size: 16px; background-color: #6c757d;">
+          <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+      </div>
+
       <p style="text-align: center; color: #555; margin-top: -15px; margin-bottom: 25px;">Los campos con <span class="required-star">*</span> son obligatorios.</p>
 
       <form method="post" action="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}">
@@ -305,12 +309,6 @@ input[type="text"]:focus, select:focus {
 
           <button class="botones" type="submit"><i class="fas fa-save"></i> Guardar Cambios</button>
       </form>
-
-      <div style="text-align: center; margin-top: 20px;">
-        <a href="{% url 'desarrollo:listar_seguimientos' %}?nino={{ seguimiento.nino.id }}" style="color: #555; text-decoration: none;">
-          ← Volver al listado de seguimientos
-        </a>
-      </div>
     </div>
   </div>
 </body>

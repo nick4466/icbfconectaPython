@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.db.models import Avg
 
 from .models import DesarrolloNino, SeguimientoDiario
+from core.models import Asistencia
 from novedades.models import Novedad
 
 
@@ -23,23 +24,25 @@ class GeneradorEvaluacionMensual:
         self.seguimientos_mes = self._get_seguimientos()
         self.novedades_mes = self._get_novedades()
 
-    def run(self, only_tendencia=False):
+    def run(self, only_tendencia=False, save_instance=True):
         """
         Ejecuta todos los pasos para generar y guardar la evaluación.
         Si only_tendencia=True, solo recalcula la tendencia respecto al mes anterior.
+        Si save_instance=False, solo ejecuta la lógica pero no guarda el objeto.
         """
         if only_tendencia:
             self._generar_valoracion_general()  # Solo tendencia y participaciones
-            self.evaluacion.save(run_generator=False) # Guardar sin volver a llamar al generador
-            return # Detener la ejecución aquí
+            if save_instance:
+                self.evaluacion.save(run_generator=False) # Guardar sin volver a llamar al generador
+            return
         self._generar_valoracion_general()
         self._generar_evaluacion_por_areas()
         self._generar_fortalezas()
         self._generar_aspectos_a_mejorar()
         self._generar_alertas()
         self._generar_conclusion_general()
-
-        self.evaluacion.save(run_generator=False) # Guardar sin volver a llamar al generador
+        if save_instance:
+            self.evaluacion.save(run_generator=False) # Guardar sin volver a llamar al generador
 
     def _get_seguimientos(self):
         return SeguimientoDiario.objects.filter(
@@ -50,6 +53,13 @@ class GeneradorEvaluacionMensual:
 
     def _get_novedades(self):
         return Novedad.objects.filter(
+            nino=self.nino,
+            fecha__gte=self.fecha_inicio_mes,
+            fecha__lte=self.fecha_fin_mes
+        )
+
+    def _get_asistencias(self):
+        return Asistencia.objects.filter(
             nino=self.nino,
             fecha__gte=self.fecha_inicio_mes,
             fecha__lte=self.fecha_fin_mes
@@ -106,6 +116,18 @@ class GeneradorEvaluacionMensual:
         comportamientos = self.seguimientos_mes.values_list('comportamiento_logro', flat=True)
         if comportamientos:
             self.evaluacion.comportamiento_frecuente = Counter(comportamientos).most_common(1)[0][0]
+
+        # 4. Porcentaje de Asistencia
+        asistencias_mes = self._get_asistencias()
+        total_dias_registrados = asistencias_mes.count()
+        dias_presente = asistencias_mes.filter(estado='Presente').count()
+
+        if total_dias_registrados > 0:
+            porcentaje = round((dias_presente / total_dias_registrados) * 100)
+            self.evaluacion.porcentaje_asistencia = porcentaje
+        else:
+            # Si no hay registros de asistencia, no se puede calcular.
+            self.evaluacion.porcentaje_asistencia = None
 
     def _generar_evaluacion_por_areas(self):
         # Esta es una implementación simplificada. Se puede expandir con análisis de texto más avanzado.
@@ -191,6 +213,10 @@ class GeneradorEvaluacionMensual:
         if novedades_asistencia > 2:
             aspectos.append(f"Se registraron {novedades_asistencia} novedades por inasistencia, lo cual puede afectar su proceso.")
 
+        # Nuevo: Aspecto a mejorar si la tendencia es de retroceso
+        if self.evaluacion.tendencia_valoracion == 'Retrocede':
+            aspectos.append("Se observa un retroceso en el logro general en comparación con el mes anterior. Es importante identificar las causas.")
+
         self.evaluacion.aspectos_a_mejorar = "- " + "\n- ".join(aspectos) if aspectos else "No se identificaron aspectos críticos a mejorar este mes."
 
     def _generar_alertas(self):
@@ -206,6 +232,10 @@ class GeneradorEvaluacionMensual:
         valoraciones_muy_bajas = self.seguimientos_mes.filter(valoracion=1).count()
         if valoraciones_muy_bajas >= 3:
             alertas.append(f"Alerta: El niño/a tuvo {valoraciones_muy_bajas} días con la valoración más baja (1 estrella).")
+
+        # Alerta: Tendencia de retroceso
+        if self.evaluacion.tendencia_valoracion == 'Retrocede':
+            alertas.append("Alerta de Retroceso: El desempeño general del niño ha disminuido en comparación con el mes anterior.")
 
         # Alerta: Inasistencias
         inasistencias = self.novedades_mes.filter(tipo='c').count()
