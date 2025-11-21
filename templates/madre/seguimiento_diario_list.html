@@ -58,11 +58,11 @@
     nav ul .dropdown:hover .dropdown-content { display: block; }
 
     .tabla-registros {
-      max-width: 1100px; margin: 40px auto; background-color: rgba(255, 255, 255, 0.9);
+      max-width: 1200px; margin: 40px auto; background-color: rgba(255, 255, 255, 0.92);
       border-radius: 14px; padding: 30px; box-shadow: 0 6px 12px rgba(0,0,0,0.1);
     }
 
-    h1 { text-align: center; margin-bottom: 25px; font-size: 32px; color: #7a3eb1; }
+   h1 { text-align: center; margin-bottom: 25px; font-size: 32px; color: #7a3eb1; }
 
     .filtros-y-botones { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
 
@@ -83,11 +83,6 @@
     .btn-volver:hover {
       background-color: #5a6268;
     }
-
-    table { width: 100%; border-collapse: collapse; font-size: 16px; background-color: white; border-radius: 10px; overflow: hidden; margin-top: 20px;}
-    thead { background-color: #f3c1e5; color: #5e3370; }
-    th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
-    tbody tr:hover { background-color: #f9e6ff; }
 
     .acciones {
       display: flex;
@@ -116,6 +111,141 @@
     .btn-verde { background: #28a745; color: white; }
     .btn-azul  { background: #007bff; color: white; }
     .btn-rojo  { background: #dc3545; color: white; }
+
+    /* Estilos para las tarjetas de seguimiento */
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    /* --- NUEVO DISEÑO MODERNO DE TIMELINE Y CARDS --- */
+    .timeline-vertical {
+      position: relative;
+      margin: 40px 0;
+      padding-left: 40px;
+      border-left: 4px solid #e5d5f5;
+    }
+    .timeline-event {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -28px;
+      top: 18px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(155,89,182,0.13);
+      border: 4px solid #fff;
+      z-index: 2;
+    }
+    .timeline-card-alta .timeline-dot { background: #7a3eb1; }
+    .timeline-card-media .timeline-dot { background: #5dade2; }
+    .timeline-card-baja .timeline-dot { background: #ffc107; color: #5e3370; }
+    .timeline-content {
+      margin-left: 30px;
+      width: 100%;
+    }
+    .timeline-date {
+      font-size: 18px;
+      color: #7a3eb1;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .seguimiento-card-modern {
+      background: #f8f6fa;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(155, 89, 182, 0.08);
+      padding: 22px 24px 16px 24px;
+      margin-bottom: 0;
+      border-left: 8px solid var(--card-color, #9B59B6);
+      display: flex;
+      flex-direction: column;
+      min-width: 260px;
+      min-height: 140px;
+      transition: box-shadow .2s, transform .2s;
+      margin-bottom: 40px;
+    }
+    .card-alta {
+      --card-color: #7a3eb1;
+    }
+    .card-media {
+      --card-color: #5dade2;
+    }
+    .card-baja {
+      --card-color: #e74c3c; /* Cambiado de amarillo a rojo */
+    }
+    .card-header-modern {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+    .avatar-modern {
+      width: 48px; height: 48px; border-radius: 50%; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: bold; box-shadow: 0 2px 8px rgba(155,89,182,0.13);
+      background: #9B59B6;
+      flex-shrink: 0;
+    }
+    .card-alta .avatar-modern { background: #7a3eb1; }
+    .card-media .avatar-modern { background: #5dade2; }
+    .card-baja .avatar-modern { background: #e74c3c; color: #fff; }
+    .card-header-modern h3 {
+      font-size: 20px;
+      color: #7a3eb1;
+      margin: 0 0 2px 0;
+      font-weight: 900;
+    }
+    .planeacion-label {
+      font-size: 16px;
+      color: #555;
+      font-weight: 600;
+      margin-top: 2px;
+      display: inline-block;
+      background: #f3f4f6;
+      padding: 3px 10px;
+      border-radius: 8px;
+    }
+    .card-body-modern p {
+      margin: 4px 0;
+      font-size: 15px;
+      color: #444;
+    }
+    .card-date {
+      font-size: 17px;
+      font-weight: 700;
+      color: #7a3eb1;
+      margin-bottom: 8px !important;
+    }
+    .card-footer-modern { 
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .cards-container-modern {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+      margin-top: 30px;
+    }
+
+    /* Estilos para la paginación */
+    .pagination { display: flex; justify-content: center; margin-top: 30px; }
+    .pagination a, .pagination .current { margin: 0 5px; padding: 8px 16px; text-decoration: none; border-radius: 6px; color: #9B59B6; border: 1px solid #e5d5f5; }
+    .pagination a:hover { background-color: #f3c1e5; }
+    .pagination .current { background-color: #9B59B6; color: white; border-color: #9B59B6; }
 
     .empty-message { color: #777; margin-top: 20px; text-align: center; font-size: 18px; padding: 40px 0;}
 
@@ -157,6 +287,28 @@
       font-size: 16px;
       transition: opacity 0.5s ease;
     }
+
+    /* Estilos para el mensaje de notificación */
+    #mensajeNotificacion {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      transition: opacity 0.5s ease;
+    }
+    #mensajeNotificacion i {
+      font-size: 18px;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
@@ -172,22 +324,20 @@
           <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
           <div class="dropdown-content">
             <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
-          </div>
-        </li>
-        <li>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar <br> Contraseña</a>
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}
                 <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
             </form>
+          </div>
         </li>
       </ul>
     </nav>
   </header>
 
   <div class="tabla-registros">
-    <h1>
-      Seguimientos Diarios
+    <h1><i class="fas fa-clipboard-list"></i>
+      Seguimientos Diarios 
       {% if nino_filtrado %}<br><small style="font-size: 18px; color: #555;">de {{ nino_filtrado.nombres }} {{ nino_filtrado.apellidos }}</small>{% endif %}
     </h1>
 
@@ -220,47 +370,278 @@
       </div>
     </div>
 
-    {% if seguimientos %}
-      <table>
-        <thead>
-          <tr>
-            <th>Niño/a</th>
-            <th>Fecha</th>
-            <th>Planeación</th>
-            <th>Valoración</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for seguimiento in seguimientos %}
-          <tr
-            data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
-            data-fecha="{{ seguimiento.fecha|date:'Y-m-d' }}"
-            data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
-            data-participacion="{{ seguimiento.participacion }}"
-            data-comportamiento="{{ seguimiento.comportamiento_logro }}"
-            data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
-            data-valoracion="{{ seguimiento.valoracion|default:0 }}"
-          >
-            <td>{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</td>
-            <td>{{ seguimiento.fecha|date:"Y-m-d" }}</td>
-            <td>{{ seguimiento.planeacion.nombre_experiencia }}</td>
-            <td>
-              <span class="display-stars">
-                {% for i in "12345" %}
-                  {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
-                {% endfor %}
-              </span>
-            </td>
-            <td class="acciones">
-              <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-              <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
-              <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
-            </td>
-          </tr>
+    {% if seguimientos.object_list %} 
+      {% if nino_filtrado %}
+        <!-- VISTA DE LÍNEA DE TIEMPO (cuando se filtra por un niño) -->
+        <div class="timeline-vertical">
+          {% for seguimiento in seguimientos.object_list %}
+            {% with valoracion=seguimiento.valoracion|default:0 %}
+              {% if valoracion >= 4 %}
+                {% with icon_class="fa-star" color_class="card-alta" timeline_color_class="timeline-card-alta" %}
+                  <div class="timeline-event {{ timeline_color_class }}">
+                    <div class="timeline-dot"><i class="fas {{ icon_class }}"></i></div>
+                    <div class="timeline-content">
+                      <div class="timeline-date">{{ seguimiento.fecha|date:"d F, Y" }}</div>
+                      <div class="seguimiento-card-modern {{ color_class }}"
+                           data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
+                           data-fecha="{{ seguimiento.fecha|date:'d F, Y' }}"
+                           data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
+                           data-participacion="{{ seguimiento.participacion }}"
+                           data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+                           data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
+                           data-valoracion="{{ seguimiento.valoracion|default:0 }}">
+                        <div class="card-header-modern">
+                          <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
+                          <div>
+                            <h3>{{ seguimiento.planeacion.nombre_experiencia }}</h3>
+                            <span class="planeacion-label">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                          </div>
+                        </div>
+                        <div class="card-body-modern">
+                          <p><strong>Participación:</strong> {{ seguimiento.participacion|capfirst }}</p>
+                          <p><strong>Comportamiento:</strong> {{ seguimiento.comportamiento_logro|capfirst }}</p>
+                          <p><strong>Observaciones:</strong> {{ seguimiento.observaciones|default:'N/A'|truncatewords:10 }}</p>
+                        </div>
+                        <div class="card-footer-modern">
+                          <span class="display-stars">
+                            {% for i in "12345" %}
+                              {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
+                            {% endfor %}
+                          </span>
+                          <div class="acciones">
+                            <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+                            <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
+                            <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endwith %}
+              {% else %}
+                {% if valoracion >= 3 %}
+                  {% with icon_class="fa-check" color_class="card-media" timeline_color_class="timeline-card-media" %}
+                    <div class="timeline-event {{ timeline_color_class }}">
+                      <div class="timeline-dot"><i class="fas {{ icon_class }}"></i></div>
+                      <div class="timeline-content">
+                        <div class="timeline-date">{{ seguimiento.fecha|date:"d F, Y" }}</div>
+                        <div class="seguimiento-card-modern {{ color_class }}"
+                             data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
+                             data-fecha="{{ seguimiento.fecha|date:'d F, Y' }}"
+                             data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
+                             data-participacion="{{ seguimiento.participacion }}"
+                             data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+                             data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
+                             data-valoracion="{{ seguimiento.valoracion|default:0 }}">
+                          <div class="card-header-modern">
+                            <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
+                            <div>
+                              <h3>{{ seguimiento.planeacion.nombre_experiencia }}</h3>
+                              <span class="planeacion-label">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                            </div>
+                          </div>
+                          <div class="card-body-modern">
+                          <div class="card-footer-modern">
+                            <span class="display-stars">
+                              {% for i in "12345" %}
+                                {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
+                              {% endfor %}
+                            </span>
+                            <div class="acciones">
+                              <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+                              <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
+                              <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endwith %}
+                {% else %}
+                  {% with icon_class="fa-exclamation" color_class="card-baja" timeline_color_class="timeline-card-baja" %}
+                    <div class="timeline-event {{ timeline_color_class }}">
+                      <div class="timeline-dot"><i class="fas {{ icon_class }}"></i></div>
+                      <div class="timeline-content">
+                        <div class="timeline-date">{{ seguimiento.fecha|date:"d F, Y" }}</div>
+                        <div class="seguimiento-card-modern {{ color_class }}"
+                             data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
+                             data-fecha="{{ seguimiento.fecha|date:'d F, Y' }}"
+                             data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
+                             data-participacion="{{ seguimiento.participacion }}"
+                             data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+                             data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
+                             data-valoracion="{{ seguimiento.valoracion|default:0 }}">
+                          <div class="card-header-modern">
+                            <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
+                            <div>
+                              <h3>{{ seguimiento.planeacion.nombre_experiencia }}</h3>
+                              <span class="planeacion-label">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                            </div>
+                          </div>
+                          <div class="card-body-modern">
+                            <p><strong>Participación:</strong> {{ seguimiento.participacion|capfirst }}</p>
+                            <p><strong>Comportamiento:</strong> {{ seguimiento.comportamiento_logro|capfirst }}</p>
+                            <p><strong>Observaciones:</strong> {{ seguimiento.observaciones|default:'N/A'|truncatewords:10 }}</p>
+                          </div>
+                          <div class="card-footer-modern">
+                            <span class="display-stars">
+                              {% for i in "12345" %}
+                                {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
+                              {% endfor %}
+                            </span>
+                            <div class="acciones">
+                              <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+                              <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
+                              <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endwith %}
+                {% endif %}
+              {% endif %}
+            {% endwith %}
           {% endfor %}
-        </tbody>
-      </table>
+        </div>
+      {% else %}
+        <!-- VISTA DE CUADRÍCULA (vista general) -->
+        <div class="cards-container-modern">
+          {% for seguimiento in seguimientos.object_list %}
+            {% with valoracion=seguimiento.valoracion|default:0 %}
+              {% if valoracion >= 4 %}
+                {% with color_class="card-alta" %}
+                  <div class="seguimiento-card-modern {{ color_class }}"
+                       data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
+                       data-fecha="{{ seguimiento.fecha|date:'d F, Y' }}"
+                       data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
+                       data-participacion="{{ seguimiento.participacion }}"
+                       data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+                       data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
+                       data-valoracion="{{ seguimiento.valoracion|default:0 }}">
+                    <div class="card-header-modern">
+                      <span class="avatar-modern {{ color_class }}">
+                        {{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}
+                      </span>
+                      <div>
+                        <h3>{{ seguimiento.planeacion.nombre_experiencia }}</h3>
+                        <span class="planeacion-label">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                      </div>
+                    </div>
+                    <div class="card-body-modern">
+                      <p class="card-date">{{ seguimiento.fecha|date:"d F, Y" }}</p>
+                      <!-- Más detalles en el modal -->
+                    </div>
+                    <div class="card-footer-modern">
+                      <span class="display-stars">
+                        {% for i in "12345" %}
+                          {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
+                        {% endfor %}
+                      </span>
+                      <div class="acciones">
+                        <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+                        <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
+                        <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
+                      </div>
+                    </div>
+                  </div>
+                {% endwith %}
+              {% else %}
+                {% if valoracion >= 3 %}
+                  {% with color_class="card-media" %}
+                    <div class="seguimiento-card-modern {{ color_class }}"
+                         data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
+                         data-fecha="{{ seguimiento.fecha|date:'d F, Y' }}"
+                         data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
+                         data-participacion="{{ seguimiento.participacion }}"
+                         data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+                         data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
+                         data-valoracion="{{ seguimiento.valoracion|default:0 }}">
+                      <div class="card-header-modern">
+                        <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
+                        <div>
+                          <h3>{{ seguimiento.planeacion.nombre_experiencia }}</h3>
+                          <span class="planeacion-label">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                        </div>
+                      </div>
+                      <div class="card-body-modern">
+                      <p><strong>Participación:</strong> {{ seguimiento.participacion|capfirst }}</p>
+                      <p><strong>Comportamiento:</strong> {{ seguimiento.comportamiento_logro|capfirst }}</p>
+                        <p><strong>Participación:</strong> {{ seguimiento.participacion|capfirst }}</p>
+                        <p><strong>Comportamiento:</strong> {{ seguimiento.comportamiento_logro|capfirst }}</p>
+                      </div>
+                      <div class="card-footer-modern">
+                        <span class="display-stars">
+                          {% for i in "12345" %}
+                            {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
+                          {% endfor %}
+                        </span>
+                        <div class="acciones">
+                          <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+                          <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
+                          <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
+                        </div>
+                      </div>
+                    </div>
+                  {% endwith %}
+                {% else %}
+                  {% with color_class="card-baja" %}
+                    <div class="seguimiento-card-modern {{ color_class }}"
+                         data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
+                         data-fecha="{{ seguimiento.fecha|date:'d F, Y' }}"
+                         data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
+                         data-participacion="{{ seguimiento.participacion }}"
+                         data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+                         data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
+                         data-valoracion="{{ seguimiento.valoracion|default:0 }}">
+                      <div class="card-header-modern">
+                        <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
+                        <div>
+                          <h3>{{ seguimiento.planeacion.nombre_experiencia }}</h3>
+                          <span class="planeacion-label">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                        </div>
+                      </div>
+                      <div class="card-body-modern">
+                        <p class="card-date">{{ seguimiento.fecha|date:"d F, Y" }}</p>
+                        <p><strong>Participación:</strong> {{ seguimiento.participacion|capfirst }}</p>
+                        <p><strong>Comportamiento:</strong> {{ seguimiento.comportamiento_logro|capfirst }}</p>
+                      </div>
+                      <div class="card-footer-modern">
+                        <span class="display-stars">
+                          {% for i in "12345" %}
+                            {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
+                          {% endfor %}
+                        </span>
+                        <div class="acciones">
+                          <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+                          <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-pen"></i></a>
+                          <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
+                        </div>
+                      </div>
+                    </div>
+                  {% endwith %}
+                {% endif %}
+              {% endif %}
+            {% endwith %}
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="pagination">
+        {% if seguimientos.has_previous %}
+          <a href="?page=1&{{ request.GET.urlencode|cut:'page=' }}">&laquo; Primera</a>
+          <a href="?page={{ seguimientos.previous_page_number }}&{{ request.GET.urlencode|cut:'page=' }}">Anterior</a>
+        {% endif %}
+
+        <span class="current">
+          Página {{ seguimientos.number }} de {{ seguimientos.paginator.num_pages }}.
+        </span>
+
+        {% if seguimientos.has_next %}
+          <a href="?page={{ seguimientos.next_page_number }}&{{ request.GET.urlencode|cut:'page=' }}">Siguiente</a>
+          <a href="?page={{ seguimientos.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page=' }}">Última &raquo;</a>
+        {% endif %}
+      </div>
     {% else %}
       <p class="empty-message">No hay seguimientos diarios registrados para la fecha seleccionada.</p>
     {% endif %}
@@ -310,7 +691,11 @@
 
     document.querySelectorAll('.ver-detalles').forEach(button => {
       button.addEventListener('click', function() {
-        const row = this.closest('tr');
+        let card = this.closest('.seguimiento-card-modern');
+        if (!card) {
+            card = this.closest('.timeline-event').querySelector('.seguimiento-card-modern');
+        }
+        const row = card;
         
         document.getElementById('modal-nino').textContent = row.dataset.nino;
         document.getElementById('modal-fecha').textContent = row.dataset.fecha;

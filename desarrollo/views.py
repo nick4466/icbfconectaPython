@@ -545,7 +545,7 @@ def listar_seguimientos(request):
         fecha_str = None
 
     # --- Paginación ---
-    paginator = Paginator(seguimientos_query, 4) # Mostrar 6 seguimientos por página
+    paginator = Paginator(seguimientos_query, 3) # Mostrar 6 seguimientos por página
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
