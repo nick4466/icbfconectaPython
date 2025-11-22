@@ -158,14 +158,12 @@
             <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
             <div class="dropdown-content">
               <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-              <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
-            </div>
-          </li>
-          <li>
+              <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar <br /> Contraseña</a>
               <form method="post" action="{% url 'logout' %}" style="display: inline;">
                   {% csrf_token %}
                   <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
               </form>
+            </div>
           </li>
         </ul>
       </nav>

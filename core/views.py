@@ -989,6 +989,20 @@ def padre_dashboard(request):
         # Manejar el caso donde el padre no tiene un hijo asignado
         return render(request, 'padre/dashboard.html', {'error': 'No tienes un niño asignado.'})
 
+def _get_logro_style(logro):
+    """
+    Retorna un color y un ícono para el logro mensual.
+    """
+    logro = (logro or "").lower()
+    if "excelente" in logro or "alto" in logro:
+        return "#27ae60", "fas fa-star"
+    elif "medio" in logro or "regular" in logro:
+        return "#f1c40f", "fas fa-check"
+    elif "bajo" in logro or "alerta" in logro:
+        return "#e74c3c", "fas fa-exclamation"
+    else:
+        return "#9B59B6", "fas fa-child"
+
 
 # ----------------------------------------------------
 # 💡 NUEVA FUNCIÓN: Ver Desarrollo (Vista del Padre)
@@ -1012,55 +1026,19 @@ def padre_ver_desarrollo(request, nino_id):
             except (ValueError, TypeError):
                 mes_filtro = ''
 
-        # === LÓGICA DE DIFERENCIACIÓN DE CARDS ===
+        # Procesamiento de datos para la plantilla
         desarrollos_list = []
         for desarrollo in desarrollos_qs:
-            ratings = [desarrollo.rating_cognitiva, desarrollo.rating_comunicativa, desarrollo.rating_socio_afectiva, desarrollo.rating_corporal]
-            ratings_validos = [r for r in ratings if r is not None]
-            promedio = round(sum(ratings_validos) / len(ratings_validos), 1) if ratings_validos else None
-
-            # Lógica de acento, icono y mes_ano (igual que madre)
-            if promedio is not None:
-                if promedio >= 4.5:
-                    accent_color = '#7a3eb1'
-                    icono = 'fas fa-star'
-                elif promedio >= 4.0:
-                    accent_color = '#5dade2'
-                    icono = 'fas fa-smile-beam'
-                elif promedio >= 3.0:
-                    accent_color = '#48c9b0'
-                    icono = 'fas fa-smile'
-                elif promedio >= 2.0:
-                    accent_color = '#f7ca18'
-                    icono = 'fas fa-meh'
-                else:
-                    accent_color = '#e74c3c'
-                    icono = 'fas fa-frown'
-            else:
-                accent_color = '#9B59B6'
-                icono = 'fas fa-question'
-
-            mes_ano = desarrollo.fecha_fin_mes.strftime('%B %Y').capitalize()
+            accent_color, icono = _get_logro_style(desarrollo.logro_mes)
 
             desarrollos_list.append({
-                'id': desarrollo.id,
-                'dimension_cognitiva': desarrollo.dimension_cognitiva,
-                'dimension_comunicativa': desarrollo.dimension_comunicativa,
-                'dimension_socio_afectiva': desarrollo.dimension_socio_afectiva,
-                'dimension_corporal': desarrollo.dimension_corporal,
-                'rating_cognitiva': desarrollo.rating_cognitiva or 0,
-                'rating_comunicativa': desarrollo.rating_comunicativa or 0,
-                'rating_socio_afectiva': desarrollo.rating_socio_afectiva or 0,
-                'rating_corporal': desarrollo.rating_corporal or 0,
-                'promedio': promedio,
+                'desarrollo': desarrollo,
                 'accent_color': accent_color,
                 'icono': icono,
-                'mes_ano': mes_ano,
-                'fecha_fin_mes': desarrollo.fecha_fin_mes,
             })
 
         # Paginación
-        paginator = Paginator(desarrollos_list, 2)
+        paginator = Paginator(desarrollos_list, 2) # 2 registros por página
         page_number = request.GET.get('page')
         desarrollos_paginados = paginator.get_page(page_number)
 
@@ -1072,7 +1050,7 @@ def padre_ver_desarrollo(request, nino_id):
             }
         })
     except (Padre.DoesNotExist, Nino.DoesNotExist):
-        return redirect('padre_dashboard')
+        return redirect('padre_dashboard') # pragma: no cover
 
 # core/views.py
 

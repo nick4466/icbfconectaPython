@@ -32,12 +32,43 @@ def padre_ver_desarrollo(request, nino_id):
         padre = Padre.objects.get(usuario=request.user)
         # Obtener el niño específico y verificar que pertenece al padre
         nino = get_object_or_404(Nino, id=nino_id, padre=padre)
-        
-        desarrollos = []
-        if nino:
-            desarrollos = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes')
 
-        return render(request, 'padre/desarrollo_list.html', {'nino': nino, 'desarrollos': desarrollos})
+        desarrollos_qs = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes')
+
+        # Lógica de filtrado por mes
+        mes_filtro = request.GET.get('mes', '')
+        if mes_filtro:
+            try:
+                year, month = map(int, mes_filtro.split('-'))
+                desarrollos_qs = desarrollos_qs.filter(fecha_fin_mes__year=year, fecha_fin_mes__month=month)
+            except (ValueError, TypeError):
+                mes_filtro = ''
+
+        # Procesamiento de datos para añadir colores e íconos (como en el dashboard)
+        desarrollos_list = []
+        for desarrollo in desarrollos_qs:
+            # Lógica simple para asignar color e ícono basado en el logro
+            logro = (desarrollo.logro_mes or "").lower()
+            if "alto" in logro:
+                accent_color, icono = "#27ae60", "fas fa-star"
+            elif "adecuado" in logro:
+                accent_color, icono = "#f1c40f", "fas fa-check"
+            else: # "En Proceso" o sin datos
+                accent_color, icono = "#e74c3c", "fas fa-exclamation-triangle"
+            
+            desarrollos_list.append({'desarrollo': desarrollo, 'accent_color': accent_color, 'icono': icono})
+
+        # --- ¡AQUÍ ESTÁ LA CORRECCIÓN CLAVE! ---
+        # Se aplica la paginación a la lista de desarrollos
+        paginator = Paginator(desarrollos_list, 2) # 2 registros por página
+        page_number = request.GET.get('page')
+        desarrollos_paginados = paginator.get_page(page_number)
+
+        return render(request, 'padre/desarrollo_list.html', {
+            'nino': nino, 
+            'desarrollos': desarrollos_paginados, # Se envía el objeto paginado
+            'filtros': {'mes': mes_filtro}
+        })
     except (Padre.DoesNotExist, Nino.DoesNotExist):
         return redirect('padre_dashboard')
 

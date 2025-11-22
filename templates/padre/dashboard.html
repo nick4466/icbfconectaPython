@@ -223,15 +223,14 @@
           <div class="dropdown-content">
             <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
             <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
-          </div>
-        </li>
-
-        <li>
-          <form method="post" action="{% url 'logout' %}">
+            <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}
             <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
           </form>
+          </div>
         </li>
+
+        
       </ul>
     </nav>
   </header>
@@ -246,26 +245,32 @@
       {% for data in ninos_data %}
         <div class="card" style="margin-bottom:28px; position:relative;">
           <div class="card-header">
-            <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto de {{ data.nino.nombres }}">
+            {% if data.nino.foto %}
+              <img src="{{ data.nino.foto.url }}" alt="Foto de {{ data.nino.nombres }}">
+            {% else %}
+              <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto de {{ data.nino.nombres }}">
+            {% endif %}
             <div class="card-header-info">
               <h3 style="font-size:22px;color:#7a3eb1;font-weight:700;margin-bottom:2px;">{{ data.nino.nombres }} {{ data.nino.apellidos }}</h3>
             </div>
           </div>
           <div class="card-body">
             {% if data.ultimo_desarrollo %}
-              <div style="margin-bottom:8px; color:#555; font-size:15px; display:flex; align-items:center; gap:8px;">
+              <div style="margin-bottom:12px; color:#555; font-size:15px; display:flex; align-items:center; gap:8px;">
                 <i class="fas fa-calendar-alt" style="color:#7a3eb1;"></i>
                 <strong>Último registro:</strong>
                 <span style="background:#eaf6ff;padding:2px 10px;border-radius:12px; font-weight:600; color:#7a3eb1;">{{ data.ultimo_desarrollo.fecha_fin_mes|date:"d \d\e F \d\e Y" }}</span>
               </div>
-              <p class="resumen-desarrollo" style="margin-bottom:10px;">
+              <p class="resumen-desarrollo" style="margin-bottom:12px;">
                 <i class="fas fa-quote-left" style="opacity:0.6;margin-right:5px;"></i>
-                {{ data.ultimo_desarrollo.dimension_cognitiva|truncatewords:15 }}
+                {{ data.ultimo_desarrollo.conclusion_general|truncatewords:20 }}
               </p>
-              {% if data.ultimo_desarrollo.promedio %}
+              {% if data.ultimo_desarrollo.logro_mes %}
                 <span style="display:inline-block;background:#fff;color:#7a3eb1;font-weight:700;padding:5px 16px;border-radius:16px;font-size:15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(155,89,182,0.08);border:2px solid #7a3eb1; position:absolute; top:18px; right:18px;">
-                  <i class="fas fa-star" style="color:#f5b301; margin-right:6px;"></i>
-                  Promedio: {{ data.ultimo_desarrollo.promedio }}
+                  {% if data.ultimo_desarrollo.logro_mes == 'Alto' %}<i class="fas fa-seedling" style="color:#27ae60; margin-right:6px;"></i>
+                  {% elif data.ultimo_desarrollo.logro_mes == 'Adecuado' %}<i class="fas fa-child" style="color:#2980b9; margin-right:6px;"></i>
+                  {% else %}<i class="fas fa-hourglass-half" style="color:#f39c12; margin-right:6px;"></i>{% endif %}
+                  Logro: {{ data.ultimo_desarrollo.logro_mes }}
                 </span>
               {% endif %}
             {% else %}
