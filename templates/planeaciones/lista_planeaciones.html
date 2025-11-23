@@ -264,8 +264,28 @@
     .btn-pdf:hover {
       background-color: #ff8a7d;
     }
+        /* --- ESTILOS DE PAGINACIÓN --- */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 30px;
+      gap: 8px;
+    }
+    .pagination a, .pagination span {
+      color: #9B59B6;
+      padding: 8px 14px;
+      text-decoration: none;
+      transition: background-color .3s;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: white;
+    }
+    .pagination a:hover { background-color: #f1f1f1; }
+    .pagination .current { background-color: #9B59B6; color: white; border-color: #9B59B6; }
+    .pagination .disabled { color: #ccc; border-color: #ddd; background-color: #f8f9fa; }
 
-    </style>
+        </style>
   </head>
 
   <body>
@@ -361,6 +381,28 @@
           {% endif %}
         </tbody>
       </table>
+        <!-- Controles de Paginación -->
+<div class="pagination">
+  {% if planeaciones.has_previous %}
+    <a href="?page=1{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">&laquo; Primera</a>
+    <a href="?page={{ planeaciones.previous_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Anterior</a>
+  {% else %}
+    <span class="disabled">&laquo; Primera</span>
+    <span class="disabled">Anterior</span>
+  {% endif %}
+
+  <span class="current">
+    Página {{ planeaciones.number }} de {{ planeaciones.paginator.num_pages }}.
+  </span>
+
+  {% if planeaciones.has_next %}
+    <a href="?page={{ planeaciones.next_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Siguiente</a>
+    <a href="?page={{ planeaciones.paginator.num_pages }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Última &raquo;</a>
+  {% else %}
+    <span class="disabled">Siguiente</span>
+    <span class="disabled">Última &raquo;</span>
+  {% endif %}
+</div>
 
       <!-- BOTÓN VOLVER CENTRADO -->
       <div class="contenedor-volver">

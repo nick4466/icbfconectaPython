@@ -8,7 +8,7 @@ from xhtml2pdf import pisa
 from django.contrib import messages
 from reportlab.pdfgen import canvas
 from django.contrib.auth.decorators import login_required
-
+from django.core.paginator import Paginator
 
 
 
@@ -22,6 +22,11 @@ def lista_planeaciones(request):
         planeaciones = Planeacion.objects.filter(madre=madre, fecha__month=mes).order_by('-fecha')
     else:
         planeaciones = Planeacion.objects.filter(madre=madre).order_by('-fecha')
+ # ------ PAGINACIÓN ------
+    paginator = Paginator(planeaciones, 4)  # 4 planeaciones por página
+    page_number = request.GET.get('page')
+    planeaciones = paginator.get_page(page_number)
+    # -------------------------
 
     # Lista de meses para la barra de búsqueda
     meses = [
