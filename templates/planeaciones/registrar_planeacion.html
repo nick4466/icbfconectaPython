@@ -200,6 +200,26 @@
             text-align: center;
             font-weight: bold;
         }
+            .input-field, .textarea-field {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #b18ad7;
+            background-color: #ffffff;
+            font-size: 15px;
+        }
+
+        /* Estilo placeholder */
+        .input-field::placeholder,
+        .textarea-field::placeholder {
+            color: #999 !important;
+            opacity: 1;
+        }
+
+        /* Evitar que el texto se vea oscuro sobre fondo morado */
+        textarea.textarea-field {
+            background-color: white;
+        }
 
     </style>
 </head>
@@ -231,6 +251,18 @@
 <div class="main-title1">Registrar Planeación </div>
 <div class="main-title">
 
+{% if messages %}
+<div style="width:80%; margin:10px auto;">
+    {% for message in messages %}
+        <div class="alert" style="
+    background: #ffdddd;
+    color: #cc0000;
+    padding: 10px;
+    border-radius: 3px;
+">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     <!-- Tres campos principales arriba -->

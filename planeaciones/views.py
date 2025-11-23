@@ -49,6 +49,12 @@ def registrar_planeacion(request):
         if form.is_valid():
             planeacion = form.save(commit=False)
             planeacion.madre = request.user
+
+           # Validación: impedir 2 planeaciones el mismo día
+            if Planeacion.objects.filter(madre=request.user, fecha=planeacion.fecha).exists():
+                messages.error(request, "❌ Ya existe una planeación registrada para esta fecha.")
+                return redirect('planeaciones:registrar_planeacion')
+
             planeacion.save()
 
             # Guardar múltiples imágenes
