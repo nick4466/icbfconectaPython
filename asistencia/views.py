@@ -9,6 +9,7 @@ from notifications.models import Notification  # importa el modelo
 from django.contrib.auth.decorators import login_required
 from core.views import rol_requerido  # si lo tienes definido ahí
 from core.models import HogarComunitario
+from asistencia.utils import verificar_ausencias
 
 
 
@@ -32,6 +33,7 @@ def asistencia_form(request):
                     fecha=fecha_hoy,
                     defaults={'estado': estado}
                 )
+                verificar_ausencias(nino)  # Llama a la función para verificar ausencias
 
         # Notificaciones
         notifications = Notification.objects.filter(read=False).order_by('-created_at')
