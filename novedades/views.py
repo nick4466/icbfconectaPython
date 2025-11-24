@@ -3,12 +3,21 @@ from .models import Novedad
 from .forms import NovedadForm
 from django.db.models import Q
 from datetime import datetime
-from core.models import Nino, Asistencia
+from core.models import Nino, Asistencia, HogarComunitario
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from core.views import rol_requerido
 
+
+@login_required
+@rol_requerido('madre_comunitaria')
 def novedades_list(request):
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
+    ninos_madre = Nino.objects.filter(hogar=hogar_madre)
+
     query = request.GET.get('q')
-    novedades = Novedad.objects.select_related('nino').all().order_by('-fecha')
+    novedades = Novedad.objects.select_related('nino').filter(nino__in=ninos_madre).order_by('-fecha')
 
     if query:
         filtros = (
@@ -29,20 +38,38 @@ def novedades_list(request):
     return render(request, 'novedades/list.html', {'novedades': novedades, 'query': query})
 
 
+
+@login_required
+@rol_requerido('madre_comunitaria')
 def novedades_create(request):
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
+
     form = NovedadForm(request.POST or None)
+    form.fields['nino'].queryset = Nino.objects.filter(hogar=hogar_madre)
+
     if request.method == 'POST' and form.is_valid():
         form.save()
         return redirect('novedades:novedades_list')
+
     return render(request, 'novedades/create.html', {'form': form})
 
 
+
+@login_required
+@rol_requerido('madre_comunitaria')
 def novedades_edit(request, pk):
-    novedad = get_object_or_404(Novedad, pk=pk)
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
+
+    novedad = get_object_or_404(Novedad, pk=pk, nino__hogar=hogar_madre)
     form = NovedadForm(request.POST or None, instance=novedad)
-    if form.is_valid():
+    form.fields['nino'].queryset = Nino.objects.filter(hogar=hogar_madre)
+
+    if request.method == 'POST' and form.is_valid():
         form.save()
-        return redirect('novedades:novedades_list')  # corregido
+        return redirect('novedades:novedades_list')
+
     return render(request, 'novedades/form.html', {'form': form})
 
 
@@ -67,18 +94,24 @@ def justificar_ausencia(request, novedad_id):
     return redirect('novedades:novedades_list')  # corregido
 
 
+@login_required
+@rol_requerido('madre_comunitaria')
 def nueva_novedad(request):
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
     nino_id = request.GET.get('nino_id')
     fecha = request.GET.get('fecha')
 
     initial = {}
     nino = None
     if nino_id:
-        nino = get_object_or_404(Nino, id=nino_id)
+        nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
         initial['nino'] = nino
 
     if request.method == 'POST':
-        form = NovedadForm(request.POST)
+        form = NovedadForm(request.POST or None, initial=initial)
+        form.fields['nino'].queryset = Nino.objects.filter(hogar=hogar_madre)
+
         if form.is_valid():
             novedad = form.save()
             if nino_id and fecha:
@@ -89,10 +122,17 @@ def nueva_novedad(request):
             return redirect('novedades:novedades_list')
     else:
         form = NovedadForm(initial=initial)
+        form.fields['nino'].queryset = Nino.objects.filter(hogar=hogar_madre)
 
-    return render(request, 'novedades/nueva.html', {'form': form, 'nino': nino, 'fecha': fecha})  # corregido
+    return render(request, 'novedades/nueva.html', {'form': form, 'nino': nino, 'fecha': fecha})
+  # corregido
 
 
+@login_required
+@rol_requerido('madre_comunitaria')
 def detalle_novedad(request, novedad_id):
-    novedad = get_object_or_404(Novedad, id=novedad_id)
-    return render(request, 'novedades/detalle.html', {'novedad': novedad})  # corregido
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
+    novedad = get_object_or_404(Novedad, id=novedad_id, nino__hogar=hogar_madre)
+    return render(request, 'novedades/detalle.html', {'novedad': novedad})
+

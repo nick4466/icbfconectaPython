@@ -6,9 +6,19 @@ from django.http import JsonResponse
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 from notifications.models import Notification  # importa el modelo
+from django.contrib.auth.decorators import login_required
+from core.views import rol_requerido  # si lo tienes definido ahí
+from core.models import HogarComunitario
+
+
+
+@login_required
+@rol_requerido('madre_comunitaria')
 
 def asistencia_form(request):
-    ninos = Nino.objects.all()
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
+    ninos = Nino.objects.filter(hogar=hogar_madre)
 
     if request.method == 'POST':
         fecha_str = request.POST.get('fecha')
@@ -49,8 +59,12 @@ def asistencia_form(request):
     })
 
 
+@login_required
+@rol_requerido('madre_comunitaria')
 def historial_asistencia(request, nino_id):
-    nino = get_object_or_404(Nino, id=nino_id)
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
+    nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
     historial = Asistencia.objects.filter(nino=nino).order_by('-fecha')
 
     # Filtro por rango
