@@ -33,14 +33,17 @@
         background-attachment: scroll;
       }
       header {
-        background-color: rgba(255, 255, 255, 0.85);
-        padding: 15px 30px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 2px solid #e5d5f5;
-        backdrop-filter: blur(4px);
-      }
+    position: relative;
+    z-index: 2000;       /* ← ADD THIS */
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #e5d5f5;
+    backdrop-filter: blur(4px);
+}
+
       header img { height: 60px; }
       nav ul {
         list-style: none;
@@ -261,25 +264,101 @@
     font-weight: bold;
   }
 
+  /* notificaciones */
+.notif-dropdown {
+  position: absolute;
+  top: 80px;
+  right: 30px;
+  width: 320px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 5000; /* ← SUBE ESTE VALOR */
+  padding: 15px;
+}
+
+
+.notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.notif-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notif-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.notif-item.unread {
+  background-color: #f9f0ff;
+}
+
+.label.level-grave {
+  color: #c0392b;
+  font-weight: bold;
+}
+
+.label.level-warning {
+  color: #f39c12;
+}
+
+.label.level-info {
+  color: #3498db;
+}
+
+
+
+
+
     </style>
   </head>
   <body>
 
     <header>
-      <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
-      <nav>
-        <ul>
-          <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-arrow-left"></i> Volver</a></li>
+  <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
+  <nav>
+    <ul>
+      <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-arrow-left"></i> Volver</a></li>
+      <li><a href="{% url 'novedades:novedades_list' %}">Reportar Novedad</a></li>
 
-          <li><a href="{% url 'novedades:novedades_list' %}">Reportar Novedad</a></li>
+      <li>
+        <button class="icon-bell" id="notifToggle">
+          <span class="badge" id="notifCount">{{ notif_count }}</span>
+        </button>
+      </li>
 
+      <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+    </ul>
+  </nav>
 
+  <!-- 🔔 Panel fuera del nav -->
+  <div class="notif-dropdown" id="notifPanel" hidden>
+    <div class="notif-header">
+      <strong>Notificaciones</strong>
+      <button id="markAllRead">Marcar todo como leído</button>
+    </div>
+    <ul class="notif-list">
+      {% for n in notifications %}
+        <li class="notif-item {% if not n.read %}unread{% endif %}">
+          <a href="{{ n.related_object.get_absolute_url }}">
+            <span class="label level-{{ n.level }}">{{ n.level|title }}</span>
+            <span class="title">{{ n.title }}</span>
+            <span class="time">{{ n.created_at|timesince }} atrás</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</header>
 
-          <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
-          
-        </ul>
-      </nav>
-    </header>
 
     <div class="main-title">ICBF - CONECTA | Llamado de Asistencia</div>
 
@@ -382,6 +461,16 @@
 
     </div>
   </div>
+
+  
+
+<script>
+  document.getElementById("notifToggle").addEventListener("click", function () {
+    const panel = document.getElementById("notifPanel");
+    panel.hidden = !panel.hidden;
+  });
+</script>
+
 
 
   </body>
@@ -520,4 +609,27 @@ function guardarJustificacion() {
 const csrftoken = getCookie('csrftoken');
 
   </script>
+
+  <script>
+  document.getElementById("markAllRead").addEventListener("click", function () {
+    fetch("{% url 'marcar_todo_leido' %}", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": "{{ csrf_token }}",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById("notifCount").textContent = "0";
+        document.querySelectorAll(".notif-item.unread").forEach(el => {
+          el.classList.remove("unread");
+        });
+      }
+    });
+  });
+</script>
+
 

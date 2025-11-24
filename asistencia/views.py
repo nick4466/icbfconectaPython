@@ -5,6 +5,7 @@ from novedades.models import Novedad
 from django.http import JsonResponse
 from django.core.serializers.json import DjangoJSONEncoder
 import json
+from notifications.models import Notification  # importa el modelo
 
 def asistencia_form(request):
     ninos = Nino.objects.all()
@@ -22,16 +23,29 @@ def asistencia_form(request):
                     defaults={'estado': estado}
                 )
 
+        # Notificaciones
+        notifications = Notification.objects.filter(read=False).order_by('-created_at')
+        notif_count = notifications.count()
+
         return render(request, 'asistencia/asistencia_form.html', {
             'ninos': ninos,
             'fecha_hoy': fecha_hoy,
-            'mensaje': 'Asistencia registrada exitosamente ✅'
+            'mensaje': 'Asistencia registrada exitosamente ✅',
+            'notifications': notifications,
+            'notif_count': notif_count,
         })
 
     fecha_hoy = date.today()
+
+    # Notificaciones también en GET
+    notifications = Notification.objects.filter(read=False).order_by('-created_at')
+    notif_count = notifications.count()
+
     return render(request, 'asistencia/asistencia_form.html', {
         'ninos': ninos,
-        'fecha_hoy': fecha_hoy
+        'fecha_hoy': fecha_hoy,
+        'notifications': notifications,
+        'notif_count': notif_count,
     })
 
 

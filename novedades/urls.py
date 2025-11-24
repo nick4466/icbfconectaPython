@@ -11,9 +11,11 @@ urlpatterns = [
     path('nueva/', novedades_create, name='novedades_create'),
     path('editar/<int:pk>/', novedades_edit, name='novedades_edit'),
     path('eliminar/<int:pk>/', novedades_delete, name='novedades_delete'),
+
+    # Vista completa
     path('detalle/<int:pk>/', novedades_detail, name='novedades_detail'),
 
-    path('detalle/<int:novedad_id>/', views.detalle_novedad, name='detalle'),
-    
+    # Vista reducida para modal
+    path('detalle-modal/<int:novedad_id>/', views.detalle_novedad, name='detalle'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

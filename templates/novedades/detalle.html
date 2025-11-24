@@ -5,58 +5,155 @@
   <meta charset="UTF-8">
   <title>Detalle de Novedad</title>
   <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
-  <style>
-    .card {
-      max-width: 600px;
-      margin: 40px auto;
-      background: rgba(255,255,255,0.9);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+ <style>
+    body {
+      margin: 0;
       font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondito.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-color: rgba(0, 0, 0, 0.4);
     }
-    .card h2 {
-      color: #7a3eb1;
-      margin-bottom: 15px;
+
+    header {
+      background-color: rgba(231, 231, 231, 0.795);
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
     }
-    .card p {
+    header img { height: 60px; }
+nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+    nav ul li a {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
       font-size: 16px;
-      margin: 8px 0;
-    }
-    .volver {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 10px 16px;
-      background-color: #9B59B6;
-      color: white;
+      padding: 8px 12px;
       border-radius: 6px;
+      transition: background-color 0.3s ease;
+    }
+    nav ul li a:hover { background-color: #f3c1e5; }
+    .main-title {
+      text-align: center;
+      margin-top: 20px;
+      padding: 20px;
+      font-size: 26px;
+      font-weight: bold;
+      color: #7a3eb1;
+      background-color: rgba(234, 233, 233, 0.7);
+      margin: 20px auto;
+      width: 80%;
+      border-radius: 10px;
+    }
+    
+    .main-title {
+      text-align: center;
+      margin-top: 20px;
+      padding: 20px;
+      font-size: 26px;
+      font-weight: bold;
+      color: #7a3eb1;
+      background-color: rgba(255, 255, 255, 0.7);
+      width: 80%;
+      margin: 20px auto;
+      border-radius: 10px;
+    }
+
+    .detail-card {
+      background-color: rgba(238, 238, 238, 0.55);
+      backdrop-filter: blur(6px) saturate(120%);
+      -webkit-backdrop-filter: blur(6px) saturate(120%);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      max-width: 800px;
+      margin: 0 auto 40px;
+    }
+
+    .detail-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .detail-card li {
+      padding: 12px 18px;
+      margin-bottom: 10px;
+      background-color: rgba(243, 193, 229, 0.3);
+      border-radius: 8px;
+      font-size: 16px;
+      color: #5e3370;
+    }
+
+    .btn-secondary {
+      display: block;
+      margin: 0 auto;
+      background-color: #7a3eb1;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
       text-decoration: none;
       font-weight: bold;
       transition: background-color 0.3s ease;
     }
-    .volver:hover { background-color: #8e44ad; }
+
+    .btn-secondary:hover {
+      background-color: #9B59B6;
+    }
+
+    @media (max-width: 768px) {
+      .main-title { font-size: 22px; width: 90%; }
+      .detail-card { padding: 20px; }
+      .detail-card li { font-size: 15px; }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Detalle de Novedad</h2>
-    <p><strong>Niño:</strong> {{ novedad.nino.nombres }} {{ novedad.nino.apellidos }}</p>
-    <p><strong>Fecha:</strong> {{ novedad.fecha }}</p>
-    <p><strong>Tipo:</strong> {{ novedad.tipo }}</p>
-    <p><strong>Descripción:</strong> {{ novedad.descripcion }}</p>
-    <p><strong>Observaciones:</strong> {{ novedad.observaciones }}</p>
+<h2 class="main-title">Detalle de Novedad</h2>
 
-     {% if novedad.archivo_pdf %}
-    <li>
-      <strong>Soporte PDF:</strong>
-      <a href="{{ novedad.archivo_pdf.url }}" target="_blank">Ver PDF</a> |
-      <a href="{{ novedad.archivo_pdf.url }}" download>Descargar PDF</a>
-    </li>
-  {% else %}
-    <li><strong>Soporte PDF:</strong> No se adjuntó archivo</li>
-  {% endif %}
+  <!-- Tarjeta de detalle -->
+  <div class="detail-card">
+    <ul>
+      <li><strong>Niño:</strong> {{ novedad.nino }}</li>
+      <li><strong>Fecha:</strong> {{ novedad.fecha|date:"d/m/Y" }}</li>
+      <li><strong>Clase:</strong> {{ novedad.clase }}</li>
+      <li><strong>Tipo:</strong> {{ novedad.get_tipo_display }}</li>
+      <li><strong>Docente:</strong> {{ novedad.docente }}</li>
+      <li><strong>Descripción:</strong> {{ novedad.descripcion }}</li>
+      <li><strong>Causa:</strong> {{ novedad.causa }}</li>
+      <li><strong>Disposición:</strong> {{ novedad.disposicion }}</li>
+      <li><strong>Acuerdos:</strong> {{ novedad.acuerdos }}</li>
+      <li><strong>Observaciones:</strong> {{ novedad.observaciones }}</li>
+    </ul>
 
-    <a href="{% url 'historial_asistencia' novedad.nino.id %}" class="volver">← Volver al historial</a>
+    {% if novedad.archivo_pdf %}
+      <div class="pdf-links">
+        <strong>Soporte PDF:</strong>
+        <a href="{{ novedad.archivo_pdf.url }}" target="_blank">Ver PDF</a>
+        <a href="{{ novedad.archivo_pdf.url }}" download>Descargar PDF</a>
+      </div>
+    {% else %}
+      <p><strong>Soporte PDF:</strong> No se adjuntó archivo</p>
+    {% endif %}
+
+    <br>
+
+    <!-- Botón volver -->
+    <a href="{% url 'novedades:novedades_list' %}" class="btn-secondary">Regresar a novedades</a>
+    <br>
+    <a href="{% url 'historial_asistencia' novedad.nino.id %}" class="btn-secondary">Ir a historial</a>
+
   </div>
+
 </body>
 </html>
