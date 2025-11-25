@@ -270,7 +270,8 @@ nav ul {
             <div class="menu-container">
               <button class="menu-trigger">⋯</button>
               <div class="menu-options">
-                <a href="{% url 'novedades:novedades_detail' novedad.pk %}">Ver</a>
+                <a href="{% url 'novedades:detalle' novedad.id %}">Ver detalle simple</a>
+
                 <a href="{% url 'novedades:novedades_edit' novedad.pk %}">Editar</a>
                 <a href="{% url 'novedades:novedades_delete' novedad.pk %}" style="color: red;">Eliminar</a>
               </div>

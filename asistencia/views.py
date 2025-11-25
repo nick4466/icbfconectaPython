@@ -5,9 +5,21 @@ from novedades.models import Novedad
 from django.http import JsonResponse
 from django.core.serializers.json import DjangoJSONEncoder
 import json
+from notifications.models import Notification  # importa el modelo
+from django.contrib.auth.decorators import login_required
+from core.views import rol_requerido  # si lo tienes definido ahí
+from core.models import HogarComunitario
+from asistencia.utils import verificar_ausencias
+
+
+
+@login_required
+@rol_requerido('madre_comunitaria')
 
 def asistencia_form(request):
-    ninos = Nino.objects.all()
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
+    ninos = Nino.objects.filter(hogar=hogar_madre)
 
     if request.method == 'POST':
         fecha_str = request.POST.get('fecha')
@@ -21,22 +33,40 @@ def asistencia_form(request):
                     fecha=fecha_hoy,
                     defaults={'estado': estado}
                 )
+                verificar_ausencias(nino)  # Llama a la función para verificar ausencias
+
+        # Notificaciones
+        notifications = Notification.objects.filter(read=False).order_by('-created_at')
+        notif_count = notifications.count()
 
         return render(request, 'asistencia/asistencia_form.html', {
             'ninos': ninos,
             'fecha_hoy': fecha_hoy,
-            'mensaje': 'Asistencia registrada exitosamente ✅'
+            'mensaje': 'Asistencia registrada exitosamente ✅',
+            'notifications': notifications,
+            'notif_count': notif_count,
         })
 
     fecha_hoy = date.today()
+
+    # Notificaciones también en GET
+    notifications = Notification.objects.filter(read=False).order_by('-created_at')
+    notif_count = notifications.count()
+
     return render(request, 'asistencia/asistencia_form.html', {
         'ninos': ninos,
-        'fecha_hoy': fecha_hoy
+        'fecha_hoy': fecha_hoy,
+        'notifications': notifications,
+        'notif_count': notif_count,
     })
 
 
+@login_required
+@rol_requerido('madre_comunitaria')
 def historial_asistencia(request, nino_id):
-    nino = get_object_or_404(Nino, id=nino_id)
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
+    nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
     historial = Asistencia.objects.filter(nino=nino).order_by('-fecha')
 
     # Filtro por rango

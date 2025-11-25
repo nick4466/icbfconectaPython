@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'novedades',
     'desarrollo',
     'correos',
+    'notifications',
 
 ]
 AUTH_USER_MODEL = 'core.Usuario'

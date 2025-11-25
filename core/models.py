@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 # ------------------------
 # Discapacidad
@@ -438,5 +441,41 @@ class Planeacion(models.Model):
         return f"{self.nombre_actividad} - {self.fecha}"
     
 # ------------------------ JUANITO ------------------------
-# Novedades
-# Ajusta si el modelo Niño está en otra app
+# sistema de notificaciones 
+#User = get_user_model() bro cnacelado por el bien de la trama, mas que cree ya notificaciones en su propio app
+
+#class Notification(models.Model):
+    #title = models.CharField(max_length=200)
+    #message = models.TextField()
+    #level = models.CharField(
+        max_length=20,
+        choices=[("grave", "Grave"), ("warning", "Warning"), ("info", "Info")],
+        default="info",
+    #)
+    #created_at = models.DateTimeField(auto_now_add=True)
+    #read = models.BooleanField(default=False)
+
+    # Opcional: destinatario(s)
+    #recipient = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="core_notifications_received"
+    #)
+
+    #content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="core_notifications_content"
+    #)
+    #object_id = models.PositiveIntegerField(null=True, blank=True)
+    #related_object = GenericForeignKey("content_type", "object_id")
+
+    #class Meta:
+        ordering = ["-created_at"]
+
+    #def __str__(self):
+        return f"{self.title} ({self.level})"

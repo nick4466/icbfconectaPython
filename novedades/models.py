@@ -44,8 +44,10 @@ class Novedad(models.Model):
         }
         return prioridades.get(self.tipo, 1)
 
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('novedades:detalle', args=[str(self.id)])
+
     def __str__(self):
         return f"Novedad de {self.nino.nombre} - {self.fecha}"
-    
-    
     
