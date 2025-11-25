@@ -1,8 +1,16 @@
 from django import forms
 from .models import Planeacion, Documentacion
+from .models import Planeacion, Documentacion, Dimension
 
-# Form para Planeacion
 class PlaneacionForm(forms.ModelForm):
+
+    dimensiones = forms.ModelMultipleChoiceField(
+        queryset=Dimension.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Dimensiones trabajadas"
+    )
+
     class Meta:
         model = Planeacion
         exclude = ['madre']  # El usuario se asigna en la vista
@@ -21,7 +29,7 @@ class PlaneacionForm(forms.ModelForm):
             'intencionalidad_pedagogica': forms.Textarea(
                 attrs={
                     'rows': 2,
-                    'placeholder': 'Describe el proposito de la planeación pedagógica'
+                    'placeholder': 'Describe el propósito de la planeación pedagógica'
                 }
             ),
             'materiales_utilizar': forms.Textarea(
@@ -33,7 +41,7 @@ class PlaneacionForm(forms.ModelForm):
             'ambiente_educativo': forms.Textarea(
                 attrs={
                     'rows': 2,
-                    'placeholder': 'Cómo vas a ambientar el aula o espacio educativo?'
+                    'placeholder': '¿Cómo vas a ambientar el aula o espacio educativo?'
                 }
             ),
             'experiencia_inicio': forms.Textarea(
@@ -51,7 +59,7 @@ class PlaneacionForm(forms.ModelForm):
             'cierre_experiencia': forms.Textarea(
                 attrs={
                     'rows': 3,
-                    'placeholder': 'Cómo finaliza la actividad?'
+                    'placeholder': '¿Cómo finaliza la actividad?'
                 }
             ),
             'situaciones_presentadas': forms.Textarea(
@@ -65,12 +73,13 @@ class PlaneacionForm(forms.ModelForm):
             'nombre_experiencia': 'Nombre de la experiencia',
             'intencionalidad_pedagogica': 'Intencionalidad pedagógica',
             'materiales_utilizar': 'Materiales a utilizar',
-            'ambiente_educativo': 'Como vas a decorar el aula o el espacio educativo?',
+            'ambiente_educativo': 'Decoración o ambientación del espacio educativo',
             'experiencia_inicio': 'Inicio de la experiencia',
             'experiencia_pedagogica': 'Desarrollo de la experiencia pedagógica',
             'cierre_experiencia': 'Cierre de la experiencia',
-            'situaciones_presentadas': 'Situaciones presentadas para el seguimiento de los niños y niñas',
+            'situaciones_presentadas': 'Seguimiento de situaciones presentadas',
         }
+
 
 # Form para Documentacion
 class DocumentacionForm(forms.ModelForm):

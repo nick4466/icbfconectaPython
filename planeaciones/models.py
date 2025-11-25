@@ -2,6 +2,13 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 
+class Dimension(models.Model):
+    nombre = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nombre
+
+
 class Planeacion(models.Model):
     madre = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     fecha = models.DateField()
@@ -13,7 +20,7 @@ class Planeacion(models.Model):
     experiencia_pedagogica = models.TextField()
     cierre_experiencia = models.TextField()
     situaciones_presentadas = models.TextField()
-    
+    dimensiones = models.ManyToManyField(Dimension, blank=True)
 
     def __str__(self):
         return f"{self.nombre_experiencia} - {self.fecha}"

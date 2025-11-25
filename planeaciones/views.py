@@ -61,6 +61,7 @@ def registrar_planeacion(request):
                 return redirect('planeaciones:registrar_planeacion')
 
             planeacion.save()
+            form.save_m2m()
 
             # Guardar múltiples imágenes
             for f in request.FILES.getlist('imagenes'):
@@ -93,16 +94,18 @@ def editar_planeacion(request, id):
                 doc.delete()
 
         if form.is_valid():
-            form.save()
+            planeacion = form.save(commit=False)  # importante para save_m2m
+            planeacion.save()
+            form.save_m2m()
 
             # Si subió nuevas imágenes
             for f in request.FILES.getlist('imagenes'):
                 Documentacion.objects.create(planeacion=planeacion, imagen=f)
 
-            messages.success(request, ' Planeación actualizada correctamente.')
+            messages.success(request, 'Planeación actualizada correctamente.')
             return redirect('planeaciones:detalle_planeacion', id=planeacion.id)
         else:
-            messages.error(request, ' Ocurrió un error al actualizar la planeación.')
+            messages.error(request, 'Ocurrió un error al actualizar la planeación.')
     else:
         form = PlaneacionForm(instance=planeacion)
 

@@ -2,201 +2,129 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalle Planeación - ICBF Conecta</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
-  <style>
-    * { box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detalle Planeación - ICBF Conecta</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body {
+    font-family: 'Roboto', sans-serif;
+    background-image: url("{% static 'img/fondito.jpg' %}");
+    background-size: cover;
+    background-attachment: fixed;
+    color: #5e3370;
+  }
 
-    body {
-        margin: 0;
-        font-family: 'Roboto', sans-serif;
-        background-image: url("{% static 'img/fondito.jpg' %}");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-    }
+  header {
+    background-color: rgba(255,255,255,0.9);
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    padding: 15px 30px;
+    border-bottom: 2px solid #e5d5f5;
+    backdrop-filter: blur(5px);
+  }
+  header img { height:60px; }
 
-    header {
-        background-color: rgba(255, 255, 255, 0.85);
-        padding: 15px 30px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 2px solid #e5d5f5;
-        backdrop-filter: blur(4px);
-    }
+  nav ul {
+    display:flex;
+    list-style:none;
+    gap:15px;
+  }
+  nav ul li a, nav ul li button {
+    color:#9B59B6;
+    font-weight:bold;
+    text-decoration:none;
+    padding:8px 12px;
+    border-radius:6px;
+    transition:0.3s;
+    background:none; border:none; cursor:pointer;
+  }
+  nav ul li a:hover, nav ul li button:hover { background-color:#f3c1e5; }
 
-    header img { height: 60px; }
+  .main-title {
+    text-align:center;
+    font-size:28px;
+    font-weight:bold;
+    margin:20px auto;
+    padding:20px;
+    width:85%;
+    background: rgba(255,255,255,0.75);
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+    color:#7a3eb1;
+  }
 
-    nav ul {
-        list-style: none;
-        display: flex;
-        gap: 20px;
-        padding: 0;
-        margin: 0;
-    }
+  .info-cards {
+    display:grid;
+    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    max-width:1200px;
+    margin: 25px auto;
+  }
+  .card {
+    background: rgba(243,196,255,0.4);
+    border-radius:10px;
+    padding:15px 20px;
+    border:1px solid #d6b4f5;
+    box-shadow:0 4px 8px rgba(0,0,0,0.1);
+  }
+  .card label { font-weight:bold; display:block; margin-bottom:5px; }
+  .card p { background: rgba(255,255,255,0.6); padding:8px; border-radius:6px; }
 
-    nav ul li a, nav ul li button {
-        text-decoration: none;
-        color: #9B59B6;
-        font-weight: bold;
-        font-size: 16px;
-        padding: 8px 12px;
-        border-radius: 6px;
-        transition: background-color 0.3s ease;
-        background: none;
-        border: none;
-        cursor: pointer;
-    }
+  .table-wrapper {
+    max-width:1400px;
+    width:95%;
+    margin:25px auto;
+    overflow-x:auto;
+    background: rgba(255,255,255,0.75);
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+  }
+  table { width:100%; border-collapse:collapse; }
+  th,td { padding:12px; text-align:left; border:1px solid #ddd; vertical-align:top; }
+  th { background:#9B59B6; color:white; }
+  td p { background: rgba(243,196,255,0.3); padding:8px; border-radius:6px; }
 
-    nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
+  .documentos {
+    display:flex;
+    flex-wrap:wrap;
+    gap:15px;
+    justify-content:center;
+    margin-top:20px;
+  }
+  .documentos img {
+    max-width:150px;
+    border-radius:12px;
+    box-shadow:0 4px 8px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+    cursor:pointer;
+  }
+  .documentos img:hover { transform: scale(1.5); position:relative; z-index:10; }
 
-    nav ul .dropdown { position: relative; }
-    nav ul .dropdown-content {
-        display: none;
-        position: absolute;
-        background-color: rgba(255, 255, 255, 0.98);
-        min-width: 200px;
-        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-        z-index: 1;
-        border-radius: 8px;
-        padding: 8px 0;
-    }
-    nav ul .dropdown-content a { color: #9B59B6; padding: 12px 16px; text-decoration: none; display: block; }
-    nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
-    nav ul .dropdown:hover .dropdown-content { display: block; }
+  .btn-volver {
+    display:inline-block;
+    text-align:center;
+    background:#f3c1e5;
+    color:#5e3370;
+    font-weight:bold;
+    padding:12px 25px;
+    border-radius:10px;
+    text-decoration:none;
+    margin:30px auto;
+    transition:0.3s;
+  }
+  .btn-volver:hover { background:#e8a9d6; }
 
-    .main-title {
-        text-align: center;
-        margin-top: 20px;
-        padding: 20px;
-        font-size: 26px;
-        font-weight: bold;
-        color: #7a3eb1;
-        background-color: rgba(255, 255, 255, 0.7);
-        margin: 20px auto;
-        width: 80%;
-        border-radius: 10px;
-    }
-
-    /* Campos superiores en fila */
-    .form-top {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-        max-width: 1100px;
-        margin: 20px auto;
-    }
-
-    .form-top .col label {
-        font-weight: bold;
-        color: #5e3370;
-        margin-bottom: 5px;
-        display: block;
-    }
-
-    .form-top .col p {
-        background-color:#f3c4ffb3;
-        padding:10px;
-        border-radius:6px;
-        margin:0;
-        border:1px solid #ccc;
-    }
-
-    /* Tabla principal */
-    .table-container {
-        max-width: 1400px;
-        width: 95%;
-        margin: 20px auto;
-        overflow-x: auto;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        background-color: rgba(255,255,255,0.85);
-        border-radius: 8px;
-    }
-
-    th, td {
-        border: 1px solid #ddd;
-        padding: 12px 10px;
-        font-size: 14px;
-        vertical-align: top;
-    }
-
-    th { background-color: #9B59B6; color: white; text-align: left; }
-
-    td p {
-        margin:0;
-        background-color:#f3c4ffb3;
-        padding:8px;
-        border-radius:6px;
-    }
-   
-    .table-wrapper {
-        background-color: rgba(255, 255, 255, 0.75);   /* igual al del título */
-        padding: 25px;
-        border-radius: 12px;
-        width: 95%;
-        max-width: 1400px;
-        margin: 25px auto;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        backdrop-filter: blur(3px);
-    }
-
-    .documentos {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 15px;
-    }
-
-    .documentos img {
-        max-width: 150px;
-        border-radius: 12px;
-        box-shadow:0 4px 8px rgba(0,0,0,0.2);
-        transition: transform 0.3s ease;
-        cursor: pointer;
-    }
-
-    .documentos img:hover {
-        transform: scale(1.5);
-        z-index: 10;
-        position: relative;
-    }
-
-    .btn-volver {
-        display: inline-block;
-        background-color: #f3c1e5;
-        color: #5e3370;
-        padding: 10px 20px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: bold;
-        margin: 20px;
-    }
-
-    .btn-volver:hover { background-color: #e8a9d6; }
-    
-    
-    .contenedor-volver {
-    text-align: center;
-    margin-top: 20px;
-    }
-
-
-    @media(max-width:768px){
-        .main-title { font-size: 24px; width: 90%; }
-        .documentos img { max-width: 90%; }
-        .form-top { grid-template-columns: 1fr; }
-    }
-
-  </style>
+  @media(max-width:768px){
+    .main-title { font-size:24px; width:90%; }
+    .info-cards { grid-template-columns:1fr; }
+    .documentos img { max-width:90%; }
+  }
+</style>
 </head>
 <body>
 <header>
@@ -206,7 +134,7 @@
       <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
       <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
       <li>
-        <form method="post" action="{% url 'logout' %}" style="display:inline;">
+        <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
           <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
         </form>
@@ -216,23 +144,31 @@
 </header>
 
 <div class="main-title">Detalle de Planeación</div>
-<div class="form-top">
-  <div class="col">
+
+<div class="info-cards">
+  <div class="card">
     <label>Fecha</label>
     <p>{{ planeacion.fecha }}</p>
   </div>
-  <div class="col">
+  <div class="card">
     <label>Nombre de la Experiencia</label>
     <p>{{ planeacion.nombre_experiencia }}</p>
   </div>
-  <div class="col">
+  <div class="card">
     <label>Intencionalidad Pedagógica</label>
     <p>{{ planeacion.intencionalidad_pedagogica }}</p>
+  </div>
+  <div class="card">
+    <label>Dimensiones Asignadas</label>
+    {% if planeacion.dimensiones.all %}
+      <p>{% for dim in planeacion.dimensiones.all %}{{ dim.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+    {% else %}
+      <p>No se han asignado dimensiones.</p>
+    {% endif %}
   </div>
 </div>
 
 <div class="table-wrapper">
-<div class="table-container">
   <table>
     <thead>
       <tr>
@@ -267,13 +203,11 @@
       </tr>
     </tbody>
   </table>
-  <div class="contenedor-volver">
+</div>
+
+<div style="text-align:center;">
   <a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-volver">Volver</a>
-  </div>
 </div>
-</div>
-
-
 
 </body>
 </html>

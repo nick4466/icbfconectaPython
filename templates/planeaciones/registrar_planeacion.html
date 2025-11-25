@@ -220,6 +220,84 @@
         textarea.textarea-field {
             background-color: white;
         }
+        .contenedor {
+    width: 90%;
+    margin: auto;
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+.card {
+    background: rgba(255,255,255,0.80);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+}
+
+.card h2 {
+    margin-bottom: 20px;
+    color: #7a3eb1;
+}
+
+.fila {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 18px;
+}
+
+.col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.col label {
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #5e3370;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #b18ad7;
+    background: white;
+    font-size: 14px;
+}
+
+textarea {
+    min-height: 70px;
+}
+
+.acciones {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.btn-guardar {
+    background-color: #9B59B6;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 8px;
+    border: none;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-volver {
+    margin-left: 15px;
+    background-color: #f3c1e5;
+    color: #5e3370;
+    padding: 12px 25px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
 
     </style>
 </head>
@@ -249,92 +327,142 @@
 </header>
 
 <div class="main-title1">Registrar Planeación </div>
-<div class="main-title">
 
-{% if messages %}
-<div style="width:80%; margin:10px auto;">
-    {% for message in messages %}
-        <div class="alert" style="
-    background: #ffdddd;
-    color: #cc0000;
-    padding: 10px;
-    border-radius: 3px;
-">{{ message }}</div>
-    {% endfor %}
+<div class="main-title">
+    {% if messages %}
+    <div style="width:80%; margin:10px auto;">
+        {% for message in messages %}
+            <div class="alert" style="
+                background: #ffdddd;
+                color: #cc0000;
+                padding: 10px;
+                border-radius: 3px;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
-{% endif %}
+
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    <!-- Tres campos principales arriba -->
-    <div class="form-top">
-        <div>
-            <label for="id_fecha">Fecha</label>
-            {{ form.fecha }}
+
+    <div class="contenedor">
+
+        <!-- Tarjeta Izquierda -->
+        <div class="card">
+            <h2><i class="fas fa-file-alt"></i> Datos Generales</h2>
+
+            <div class="fila">
+                <div class="col">
+                    <label>Fecha</label>
+                    {{ form.fecha }}
+                </div>
+
+                <div class="col">
+                    <label>Nombre de la experiencia</label>
+                    {{ form.nombre_experiencia }}
+                </div>
+            </div>
+
+            <div class="fila">
+                <div class="col">
+                    <label>Intencionalidad Pedagógica</label>
+                    {{ form.intencionalidad_pedagogica }}
+                </div>
+            </div>
+
+                    <div class="card" style="margin: 20px 0;">
+                <h3 class="titulo-bloque" style="color:#7a3eb1; margin-bottom:10px;">
+                    Dimensiones a trabajar
+                </h3>
+
+                <!-- Botón para seleccionar todas -->
+                <button type="button" id="seleccionar-todas" style="
+                    background:#7a3eb1;
+                    color:white;
+                    border:none;
+                    padding:6px 12px;
+                    border-radius:6px;
+                    margin-bottom:10px;
+                    cursor:pointer;
+                ">Seleccionar todas</button>
+
+                {{ form.dimensiones }}
+            </div>
+            <div class="fila">
+                <div class="col">
+                    <label>Materiales a utilizar</label>
+                    {{ form.materiales_utilizar }}
+                </div>
+            </div>
         </div>
-        <div>
-            <label for="id_nombre_experiencia">Nombre de la experiencia</label>
-            {{ form.nombre_experiencia }}
+
+        <!-- Tarjeta Derecha -->
+        <div class="card">
+            <h2><i class="fas fa-chalkboard-teacher"></i> Desarrollo de la Experiencia</h2>
+
+            <div class="fila">
+                <div class="col">
+                    <label>Ambientación del espacio</label>
+                    {{ form.ambiente_educativo }}
+                </div>
+            </div>
+
+            <div class="fila">
+                <div class="col">
+                    <label>Actividad de Inicio</label>
+                    {{ form.experiencia_inicio }}
+                </div>
+            </div>
+
+            <div class="fila">
+                <div class="col">
+                    <label>Desarrollo</label>
+                    {{ form.experiencia_pedagogica }}
+                </div>
+            </div>
+
+            <div class="fila">
+                <div class="col">
+                    <label>Cierre</label>
+                    {{ form.cierre_experiencia }}
+                </div>
+            </div>
+
+            <div class="fila">
+                <div class="col">
+                    <label>Observaciones</label>
+                    {{ form.situaciones_presentadas }}
+                </div>
+            </div>
+
+            <div class="fila">
+                <div class="col">
+                    <label>Evidencias (Fotos)</label>
+                    <input type="file" name="imagenes" multiple>
+                </div>
+            </div>
         </div>
-        <div>
-            <label for="id_intencionalidad_pedagogica">Intencionalidad Pedagógica</label>
-            {{ form.intencionalidad_pedagogica }}
-        </div>
+
+    </div> <!-- cierre contenedor -->
+
+    <!-- Botones -->
+    <div class="acciones">
+        <button type="submit" class="btn-guardar">Guardar Planeación</button>
+
+        <a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
     </div>
-
-    <!-- Tabla de planeación -->
-    <div style="flex: 1 1 600px;">
-      <table>
-        <thead>
-          <tr>
-            <th>Materiales a Utilizar</th>
-            <th>Ambiente Educativo</th>
-            <th>Actividad de Inicio</th>
-            <th>Desarrollo de la Actividad</th>
-            <th>Cierre de la Actividad</th>
-            <th>Observaciones</th>
-            <th>Documentación (Evidencia)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{{ form.materiales_utilizar }}</td>
-            <td>{{ form.ambiente_educativo }}</td>
-            <td>{{ form.experiencia_inicio }}</td>
-            <td>{{ form.experiencia_pedagogica }}</td>
-            <td>{{ form.cierre_experiencia }}</td>
-            <td>{{ form.situaciones_presentadas }}</td>
-            <td>
-                <!-- Input para múltiples archivos -->
-                <input type="file" name="imagenes" multiple>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Mensajes y carga de imágenes -->
-    <div style="flex: 1 1 300px;">
-        {% if success %}
-     <div class="alert">{{ success }}</div>
-        {% endif %}
-
-
-        {% if documentos %}
-          <div>
-            {% for doc in documentos %}
-              <img src="{{ doc.imagen.url }}" alt="Evidencia" style="max-width: 100%; margin-bottom: 10px; border-radius: 8px;">
-            {% endfor %}
-          </div>
-        {% endif %}
-    </div>
-
-    <button type="submit" class="btn-guardar">Guardar Planeación</button>
-    <a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-volver">
-    <i class="fas fa-arrow-left"></i> Volver al listado
-</a>
 
 </form>
-</div>
 
-</body>
-</html>
+</div>
+</body> 
+<script>
+    document.getElementById('seleccionar-todas').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('input[name="dimensiones"]');
+        checkboxes.forEach(cb => cb.checked = true);
+    });
+</script>
