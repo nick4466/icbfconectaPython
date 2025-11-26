@@ -25,11 +25,24 @@ from xhtml2pdf import pisa
 # --- GENERAR REPORTE PDF DE MATRÍCULA DE UN NIÑO ---
 @login_required
 def reporte_matricula_nino_pdf(request, nino_id):
+    import os
+    from django.conf import settings
+    
     nino = get_object_or_404(Nino, id=nino_id)
     padre = nino.padre
     hogar = nino.hogar
     usuario_generador = request.user.get_full_name() or request.user.username
     fecha_reporte = timezone.now().strftime('%d/%m/%Y %H:%M')
+    
+    # Función auxiliar para obtener ruta absoluta de archivo
+    def get_absolute_path(file_field):
+        if file_field and hasattr(file_field, 'path'):
+            try:
+                return os.path.abspath(file_field.path)
+            except:
+                return None
+        return None
+    
     template = get_template('madre/reporte_ninos.html')
     context = {
         'nino': nino,
@@ -37,6 +50,14 @@ def reporte_matricula_nino_pdf(request, nino_id):
         'hogar': hogar,
         'usuario_generador': usuario_generador,
         'fecha_reporte': fecha_reporte,
+        # Rutas absolutas para las imágenes del niño
+        'nino_foto_path': get_absolute_path(nino.foto),
+        'nino_carnet_path': get_absolute_path(nino.carnet_vacunacion),
+        'nino_eps_path': get_absolute_path(nino.certificado_eps),
+        'nino_registro_path': get_absolute_path(nino.registro_civil_img),
+        # Rutas absolutas para las imágenes del padre
+        'padre_documento_path': get_absolute_path(padre.documento_identidad_img) if padre else None,
+        'padre_sisben_path': get_absolute_path(padre.clasificacion_sisben) if padre else None,
     }
     html = template.render(context)
     response = HttpResponse(content_type='application/pdf')
