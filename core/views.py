@@ -1486,14 +1486,23 @@ def cambiar_padre_de_nino(request):
         accion = request.POST.get('accion')
         nino_id = request.POST.get('nino_seleccionado')
         nuevo_padre_id = request.POST.get('nuevo_padre_id')
+        motivo_cambio = request.POST.get('motivo_cambio')
+        observaciones_motivo = request.POST.get('observaciones_motivo', '')
         
         # Log para debugging
         print(f"[DEBUG] Acción: {accion}")
         print(f"[DEBUG] Niño ID: {nino_id}")
         print(f"[DEBUG] Nuevo Padre ID: {nuevo_padre_id}")
+        print(f"[DEBUG] Motivo: {motivo_cambio}")
+        print(f"[DEBUG] Observaciones: {observaciones_motivo}")
         print(f"[DEBUG] POST data: {request.POST}")
         
         if accion == 'cambiar_existente' and nino_id and nuevo_padre_id:
+            # Validar que se haya seleccionado un motivo
+            if not motivo_cambio:
+                messages.error(request, 'Debe seleccionar el motivo del cambio de asignación.')
+                return redirect('cambiar_padre_nino')
+            
             # Cambiar a padre existente
             print(f"[DEBUG] Cambiando niño {nino_id} a padre existente {nuevo_padre_id}")
             try:
@@ -1517,11 +1526,13 @@ def cambiar_padre_de_nino(request):
                     # Guardar en la sesión para el SweetAlert
                     request.session['cambio_padre_exitoso'] = {
                         'nombre': f'{nino.nombres} {nino.apellidos}',
-                        'mensaje': mensaje_exito
+                        'mensaje': mensaje_exito,
+                        'motivo': motivo_cambio,
+                        'observaciones': observaciones_motivo
                     }
                     
                     messages.success(request, mensaje_exito)
-                    print(f"[DEBUG] Cambio exitoso")
+                    print(f"[DEBUG] Cambio exitoso - Motivo: {motivo_cambio}")
                     return redirect('listar_ninos')
             except Exception as e:
                 print(f"[ERROR] Error al cambiar padre: {str(e)}")
@@ -1530,6 +1541,11 @@ def cambiar_padre_de_nino(request):
                 messages.error(request, f"Error al cambiar padre: {e}")
                 
         elif accion == 'cambiar_nuevo' and nino_id and padre_form.is_valid():
+            # Validar que se haya seleccionado un motivo
+            if not motivo_cambio:
+                messages.error(request, 'Debe seleccionar el motivo del cambio de asignación.')
+                return redirect('cambiar_padre_nino')
+            
             # Cambiar a nuevo padre
             print(f"[DEBUG] Creando nuevo padre y cambiando niño {nino_id}")
             try:
