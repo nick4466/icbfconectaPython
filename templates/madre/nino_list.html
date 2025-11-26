@@ -7,6 +7,7 @@
   <title>Listado de Niños</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body {
       margin: 0;
@@ -355,6 +356,45 @@
         modal.style.display = 'flex';
       });
     });
+  </script>
+
+  <!-- Script para mostrar SweetAlert cuando hay matrícula exitosa -->
+  <script>
+    {% if request.session.matricula_exitosa %}
+      Swal.fire({
+        title: '¡Matrícula Exitosa!',
+        html: '<strong>{{ request.session.matricula_exitosa.mensaje|escapejs }}</strong>',
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#9B59B6',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showClass: {
+          popup: 'animate__animated animate__bounceIn'
+        },
+        hideClass: {
+          popup: 'animate__animated animate__fadeOut'
+        }
+      });
+    {% endif %}
+
+    {% if request.session.cambio_padre_exitoso %}
+      Swal.fire({
+        title: '¡Cambio de Padre Exitoso!',
+        html: '<strong>{{ request.session.cambio_padre_exitoso.mensaje|escapejs }}</strong>',
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#9B59B6',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showClass: {
+          popup: 'animate__animated animate__bounceIn'
+        },
+        hideClass: {
+          popup: 'animate__animated animate__fadeOut'
+        }
+      });
+    {% endif %}
   </script>
 
 </body>

@@ -201,6 +201,11 @@ def matricular_nino(request):
                         nino.registro_civil_img = request.FILES['nino-registro_civil_img']
                     nino.save()
                     
+                    # Guardar el nombre del niño en la sesión para mostrarlo en el SweetAlert
+                    request.session['matricula_exitosa'] = {
+                        'nombre': f'{nino.nombres} {nino.apellidos}',
+                        'mensaje': f'El niño {nino.nombres} {nino.apellidos} ha sido matriculado exitosamente en el hogar {hogar_madre.nombre_hogar}.'
+                    }
                     messages.success(request, f'Niño {nino.nombres} matriculado correctamente.')
                     return redirect('listar_ninos')
             except Exception as e:
@@ -1067,8 +1072,24 @@ def listar_ninos(request):
     except HogarComunitario.DoesNotExist:
         messages.error(request, 'No tienes un hogar comunitario asignado.')
         return redirect('madre_dashboard')
+    
     ninos = Nino.objects.filter(hogar=hogar)
-    return render(request, 'madre/nino_list.html', {'ninos': ninos})
+    
+    # Contexto con información de matrícula exitosa si existe
+    context = {
+        'ninos': ninos
+    }
+    
+    # Renderizar el template
+    response = render(request, 'madre/nino_list.html', context)
+    
+    # Limpiar la sesión después de renderizar (para que el mensaje solo se muestre una vez)
+    if 'matricula_exitosa' in request.session:
+        del request.session['matricula_exitosa']
+    if 'cambio_padre_exitoso' in request.session:
+        del request.session['cambio_padre_exitoso']
+    
+    return response
 
 @login_required
 def ver_ficha_nino(request, id):
@@ -1492,6 +1513,12 @@ def cambiar_padre_de_nino(request):
                     if padre_anterior:
                         mensaje_exito += f'del padre {padre_anterior.usuario.get_full_name()} '
                     mensaje_exito += f'al padre {nuevo_padre.usuario.get_full_name()}.'
+                    
+                    # Guardar en la sesión para el SweetAlert
+                    request.session['cambio_padre_exitoso'] = {
+                        'nombre': f'{nino.nombres} {nino.apellidos}',
+                        'mensaje': mensaje_exito
+                    }
                     
                     messages.success(request, mensaje_exito)
                     print(f"[DEBUG] Cambio exitoso")
