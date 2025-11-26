@@ -716,12 +716,33 @@
         if (opcion === 'existente') {
           optionExistente.classList.add('selected');
           seccionExistente.classList.add('active');
+          // Deshabilitar campos del formulario de nuevo padre
+          deshabilitarCamposNuevoPadre(true);
         } else {
           optionNuevo.classList.add('selected');
           seccionNuevo.classList.add('active');
+          // Habilitar campos del formulario de nuevo padre
+          deshabilitarCamposNuevoPadre(false);
         }
 
         verificarFormularioCompleto();
+      }
+
+      function deshabilitarCamposNuevoPadre(deshabilitar) {
+        // Deshabilitar/habilitar todos los campos del formulario de nuevo padre
+        const camposNuevoPadre = document.querySelectorAll('#seccionNuevo input, #seccionNuevo select');
+        camposNuevoPadre.forEach(campo => {
+          if (deshabilitar) {
+            campo.disabled = true;
+            campo.removeAttribute('required');
+          } else {
+            campo.disabled = false;
+            // Restaurar required solo en campos obligatorios
+            if (['padre-nombres', 'padre-apellidos', 'padre-documento', 'padre-correo', 'padre-telefono'].includes(campo.id)) {
+              campo.setAttribute('required', 'required');
+            }
+          }
+        });
       }
 
       // Manejar búsqueda de padre existente
@@ -781,6 +802,7 @@
       }
 
       function mostrarPadreExistente(padre) {
+        console.log('Mostrando padre encontrado:', padre);
         const padreExistenteDatos = document.getElementById('padreExistenteDatos');
         padreExistenteDatos.innerHTML = `
           <div class="info-dato">
@@ -827,9 +849,16 @@
       function verificarFormularioCompleto() {
         let completo = false;
         
+        console.log('Verificando formulario completo...');
+        console.log('Niño seleccionado:', ninoSeleccionado.value);
+        console.log('Opción seleccionada:', opcionSeleccionada);
+        console.log('Padre encontrado:', padreEncontrado);
+        console.log('Nuevo padre ID:', nuevoPadreId.value);
+        
         if (ninoSeleccionado.value && opcionSeleccionada) {
           if (opcionSeleccionada === 'existente') {
-            completo = padreEncontrado !== null;
+            completo = padreEncontrado !== null && nuevoPadreId.value !== '';
+            console.log('Verificando opción existente, completo:', completo);
           } else if (opcionSeleccionada === 'nuevo') {
             // Verificar campos obligatorios del nuevo padre
             const camposObligatorios = [
@@ -844,10 +873,12 @@
               const campo = document.getElementById(id);
               return campo && campo.value.trim() !== '';
             });
+            console.log('Verificando opción nuevo, completo:', completo);
           }
         }
         
         btnSubmit.disabled = !completo;
+        console.log('Botón submit deshabilitado:', btnSubmit.disabled);
       }
 
       // Agregar listeners a campos de nuevo padre
@@ -856,8 +887,56 @@
         campo.addEventListener('change', verificarFormularioCompleto);
       });
 
+      // Inicializar: deshabilitar campos de nuevo padre por defecto
+      deshabilitarCamposNuevoPadre(true);
+
       // Verificar formulario al cargar
       verificarFormularioCompleto();
+
+      // Handler para el submit del formulario
+      const form = document.getElementById('cambiarPadreForm');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          console.log('Formulario enviado');
+          console.log('Acción:', accionInput.value);
+          console.log('Niño seleccionado:', ninoSeleccionado.value);
+          console.log('Nuevo padre ID:', nuevoPadreId.value);
+          
+          // Validar antes de enviar
+          if (!ninoSeleccionado.value) {
+            e.preventDefault();
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Debe seleccionar un niño.'
+            });
+            return false;
+          }
+          
+          if (!accionInput.value) {
+            e.preventDefault();
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Debe seleccionar una opción (padre existente o nuevo padre).'
+            });
+            return false;
+          }
+          
+          if (accionInput.value === 'cambiar_existente' && !nuevoPadreId.value) {
+            e.preventDefault();
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Debe buscar y seleccionar un padre existente.'
+            });
+            return false;
+          }
+          
+          console.log('Formulario válido, enviando...');
+          // El formulario se enviará normalmente
+        });
+      }
     });
   </script>
 

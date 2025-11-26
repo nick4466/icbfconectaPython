@@ -1466,28 +1466,45 @@ def cambiar_padre_de_nino(request):
         nino_id = request.POST.get('nino_seleccionado')
         nuevo_padre_id = request.POST.get('nuevo_padre_id')
         
+        # Log para debugging
+        print(f"[DEBUG] Acción: {accion}")
+        print(f"[DEBUG] Niño ID: {nino_id}")
+        print(f"[DEBUG] Nuevo Padre ID: {nuevo_padre_id}")
+        print(f"[DEBUG] POST data: {request.POST}")
+        
         if accion == 'cambiar_existente' and nino_id and nuevo_padre_id:
             # Cambiar a padre existente
+            print(f"[DEBUG] Cambiando niño {nino_id} a padre existente {nuevo_padre_id}")
             try:
                 with transaction.atomic():
                     nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
                     nuevo_padre = get_object_or_404(Padre, id=nuevo_padre_id)
                     padre_anterior = nino.padre
                     
+                    print(f"[DEBUG] Niño encontrado: {nino.nombres} {nino.apellidos}")
+                    print(f"[DEBUG] Padre anterior: {padre_anterior.usuario.get_full_name() if padre_anterior else 'Sin padre'}")
+                    print(f"[DEBUG] Nuevo padre: {nuevo_padre.usuario.get_full_name()}")
+                    
                     nino.padre = nuevo_padre
                     nino.save()
                     
-                    messages.success(request, 
-                        f'El niño {nino.nombres} {nino.apellidos} ha sido asignado correctamente '
-                        f'del padre {padre_anterior.usuario.get_full_name()} '
-                        f'al padre {nuevo_padre.usuario.get_full_name()}.'
-                    )
+                    mensaje_exito = f'El niño {nino.nombres} {nino.apellidos} ha sido asignado correctamente '
+                    if padre_anterior:
+                        mensaje_exito += f'del padre {padre_anterior.usuario.get_full_name()} '
+                    mensaje_exito += f'al padre {nuevo_padre.usuario.get_full_name()}.'
+                    
+                    messages.success(request, mensaje_exito)
+                    print(f"[DEBUG] Cambio exitoso")
                     return redirect('listar_ninos')
             except Exception as e:
+                print(f"[ERROR] Error al cambiar padre: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 messages.error(request, f"Error al cambiar padre: {e}")
                 
         elif accion == 'cambiar_nuevo' and nino_id and padre_form.is_valid():
             # Cambiar a nuevo padre
+            print(f"[DEBUG] Creando nuevo padre y cambiando niño {nino_id}")
             try:
                 with transaction.atomic():
                     nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
@@ -1536,8 +1553,20 @@ def cambiar_padre_de_nino(request):
                     )
                     return redirect('listar_ninos')
             except Exception as e:
+                print(f"[ERROR] Error al crear nuevo padre y cambiar: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 messages.error(request, f"Error al cambiar padre: {e}")
         else:
+            print(f"[DEBUG] Datos incompletos o formulario inválido")
+            print(f"[DEBUG] Acción válida: {accion in ['cambiar_existente', 'cambiar_nuevo']}")
+            print(f"[DEBUG] Niño ID presente: {bool(nino_id)}")
+            if accion == 'cambiar_existente':
+                print(f"[DEBUG] Nuevo padre ID presente: {bool(nuevo_padre_id)}")
+            if accion == 'cambiar_nuevo':
+                print(f"[DEBUG] Padre form válido: {padre_form.is_valid()}")
+                if not padre_form.is_valid():
+                    print(f"[DEBUG] Errores del formulario: {padre_form.errors}")
             messages.error(request, 'Datos incompletos para realizar el cambio.')
     else:
         cambiar_form = CambiarPadreForm(hogar=hogar_madre, prefix='cambiar')
