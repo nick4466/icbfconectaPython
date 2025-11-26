@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages 
-from .models import DesarrolloNino, SeguimientoDiario
+from .models import DesarrolloNino, SeguimientoDiario, EvaluacionDimension
 from planeaciones.models import Planeacion as PlaneacionModel
 from novedades.models import Novedad
 from core.models import Nino, HogarComunitario, Padre, MadreComunitaria
@@ -487,19 +487,34 @@ def registrar_seguimiento_diario(request):
                 'ninos_para_seleccionar': [nino], # Para que el select no falle
             })
         # Crear el registro de seguimiento
-        # Crear el registro
-        SeguimientoDiario.objects.create(
+        seguimiento = SeguimientoDiario.objects.create(
             nino=nino,
             planeacion=planeacion_del_dia,
             fecha=fecha_obj,
-            participacion=request.POST.get('participacion'),
-            comportamiento_logro=request.POST.get('comportamiento_logro'),
+            comportamiento_general=request.POST.get('comportamiento_general'),
+            estado_emocional=request.POST.get('estado_emocional'),
             observaciones=request.POST.get('observaciones'),
+            observacion_relevante='observacion_relevante' in request.POST,
             valoracion=request.POST.get('valoracion')
         )
+
+        # 4. Guardar las evaluaciones por dimensión
+        dimensiones_ids = request.POST.getlist('dimension_id')
+        for dim_id in dimensiones_ids:
+            desempeno = request.POST.get(f'desempeno_{dim_id}')
+            observacion_dim = request.POST.get(f'observacion_{dim_id}')
+            
+            if desempeno: # Solo guardar si se envió un desempeño
+                EvaluacionDimension.objects.create(
+                    seguimiento=seguimiento,
+                    dimension_id=dim_id,
+                    desempeno=desempeno,
+                    observacion=observacion_dim
+                )
+
         messages.success(request, f"¡Seguimiento para {nino.nombres} registrado correctamente!")
         redirect_url = reverse('desarrollo:listar_seguimientos')
-        return redirect(f'{redirect_url}?nino={nino_id}&exito=1')
+        return redirect(f'{redirect_url}?nino={nino_id}')
 
     # --- Lógica para mostrar el formulario (GET) ---
     fecha_str = request.GET.get('fecha')
@@ -508,6 +523,8 @@ def registrar_seguimiento_diario(request):
         'titulo_form': 'Registrar Seguimiento Diario',
         'fecha_filtro': fecha_str,
         'nino_preseleccionado': None, # Inicializamos
+        'comportamiento_choices': SeguimientoDiario.COMPORTAMIENTO_CHOICES,
+        'estado_emocional_choices': SeguimientoDiario.ESTADO_EMOCIONAL_CHOICES,
     }
 
     # Si se preselecciona un niño (ej: desde la gestión), lo obtenemos y lo pasamos al contexto.
@@ -524,10 +541,13 @@ def registrar_seguimiento_diario(request):
     # --- A partir de aquí, asumimos que SÍ hay una fecha ---
     fecha_obj = datetime.strptime(fecha_str, '%Y-%m-%d').date()
 
-    planeacion_del_dia = PlaneacionModel.objects.filter(madre=hogar_madre.madre.usuario, fecha=fecha_obj).first()
+    # Precargar las dimensiones para optimizar la consulta
+    planeacion_del_dia = PlaneacionModel.objects.filter(madre=hogar_madre.madre.usuario, fecha=fecha_obj).prefetch_related('dimensiones').first()
     if not planeacion_del_dia:
         context['error'] = f"No hay actividad planeada para este día ({fecha_str}). No se puede registrar seguimiento."
         return render(request, 'madre/seguimiento_diario_form.html', context)
+
+    context['dimensiones_planeacion'] = planeacion_del_dia.dimensiones.all()
 
     # --- Verificación de asistencia específica si viene un niño preseleccionado ---
     if context.get('nino_preseleccionado'):
@@ -633,27 +653,56 @@ def editar_seguimiento_diario(request, id):
         return redirect('desarrollo:listar_seguimientos')
 
     if request.method == 'POST':
-        # Actualizar los campos del seguimiento con los datos del formulario
-        seguimiento.participacion = request.POST.get('participacion')
-        seguimiento.comportamiento_logro = request.POST.get('comportamiento_logro')
-        seguimiento.observaciones = request.POST.get('observaciones', '').strip()
+        # Actualizar campos principales del seguimiento
+        seguimiento.comportamiento_general = request.POST.get('comportamiento_general')
+        seguimiento.estado_emocional = request.POST.get('estado_emocional')
+        seguimiento.observaciones = request.POST.get('observaciones')
+        seguimiento.observacion_relevante = 'observacion_relevante' in request.POST
         seguimiento.valoracion = request.POST.get('valoracion')
-
-        # Validación simple para campos obligatorios
-        if not all([seguimiento.participacion, seguimiento.comportamiento_logro, seguimiento.valoracion]):
-            return render(request, 'madre/editar_seguimiento_diario.html', {
-                'error': "Error: Debes completar todos los campos obligatorios.",
-                'seguimiento': seguimiento,
-                'titulo_form': 'Editar Seguimiento Diario',
-            })
-
         seguimiento.save()
+
+        # Actualizar las evaluaciones por dimensión
+        dimensiones_ids = request.POST.getlist('dimension_id')
+        for dim_id in dimensiones_ids:
+            desempeno = request.POST.get(f'desempeno_{dim_id}')
+            observacion_dim = request.POST.get(f'observacion_{dim_id}')
+            
+            # Usamos update_or_create para actualizar si existe, o crear si es nueva
+            if desempeno:
+                EvaluacionDimension.objects.update_or_create(
+                    seguimiento=seguimiento,
+                    dimension_id=dim_id,
+                    defaults={
+                        'desempeno': desempeno,
+                        'observacion': observacion_dim
+                    }
+                )
+
         messages.success(request, f"El seguimiento para {seguimiento.nino.nombres} del {seguimiento.fecha.strftime('%d-%m-%Y')} ha sido actualizado exitosamente.")
         return redirect(reverse('desarrollo:listar_seguimientos') + f'?nino={seguimiento.nino.id}')
+
+    # --- Lógica para GET (mostrar el formulario con datos) ---
+    # Precargar las dimensiones de la planeación asociada
+    planeacion_del_dia = seguimiento.planeacion
+    dimensiones_planeacion = planeacion_del_dia.dimensiones.all()
+
+    # Cargar las evaluaciones de dimensión existentes en un diccionario para fácil acceso
+    evaluaciones_existentes = {
+        eval_dim.dimension_id: eval_dim 
+        for eval_dim in seguimiento.evaluaciones_dimension.all()
+    }
+
+    # Añadir las evaluaciones existentes a cada dimensión para la plantilla
+    for dim in dimensiones_planeacion:
+        dim.evaluacion_guardada = evaluaciones_existentes.get(dim.id)
 
     return render(request, 'madre/editar_seguimiento_diario.html', {
         'seguimiento': seguimiento,
         'titulo_form': 'Editar Seguimiento Diario',
+        'planeacion': planeacion_del_dia,
+        'dimensiones_planeacion': dimensiones_planeacion,
+        'comportamiento_choices': SeguimientoDiario.COMPORTAMIENTO_CHOICES,
+        'estado_emocional_choices': SeguimientoDiario.ESTADO_EMOCIONAL_CHOICES,
     })
 
 @login_required

@@ -115,32 +115,47 @@ class SeguimientoDiario(models.Model):
     fecha = models.DateField()
 
     # --- Opciones para los campos de selección ---
-    PARTICIPACION_CHOICES = [
-        ('alta', 'Alta'),
-        ('media', 'Media'),
-        ('baja', 'Baja'),
-        ('no_aplica', 'No Aplica'),
-    ]
     COMPORTAMIENTO_CHOICES = [
-        ('excelente', 'Excelente'),
-        ('bueno', 'Bueno'),
-        ('regular', 'Regular'),
-        ('bajo', 'Bajo'),
-        ('dificultad', 'Presentó Dificultad'),
+        ('participativo', 'Participativo'),
+        ('aislado', 'Aislado'),
+        ('impulsivo', 'Impulsivo'),
+        ('inquieto', 'Inquieto'),
+        ('tranquilo', 'Tranquilo'),
+        ('colaborativo', 'Colaborativo'),
+    ]
+    ESTADO_EMOCIONAL_CHOICES = [
+        ('alegre', 'Alegre'),
+        ('tranquilo', 'Tranquilo'),
+        ('curioso', 'Curioso'),
+        ('motivado', 'Motivado'),
+        ('carinoso', 'Cariñoso'),
+        ('cansado', 'Cansado'),
+        ('triste', 'Triste'),
+        ('ansioso', 'Ansioso'),
+        ('frustrado', 'Frustrado'),
+        ('enojado', 'Enojado / Irritado'),
+        ('timido', 'Tímido / Inseguro'),
+        ('aislado_emocional', 'Aislado (poco participativo)'),
     ]
 
     # Campos de seguimiento
-    participacion = models.CharField(
-        max_length=10, choices=PARTICIPACION_CHOICES,
-        verbose_name="¿Cómo participó el niño/a en la actividad?",
+    comportamiento_general = models.CharField(
+        max_length=20, choices=COMPORTAMIENTO_CHOICES,
+        verbose_name="Comportamiento general del niño", null=True, blank=True
     )
-    comportamiento_logro = models.CharField(
-        max_length=10, choices=COMPORTAMIENTO_CHOICES,
-        verbose_name="Comportamiento, interés y nivel de logro",
+    estado_emocional = models.CharField(
+        max_length=20, choices=ESTADO_EMOCIONAL_CHOICES,
+        verbose_name="Estado emocional del niño", null=True, blank=True
     )
     observaciones = models.TextField(
         verbose_name="Observaciones del educador",
         blank=True, null=True
+    )
+    observacion_relevante = models.BooleanField(
+        default=False,
+        blank=True,
+        verbose_name="¿Esta observación es relevante para el desarrollo del niño?",
+        help_text="Marcar si la observación debe ser considerada en los informes de desarrollo."
     )
     valoracion = models.PositiveSmallIntegerField(
         verbose_name="Valoración del día",
@@ -154,3 +169,23 @@ class SeguimientoDiario(models.Model):
         verbose_name_plural = "Seguimientos Diarios"
         unique_together = ('nino', 'fecha') # Asegura un solo seguimiento por niño y día
         ordering = ['-fecha', 'nino']
+
+
+class EvaluacionDimension(models.Model):
+    """
+    Almacena la evaluación de una dimensión específica dentro de un seguimiento diario.
+    """
+    DESEMPENO_CHOICES = [
+        ('alto', 'Alto'),
+        ('adecuado', 'Adecuado'),
+        ('proceso', 'En Proceso'),
+        ('bajo', 'Bajo'),
+    ]
+
+    seguimiento = models.ForeignKey(SeguimientoDiario, on_delete=models.CASCADE, related_name='evaluaciones_dimension')
+    dimension = models.ForeignKey('planeaciones.Dimension', on_delete=models.CASCADE)
+    desempeno = models.CharField(max_length=10, choices=DESEMPENO_CHOICES)
+    observacion = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ('seguimiento', 'dimension')
