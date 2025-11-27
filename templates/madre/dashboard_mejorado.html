@@ -7,7 +7,7 @@
   <title>ICBF Conecta - Dashboard Madre Comunitaria</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.org/npm/chart.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -184,7 +184,7 @@
     .capacidad-progress-bar {
       height: 100%;
       background: linear-gradient(90deg, #9B59B6 0%, #c995d9 100%);
-      width: {{ porcentaje_ocupacion }}%;
+      width: 53%;
       border-radius: 10px;
       transition: width 0.3s ease;
     }
@@ -266,11 +266,6 @@
     .badge-normal {
       background-color: #e8f5e9;
       color: #388e3c;
-    }
-
-    .badge-advertencia {
-      background-color: #fff3e0;
-      color: #f57c00;
     }
 
     /* PLANEACIÓN CARD */
@@ -456,7 +451,6 @@
     <nav>
       <ul>
         <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
-        <li><a href="{% url 'asistencia_form' %}"><i class="fas fa-clipboard-check"></i> Llamado de Asistencia</a></li>
         <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
         <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
         <li class="dropdown">
@@ -479,9 +473,9 @@
 
     <!-- SECCIÓN DE BIENVENIDA -->
     <div class="welcome-section">
-      <h1><i class="fas fa-home"></i> Bienvenida, {{ nombre_madre }}</h1>
-      <p><strong>Hogar Comunitario:</strong> {{ hogar_madre.nombre_hogar }} - {{ hogar_madre.barrio }}</p>
-      <p><strong>Fecha:</strong> {{ fecha_actual }} | <strong>Hora:</strong> {{ hora_actual }}</p>
+      <h1><i class="fas fa-home"></i> Bienvenida, María Alejandra</h1>
+      <p><strong>Hogar Comunitario:</strong> Casa de los Angelitos - Barrio Centro</p>
+      <p><strong>Fecha:</strong> 26 de Noviembre de 2025 | <strong>Hora:</strong> 08:30 AM</p>
     </div>
 
     <!-- GRID PRINCIPAL -->
@@ -493,27 +487,27 @@
         
         <div class="capacidad-content">
           <div class="capacidad-info">
-            <div class="capacidad-numero">{{ total_ninos }} / {{ capacidad_maxima }}</div>
+            <div class="capacidad-numero">8 / 15</div>
             <p class="capacidad-texto">Niños activos matriculados</p>
             <div class="capacidad-progress">
               <div class="capacidad-progress-bar"></div>
             </div>
-            <p class="capacidad-texto" style="margin-top: 5px; color: #9B59B6; font-weight: 600;">{{ porcentaje_ocupacion }}% de capacidad utilizada</p>
+            <p class="capacidad-texto" style="margin-top: 5px; color: #9B59B6; font-weight: 600;">53% de capacidad utilizada</p>
           </div>
         </div>
 
         <div class="capacidad-stats">
           <div class="stat-item">
-            <div class="stat-numero">{{ total_ninos }}</div>
+            <div class="stat-numero">8</div>
             <div class="stat-label">Activos</div>
           </div>
           <div class="stat-item">
-            <div class="stat-numero">{{ disponibles }}</div>
+            <div class="stat-numero">7</div>
             <div class="stat-label">Disponibles</div>
           </div>
           <div class="stat-item">
-            <div class="stat-numero">{{ capacidad_maxima }}</div>
-            <div class="stat-label">Capacidad Total</div>
+            <div class="stat-numero">2</div>
+            <div class="stat-label">Inactivos</div>
           </div>
         </div>
 
@@ -529,29 +523,21 @@
 
       <!-- CARD 2: RESUMEN PLANEACIÓN HOY -->
       <div class="card">
-        <h2><i class="fas fa-calendar-day"></i> Hoy {{ fecha_actual|slice:":2" }}</h2>
+        <h2><i class="fas fa-calendar-day"></i> Hoy 26 de Noviembre</h2>
         
-        {% if planeacion_hoy %}
         <div class="planeacion-hoy">
           <h3>✓ Planeación Cargada</h3>
           <div class="planeacion-hoy-content">
-            <strong>Tema:</strong> {{ planeacion_hoy.nombre_experiencia }}<br>
-            <strong>Intencionalidad:</strong> {{ planeacion_hoy.intencionalidad_pedagogica|truncatewords:10 }}
+            <strong>Tema:</strong> "Explorando Colores y Formas"<br>
+            <strong>Hora inicio:</strong> 09:00 AM<br>
+            <strong>Hora fin:</strong> 11:30 AM<br>
+            <strong>Actividad:</strong> Manualidades y juego libre
           </div>
         </div>
-        {% else %}
-        <div class="alerta-justificacion">
-          <i class="fas fa-exclamation-triangle"></i>
-          <div class="alerta-texto">
-            <h3>⚠️ Sin Planeación</h3>
-            <p>No hay planeación registrada para hoy</p>
-          </div>
-        </div>
-        {% endif %}
 
         <div class="acciones-rapidas">
           <a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn btn-primario" style="flex: 1;">
-            <i class="fas fa-edit"></i> Ver Planeaciones
+            <i class="fas fa-edit"></i> Ver Planeación
           </a>
         </div>
       </div>
@@ -561,34 +547,50 @@
         <h2><i class="fas fa-calendar-week"></i> Planeaciones de la Semana</h2>
         
         <div class="planeacion-semana">
-          {% for dia in planeaciones_semana %}
-          <div class="dia-planeacion {{ dia.estado }}">
-            {% if dia.estado == 'completado' %}
-              <i class="fas fa-check-circle"></i><br>
-            {% elif dia.estado == 'hoy' %}
-              <i class="fas fa-star"></i><br>
-            {% else %}
-              <i class="fas fa-exclamation-circle"></i><br>
-            {% endif %}
-            {{ dia.nombre }} {{ dia.numero }}<br>
-            <div class="dia-nombre">
-              {% if dia.estado == 'completado' %}Completado
-              {% elif dia.estado == 'hoy' %}Hoy
-              {% else %}Faltante{% endif %}
-            </div>
+          <div class="dia-planeacion completado">
+            <i class="fas fa-check-circle"></i><br>
+            Lun 23<br>
+            <div class="dia-nombre">Completado</div>
           </div>
-          {% endfor %}
+          <div class="dia-planeacion completado">
+            <i class="fas fa-check-circle"></i><br>
+            Mar 24<br>
+            <div class="dia-nombre">Completado</div>
+          </div>
+          <div class="dia-planeacion completado">
+            <i class="fas fa-check-circle"></i><br>
+            Mié 25<br>
+            <div class="dia-nombre">Completado</div>
+          </div>
+          <div class="dia-planeacion hoy">
+            <i class="fas fa-star"></i><br>
+            Jue 26<br>
+            <div class="dia-nombre">Hoy</div>
+          </div>
+          <div class="dia-planeacion faltante">
+            <i class="fas fa-exclamation-circle"></i><br>
+            Vie 27<br>
+            <div class="dia-nombre">Faltante</div>
+          </div>
+          <div class="dia-planeacion faltante">
+            <i class="fas fa-exclamation-circle"></i><br>
+            Sab 28<br>
+            <div class="dia-nombre">Faltante</div>
+          </div>
+          <div class="dia-planeacion faltante">
+            <i class="fas fa-exclamation-circle"></i><br>
+            Dom 29<br>
+            <div class="dia-nombre">Faltante</div>
+          </div>
         </div>
 
-        {% if planeaciones_faltantes > 0 %}
         <div class="alerta-justificacion" style="margin-top: 15px;">
           <i class="fas fa-exclamation-triangle"></i>
           <div class="alerta-texto">
             <h3>⚠️ Pendientes Detectados</h3>
-            <p>Te faltan {{ planeaciones_faltantes }} planeación(es) para completar la semana. Por favor, carga las planeaciones pendientes.</p>
+            <p>Te faltan 3 planeaciones para completar la semana. Por favor, carga las planeaciones para los días viernes, sábado y domingo.</p>
           </div>
         </div>
-        {% endif %}
       </div>
 
       <!-- CARD 4: ASISTENCIA NIÑOS -->
@@ -602,29 +604,66 @@
               <th>Faltas</th>
               <th>Asistencia %</th>
               <th>Estado</th>
+              <th>Acción</th>
             </tr>
           </thead>
           <tbody>
-            {% for nino_data in asistencia_list %}
             <tr>
-              <td>{{ nino_data.nino }}</td>
-              <td>{{ nino_data.faltas }}</td>
-              <td>{{ nino_data.porcentaje }}%</td>
-              <td>
-                {% if nino_data.estado == 'alto_riesgo' %}
-                  <span class="badge badge-alerta">⚠️ Alto riesgo</span>
-                {% elif nino_data.estado == 'advertencia' %}
-                  <span class="badge badge-advertencia">Advertencia</span>
-                {% else %}
-                  <span class="badge badge-normal">Normal</span>
-                {% endif %}
-              </td>
+              <td>Juan Rodríguez</td>
+              <td>8</td>
+              <td>60%</td>
+              <td><span class="badge badge-alerta">⚠️ Alto riesgo</span></td>
+              <td><button class="btn" style="background: #ffc107; color: black; padding: 5px 10px; font-size: 12px;">Solicitar Justificación</button></td>
             </tr>
-            {% empty %}
             <tr>
-              <td colspan="4" style="text-align: center; color: #888;">No hay datos de asistencia disponibles</td>
+              <td>María García</td>
+              <td>5</td>
+              <td>75%</td>
+              <td><span class="badge badge-alerta">Advertencia</span></td>
+              <td><button class="btn" style="background: #ffc107; color: black; padding: 5px 10px; font-size: 12px;">Recordar</button></td>
             </tr>
-            {% endfor %}
+            <tr>
+              <td>Carlos López</td>
+              <td>2</td>
+              <td>90%</td>
+              <td><span class="badge badge-normal">Normal</span></td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>Ana Martínez</td>
+              <td>0</td>
+              <td>100%</td>
+              <td><span class="badge badge-normal">Excelente</span></td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>Felipe Sánchez</td>
+              <td>6</td>
+              <td>70%</td>
+              <td><span class="badge badge-alerta">Advertencia</span></td>
+              <td><button class="btn" style="background: #ffc107; color: black; padding: 5px 10px; font-size: 12px;">Recordar</button></td>
+            </tr>
+            <tr>
+              <td>Daniela Ruiz</td>
+              <td>3</td>
+              <td>85%</td>
+              <td><span class="badge badge-normal">Normal</span></td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>Sofía Morales</td>
+              <td>1</td>
+              <td>95%</td>
+              <td><span class="badge badge-normal">Normal</span></td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>Andrés Peña</td>
+              <td>7</td>
+              <td>65%</td>
+              <td><span class="badge badge-alerta">⚠️ Alto riesgo</span></td>
+              <td><button class="btn" style="background: #ffc107; color: black; padding: 5px 10px; font-size: 12px;">Solicitar Justificación</button></td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -647,130 +686,33 @@
             <h3 style="color: #7a3eb1; margin-top: 0; font-size: 15px;">Resumen General</h3>
             <div style="margin-top: 20px;">
               <div class="stat-item" style="margin-bottom: 12px;">
-                <div class="stat-numero" style="color: #d32f2f;">{{ promedio_faltas }}</div>
+                <div class="stat-numero" style="color: #d32f2f;">4.25</div>
                 <div class="stat-label">Promedio de faltas por niño</div>
               </div>
               <div class="stat-item" style="margin-bottom: 12px;">
-                <div class="stat-numero" style="color: #f57c00;">{{ total_faltas }}</div>
+                <div class="stat-numero" style="color: #f57c00;">34</div>
                 <div class="stat-label">Total de faltas (últimas 4 sem)</div>
               </div>
               <div class="stat-item" style="margin-bottom: 12px;">
-                <div class="stat-numero" style="color: #388e3c;">{{ porcentaje_asistencia_hogar }}%</div>
+                <div class="stat-numero" style="color: #388e3c;">81%</div>
                 <div class="stat-label">Asistencia promedio hogar</div>
               </div>
               <div class="stat-item">
-                <div class="stat-numero" style="color: #d32f2f;">{{ ninos_atencion }}</div>
+                <div class="stat-numero" style="color: #d32f2f;">2</div>
                 <div class="stat-label">Niños requieren atención</div>
               </div>
             </div>
           </div>
         </div>
 
-        {% if ninos_atencion > 0 %}
         <div class="alerta-justificacion" style="margin-top: 20px;">
           <i class="fas fa-clipboard-check"></i>
           <div class="alerta-texto">
             <h3>📋 Recordatorio Importante</h3>
-            <p>Existen {{ ninos_atencion }} niño(s) con alto número de faltas. Por favor, solicita justificación de inasistencia a los padres y registra el motivo en el sistema.</p>
+            <p>Existen 2 niños (Juan Rodríguez y Andrés Peña) con más de 7 faltas en las últimas 4 semanas. Por favor, solicita justificación de inasistencia a los padres y registra el motivo en el sistema.</p>
           </div>
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- CARD NUEVA: TENDENCIA DE ASISTENCIA SEMANAL -->
-      <div class="card">
-        <h2><i class="fas fa-chart-line"></i> Tendencia Asistencia</h2>
-        
-        <div class="chart-container" style="height: 250px;">
-          <canvas id="chartTendencia"></canvas>
-        </div>
-
-        <div style="margin-top: 15px; padding: 12px; background: #f5f1fa; border-radius: 8px; text-align: center;">
-          <strong style="color: #7a3eb1;">Seguimiento Últimas 4 Semanas</strong>
-          <p style="margin: 5px 0 0 0; color: #888; font-size: 13px;">Monitoreo del porcentaje de asistencia semanal</p>
         </div>
       </div>
-
-      <!-- CARD NUEVA: NOVEDADES RECIENTES -->
-      <div class="card">
-        <h2><i class="fas fa-exclamation-circle"></i> Novedades Recientes</h2>
-        
-        {% if novedades_salud > 0 %}
-        <div class="alerta-justificacion" style="margin-bottom: 15px;">
-          <i class="fas fa-heartbeat"></i>
-          <div class="alerta-texto">
-            <h3>⚕️ Alertas de Salud</h3>
-            <p>{{ novedades_salud }} novedad(es) de salud activa(s)</p>
-          </div>
-        </div>
-        {% endif %}
-
-        <div style="max-height: 280px; overflow-y: auto;">
-          {% for novedad in novedades_recientes %}
-          <div style="padding: 10px; background: #faf8fc; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid 
-            {% if novedad.tipo == 'a' or novedad.tipo == 'e' %}#d32f2f
-            {% elif novedad.tipo == 'b' or novedad.tipo == 'c' %}#f57c00
-            {% else %}#1976d2{% endif %};">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <strong style="color: #7a3eb1; font-size: 14px;">{{ novedad.nino.nombres }}</strong>
-              <span style="font-size: 11px; color: #888;">{{ novedad.fecha|date:"d/m/Y" }}</span>
-            </div>
-            <p style="margin: 5px 0 0 0; color: #555; font-size: 13px;">{{ novedad.get_tipo_display }}</p>
-            {% if novedad.descripcion %}
-            <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">{{ novedad.descripcion|truncatewords:15 }}</p>
-            {% endif %}
-          </div>
-          {% empty %}
-          <div style="text-align: center; padding: 30px; color: #888;">
-            <i class="fas fa-check-circle" style="font-size: 40px; color: #c995d9; margin-bottom: 10px;"></i>
-            <p style="margin: 0;">No hay novedades recientes</p>
-          </div>
-          {% endfor %}
-        </div>
-
-        {% if novedades_recientes %}
-        <div class="acciones-rapidas" style="margin-top: 15px;">
-          <a href="{% url 'novedades:novedades_list' %}" class="btn btn-primario" style="flex: 1;">
-            <i class="fas fa-list"></i> Ver Todas las Novedades
-          </a>
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- CARD NUEVA: PADRES PARA CONTACTAR -->
-      {% if padres_contactar %}
-      <div class="card">
-        <h2><i class="fas fa-phone-alt"></i> Padres para Contactar</h2>
-        
-        <div class="alerta-justificacion" style="margin-bottom: 15px;">
-          <i class="fas fa-exclamation-triangle"></i>
-          <div class="alerta-texto">
-            <h3>⚠️ Acción Requerida</h3>
-            <p>{{ padres_contactar|length }} padre(s) debe(n) ser contactado(s) por faltas elevadas</p>
-          </div>
-        </div>
-
-        <div style="max-height: 280px; overflow-y: auto;">
-          {% for contacto in padres_contactar %}
-          <div style="padding: 12px; background: #fff3e0; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #f57c00;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-              <div style="flex: 1;">
-                <strong style="color: #e65100; font-size: 14px;">{{ contacto.nino }}</strong>
-                <p style="margin: 3px 0; color: #666; font-size: 13px;">Padre: {{ contacto.padre }}</p>
-              </div>
-              <span class="badge badge-alerta">{{ contacto.faltas }} faltas</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffe0b2;">
-              <i class="fas fa-phone" style="color: #f57c00;"></i>
-              <a href="tel:{{ contacto.telefono }}" style="color: #e65100; text-decoration: none; font-weight: 600; font-size: 13px;">
-                {{ contacto.telefono }}
-              </a>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
 
       <!-- CARD 6: ACCIONES PENDIENTES -->
       <div class="card">
@@ -779,19 +721,17 @@
         <div style="margin-top: 15px;">
           <div style="padding: 12px; background: #fff3e0; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #f57c00;">
             <strong style="color: #e65100;">Planeaciones Pendientes:</strong>
-            <p style="margin: 5px 0 0 0; color: #bf6700;">{{ planeaciones_faltantes }} planeación(es) faltante(s)</p>
+            <p style="margin: 5px 0 0 0; color: #bf6700;">3 planeaciones faltantes (Vie, Sab, Dom)</p>
           </div>
           
-          {% if ninos_atencion > 0 %}
           <div style="padding: 12px; background: #ffe5e5; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #d32f2f;">
-            <strong style="color: #c62828;">Niños Requieren Atención:</strong>
-            <p style="margin: 5px 0 0 0; color: #d32f2f;">{{ ninos_atencion }} niño(s) con faltas elevadas</p>
+            <strong style="color: #c62828;">Justificaciones Requeridas:</strong>
+            <p style="margin: 5px 0 0 0; color: #d32f2f;">2 niños requieren documentación</p>
           </div>
-          {% endif %}
           
           <div style="padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 3px solid #1976d2;">
             <strong style="color: #0d47a1;">Registro de Asistencia:</strong>
-            <p style="margin: 5px 0 0 0; color: #1565c0;">Actualizar para hoy</p>
+            <p style="margin: 5px 0 0 0; color: #1565c0;">Actualizar para hoy (26 de nov)</p>
           </div>
         </div>
 
@@ -809,110 +749,47 @@
   <!-- SCRIPT PARA GRÁFICAS -->
   <script>
     // Gráfica de Faltas por Niño
-    const ctx = document.getElementById('chartFaltas');
-    if (ctx) {
-      const asistenciaData = {{ asistencia_data|safe }};
-      
-      const labels = asistenciaData.map(d => d.nino);
-      const faltas = asistenciaData.map(d => d.faltas);
-      const estados = asistenciaData.map(d => d.estado);
-      
-      // Colores según el estado
-      const backgroundColors = estados.map(estado => {
-        if (estado === 'alto_riesgo') return '#d32f2f';
-        if (estado === 'advertencia') return '#f57c00';
-        return '#388e3c';
-      });
-
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Faltas (últimas 4 semanas)',
-            data: faltas,
-            backgroundColor: backgroundColors,
-            borderRadius: 6,
-            borderSkipped: false
-          }]
+    const ctx = document.getElementById('chartFaltas').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Juan', 'María', 'Carlos', 'Ana', 'Felipe', 'Daniela', 'Sofía', 'Andrés'],
+        datasets: [{
+          label: 'Faltas (últimas 4 semanas)',
+          data: [8, 5, 2, 0, 6, 3, 1, 7],
+          backgroundColor: [
+            '#d32f2f',
+            '#f57c00',
+            '#388e3c',
+            '#388e3c',
+            '#f57c00',
+            '#388e3c',
+            '#388e3c',
+            '#d32f2f'
+          ],
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
         },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            x: {
-              beginAtZero: true,
-              ticks: {
-                stepSize: 2
-              }
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 2
             }
           }
         }
-      });
-    }
-
-    // Gráfica de Tendencia de Asistencia Semanal
-    const ctxTendencia = document.getElementById('chartTendencia');
-    if (ctxTendencia) {
-      const semanasData = {{ semanas_asistencia|safe }};
-      
-      const labelsSemanas = semanasData.map(d => d.semana);
-      const porcentajes = semanasData.map(d => d.porcentaje);
-
-      new Chart(ctxTendencia, {
-        type: 'line',
-        data: {
-          labels: labelsSemanas,
-          datasets: [{
-            label: 'Asistencia %',
-            data: porcentajes,
-            borderColor: '#9B59B6',
-            backgroundColor: 'rgba(155, 89, 182, 0.1)',
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4,
-            pointRadius: 6,
-            pointHoverRadius: 8,
-            pointBackgroundColor: '#9B59B6',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return 'Asistencia: ' + context.parsed.y + '%';
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 100,
-              ticks: {
-                callback: function(value) {
-                  return value + '%';
-                }
-              }
-            }
-          }
-        }
-      });
-    }
+      }
+    });
   </script>
 
 </body>
