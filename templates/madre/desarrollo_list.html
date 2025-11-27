@@ -504,6 +504,7 @@
         data-mejorar="{{ desarrollo.aspectos_a_mejorar|default_if_none:''|escapejs }}"
         data-alertas="{{ desarrollo.alertas_mes|default_if_none:''|escapejs }}"
         data-conclusion="{{ desarrollo.conclusion_general|default_if_none:''|escapejs }}"
+        data-novedades="{{ desarrollo.novedades_mes|default_if_none:''|escapejs }}"
       >
         <span class="badge-promedio">Logro: {{ desarrollo.logro_mes|default:'N/A' }}</span>
         <i class="fas fa-seedling card-icon"></i>
@@ -573,7 +574,6 @@
         <div class="modal-item"><strong>Comunicativa:</strong> <span id="modal-comunicativa"></span></div>
         <div class="modal-item"><strong>Socio-Afectiva:</strong> <span id="modal-socioafectiva"></span></div>
         <div class="modal-item"><strong>Corporal:</strong> <span id="modal-corporal"></span></div>
-        <div class="modal-item full-width"><strong>Autonomía e Independencia:</strong> <span id="modal-autonomia"></span></div>
       </div>
       <hr>
       <div class="modal-grid">
@@ -588,6 +588,10 @@
         <div class="modal-item full-width">
           <strong>Alertas o Novedades:</strong>
           <blockquote id="modal-alertas"></blockquote>
+        </div>
+        <div class="modal-item full-width">
+          <strong>Vista previa de novedades:</strong>
+          <div id="modal-novedades" style="background:#f8f6ff; border-radius:8px; border:1px solid #e5d5f5; padding:10px 14px; margin-top:6px; font-size:15px; color:#555;"></div>
         </div>
         <div class="modal-item full-width">
           <strong>Conclusión General:</strong>
@@ -620,22 +624,27 @@
           if (!valor || valor.trim() === '' || valor.trim().toLowerCase() === 'no registrado') {
             return 'Sin información registrada';
           }
-          // Decodifica cualquier secuencia \uXXXX a su carácter real
-          return valor.replace(/\\u([0-9a-fA-F]{4})/g, function(match, grp) {
+          // Decodifica secuencias Unicode (\uXXXX)
+          valor = valor.replace(/\\u([0-9a-fA-F]{4})/g, function(match, grp) {
             return String.fromCharCode(parseInt(grp, 16));
           });
+          // Reemplaza saltos de línea (\r\n, \n, \r) por <br>
+          valor = valor.replace(/\r\n|\n|\r/g, '<br>');
+          // Reemplaza comillas escapadas
+          valor = valor.replace(/\\'/g, "'").replace(/\\"/g, '"');
+          return valor;
         }
         document.getElementById('modal-nino').textContent = card.dataset.nino;
         document.getElementById('modal-fecha').textContent = card.dataset.fecha;
-        document.getElementById('modal-cognitiva').textContent = mostrarDimension(card.dataset.evalCognitiva);
-        document.getElementById('modal-comunicativa').textContent = mostrarDimension(card.dataset.evalComunicativa);
-        document.getElementById('modal-socioafectiva').textContent = mostrarDimension(card.dataset.evalSocioafectiva);
-        document.getElementById('modal-corporal').textContent = mostrarDimension(card.dataset.evalCorporal);
-        document.getElementById('modal-autonomia').textContent = mostrarDimension(card.dataset.autonomia);
-        document.getElementById('modal-fortalezas').textContent = mostrarDimension(card.dataset.fortalezas);
-        document.getElementById('modal-mejorar').textContent = mostrarDimension(card.dataset.mejorar);
-        document.getElementById('modal-alertas').textContent = mostrarDimension(card.dataset.alertas);
-        document.getElementById('modal-conclusion').textContent = mostrarDimension(card.dataset.conclusion);
+        document.getElementById('modal-cognitiva').innerHTML = mostrarDimension(card.dataset.evalCognitiva);
+        document.getElementById('modal-comunicativa').innerHTML = mostrarDimension(card.dataset.evalComunicativa);
+        document.getElementById('modal-socioafectiva').innerHTML = mostrarDimension(card.dataset.evalSocioafectiva);
+        document.getElementById('modal-corporal').innerHTML = mostrarDimension(card.dataset.evalCorporal);
+        document.getElementById('modal-fortalezas').innerHTML = mostrarDimension(card.dataset.fortalezas);
+        document.getElementById('modal-mejorar').innerHTML = mostrarDimension(card.dataset.mejorar);
+        document.getElementById('modal-alertas').innerHTML = mostrarDimension(card.dataset.alertas);
+        document.getElementById('modal-conclusion').innerHTML = mostrarDimension(card.dataset.conclusion);
+        document.getElementById('modal-novedades').innerHTML = (card.dataset.novedades && card.dataset.novedades !== 'undefined') ? mostrarDimension(card.dataset.novedades) : '<span style="color:#888;">No hay novedades registradas este mes.</span>';
         modal.style.display = 'flex';
       });
     });

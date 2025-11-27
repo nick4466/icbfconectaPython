@@ -113,7 +113,7 @@ def listar_desarrollos(request):
     # === LÓGICA DE DIFERENCIACIÓN DE CARDS ===
     hoy = timezone.now().date()
     desarrollos_list = []
-
+    from novedades.models import Novedad
     for desarrollo in desarrollos:
         logro = desarrollo.logro_mes
 
@@ -141,6 +141,26 @@ def listar_desarrollos(request):
             desarrollo.is_actual = True
         else:
             desarrollo.is_actual = False
+
+        # Obtener novedades del mes para el niño
+        novedades_qs = Novedad.objects.filter(
+            nino=desarrollo.nino,
+            fecha__year=desarrollo.fecha_fin_mes.year,
+            fecha__month=desarrollo.fecha_fin_mes.month
+        ).order_by('fecha')
+        if novedades_qs.exists():
+            novedades_html = []
+            for novedad in novedades_qs:
+                tipo = novedad.get_tipo_display() if hasattr(novedad, 'get_tipo_display') else novedad.tipo
+                # fecha = novedad.fecha.strftime('%d/%m/%Y')  # Eliminamos la fecha
+                descripcion = novedad.descripcion or ''
+                url = reverse('novedades:novedades_detail', args=[novedad.id])
+                novedades_html.append(
+                    f'<div style="margin-bottom:8px;"><b>{tipo}</b>: {descripcion} <a href="{url}" target="_blank" style="color:#5dade2;">Ver detalle</a></div>'
+                )
+            desarrollo.novedades_mes = "".join(novedades_html)
+        else:
+            desarrollo.novedades_mes = ""
         desarrollos_list.append(desarrollo)
 
     # --- Paginación ---
