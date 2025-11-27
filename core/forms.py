@@ -261,6 +261,18 @@ class NinoForm(forms.ModelForm):
         otra_discapacidad = cleaned_data.get('otra_discapacidad')
         nacionalidad = cleaned_data.get('nacionalidad')
         otro_pais = cleaned_data.get('otro_pais')
+        fecha_nacimiento = cleaned_data.get('fecha_nacimiento')
+        
+        # Validar edad del niño (debe estar entre 1 y 5 años)
+        if fecha_nacimiento:
+            from datetime import date
+            hoy = date.today()
+            edad = hoy.year - fecha_nacimiento.year - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
+            
+            if edad < 1:
+                self.add_error('fecha_nacimiento', 'El niño tiene menos de 1 año y no puede ser matriculado. La edad mínima es de 1 año.')
+            elif edad > 5:
+                self.add_error('fecha_nacimiento', 'El niño es mayor de 5 años y no puede ser matriculado. La edad máxima es de 5 años.')
         
         if tiene_discapacidad:
             if not tipos_discapacidad and not otra_discapacidad:

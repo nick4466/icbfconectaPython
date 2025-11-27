@@ -25,11 +25,24 @@ from xhtml2pdf import pisa
 # --- GENERAR REPORTE PDF DE MATRÍCULA DE UN NIÑO ---
 @login_required
 def reporte_matricula_nino_pdf(request, nino_id):
+    import os
+    from django.conf import settings
+    
     nino = get_object_or_404(Nino, id=nino_id)
     padre = nino.padre
     hogar = nino.hogar
     usuario_generador = request.user.get_full_name() or request.user.username
     fecha_reporte = timezone.now().strftime('%d/%m/%Y %H:%M')
+    
+    # Función auxiliar para obtener ruta absoluta de archivo
+    def get_absolute_path(file_field):
+        if file_field and hasattr(file_field, 'path'):
+            try:
+                return os.path.abspath(file_field.path)
+            except:
+                return None
+        return None
+    
     template = get_template('madre/reporte_ninos.html')
     context = {
         'nino': nino,
@@ -37,6 +50,14 @@ def reporte_matricula_nino_pdf(request, nino_id):
         'hogar': hogar,
         'usuario_generador': usuario_generador,
         'fecha_reporte': fecha_reporte,
+        # Rutas absolutas para las imágenes del niño
+        'nino_foto_path': get_absolute_path(nino.foto),
+        'nino_carnet_path': get_absolute_path(nino.carnet_vacunacion),
+        'nino_eps_path': get_absolute_path(nino.certificado_eps),
+        'nino_registro_path': get_absolute_path(nino.registro_civil_img),
+        # Rutas absolutas para las imágenes del padre
+        'padre_documento_path': get_absolute_path(padre.documento_identidad_img) if padre else None,
+        'padre_sisben_path': get_absolute_path(padre.clasificacion_sisben) if padre else None,
     }
     html = template.render(context)
     response = HttpResponse(content_type='application/pdf')
@@ -45,6 +66,152 @@ def reporte_matricula_nino_pdf(request, nino_id):
     if pisa_status.err:
         return HttpResponse('Error al generar el PDF', status=500)
     return response
+
+@login_required
+def reporte_general_hogar_pdf(request):
+    """Genera un reporte PDF con todos los niños del hogar de la madre comunitaria"""
+    import os
+    from django.conf import settings
+    
+    # Verificar que el usuario sea madre comunitaria
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, 'Acceso denegado. No tienes los permisos necesarios.')
+        return redirect('home')
+    
+    # Obtener el hogar de la madre comunitaria logueada
+    try:
+        madre = MadreComunitaria.objects.get(usuario=request.user)
+        # El hogar se obtiene a través del related_name 'hogares_asignados'
+        hogar = madre.hogares_asignados.first()
+        if not hogar:
+            messages.error(request, 'No tienes un hogar asignado.')
+            return redirect('listar_ninos')
+    except MadreComunitaria.DoesNotExist:
+        messages.error(request, 'No se encontró información de madre comunitaria.')
+        return redirect('listar_ninos')
+    
+    # Obtener todos los niños del hogar
+    ninos = Nino.objects.filter(hogar=hogar).select_related('padre', 'padre__usuario').order_by('apellidos', 'nombres')
+    
+    if not ninos.exists():
+        messages.warning(request, 'No hay niños matriculados en este hogar para generar el reporte.')
+        return redirect('listar_ninos')
+    
+    usuario_generador = request.user.get_full_name() or request.user.username
+    fecha_reporte = timezone.now().strftime('%d/%m/%Y %H:%M')
+    
+    # Función auxiliar para obtener ruta absoluta de archivo
+    def get_absolute_path(file_field):
+        if file_field and hasattr(file_field, 'path'):
+            try:
+                return os.path.abspath(file_field.path)
+            except:
+                return None
+        return None
+    
+    # Preparar datos de cada niño con sus rutas de documentos
+    ninos_data = []
+    for nino in ninos:
+        padre = nino.padre
+        nino_info = {
+            'nino': nino,
+            'padre': padre,
+            'nino_foto_path': get_absolute_path(nino.foto),
+            'nino_carnet_path': get_absolute_path(nino.carnet_vacunacion),
+            'nino_eps_path': get_absolute_path(nino.certificado_eps),
+            'nino_registro_path': get_absolute_path(nino.registro_civil_img),
+            'padre_documento_path': get_absolute_path(padre.documento_identidad_img) if padre else None,
+            'padre_sisben_path': get_absolute_path(padre.clasificacion_sisben) if padre else None,
+        }
+        ninos_data.append(nino_info)
+    
+    template = get_template('madre/reporte_general_hogar.html')
+    context = {
+        'hogar': hogar,
+        'ninos_data': ninos_data,
+        'total_ninos': ninos.count(),
+        'usuario_generador': usuario_generador,
+        'fecha_reporte': fecha_reporte,
+    }
+    
+    html = template.render(context)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="reporte_general_{hogar.nombre_hogar.replace(" ", "_")}.pdf"'
+    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=response, encoding='utf-8')
+    if pisa_status.err:
+        return HttpResponse('Error al generar el PDF', status=500)
+    return response
+
+@login_required
+def certificado_matricula_pdf(request, nino_id):
+    """Genera un certificado de matrícula oficial en PDF"""
+    import os
+    import random
+    from datetime import date
+    import locale
+    
+    # Configurar locale para fechas en español
+    try:
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+    except:
+        try:
+            locale.setlocale(locale.LC_TIME, 'Spanish_Spain.1252')
+        except:
+            pass
+    
+    nino = get_object_or_404(Nino, id=nino_id)
+    padre = nino.padre
+    hogar = nino.hogar
+    
+    # Calcular edad del niño
+    hoy = date.today()
+    edad = hoy.year - nino.fecha_nacimiento.year - ((hoy.month, hoy.day) < (nino.fecha_nacimiento.month, nino.fecha_nacimiento.day))
+    
+    # Generar código de verificación único
+    codigo_verificacion = f"ICBF-{hogar.id:04d}-{nino.id:05d}-{random.randint(1000, 9999)}"
+    
+    # Obtener ruta absoluta del logo
+    from django.conf import settings
+    logo_path = os.path.join(settings.BASE_DIR, 'core', 'static', 'img', 'logo.png')
+    if not os.path.exists(logo_path):
+        logo_path = None
+    else:
+        logo_path = os.path.abspath(logo_path)
+    
+    # Formatear fecha en español manualmente
+    meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+             'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+    fecha_emision = f"{hoy.day} de {meses[hoy.month - 1]} de {hoy.year}"
+    
+    # Formatear fechas del niño
+    fecha_nac = nino.fecha_nacimiento
+    fecha_nacimiento_texto = f"{fecha_nac.day} de {meses[fecha_nac.month - 1]} de {fecha_nac.year}"
+    
+    fecha_ing = nino.fecha_ingreso
+    fecha_ingreso_texto = f"{fecha_ing.day} de {meses[fecha_ing.month - 1]} de {fecha_ing.year}"
+    
+    template = get_template('madre/certificado_matricula.html')
+    context = {
+        'nino': nino,
+        'padre': padre,
+        'hogar': hogar,
+        'edad': edad,
+        'codigo_verificacion': codigo_verificacion,
+        'fecha_emision': fecha_emision,
+        'fecha_nacimiento_texto': fecha_nacimiento_texto,
+        'fecha_ingreso_texto': fecha_ingreso_texto,
+        'año_actual': hoy.year,
+        'logo_path': logo_path,
+    }
+    
+    html = template.render(context)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="certificado_matricula_{nino.nombres}_{nino.apellidos}.pdf"'
+    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=response, encoding='utf-8')
+    if pisa_status.err:
+        return HttpResponse('Error al generar el certificado', status=500)
+    return response
+
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from .models import Rol, Usuario, MadreComunitaria, HogarComunitario
@@ -201,6 +368,11 @@ def matricular_nino(request):
                         nino.registro_civil_img = request.FILES['nino-registro_civil_img']
                     nino.save()
                     
+                    # Guardar el nombre del niño en la sesión para mostrarlo en el SweetAlert
+                    request.session['matricula_exitosa'] = {
+                        'nombre': f'{nino.nombres} {nino.apellidos}',
+                        'mensaje': f'El niño {nino.nombres} {nino.apellidos} ha sido matriculado exitosamente en el hogar {hogar_madre.nombre_hogar}.'
+                    }
                     messages.success(request, f'Niño {nino.nombres} matriculado correctamente.')
                     return redirect('listar_ninos')
             except Exception as e:
@@ -1067,8 +1239,24 @@ def listar_ninos(request):
     except HogarComunitario.DoesNotExist:
         messages.error(request, 'No tienes un hogar comunitario asignado.')
         return redirect('madre_dashboard')
+    
     ninos = Nino.objects.filter(hogar=hogar)
-    return render(request, 'madre/nino_list.html', {'ninos': ninos})
+    
+    # Contexto con información de matrícula exitosa si existe
+    context = {
+        'ninos': ninos
+    }
+    
+    # Renderizar el template
+    response = render(request, 'madre/nino_list.html', context)
+    
+    # Limpiar la sesión después de renderizar (para que el mensaje solo se muestre una vez)
+    if 'matricula_exitosa' in request.session:
+        del request.session['matricula_exitosa']
+    if 'cambio_padre_exitoso' in request.session:
+        del request.session['cambio_padre_exitoso']
+    
+    return response
 
 @login_required
 def ver_ficha_nino(request, id):
@@ -1465,29 +1653,68 @@ def cambiar_padre_de_nino(request):
         accion = request.POST.get('accion')
         nino_id = request.POST.get('nino_seleccionado')
         nuevo_padre_id = request.POST.get('nuevo_padre_id')
+        motivo_cambio = request.POST.get('motivo_cambio')
+        observaciones_motivo = request.POST.get('observaciones_motivo', '')
+        
+        # Log para debugging
+        print(f"[DEBUG] Acción: {accion}")
+        print(f"[DEBUG] Niño ID: {nino_id}")
+        print(f"[DEBUG] Nuevo Padre ID: {nuevo_padre_id}")
+        print(f"[DEBUG] Motivo: {motivo_cambio}")
+        print(f"[DEBUG] Observaciones: {observaciones_motivo}")
+        print(f"[DEBUG] POST data: {request.POST}")
         
         if accion == 'cambiar_existente' and nino_id and nuevo_padre_id:
+            # Validar que se haya seleccionado un motivo
+            if not motivo_cambio:
+                messages.error(request, 'Debe seleccionar el motivo del cambio de asignación.')
+                return redirect('cambiar_padre_nino')
+            
             # Cambiar a padre existente
+            print(f"[DEBUG] Cambiando niño {nino_id} a padre existente {nuevo_padre_id}")
             try:
                 with transaction.atomic():
                     nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
                     nuevo_padre = get_object_or_404(Padre, id=nuevo_padre_id)
                     padre_anterior = nino.padre
                     
+                    print(f"[DEBUG] Niño encontrado: {nino.nombres} {nino.apellidos}")
+                    print(f"[DEBUG] Padre anterior: {padre_anterior.usuario.get_full_name() if padre_anterior else 'Sin padre'}")
+                    print(f"[DEBUG] Nuevo padre: {nuevo_padre.usuario.get_full_name()}")
+                    
                     nino.padre = nuevo_padre
                     nino.save()
                     
-                    messages.success(request, 
-                        f'El niño {nino.nombres} {nino.apellidos} ha sido asignado correctamente '
-                        f'del padre {padre_anterior.usuario.get_full_name()} '
-                        f'al padre {nuevo_padre.usuario.get_full_name()}.'
-                    )
+                    mensaje_exito = f'El niño {nino.nombres} {nino.apellidos} ha sido asignado correctamente '
+                    if padre_anterior:
+                        mensaje_exito += f'del padre {padre_anterior.usuario.get_full_name()} '
+                    mensaje_exito += f'al padre {nuevo_padre.usuario.get_full_name()}.'
+                    
+                    # Guardar en la sesión para el SweetAlert
+                    request.session['cambio_padre_exitoso'] = {
+                        'nombre': f'{nino.nombres} {nino.apellidos}',
+                        'mensaje': mensaje_exito,
+                        'motivo': motivo_cambio,
+                        'observaciones': observaciones_motivo
+                    }
+                    
+                    messages.success(request, mensaje_exito)
+                    print(f"[DEBUG] Cambio exitoso - Motivo: {motivo_cambio}")
                     return redirect('listar_ninos')
             except Exception as e:
+                print(f"[ERROR] Error al cambiar padre: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 messages.error(request, f"Error al cambiar padre: {e}")
                 
         elif accion == 'cambiar_nuevo' and nino_id and padre_form.is_valid():
+            # Validar que se haya seleccionado un motivo
+            if not motivo_cambio:
+                messages.error(request, 'Debe seleccionar el motivo del cambio de asignación.')
+                return redirect('cambiar_padre_nino')
+            
             # Cambiar a nuevo padre
+            print(f"[DEBUG] Creando nuevo padre y cambiando niño {nino_id}")
             try:
                 with transaction.atomic():
                     nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
@@ -1536,8 +1763,20 @@ def cambiar_padre_de_nino(request):
                     )
                     return redirect('listar_ninos')
             except Exception as e:
+                print(f"[ERROR] Error al crear nuevo padre y cambiar: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 messages.error(request, f"Error al cambiar padre: {e}")
         else:
+            print(f"[DEBUG] Datos incompletos o formulario inválido")
+            print(f"[DEBUG] Acción válida: {accion in ['cambiar_existente', 'cambiar_nuevo']}")
+            print(f"[DEBUG] Niño ID presente: {bool(nino_id)}")
+            if accion == 'cambiar_existente':
+                print(f"[DEBUG] Nuevo padre ID presente: {bool(nuevo_padre_id)}")
+            if accion == 'cambiar_nuevo':
+                print(f"[DEBUG] Padre form válido: {padre_form.is_valid()}")
+                if not padre_form.is_valid():
+                    print(f"[DEBUG] Errores del formulario: {padre_form.errors}")
             messages.error(request, 'Datos incompletos para realizar el cambio.')
     else:
         cambiar_form = CambiarPadreForm(hogar=hogar_madre, prefix='cambiar')

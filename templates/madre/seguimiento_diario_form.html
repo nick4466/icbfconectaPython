@@ -260,6 +260,15 @@ input[type="text"]:focus, select:focus {
       font-weight: bold;
       margin-left: 5px;
     }
+    
+    .dimension-block {
+        background-color: #f9f9f9;
+        border: 1px solid #eee;
+        border-left: 5px solid #a569bd;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
 
     /* Estilos para las estrellas */
     .rating-stars {
@@ -286,6 +295,27 @@ input[type="text"]:focus, select:focus {
     .rating-stars input[type="radio"]:checked ~ label:hover,
     .rating-stars input[type="radio"]:checked ~ label:hover ~ label {
       color: #f5b301;
+    }
+    .nota-valoracion {
+      background-color: #f0e6f5; /* Un lila muy claro */
+      border: 1px solid #d1b3e6;
+      border-left: 5px solid #9B59B6; /* Borde morado principal */
+      padding: 15px;
+      margin-top: 25px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #5e3370;
+    }
+    .nota-valoracion p {
+      margin: 0 0 10px 0;
+    }
+    .nota-valoracion ul {
+      margin: 0 0 5px 20px;
+      padding: 0;
+    }
+    .nota-valoracion li {
+      margin-bottom: 5px;
     }
   </style>
 </head>
@@ -368,38 +398,74 @@ input[type="text"]:focus, select:focus {
             </div>
           {% endif %}
 
-          <div class="form-group">
-            <h4>¿Cómo participó el niño/a en la actividad?<span class="required-star">*</span></h4>
-            <select name="participacion" required>
-              <option value="">-- Seleccionar participación --</option>
-              <option value="alta">Alta</option>
-              <option value="media">Media</option>
-              <option value="baja">Baja</option>
-              <option value="no_aplica">No Aplica</option>
-            </select>
-          </div>
+          <!-- Bloques dinámicos por dimensión -->
+          {% for dimension in dimensiones_planeacion %}
+            <div class="dimension-block">
+                <h4>Dimensión: {{ dimension.nombre }}</h4>
+                <input type="hidden" name="dimension_id" value="{{ dimension.id }}">
+                <div class="form-group">
+                    <label for="desempeno_{{ dimension.id }}">Desempeño<span class="required-star">*</span></label>
+                    <select name="desempeno_{{ dimension.id }}" id="desempeno_{{ dimension.id }}" class="desempeno-select" required>
+                        <option value="">-- Seleccionar desempeño --</option>
+                        <option value="alto">Alto</option>
+                        <option value="adecuado">Adecuado</option>
+                        <option value="proceso">En Proceso</option>
+                        <option value="bajo">Bajo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="observacion_{{ dimension.id }}">Observación (Opcional)</label>
+                    <textarea name="observacion_{{ dimension.id }}" id="observacion_{{ dimension.id }}" placeholder="Observaciones específicas de esta dimensión"></textarea>
+                </div>
+            </div>
+          {% endfor %}
+
+          <hr style="margin: 30px 0;">
+
+          <h4>Campos Generales del Seguimiento</h4>
+
+            <div class="form-group">
+                <label for="comportamiento_general">Comportamiento general del niño<span class="required-star">*</span></label>
+                <select name="comportamiento_general" id="comportamiento_general" required>
+                    <option value="">-- Seleccionar comportamiento --</option>
+                    {% for key, value in comportamiento_choices %}
+                        <option value="{{ key }}">{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="estado_emocional">Estado emocional del niño<span class="required-star">*</span></label>
+                <select name="estado_emocional" id="estado_emocional" required>
+                    <option value="">-- Seleccionar estado emocional --</option>
+                    {% for key, value in estado_emocional_choices %}
+                        <option value="{{ key }}">{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
           <div class="form-group">
-            <h4>Comportamiento, interés y nivel de logro<span class="required-star">*</span></h4>
-            <select name="comportamiento_logro" required>
-              <option value="">-- Seleccionar comportamiento --</option>
-              <option value="excelente">Excelente</option>
-              <option value="bueno">Bueno</option>
-              <option value="regular">Regular</option>
-              <option value="bajo">Bajo</option>
-              <option value="dificultad">Presentó Dificultad</option>
-            </select>
+            <label for="observaciones">Observaciones del educador (Opcional)</label>
+            <textarea name="observaciones" id="id_observaciones" placeholder="Observaciones adicionales (opcional)"></textarea>
+            <div id="observacion_relevante_container" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                <input type="checkbox" name="observacion_relevante" id="id_observacion_relevante" value="true">
+                <label for="id_observacion_relevante">¿Esta observación es relevante para el desarrollo del niño?</label>
+            </div>
           </div>
 
-          <div class="form-group">
-            <h4>Observaciones del educador</h4>
-            <textarea name="observaciones" placeholder="Observaciones adicionales (opcional)"></textarea>
+          <div class="nota-valoracion">
+            <p><strong>Nota sobre la valoración en estrellas:</strong></p>
+            <ul>
+              <li>Si algún desempeño es <strong>Bajo</strong>, el máximo será <strong>3 estrellas</strong>.</li>
+              <li>Si el comportamiento es <strong>negativo</strong> (ej. impulsivo, aislado), el máximo será <strong>4 estrellas</strong>.</li>
+              <li>Con buenos desempeños y comportamiento positivo, <strong>no se permitirá menos de 4 estrellas</strong>.</li>
+            </ul>
           </div>
 
           <div class="form-group">
             <h4>Valoración del día<span class="required-star">*</span></h4>
             <div class="rating-stars">
-              <input type="radio" id="valoracion-5" name="valoracion" value="5" required><label for="valoracion-5">★</label>
+              <input type="radio" id="valoracion-5" name="valoracion" value="5" required><label for="valoracion-5" title="Excelente">★</label>
               <input type="radio" id="valoracion-4" name="valoracion" value="4"><label for="valoracion-4">★</label>
               <input type="radio" id="valoracion-3" name="valoracion" value="3"><label for="valoracion-3">★</label>
               <input type="radio" id="valoracion-2" name="valoracion" value="2"><label for="valoracion-2">★</label>
@@ -415,48 +481,60 @@ input[type="text"]:focus, select:focus {
     </div>
   </div>
   <script>
-    // Frontend validation for required fields
     document.getElementById('seguimientoDiarioForm').addEventListener('submit', function(event) {
       const paso = "{{ paso }}";
       if (paso !== 'registrar_datos') { return; }
 
-      const ninoHiddenInput = this.querySelector('input[type="hidden"][name="nino"]');
-      const participacionSelect = this.querySelector('select[name="participacion"]');
-      const comportamientoSelect = this.querySelector('select[name="comportamiento_logro"]');
-      const valoracionRadios = this.querySelectorAll('input[name="valoracion"]');
-      let valoracionChecked = false;
+      let isValid = true;
+      let firstErrorMessage = "";
 
-      valoracionRadios.forEach(radio => {
-        if (radio.checked) {
-          valoracionChecked = true;
-        }
-      });
+      // --- Recopilación de datos del formulario ---
+      const desempenoSelects = Array.from(document.querySelectorAll('.desempeno-select'));
+      const comportamiento = document.getElementById('comportamiento_general').value;
+      const valoracionChecked = document.querySelector('input[name="valoracion"]:checked');
+      const valoracion = valoracionChecked ? parseInt(valoracionChecked.value, 10) : 0;
 
-      // Check if a child is selected, either from the dropdown or a hidden input
-      if (!ninoHiddenInput || ninoHiddenInput.value === "") {
-          event.preventDefault();
-          alert("Por favor, selecciona un niño.");
-          return;
+      const hayDesempenoBajo = desempenoSelects.some(s => s.value === 'bajo');
+      const todosDesempenosBuenos = desempenoSelects.every(s => ['alto', 'adecuado'].includes(s.value));
+      const esComportamientoNegativo = ['aislado', 'impulsivo', 'inquieto'].includes(comportamiento);
+      const esComportamientoPositivo = ['participativo', 'colaborador', 'tranquilo'].includes(comportamiento); // Asumiendo 'tranquilo' como positivo/neutral
+
+      // --- Lógica de validación unificada ---
+
+      // 1. Validaciones de máximo permitido
+      if (hayDesempenoBajo && valoracion > 3) {
+        isValid = false;
+        firstErrorMessage = "Si alguna dimensión tiene desempeño 'Bajo', la valoración máxima permitida es de 3 estrellas.";
+      } else if (esComportamientoNegativo && valoracion > 4) {
+        isValid = false;
+        firstErrorMessage = "Si el comportamiento es negativo (Aislado, Impulsivo, Inquieto), la valoración máxima permitida es de 4 estrellas.";
       }
 
-      if (!participacionSelect || participacionSelect.value.trim() === "") {
-        event.preventDefault();
-        alert("Por favor, selecciona la participación del niño.");
-        return;
+      // 2. Validaciones de mínimo permitido
+      if (todosDesempenosBuenos && esComportamientoPositivo && valoracion < 4) { // Mínimo 4 estrellas
+        isValid = false;
+        firstErrorMessage = "Con desempeños 'Altos' o 'Adecuados' y un comportamiento positivo, la valoración mínima debe ser de 4 estrellas.";
+      } else if (todosDesempenosBuenos && !esComportamientoPositivo && !esComportamientoNegativo && valoracion < 2) { // Comportamiento neutral
+        isValid = false;
+        firstErrorMessage = "Con buenos desempeños y un comportamiento neutral, la valoración mínima es de 2 estrellas.";
       }
-      if (!comportamientoSelect || comportamientoSelect.value.trim() === "") {
-        event.preventDefault();
-        alert("Por favor, selecciona el comportamiento, interés y nivel de logro.");
-        return;
+
+      // 3. Validación de campos obligatorios (si no hay otro error)
+      if (isValid) {
+        if (desempenoSelects.some(s => s.value === "")) firstErrorMessage = "Debes seleccionar un desempeño para todas las dimensiones.";
+        else if (comportamiento === "") firstErrorMessage = "Debes seleccionar el comportamiento general del niño.";
+        else if (document.getElementById('estado_emocional').value === "") firstErrorMessage = "Debes seleccionar el estado emocional del niño.";
+        else if (valoracion === 0) firstErrorMessage = "Debes seleccionar una valoración del día (estrellas).";
+        
+        if (firstErrorMessage) isValid = false;
       }
-      if (!valoracionChecked) {
+
+      if (!isValid) {
         event.preventDefault();
-        alert("Por favor, selecciona una valoración del día.");
-        return;
+        alert(firstErrorMessage);
       }
     });
 
-    // Script para recargar la página con la fecha seleccionada
     document.getElementById('fechaSelector').addEventListener('change', function() {
       const nuevaFecha = this.value;
       if (nuevaFecha) {
@@ -471,6 +549,32 @@ input[type="text"]:focus, select:focus {
         }
         window.location.href = url.toString();
       }
+    });
+
+    // --- Lógica para mostrar/ocultar el checkbox de observación relevante ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const observacionesTextarea = document.getElementById('id_observaciones');
+        const observacionRelevanteContainer = document.getElementById('observacion_relevante_container');
+
+        if (!observacionesTextarea || !observacionRelevanteContainer) {
+            console.error("No se encontraron los campos de observaciones para la lógica de visibilidad.");
+            return;
+        }
+
+        // Función para verificar y actualizar la visibilidad
+        function toggleRelevanteCheckbox() {
+            if (observacionesTextarea.value.trim() !== '') {
+                observacionRelevanteContainer.style.display = 'flex'; // Muestra el campo
+            } else {
+                observacionRelevanteContainer.style.display = 'none'; // Oculta el campo
+            }
+        }
+
+        // Llama a la función al cargar la página para establecer el estado inicial
+        toggleRelevanteCheckbox();
+
+        // Añade un listener para que se ejecute cada vez que el usuario escribe
+        observacionesTextarea.addEventListener('input', toggleRelevanteCheckbox);
     });
   </script>
 

@@ -150,7 +150,7 @@ class GeneradorEvaluacionMensual:
             'evaluacion_autonomia': ['solo', 'independiente', 'come', 'viste', 'guarda', 'control'],
         }
 
-        observaciones_texto = " ".join(s.observaciones for s in self.seguimientos_mes if s.observaciones)
+        observaciones_texto = " ".join(s.observaciones for s in self.seguimientos_mes if s.observaciones and s.observacion_relevante)
 
         for area, keywords in palabras_clave.items():
             texto_area = self._crear_texto_area(area, logro, observaciones_texto, keywords)

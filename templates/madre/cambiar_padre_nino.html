@@ -474,6 +474,7 @@
       <input type="hidden" name="accion" id="accionInput">
       <input type="hidden" name="nino_seleccionado" id="ninoSeleccionado">
       <input type="hidden" name="nuevo_padre_id" id="nuevoPadreId">
+      <input type="hidden" name="motivo_cambio" id="motivoCambio">
       
       <div class="form-container">
         <!-- Paso 1: Seleccionar Niño -->
@@ -609,6 +610,64 @@
             </div>
           </div>
         </div>
+
+        <!-- Paso 3: Motivo del Cambio -->
+        <div class="step" id="stepMotivo" style="opacity: 0.5; pointer-events: none;">
+          <div class="step-header">
+            <div class="step-number">3</div>
+            <div class="step-title">Motivo del Cambio de Asignación</div>
+          </div>
+
+          <div class="alert-info">
+            <i class="fas fa-exclamation-circle"></i>
+            Es importante documentar el motivo del cambio de asignación para mantener un registro institucional adecuado.
+          </div>
+
+          <div class="form-group">
+            <label for="selectMotivo">Seleccione el motivo del cambio <span style="color: #dc3545;">*</span></label>
+            <select id="selectMotivo" class="form-control" required>
+              <option value="">-- Seleccione una opción --</option>
+              <optgroup label="Cambios legales o judiciales">
+                <option value="cambio_custodia">Cambio de custodia legal</option>
+                <option value="sentencia_judicial">Sentencia judicial que modifica el tutor responsable</option>
+                <option value="adopcion">Adopción o proceso de adopción en curso</option>
+                <option value="reconocimiento_legal">Reconocimiento legal de paternidad/maternidad</option>
+                <option value="tutoria_legal">Tutoría legal otorgada por juez o autoridad competente</option>
+              </optgroup>
+              <optgroup label="Situaciones del tutor anterior">
+                <option value="fallecimiento">Fallecimiento del padre/tutor anterior</option>
+                <option value="renuncia">Renuncia voluntaria a la custodia</option>
+                <option value="desconocimiento_paradero">Desconocimiento del paradero del padre/tutor anterior</option>
+                <option value="abandono">Declaración de abandono</option>
+                <option value="cambio_temporal">Cambio temporal de tutor por hospitalización, viaje o incapacidad</option>
+              </optgroup>
+              <optgroup label="Decisiones institucionales">
+                <option value="traslado_institucional">Traslado del niño a otro hogar por decisión institucional</option>
+                <option value="riesgo_vulneracion">Riesgo o vulneración de derechos detectada</option>
+                <option value="solicitud_icbf">Solicitud formal del ICBF o entidad competente</option>
+                <option value="programa_especial">Ingreso del niño a un programa especial que asigna tutor diferente</option>
+                <option value="acogida_temporal">Asignación por acogida temporal o familia sustituta</option>
+              </optgroup>
+              <optgroup label="Reunificación familiar">
+                <option value="reunificacion">Reunificación familiar (regresa con un familiar directo)</option>
+                <option value="integracion_nucleo">Integración del niño a un nuevo núcleo familiar</option>
+                <option value="inclusion_nucleo">Inclusión del niño al núcleo familiar ya registrado</option>
+                <option value="reunificacion_adicional">Reunificación familiar con un menor adicional</option>
+              </optgroup>
+              <optgroup label="Correcciones administrativas">
+                <option value="error_registro">Cambio por error en la información previa o registro equivocado</option>
+                <option value="error_anterior">Error en el registro anterior</option>
+                <option value="cambio_documentos">Cambio de documentos o identificación del niño que requiere actualizar el tutor</option>
+                <option value="registro_multiple">Solicitud institucional para registro de varios infantes bajo el mismo responsable</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="observacionesMotivo">Observaciones adicionales (opcional)</label>
+            <textarea id="observacionesMotivo" name="observaciones_motivo" rows="4" class="form-control" placeholder="Agregue cualquier información adicional relevante sobre el cambio..."></textarea>
+          </div>
+        </div>
       </div>
 
       <div class="form-actions">
@@ -627,10 +686,13 @@
       const ninoSelect = document.getElementById('{{ cambiar_form.nino.id_for_label }}');
       const ninoInfo = document.getElementById('ninoInfo');
       const stepOpcion = document.getElementById('stepOpcion');
+      const stepMotivo = document.getElementById('stepMotivo');
       const btnSubmit = document.getElementById('btnSubmit');
       const accionInput = document.getElementById('accionInput');
       const ninoSeleccionado = document.getElementById('ninoSeleccionado');
       const nuevoPadreId = document.getElementById('nuevoPadreId');
+      const motivoCambio = document.getElementById('motivoCambio');
+      const selectMotivo = document.getElementById('selectMotivo');
 
       // Elementos de opciones
       const optionExistente = document.getElementById('optionExistente');
@@ -688,6 +750,8 @@
       function deshabilitarPasoOpcion() {
         stepOpcion.style.opacity = '0.5';
         stepOpcion.style.pointerEvents = 'none';
+        stepMotivo.style.opacity = '0.5';
+        stepMotivo.style.pointerEvents = 'none';
         btnSubmit.disabled = true;
       }
 
@@ -716,12 +780,40 @@
         if (opcion === 'existente') {
           optionExistente.classList.add('selected');
           seccionExistente.classList.add('active');
+          // Deshabilitar campos del formulario de nuevo padre
+          deshabilitarCamposNuevoPadre(true);
         } else {
           optionNuevo.classList.add('selected');
           seccionNuevo.classList.add('active');
+          // Habilitar campos del formulario de nuevo padre
+          deshabilitarCamposNuevoPadre(false);
         }
 
+        // Habilitar paso del motivo cuando se selecciona una opción
+        habilitarPasoMotivo();
         verificarFormularioCompleto();
+      }
+
+      function habilitarPasoMotivo() {
+        stepMotivo.style.opacity = '1';
+        stepMotivo.style.pointerEvents = 'auto';
+      }
+
+      function deshabilitarCamposNuevoPadre(deshabilitar) {
+        // Deshabilitar/habilitar todos los campos del formulario de nuevo padre
+        const camposNuevoPadre = document.querySelectorAll('#seccionNuevo input, #seccionNuevo select');
+        camposNuevoPadre.forEach(campo => {
+          if (deshabilitar) {
+            campo.disabled = true;
+            campo.removeAttribute('required');
+          } else {
+            campo.disabled = false;
+            // Restaurar required solo en campos obligatorios
+            if (['padre-nombres', 'padre-apellidos', 'padre-documento', 'padre-correo', 'padre-telefono'].includes(campo.id)) {
+              campo.setAttribute('required', 'required');
+            }
+          }
+        });
       }
 
       // Manejar búsqueda de padre existente
@@ -781,6 +873,7 @@
       }
 
       function mostrarPadreExistente(padre) {
+        console.log('Mostrando padre encontrado:', padre);
         const padreExistenteDatos = document.getElementById('padreExistenteDatos');
         padreExistenteDatos.innerHTML = `
           <div class="info-dato">
@@ -827,9 +920,17 @@
       function verificarFormularioCompleto() {
         let completo = false;
         
-        if (ninoSeleccionado.value && opcionSeleccionada) {
+        console.log('Verificando formulario completo...');
+        console.log('Niño seleccionado:', ninoSeleccionado.value);
+        console.log('Opción seleccionada:', opcionSeleccionada);
+        console.log('Padre encontrado:', padreEncontrado);
+        console.log('Nuevo padre ID:', nuevoPadreId.value);
+        console.log('Motivo seleccionado:', selectMotivo.value);
+        
+        if (ninoSeleccionado.value && opcionSeleccionada && selectMotivo.value) {
           if (opcionSeleccionada === 'existente') {
-            completo = padreEncontrado !== null;
+            completo = padreEncontrado !== null && nuevoPadreId.value !== '';
+            console.log('Verificando opción existente, completo:', completo);
           } else if (opcionSeleccionada === 'nuevo') {
             // Verificar campos obligatorios del nuevo padre
             const camposObligatorios = [
@@ -844,10 +945,12 @@
               const campo = document.getElementById(id);
               return campo && campo.value.trim() !== '';
             });
+            console.log('Verificando opción nuevo, completo:', completo);
           }
         }
         
         btnSubmit.disabled = !completo;
+        console.log('Botón submit deshabilitado:', btnSubmit.disabled);
       }
 
       // Agregar listeners a campos de nuevo padre
@@ -856,8 +959,74 @@
         campo.addEventListener('change', verificarFormularioCompleto);
       });
 
+      // Agregar listener al select de motivo
+      if (selectMotivo) {
+        selectMotivo.addEventListener('change', function() {
+          motivoCambio.value = this.value;
+          verificarFormularioCompleto();
+        });
+      }
+
+      // Inicializar: deshabilitar campos de nuevo padre por defecto
+      deshabilitarCamposNuevoPadre(true);
+
       // Verificar formulario al cargar
       verificarFormularioCompleto();
+
+      // Handler para el submit del formulario
+      const form = document.getElementById('cambiarPadreForm');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          console.log('Formulario enviado');
+          console.log('Acción:', accionInput.value);
+          console.log('Niño seleccionado:', ninoSeleccionado.value);
+          console.log('Nuevo padre ID:', nuevoPadreId.value);
+          
+          // Validar antes de enviar
+          if (!ninoSeleccionado.value) {
+            e.preventDefault();
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Debe seleccionar un niño.'
+            });
+            return false;
+          }
+          
+          if (!accionInput.value) {
+            e.preventDefault();
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Debe seleccionar una opción (padre existente o nuevo padre).'
+            });
+            return false;
+          }
+          
+          if (!motivoCambio.value) {
+            e.preventDefault();
+            Swal.fire({
+              icon: 'error',
+              title: 'Motivo requerido',
+              text: 'Debe seleccionar el motivo del cambio de asignación.'
+            });
+            return false;
+          }
+          
+          if (accionInput.value === 'cambiar_existente' && !nuevoPadreId.value) {
+            e.preventDefault();
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Debe buscar y seleccionar un padre existente.'
+            });
+            return false;
+          }
+          
+          console.log('Formulario válido, enviando...');
+          // El formulario se enviará normalmente
+        });
+      }
     });
   </script>
 
