@@ -142,6 +142,76 @@ def reporte_general_hogar_pdf(request):
         return HttpResponse('Error al generar el PDF', status=500)
     return response
 
+@login_required
+def certificado_matricula_pdf(request, nino_id):
+    """Genera un certificado de matrícula oficial en PDF"""
+    import os
+    import random
+    from datetime import date
+    import locale
+    
+    # Configurar locale para fechas en español
+    try:
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+    except:
+        try:
+            locale.setlocale(locale.LC_TIME, 'Spanish_Spain.1252')
+        except:
+            pass
+    
+    nino = get_object_or_404(Nino, id=nino_id)
+    padre = nino.padre
+    hogar = nino.hogar
+    
+    # Calcular edad del niño
+    hoy = date.today()
+    edad = hoy.year - nino.fecha_nacimiento.year - ((hoy.month, hoy.day) < (nino.fecha_nacimiento.month, nino.fecha_nacimiento.day))
+    
+    # Generar código de verificación único
+    codigo_verificacion = f"ICBF-{hogar.id:04d}-{nino.id:05d}-{random.randint(1000, 9999)}"
+    
+    # Obtener ruta absoluta del logo
+    from django.conf import settings
+    logo_path = os.path.join(settings.BASE_DIR, 'core', 'static', 'img', 'logo.png')
+    if not os.path.exists(logo_path):
+        logo_path = None
+    else:
+        logo_path = os.path.abspath(logo_path)
+    
+    # Formatear fecha en español manualmente
+    meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+             'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+    fecha_emision = f"{hoy.day} de {meses[hoy.month - 1]} de {hoy.year}"
+    
+    # Formatear fechas del niño
+    fecha_nac = nino.fecha_nacimiento
+    fecha_nacimiento_texto = f"{fecha_nac.day} de {meses[fecha_nac.month - 1]} de {fecha_nac.year}"
+    
+    fecha_ing = nino.fecha_ingreso
+    fecha_ingreso_texto = f"{fecha_ing.day} de {meses[fecha_ing.month - 1]} de {fecha_ing.year}"
+    
+    template = get_template('madre/certificado_matricula.html')
+    context = {
+        'nino': nino,
+        'padre': padre,
+        'hogar': hogar,
+        'edad': edad,
+        'codigo_verificacion': codigo_verificacion,
+        'fecha_emision': fecha_emision,
+        'fecha_nacimiento_texto': fecha_nacimiento_texto,
+        'fecha_ingreso_texto': fecha_ingreso_texto,
+        'año_actual': hoy.year,
+        'logo_path': logo_path,
+    }
+    
+    html = template.render(context)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="certificado_matricula_{nino.nombres}_{nino.apellidos}.pdf"'
+    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=response, encoding='utf-8')
+    if pisa_status.err:
+        return HttpResponse('Error al generar el certificado', status=500)
+    return response
+
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from .models import Rol, Usuario, MadreComunitaria, HogarComunitario

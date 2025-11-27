@@ -432,6 +432,7 @@
               <a href="{% url 'editar_nino' nino.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-edit"></i></a>
               <a href="{% url 'eliminar_nino' nino.id %}" class="btn-accion btn-rojo" title="Retirar" onclick="return confirm('¿Seguro que deseas retirar este niño?');"><i class="fas fa-trash-alt"></i></a>
               <a href="{% url 'reporte_matricula_nino_pdf' nino.id %}" class="btn-accion btn-reporte" title="Descargar PDF Matrícula"><i class="fas fa-file-pdf"></i></a>
+              <a href="{% url 'certificado_matricula_pdf' nino.id %}" class="btn-accion" style="background-color: #17a2b8; color: white;" title="Certificado de Matrícula"><i class="fas fa-certificate"></i></a>
             </td>
           </tr>
           {% endfor %}
