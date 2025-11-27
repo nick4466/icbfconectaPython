@@ -309,6 +309,42 @@
       font-size: 18px;
       line-height: 1;
     }
+
+    .mensaje-success, .mensaje-error {
+      box-shadow: 0 4px 16px rgba(40,167,69,0.13);
+      font-size: 17px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .display-stars {
+      font-size: 1.7rem !important;
+      letter-spacing: 2px;
+      color: #f5b301;
+    }
+    .display-stars .inactive {
+      color: #ddd;
+    }
+    .card-body-modern p {
+      margin: 4px 0;
+      font-size: 16px;
+      color: #444;
+    }
+    .planeacion-label {
+      font-size: 17px !important;
+      color: #7a3eb1 !important;
+      font-weight: bold;
+      background: #f3c4ff33;
+      padding: 3px 10px;
+      border-radius: 8px;
+      margin-top: 2px;
+      display: inline-block;
+    }
+
+    .dim-alto { color: #28a745; font-weight: bold; }
+    .dim-adecuado { color: #5dade2; font-weight: bold; }
+    .dim-proceso { color: #ffc107; font-weight: bold; }
+    .dim-bajo { color: #e74c3c; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -343,8 +379,9 @@
 
     {% if messages %}
       {% for message in messages %}
-        <div class="mensaje-{{ message.tags }}" id="mensajeNotificacion">
-          {{ message }}
+        <div class="mensaje-{{ message.tags }}" id="mensajeNotificacion" style="display: flex; align-items: center; gap: 12px; font-size: 17px; box-shadow: 0 4px 16px rgba(40,167,69,0.13);">
+          <i class="fas fa-check-circle" style="font-size: 22px; color: #fff; background: #28a745; border-radius: 50%; padding: 4px;"></i>
+          <span>{{ message }}</span>
         </div>
       {% endfor %}
     {% endif %}
@@ -375,7 +412,7 @@
       <div class="timeline-vertical">
         {% for seguimiento in seguimientos.object_list %}
           {% with valoracion=seguimiento.valoracion|default:0 %}
-            {% if valoracion >= 4 %}
+            {% if valoracion >= 4 %} {# ALTA #}
               {% with icon_class="fa-star" color_class="card-alta" timeline_color_class="timeline-card-alta" %}
                 <div class="timeline-event {{ timeline_color_class }}">
                   <div class="timeline-dot"><i class="fas {{ icon_class }}"></i></div>
@@ -385,24 +422,54 @@
                          data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
                          data-fecha="{{ seguimiento.fecha|date:'d F, Y' }}"
                          data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
-                         data-participacion="{{ seguimiento.participacion }}"
-                         data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+                         data-participacion="{{ seguimiento.get_comportamiento_general_display }}"
+                         data-comportamiento="{{ seguimiento.get_estado_emocional_display }}"
                          data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
-                         data-valoracion="{{ seguimiento.valoracion|default:0 }}">
+                         data-valoracion="{{ seguimiento.valoracion|default:0 }}"
+                         data-obs-relevante="{{ seguimiento.observacion_relevante|yesno:'Sí,No' }}"                         data-evaluaciones='[{% for eval in seguimiento.evaluaciones_dimension.all %}{"dimension":"{{ eval.dimension.nombre|escapejs }}","desempeno":"{{ eval.get_desempeno_display|escapejs }}","observacion":"{{ eval.observacion|default_if_none:''|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
                       <div class="card-header-modern">
                         <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
                         <div>
-                          <h3>{{ seguimiento.planeacion.nombre_experiencia }}</h3>
-                          <span class="planeacion-label">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                          <h3 style="margin-bottom: 2px;">{{ seguimiento.planeacion.nombre_experiencia }}</h3>
+                          <span class="planeacion-label" style="font-size: 17px; color: #7a3eb1; font-weight: bold;">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                          {% if seguimiento.observacion_relevante %}
+                            <span title="Observación relevante" style="margin-left: 8px; color: #e74c3c; font-size: 18px;"><i class="fas fa-exclamation-circle"></i></span>
+                          {% endif %}
                         </div>
                       </div>
                       <div class="card-body-modern">
-                        <p><strong>Participación:</strong> {{ seguimiento.participacion|capfirst }}</p>
-                        <p><strong>Comportamiento:</strong> {{ seguimiento.comportamiento_logro|capfirst }}</p>
-                        <p><strong>Observaciones:</strong> {{ seguimiento.observaciones|default:'N/A'|truncatewords:10 }}</p>
+                        <p><strong>Comportamiento:</strong> <span style="color: #5dade2; font-weight: bold;">
+    <i class="fas fa-user-friends"></i> {{ seguimiento.get_comportamiento_general_display }}
+  </span></p>
+  <p><strong>Estado Emocional:</strong> <span style="color: #ffc107; font-weight: bold;">
+    <i class="fas fa-smile"></i> {{ seguimiento.get_estado_emocional_display }}
+  </span></p>
+  {% if seguimiento.observacion_relevante and seguimiento.observaciones %}
+    <div style="margin: 8px 0; background: #f8d7da; color: #721c24; border-radius: 8px; padding: 8px 12px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+      <i class="fas fa-exclamation-circle"></i>
+      <span><strong>Observación relevante:</strong> {{ seguimiento.observaciones|truncatewords:10 }}</span>
+    </div>
+  {% else %}
+    <p><strong>Observaciones:</strong> <span style="color: #555;">{{ seguimiento.observaciones|default:'N/A'|truncatewords:10 }}</span></p>
+  {% endif %}
+  {% with evaluaciones=seguimiento.evaluaciones_dimension.all %}
+    {% if evaluaciones %}
+      {% regroup evaluaciones by desempeno as desempeno_list %}
+      <div style="margin-top: 10px;">
+        <strong>Cantidad de dimensiones evaluadas por desempeño:</strong>
+        <ul style="margin: 6px 0 0 18px; padding: 0; font-size: 15px;">
+          {% for group in desempeno_list %}
+            <li>
+              <span class="dim-{{ group.grouper }}">Dimensiones con desempeño {{ group.grouper|title }}:</span> {{ group.list|length }}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  {% endwith %}
                       </div>
                       <div class="card-footer-modern">
-                        <span class="display-stars">
+                        <span class="display-stars" style="font-size: 1.7rem;">
                           {% for i in "12345" %}
                             {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
                           {% endfor %}
@@ -418,7 +485,7 @@
                 </div>
               {% endwith %}
             {% else %}
-              {% if valoracion >= 3 %}
+              {% if valoracion >= 3 %} {# MEDIA #}
                 {% with icon_class="fa-check" color_class="card-media" timeline_color_class="timeline-card-media" %}
                   <div class="timeline-event {{ timeline_color_class }}">
                     <div class="timeline-dot"><i class="fas {{ icon_class }}"></i></div>
@@ -428,24 +495,54 @@
                            data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
                            data-fecha="{{ seguimiento.fecha|date:'d F, Y' }}"
                            data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
-                           data-participacion="{{ seguimiento.participacion }}"
-                           data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+                           data-participacion="{{ seguimiento.get_comportamiento_general_display }}"
+                           data-comportamiento="{{ seguimiento.get_estado_emocional_display }}"
                            data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
-                           data-valoracion="{{ seguimiento.valoracion|default:0 }}">
+                           data-valoracion="{{ seguimiento.valoracion|default:0 }}"
+                           data-obs-relevante="{{ seguimiento.observacion_relevante|yesno:'Sí,No' }}"                           data-evaluaciones='[{% for eval in seguimiento.evaluaciones_dimension.all %}{"dimension":"{{ eval.dimension.nombre|escapejs }}","desempeno":"{{ eval.get_desempeno_display|escapejs }}","observacion":"{{ eval.observacion|default_if_none:''|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
                         <div class="card-header-modern">
                           <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
                           <div>
-                            <h3>{{ seguimiento.planeacion.nombre_experiencia }}</h3>
-                            <span class="planeacion-label">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                            <h3 style="margin-bottom: 2px;">{{ seguimiento.planeacion.nombre_experiencia }}</h3>
+                            <span class="planeacion-label" style="font-size: 17px; color: #7a3eb1; font-weight: bold;">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                            {% if seguimiento.observacion_relevante %}
+                              <span title="Observación relevante" style="margin-left: 8px; color: #e74c3c; font-size: 18px;"><i class="fas fa-exclamation-circle"></i></span>
+                            {% endif %}
                           </div>
                         </div>
                         <div class="card-body-modern">
-                          <p><strong>Participación:</strong> {{ seguimiento.participacion|capfirst }}</p>
-                          <p><strong>Comportamiento:</strong> {{ seguimiento.comportamiento_logro|capfirst }}</p>
-                          <p><strong>Observaciones:</strong> {{ seguimiento.observaciones|default:'N/A'|truncatewords:10 }}</p>
+                          <p><strong>Comportamiento:</strong> <span style="color: #5dade2; font-weight: bold;">
+    <i class="fas fa-user-friends"></i> {{ seguimiento.get_comportamiento_general_display }}
+  </span></p>
+  <p><strong>Estado Emocional:</strong> <span style="color: #ffc107; font-weight: bold;">
+    <i class="fas fa-smile"></i> {{ seguimiento.get_estado_emocional_display }}
+  </span></p>
+  {% if seguimiento.observacion_relevante and seguimiento.observaciones %}
+    <div style="margin: 8px 0; background: #f8d7da; color: #721c24; border-radius: 8px; padding: 8px 12px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+      <i class="fas fa-exclamation-circle"></i>
+      <span><strong>Observación relevante:</strong> {{ seguimiento.observaciones|truncatewords:10 }}</span>
+    </div>
+  {% else %}
+    <p><strong>Observaciones:</strong> <span style="color: #555;">{{ seguimiento.observaciones|default:'N/A'|truncatewords:10 }}</span></p>
+  {% endif %}
+  {% with evaluaciones=seguimiento.evaluaciones_dimension.all %}
+    {% if evaluaciones %}
+      {% regroup evaluaciones by desempeno as desempeno_list %}
+      <div style="margin-top: 10px;">
+        <strong>Cantidad de dimensiones evaluadas por desempeño:</strong>
+        <ul style="margin: 6px 0 0 18px; padding: 0; font-size: 15px;">
+          {% for group in desempeno_list %}
+            <li>
+              <span class="dim-{{ group.grouper }}">Dimensiones con desempeño {{ group.grouper|title }}:</span> {{ group.list|length }}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  {% endwith %}
                         </div>
                         <div class="card-footer-modern">
-                          <span class="display-stars">
+                          <span class="display-stars" style="font-size: 1.7rem;">
                             {% for i in "12345" %}
                               {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
                             {% endfor %}
@@ -461,7 +558,7 @@
                   </div>
                 {% endwith %}
               {% else %}
-                {% with icon_class="fa-exclamation" color_class="card-baja" timeline_color_class="timeline-card-baja" %}
+                {% with icon_class="fa-exclamation" color_class="card-baja" timeline_color_class="timeline-card-baja" %} {# BAJA #}
                   <div class="timeline-event {{ timeline_color_class }}">
                     <div class="timeline-dot"><i class="fas {{ icon_class }}"></i></div>
                     <div class="timeline-content">
@@ -470,24 +567,54 @@
                            data-nino="{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}"
                            data-fecha="{{ seguimiento.fecha|date:'d F, Y' }}"
                            data-planeacion="{{ seguimiento.planeacion.nombre_experiencia }}"
-                           data-participacion="{{ seguimiento.participacion }}"
-                           data-comportamiento="{{ seguimiento.comportamiento_logro }}"
+                           data-participacion="{{ seguimiento.get_comportamiento_general_display }}"
+                           data-comportamiento="{{ seguimiento.get_estado_emocional_display }}"
                            data-observaciones="{{ seguimiento.observaciones|default:'N/A' }}"
-                           data-valoracion="{{ seguimiento.valoracion|default:0 }}">
+                           data-valoracion="{{ seguimiento.valoracion|default:0 }}"
+                           data-obs-relevante="{{ seguimiento.observacion_relevante|yesno:'Sí,No' }}"                           data-evaluaciones='[{% for eval in seguimiento.evaluaciones_dimension.all %}{"dimension":"{{ eval.dimension.nombre|escapejs }}","desempeno":"{{ eval.get_desempeno_display|escapejs }}","observacion":"{{ eval.observacion|default_if_none:''|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
                         <div class="card-header-modern">
                           <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
                           <div>
-                            <h3>{{ seguimiento.planeacion.nombre_experiencia }}</h3>
-                            <span class="planeacion-label">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                            <h3 style="margin-bottom: 2px;">{{ seguimiento.planeacion.nombre_experiencia }}</h3>
+                            <span class="planeacion-label" style="font-size: 17px; color: #7a3eb1; font-weight: bold;">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
+                            {% if seguimiento.observacion_relevante %}
+                              <span title="Observación relevante" style="margin-left: 8px; color: #e74c3c; font-size: 18px;"><i class="fas fa-exclamation-circle"></i></span>
+                            {% endif %}
                           </div>
                         </div>
                         <div class="card-body-modern">
-                          <p><strong>Participación:</strong> {{ seguimiento.participacion|capfirst }}</p>
-                          <p><strong>Comportamiento:</strong> {{ seguimiento.comportamiento_logro|capfirst }}</p>
-                          <p><strong>Observaciones:</strong> {{ seguimiento.observaciones|default:'N/A'|truncatewords:10 }}</p>
+                          <p><strong>Comportamiento:</strong> <span style="color: #5dade2; font-weight: bold;">
+    <i class="fas fa-user-friends"></i> {{ seguimiento.get_comportamiento_general_display }}
+  </span></p>
+  <p><strong>Estado Emocional:</strong> <span style="color: #ffc107; font-weight: bold;">
+    <i class="fas fa-smile"></i> {{ seguimiento.get_estado_emocional_display }}
+  </span></p>
+  {% if seguimiento.observacion_relevante and seguimiento.observaciones %}
+    <div style="margin: 8px 0; background: #f8d7da; color: #721c24; border-radius: 8px; padding: 8px 12px; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+      <i class="fas fa-exclamation-circle"></i>
+      <span><strong>Observación relevante:</strong> {{ seguimiento.observaciones|truncatewords:10 }}</span>
+    </div>
+  {% else %}
+    <p><strong>Observaciones:</strong> <span style="color: #555;">{{ seguimiento.observaciones|default:'N/A'|truncatewords:10 }}</span></p>
+  {% endif %}
+  {% with evaluaciones=seguimiento.evaluaciones_dimension.all %}
+    {% if evaluaciones %}
+      {% regroup evaluaciones by desempeno as desempeno_list %}
+      <div style="margin-top: 10px;">
+        <strong>Cantidad de dimensiones evaluadas por desempeño:</strong>
+        <ul style="margin: 6px 0 0 18px; padding: 0; font-size: 15px;">
+          {% for group in desempeno_list %}
+            <li>
+              <span class="dim-{{ group.grouper }}">Dimensiones con desempeño {{ group.grouper|title }}:</span> {{ group.list|length }}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  {% endwith %}
                         </div>
                         <div class="card-footer-modern">
-                          <span class="display-stars">
+                          <span class="display-stars" style="font-size: 1.7rem;">
                             {% for i in "12345" %}
                               {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span class="inactive">★</span>{% endif %}
                             {% endfor %}
@@ -509,15 +636,15 @@
       </div>
       <div class="pagination">
         {% if seguimientos.has_previous %}
-          <a href="?page=1&{{ request.GET.urlencode|cut:'page=' }}">&laquo; Primera</a>
-          <a href="?page={{ seguimientos.previous_page_number }}&{{ request.GET.urlencode|cut:'page=' }}">Anterior</a>
+          <a href="?page=1{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; Primera</a>
+          <a href="?page={{ seguimientos.previous_page_number }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
         {% endif %}
         <span class="current">
           Página {{ seguimientos.number }} de {{ seguimientos.paginator.num_pages }}.
         </span>
         {% if seguimientos.has_next %}
-          <a href="?page={{ seguimientos.next_page_number }}&{{ request.GET.urlencode|cut:'page=' }}">Siguiente</a>
-          <a href="?page={{ seguimientos.paginator.num_pages }}&{{ request.GET.urlencode|cut:'page=' }}">Última &raquo;</a>
+          <a href="?page={{ seguimientos.next_page_number }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+          <a href="?page={{ seguimientos.paginator.num_pages }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última &raquo;</a>
         {% endif %}
       </div>
     {% else %}
@@ -534,10 +661,17 @@
       <p><strong>Fecha:</strong> <span id="modal-fecha"></span></p>
       <p><strong>Planeación:</strong> <span id="modal-planeacion"></span></p>
       <hr>
-      <p><strong>Participación:</strong> <span id="modal-participacion"></span></p>
-      <p><strong>Comportamiento, Interés y Logro:</strong> <span id="modal-comportamiento"></span></p>
+      <p><strong>Comportamiento General:</strong> <span id="modal-participacion"></span></p>
+      <p><strong>Estado Emocional:</strong> <span id="modal-comportamiento"></span></p>
       <p><strong>Observaciones:</strong> <span id="modal-observaciones"></span></p>
-      <p><strong>Valoración:</strong> <span class="display-stars" id="modal-valoracion"></span></p>
+      <p><strong>¿Observación Relevante?:</strong> <span id="modal-obs-relevante"></span></p>
+      <hr>
+      <h3 style="color: #7a3eb1; margin-top: 20px; margin-bottom: 15px;">
+        <i class="fas fa-tasks"></i> Evaluación por Dimensiones
+      </h3>
+      <div id="modal-evaluaciones-container" style="display: flex; flex-direction: column; gap: 15px;"></div>
+      <hr>
+      <p><strong>Valoración del Día:</strong> <span class="display-stars" id="modal-valoracion"></span></p>
     </div>
   </div>
 
@@ -581,8 +715,38 @@
         document.getElementById('modal-participacion').textContent = row.dataset.participacion;
         document.getElementById('modal-comportamiento').textContent = row.dataset.comportamiento;
         document.getElementById('modal-observaciones').textContent = row.dataset.observaciones;
+        document.getElementById('modal-obs-relevante').textContent = row.dataset.obsRelevante;
 
         renderStars(document.getElementById('modal-valoracion'), row.dataset.valoracion);
+
+        // --- NUEVO: Renderizar evaluaciones por dimensión ---
+        const evaluacionesContainer = document.getElementById('modal-evaluaciones-container');
+        evaluacionesContainer.innerHTML = ''; // Limpiar contenido anterior
+        try {
+          const evaluaciones = JSON.parse(row.dataset.evaluaciones);
+          if (evaluaciones.length > 0) {
+            evaluaciones.forEach(eval => {
+              const evalElement = document.createElement('div');
+              evalElement.style.padding = '10px';
+              evalElement.style.background = '#f9f9f9';
+              evalElement.style.borderRadius = '8px';
+              evalElement.style.borderLeft = '4px solid #a569bd';
+              
+              let observacionHTML = eval.observacion ? `<p style="margin: 5px 0 0 0; font-style: italic; color: #555;">Observación: ${eval.observacion}</p>` : '';
+              
+              evalElement.innerHTML = `
+                <p style="margin: 0;"><strong>${eval.dimension}:</strong> <span style="font-weight: bold; color: #7a3eb1;">${eval.desempeno}</span></p>
+                ${observacionHTML}
+              `;
+              evaluacionesContainer.appendChild(evalElement);
+            });
+          } else {
+            evaluacionesContainer.innerHTML = '<p>No se registraron evaluaciones por dimensión.</p>';
+          }
+        } catch (e) {
+          evaluacionesContainer.innerHTML = '<p>Error al cargar las evaluaciones.</p>';
+          console.error("Error parsing evaluaciones JSON:", e);
+        }
 
         modal.style.display = 'flex';
       });

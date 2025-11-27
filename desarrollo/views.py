@@ -606,7 +606,11 @@ def listar_seguimientos(request):
     nino_filtrado = None
 
     # La consulta base siempre filtra por el hogar de la madre
-    seguimientos_query = SeguimientoDiario.objects.filter(nino__hogar=hogar_madre).select_related('nino').order_by('-fecha')
+    seguimientos_query = SeguimientoDiario.objects.filter(
+        nino__hogar=hogar_madre
+    ).select_related(
+        'nino', 'planeacion'
+    ).prefetch_related('evaluaciones_dimension').order_by('-fecha')
 
     # Si se especifica un niño, se convierte en el filtro principal
     if nino_id_filtro:
@@ -631,13 +635,18 @@ def listar_seguimientos(request):
     paginator = Paginator(seguimientos_query, 3) # Mostrar 6 seguimientos por página
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
-
+    
+    filtros = {
+        'nino': nino_id_filtro,
+        'fecha': fecha_str,
+    }
+    
     return render(request, 'madre/seguimiento_diario_list.html', {
         'seguimientos': page_obj, # Pasamos el objeto de página a la plantilla
         'fecha_filtro': fecha_str,
         'nino_id_filtro': nino_id_filtro,
         'nino_filtrado': nino_filtrado,
+        'filtros': filtros,
     })
 
 @login_required
