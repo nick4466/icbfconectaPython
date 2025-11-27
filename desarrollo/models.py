@@ -100,10 +100,68 @@ class DesarrolloNino(models.Model):
             GeneradorEvaluacionMensual(self).run()
     
     def get_participacion_frecuente_display(self):
-        return dict(SeguimientoDiario.PARTICIPACION_CHOICES).get(self.participacion_frecuente, self.participacion_frecuente)
+        # Mapea los valores calculados a textos legibles
+        mapping = {
+            'Alta': 'Participativo',
+            'Media': 'Colaborativo',
+            'Baja': 'Otro comportamiento'
+        }
+        return mapping.get(self.participacion_frecuente, self.participacion_frecuente)
 
     def get_comportamiento_frecuente_display(self):
-        return dict(SeguimientoDiario.COMPORTAMIENTO_CHOICES).get(self.comportamiento_frecuente, self.comportamiento_frecuente)
+        # Choices locales para mostrar el texto legible
+        choices = {
+            'participativo': 'Participativo',
+            'aislado': 'Aislado',
+            'impulsivo': 'Impulsivo',
+            'inquieto': 'Inquieto',
+            'tranquilo': 'Tranquilo',
+            'colaborativo': 'Colaborativo',
+        }
+        return choices.get(self.comportamiento_frecuente, self.comportamiento_frecuente)
+
+    def generar_evaluacion_por_dimensiones(self):
+        # Obtiene los seguimientos del mes
+        from .models import SeguimientoDiario, EvaluacionDimension
+        seguimientos = SeguimientoDiario.objects.filter(
+            nino=self.nino,
+            fecha__month=self.fecha_fin_mes.month,
+            fecha__year=self.fecha_fin_mes.year
+        )
+        # Dimensiones a considerar
+        dimensiones = {
+            'evaluacion_cognitiva': 'Cognitiva',
+            'evaluacion_comunicativa': 'Comunicativa / Lenguaje',
+            'evaluacion_socio_afectiva': 'Socio-afectiva',
+            'evaluacion_corporal': 'Corporal / Motricidad',
+        }
+        # Inicializa los textos
+        for campo, nombre in dimensiones.items():
+            setattr(self, campo, '')
+        # Procesa cada dimensión
+        for campo, nombre in dimensiones.items():
+            # Busca evaluaciones de esa dimensión en los seguimientos
+            textos = []
+            for seguimiento in seguimientos:
+                for ev in seguimiento.evaluaciones_dimension.all():
+                    if nombre.lower() in ev.dimension.nombre.lower():
+                        if ev.desempeno == 'alto':
+                            textos.append(f"Desempeño alto en {nombre}.")
+                        elif ev.desempeno == 'adecuado':
+                            textos.append(f"Desempeño adecuado en {nombre}.")
+                        elif ev.desempeno == 'proceso':
+                            textos.append(f"En proceso de mejora en {nombre}.")
+                        elif ev.desempeno == 'bajo':
+                            textos.append(f"Desempeño bajo en {nombre}.")
+                        if ev.observacion:
+                            textos.append(ev.observacion)
+            # Genera el texto final para la dimensión
+            if textos:
+                texto_final = '\n'.join(textos)
+            else:
+                texto_final = f"No hay información suficiente para evaluar la dimensión {nombre}."
+            setattr(self, campo, texto_final)
+        self.save(run_generator=False)
 
 
 # ------------------------

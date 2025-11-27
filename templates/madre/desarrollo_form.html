@@ -1,4 +1,5 @@
 {% load static %}
+{% load alertas_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -124,6 +125,14 @@
       border-left: 8px solid #9B59B6;
     }
 
+    .info-card {
+      background-color: #faf6fd;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      border: 1px solid #e5d5f5;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -138,7 +147,7 @@
     }
 
 
-    input[type="month"] {
+    input[type="month"], input[type="text"][disabled] {
       width: 75%;
       padding: 12px;
       font-size: 16px;
@@ -147,7 +156,7 @@
       background-color: #fff;
       transition: border-color 0.3s ease;
     }
-
+    input[type="text"][disabled] { background-color: #f1f3f4; color: #555; }
     input:focus{
       border-color: #9B59B6;
       outline: none;
@@ -161,21 +170,7 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       background-color: #fff;
-      transition: border-color 0.3s ease;
-    }
-
-    select:focus, input:focus, textarea:focus {
-      border-color: #9B59B6;
-      outline: none;
-      background-color: #f0f8ff;
-    }
-
-    .dimension-card {
-      background-color: #faf6fd;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      border: 1px solid #e5d5f5;
+      transition: border-color 0.3s eanse;
     }
 
      .card h2 {
@@ -324,7 +319,7 @@
           <i class="fas fa-arrow-left"></i> Volver al listado
         </a>
       </div>
-
+      <p style="text-align: center; color: #555; margin-top: -15px; margin-bottom: 25px;">Los campos con <span class="required-star">*</span> son obligatorios.</p>
       <form method="post" action="{{ form_action|default:'' }}" id="desarrolloForm">
         {% csrf_token %}
         {% if not desarrollo %}
@@ -360,77 +355,110 @@
         <input type="hidden" name="desarrollo_id" value="{{ desarrollo.id|default:'' }}">
         <input type="hidden" name="nino_hidden" value="{{ desarrollo.nino.id }}">
         <input type="hidden" name="mes_hidden" value="{{ desarrollo.fecha_fin_mes|date:'Y-m' }}">
-        <div class="form-group">
-          <br>
-          <label><b>Niño/a:</b></label>
-          <input type="text" value="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}" disabled>
+        
+        <div class="info-card" style="margin-bottom: 25px;">
+          <div class="form-grid">
+            <div class="form-group">
+              <label><b>Niño/a:</b></label>
+              <input type="text" value="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}" disabled>
+            </div>
+            <div class="form-group">
+              <label><b>Mes evaluado:</b></label>
+              <input type="text" value="{{ desarrollo.fecha_fin_mes|date:'F Y' }}" disabled>
+            </div>
+            <div class="form-group">
+              <label><b>Seguimientos Registrados:</b></label>
+              <input type="text" value="{{ seguimientos_mes_count|default:'-' }}" disabled>
+            </div>
+            <div class="form-group">
+              <label><b>Novedades del Mes:</b></label>
+              <input type="text" value="{{ novedades_mes_count|default:'-' }}" disabled>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label><b>Mes evaluado:</b></label>
-          <input type="text" value="{{ desarrollo.fecha_fin_mes|date:'F Y' }}" disabled>
+
+        <div class="info-card" style="margin-bottom: 25px;">
+          <h4><i class="fas fa-chart-line"></i> Resumen del Mes (Automático)</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Logro del mes:</label>
+              <input type="text" value="{{ desarrollo.logro_mes|default:'-' }}" disabled>
+            </div>
+            <div class="form-group">
+              <label>Tendencia:</label>
+              <input type="text" value="{{ desarrollo.get_tendencia_valoracion_display|default:desarrollo.tendencia_valoracion|default:'-' }}" disabled>
+            </div>
+            <div class="form-group">
+              <label>Participación más frecuente:</label>
+              <input type="text" value="{{ desarrollo.participacion_frecuente|default:'-' }}" disabled>
+            </div>
+            <div class="form-group">
+              <label>Comportamiento más frecuente:</label>
+              <input type="text" value="{{ desarrollo.comportamiento_frecuente|default:'-' }}" disabled>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label><b>Cantidad de seguimientos registrados:</b></label>
-          <input type="text" value="{{ seguimientos_mes_count|default:'-' }}" disabled>
-        </div>
-        <div class="form-group">
-          <label><b>Cantidad de novedades del mes:</b></label>
-          <input type="text" value="{{ novedades_mes_count|default:'-' }}" disabled>
-        </div>
-        <hr>
-        <h4>Valoración general del mes</h4>
-        <div class="form-group">
-          <label>Logro del mes:</label>
-          <input type="text" value="{{ desarrollo.logro_mes|default:'-' }}" disabled>
-        </div>
-        <div class="form-group">
-          <label>Tendencia:</label>
-          <input type="text" value="{{ desarrollo.get_tendencia_valoracion_display|default:desarrollo.tendencia_valoracion|default:'-' }}" disabled>
-        </div>
-        <div class="form-group">
-          <label>Participación más frecuente:</label>
-          <input type="text" value="{{ desarrollo.participacion_frecuente|default:'-' }}" disabled>
-        </div>
-        <div class="form-group">
-          <label>Comportamiento más frecuente:</label>
-          <input type="text" value="{{ desarrollo.comportamiento_frecuente|default:'-' }}" disabled>
-        </div>
-        <hr>
-        <h4>Evaluación por áreas del desarrollo</h4>
-        <div class="form-group">
-          <label>Cognitivo:</label>
+
+        <div class="info-card" style="margin-bottom: 25px;">
+          <h4><i class="fas fa-brain"></i> Evaluación por Dimensiones (Automático)</h4>
+          <div class="form-group"><label>Cognitivo:</label>
           <textarea name="evaluacion_cognitiva">{{ desarrollo.evaluacion_cognitiva|default_if_none:'' }}</textarea>
-        </div>
-        <div class="form-group">
-          <label>Comunicativo / Lenguaje:</label>
+          </div>
+          <div class="form-group"><label>Comunicativo / Lenguaje:</label>
           <textarea name="evaluacion_comunicativa">{{ desarrollo.evaluacion_comunicativa|default_if_none:'' }}</textarea>
-        </div>
-        <div class="form-group">
-          <label>Socioemocional:</label>
+          </div>
+          <div class="form-group"><label>Socioemocional:</label>
           <textarea name="evaluacion_socio_afectiva">{{ desarrollo.evaluacion_socio_afectiva|default_if_none:'' }}</textarea>
-        </div>
-        <div class="form-group">
-          <label>Corporal / Motricidad:</label>
+          </div>
+          <div class="form-group"><label>Corporal / Motricidad:</label>
           <textarea name="evaluacion_corporal">{{ desarrollo.evaluacion_corporal|default_if_none:'' }}</textarea>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Autonomía:</label>
-          <textarea name="evaluacion_autonomia">{{ desarrollo.evaluacion_autonomia|default_if_none:'' }}</textarea>
+
+        <div class="info-card">
+          <h4><i class="fas fa-edit"></i> Conclusiones y Recomendaciones (Editable)</h4>
+          <div class="form-group" style="margin-bottom:18px;">
+            <label>Fortalezas del mes:</label>
+            <textarea name="fortalezas_mes" style="min-height:70px;max-height:200px;">{{ desarrollo.fortalezas_mes|default_if_none:'' }}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:18px;">
+            <label>Aspectos por mejorar:</label>
+            <textarea name="aspectos_a_mejorar" style="min-height:70px;max-height:200px;">{{ desarrollo.aspectos_a_mejorar|default_if_none:'' }}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:18px;">
+            <label>Alertas del mes:</label>
+            <textarea name="alertas_mes" style="min-height:70px;max-height:200px;">{{ desarrollo.alertas_mes|default_if_none:''|striptags }}</textarea>
+          </div>
+          <div style="margin:18px 0 18px 0; padding: 14px 14px 10px 14px; background: #f8f6ff; border-radius: 8px; border: 1px solid #e5d5f5;">
+            <strong style="font-size:1.08em;">Vista previa de novedades del mes:</strong>
+            <div style="max-height:120px; overflow-y:auto; margin-top:6px;">
+              {% if alertas_novedades %}
+                {% for nov in alertas_novedades %}
+                  <div style="margin-bottom:7px;">
+                    <span style="color:#7a3eb1; font-weight:bold;">{{ nov.tipo }}</span> ({{ nov.fecha }}):
+                    <a href="/novedades/detalle/{{ nov.id }}/" target="_blank">Ver novedad</a>
+                    {% if nov.descripcion %}<span style="color:#555;">- {{ nov.descripcion|truncatechars:60 }}</span>{% endif %}
+                  </div>
+                {% endfor %}
+              {% else %}
+                <span style="color:#888;">No hay novedades registradas este mes.</span>
+              {% endif %}
+            </div>
+          </div>
+          <hr style="border:none; border-top:1.5px dashed #e5d5f5; margin:18px 0 18px 0;">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>Conclusión general:</label>
+            <textarea name="conclusion_general" style="min-height:60px;max-height:180px;">{{ desarrollo.conclusion_general|default_if_none:'' }}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>Observaciones finales (opcional):</label>
+            <textarea name="observaciones_adicionales" placeholder="Observaciones adicionales" style="min-height:50px;max-height:140px;">{{ desarrollo.observaciones_adicionales|default_if_none:'' }}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label>Recomendaciones personales (opcional):</label>
+            <textarea name="recomendaciones_personales" placeholder="Recomendaciones personales" style="min-height:50px;max-height:140px;">{{ desarrollo.recomendaciones_personales|default_if_none:'' }}</textarea>
+          </div>
         </div>
-        <hr>
-        <h4>Fortalezas del mes</h4>
-        <textarea name="fortalezas_mes">{{ desarrollo.fortalezas_mes|default_if_none:'' }}</textarea>
-        <h4>Aspectos por mejorar</h4>
-        <textarea name="aspectos_a_mejorar">{{ desarrollo.aspectos_a_mejorar|default_if_none:'' }}</textarea>
-        <h4>Alertas del mes</h4>
-        <textarea name="alertas_mes">{{ desarrollo.alertas_mes|default_if_none:'' }}</textarea>
-        <h4>Conclusión general</h4>
-        <textarea name="conclusion_general">{{ desarrollo.conclusion_general|default_if_none:'' }}</textarea>
-        <hr>
-        <h4>Observaciones finales (opcional)</h4>
-        <textarea name="observaciones_adicionales" placeholder="Observaciones adicionales">{{ desarrollo.observaciones_adicionales|default_if_none:'' }}</textarea>
-        <h4>Recomendaciones personales (opcional)</h4>
-        <textarea name="recomendaciones_personales" placeholder="Recomendaciones personales">{{ desarrollo.recomendaciones_personales|default_if_none:'' }}</textarea>
         <button class="botones" type="submit"><i class="fas fa-save"></i> Guardar Registro</button>
         {% endif %}
       </form>

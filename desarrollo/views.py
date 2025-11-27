@@ -18,6 +18,8 @@ import os
 from django.core.paginator import Paginator
 from django.templatetags.static import static
 import calendar
+import re
+from django.utils.html import strip_tags
 
 
 # -----------------------------------------------------------------
@@ -862,6 +864,7 @@ def registrar_desarrollo(request):
                 'form_action': reverse('desarrollo:registrar_desarrollo'),
                 'seguimientos_mes_count': seguimientos_count,
                 'novedades_mes_count': novedades_count,
+                'alertas_novedades': getattr(desarrollo_preview, '_alertas_novedades', []),
             })
 
     # GET: mostrar formulario de selección de niño y mes
@@ -898,6 +901,7 @@ def registrar_desarrollo(request):
                 'seguimientos_mes_count': seguimientos_mes_count,
                 'novedades_mes_count': novedades_mes_count,
                 'form_action': reverse('desarrollo:registrar_desarrollo'),
+                'alertas_novedades': getattr(desarrollo_existente, '_alertas_novedades', []),
             })
         except (DesarrolloNino.DoesNotExist, ValueError):
             # Si no existe, redirigimos para evitar errores, mostrando un mensaje.
@@ -913,3 +917,22 @@ def registrar_desarrollo(request):
         'nino_preseleccionado': nino_preseleccionado,
         'form_action': reverse('desarrollo:registrar_desarrollo'),
     })
+
+    # Procesar alertas para el contexto de la plantilla
+    alertas_mes = desarrollo.alertas_mes or ""
+    lineas = alertas_mes.splitlines()
+
+    alertas_generales = []
+    alertas_criticas = []
+
+    for linea in lineas:
+        if "Ver detalle:" in linea:
+            alertas_criticas.append(linea)
+        else:
+            # Limpia HTML para el textarea
+            texto_plano = strip_tags(linea).strip()
+            if texto_plano:
+                alertas_generales.append(texto_plano)
+
+    context['alertas_generales'] = "\n".join(alertas_generales)
+    context['alertas_criticas'] = alertas_criticas

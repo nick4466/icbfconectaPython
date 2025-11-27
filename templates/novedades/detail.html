@@ -123,13 +123,6 @@ nav ul {
 
       <header>
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
-    <nav>
-      <ul>
-        <li><a href="#"><i class="fas fa-arrow-left"></i> Volver</a></li>
-        <li><a href="#"><i class="fas fa-sign-out-alt"></i>Cerrar Sesión</a></li>
-        
-      </ul>
-    </nav>
   </header>
 
 
@@ -156,10 +149,6 @@ nav ul {
   {% else %}
     <li><strong>Soporte PDF:</strong> No se adjuntó archivo</li>
   {% endif %}
-
-    </ul>
-    <a href="{% url 'historial_asistencia' novedad.nino.id %}" class="btn-secondary">Volver al listado</a>
-  </div>
 
 </body>
 </html>
