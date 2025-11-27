@@ -66,6 +66,82 @@ def reporte_matricula_nino_pdf(request, nino_id):
     if pisa_status.err:
         return HttpResponse('Error al generar el PDF', status=500)
     return response
+
+@login_required
+def reporte_general_hogar_pdf(request):
+    """Genera un reporte PDF con todos los niños del hogar de la madre comunitaria"""
+    import os
+    from django.conf import settings
+    
+    # Verificar que el usuario sea madre comunitaria
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, 'Acceso denegado. No tienes los permisos necesarios.')
+        return redirect('home')
+    
+    # Obtener el hogar de la madre comunitaria logueada
+    try:
+        madre = MadreComunitaria.objects.get(usuario=request.user)
+        # El hogar se obtiene a través del related_name 'hogares_asignados'
+        hogar = madre.hogares_asignados.first()
+        if not hogar:
+            messages.error(request, 'No tienes un hogar asignado.')
+            return redirect('listar_ninos')
+    except MadreComunitaria.DoesNotExist:
+        messages.error(request, 'No se encontró información de madre comunitaria.')
+        return redirect('listar_ninos')
+    
+    # Obtener todos los niños del hogar
+    ninos = Nino.objects.filter(hogar=hogar).select_related('padre', 'padre__usuario').order_by('apellidos', 'nombres')
+    
+    if not ninos.exists():
+        messages.warning(request, 'No hay niños matriculados en este hogar para generar el reporte.')
+        return redirect('listar_ninos')
+    
+    usuario_generador = request.user.get_full_name() or request.user.username
+    fecha_reporte = timezone.now().strftime('%d/%m/%Y %H:%M')
+    
+    # Función auxiliar para obtener ruta absoluta de archivo
+    def get_absolute_path(file_field):
+        if file_field and hasattr(file_field, 'path'):
+            try:
+                return os.path.abspath(file_field.path)
+            except:
+                return None
+        return None
+    
+    # Preparar datos de cada niño con sus rutas de documentos
+    ninos_data = []
+    for nino in ninos:
+        padre = nino.padre
+        nino_info = {
+            'nino': nino,
+            'padre': padre,
+            'nino_foto_path': get_absolute_path(nino.foto),
+            'nino_carnet_path': get_absolute_path(nino.carnet_vacunacion),
+            'nino_eps_path': get_absolute_path(nino.certificado_eps),
+            'nino_registro_path': get_absolute_path(nino.registro_civil_img),
+            'padre_documento_path': get_absolute_path(padre.documento_identidad_img) if padre else None,
+            'padre_sisben_path': get_absolute_path(padre.clasificacion_sisben) if padre else None,
+        }
+        ninos_data.append(nino_info)
+    
+    template = get_template('madre/reporte_general_hogar.html')
+    context = {
+        'hogar': hogar,
+        'ninos_data': ninos_data,
+        'total_ninos': ninos.count(),
+        'usuario_generador': usuario_generador,
+        'fecha_reporte': fecha_reporte,
+    }
+    
+    html = template.render(context)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="reporte_general_{hogar.nombre_hogar.replace(" ", "_")}.pdf"'
+    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode('utf-8')), dest=response, encoding='utf-8')
+    if pisa_status.err:
+        return HttpResponse('Error al generar el PDF', status=500)
+    return response
+
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from .models import Rol, Usuario, MadreComunitaria, HogarComunitario

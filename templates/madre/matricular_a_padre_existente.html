@@ -504,6 +504,7 @@
             <div class="form-group">
               <label for="{{ nino_form.fecha_nacimiento.id_for_label }}">{{ nino_form.fecha_nacimiento.label }}</label>
               {{ nino_form.fecha_nacimiento }}
+              <div id="mensaje-edad-nino" style="margin-top: 8px; font-weight: 500; font-size: 14px;"></div>
             </div>
           </div>
 
@@ -729,6 +730,56 @@
             discapacidadContainer.style.display = 'none';
           }
         });
+      }
+
+      // ========== VALIDACIÓN DE EDAD DEL NIÑO ==========
+      var fechaNacimiento = document.getElementById("{{ nino_form.fecha_nacimiento.id_for_label }}");
+      var mensajeEdad = document.getElementById("mensaje-edad-nino");
+      
+      function validarEdadNino() {
+        if (!fechaNacimiento.value) {
+          fechaNacimiento.style.borderColor = "";
+          fechaNacimiento.style.backgroundColor = "";
+          mensajeEdad.textContent = "";
+          return;
+        }
+        
+        var hoy = new Date();
+        var fechaNac = new Date(fechaNacimiento.value);
+        
+        // Calcular edad exacta
+        var edad = hoy.getFullYear() - fechaNac.getFullYear();
+        var mes = hoy.getMonth() - fechaNac.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+          edad--;
+        }
+        
+        // Validar rango de edad (1 a 5 años)
+        if (edad < 1) {
+          fechaNacimiento.style.borderColor = "#dc3545";
+          fechaNacimiento.style.backgroundColor = "#ffe6e6";
+          mensajeEdad.style.color = "#dc3545";
+          mensajeEdad.innerHTML = "<i class='fas fa-exclamation-circle'></i> El niño tiene menos de 1 año y no puede ser matriculado.";
+        } else if (edad > 5) {
+          fechaNacimiento.style.borderColor = "#dc3545";
+          fechaNacimiento.style.backgroundColor = "#ffe6e6";
+          mensajeEdad.style.color = "#dc3545";
+          mensajeEdad.innerHTML = "<i class='fas fa-exclamation-circle'></i> El niño es mayor de 5 años y no puede ser matriculado.";
+        } else {
+          fechaNacimiento.style.borderColor = "#28a745";
+          fechaNacimiento.style.backgroundColor = "#e6f9e6";
+          mensajeEdad.style.color = "#28a745";
+          mensajeEdad.innerHTML = "<i class='fas fa-check-circle'></i> Edad adecuada para matricular (" + edad + " año" + (edad !== 1 ? "s" : "") + ").";
+        }
+      }
+      
+      if (fechaNacimiento) {
+        fechaNacimiento.addEventListener("change", validarEdadNino);
+        fechaNacimiento.addEventListener("blur", validarEdadNino);
+        // Validar en carga si ya hay valor
+        if (fechaNacimiento.value) {
+          validarEdadNino();
+        }
       }
     });
   </script>
