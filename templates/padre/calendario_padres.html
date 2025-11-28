@@ -1,0 +1,469 @@
+{% load static %}
+{% load custom_tags %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendario - Padres de Familia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondopadres.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    .borde2 {
+      text-align: center;
+      background-color: rgba(155, 89, 182, 0.9);
+      color: white;
+      padding: 12px 0;
+      font-size: 26px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    /* NAVBAR */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 15px 30px;
+      border-bottom: 2px solid #e5d5f5;
+      backdrop-filter: blur(4px);
+      flex-wrap: wrap;
+    }
+
+    header img { height: 60px; }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+
+    nav ul li a, nav ul li button {
+      text-decoration: none;
+      color: #9B59B6;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
+    nav ul .dropdown { position: relative; }
+    nav ul .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      min-width: 180px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 8px 0;
+      z-index: 1;
+    }
+    nav ul .dropdown:hover .dropdown-content { display: block; }
+    nav ul .dropdown-content a {
+      color: #9B59B6;
+      padding: 12px 16px;
+      display: block;
+      text-decoration: none;
+    }
+    nav ul .dropdown-content a:hover { background:#f3c1e5; }
+
+    /* CONTENEDOR CALENDARIO */
+    .calendar-container {
+      max-width: 950px;
+      margin: 40px auto;
+      background-color: rgba(255,255,255,0.96);
+      border-radius: 18px;
+      padding: 30px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .calendar-header h2 {
+      text-align: center;
+      color: #7a3eb1;
+      font-size: 28px;
+      flex-grow: 1;
+      margin: 0;
+    }
+
+    .calendar-header button {
+      padding: 8px 16px;
+      border: none;
+      background-color: #3498db;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .calendar-header button:hover { background-color: #2980b9; }
+
+    /* Descripción símbolos */
+    .descripcion-simbolos {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      background: #f3f3f3;
+      padding: 10px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border-left: 4px solid #9B59B6;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .descripcion-simbolos i {
+      color: #3498db;
+      margin-right: 6px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      text-align: center;
+    }
+
+    .calendar-grid div strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #7a3eb1;
+    }
+
+    .day {
+      padding: 15px;
+      background-color: #e6f2ff;
+      border-radius: 12px;
+      min-height: 90px;
+      cursor: pointer;
+      position: relative;
+      transition: transform .2s, background .3s;
+      border: 1px solid #a3c9f1;
+    }
+
+    .day:hover {
+      transform: translateY(-4px);
+      background-color: #cce6ff;
+    }
+
+    .icons {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .icon {
+      font-size: 18px;
+      color: #3498db;
+    }
+
+    /* Modal */
+    #modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    #modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      width: 85%;
+      max-width: 500px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      position: relative;
+    }
+
+    #cerrar-modal {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Tarjeta informativa */
+    .info-card {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(155,89,182,0.06), rgba(46,204,113,0.03));
+      border: 1px solid rgba(155,89,182,0.12);
+      padding: 18px;
+      border-radius: 12px;
+      margin: 18px 0;
+      box-shadow: 0 6px 18px rgba(120, 70, 160, 0.06);
+    }
+    .info-card-left { flex: 1; }
+    .info-card-left h3 {
+      margin: 0 0 8px 0;
+      color: #7a3eb1;
+      font-size: 20px;
+    }
+    .info-card-left ul {
+      margin: 0 0 12px 18px;
+      color: #333;
+      line-height: 1.45;
+      font-size: 15px;
+    }
+    .info-btn {
+      display: inline-block;
+      background: linear-gradient(90deg,#7a3eb1,#5e3370);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform .15s ease, box-shadow .15s ease;
+      box-shadow: 0 6px 14px rgba(122,62,177,0.18);
+    }
+    .info-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(122,62,177,0.22); }
+
+    .info-card-right {
+      width: 220px;           /* aumentado */
+      height: 160px;          /* aumentado */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent; /* asegurar transparencia */
+      padding: 8px;
+      border-radius: 14px;
+      box-shadow: none;       /* quitar fondo pesado detrás de la imagen */
+    }
+    .info-card-right img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: transparent; /* importante para PNG transparente */
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,0.12));
+      transition: transform .2s ease, filter .2s ease;
+    }
+    .info-card-right img:hover {
+      transform: translateY(-6px) scale(1.02);
+      filter: drop-shadow(0 16px 28px rgba(0,0,0,0.16));
+    }
+
+    @media (max-width: 820px) {
+      .info-card { flex-direction: column; text-align: center; }
+      .info-card-right { width: 160px; height: 100px; }
+      .info-card-left ul { margin-left: 0; }
+    }
+
+    @media(max-width:650px) {
+      .day { min-height: 70px; }
+      .icon { font-size: 16px; }
+      .descripcion-simbolos { flex-direction: column; align-items: center; gap: 10px; }
+      .info-card {
+        flex-direction: column;
+        text-align: center;
+      }
+      .info-card-right {
+        display: block;
+        margin-top: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<div class="borde2"></div>
+
+<header>
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
+    <nav>
+      <ul>
+        <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="{% url 'calendario_padres' %}"><i class="fas fa-calendar-alt"></i> Calendario</a></li>
+        <li><a href="#"><i class="fas fa-bell"></i> Notificaciones</a></li>
+
+        <li class="dropdown">
+          <a href="#"><i class="fas fa-cog"></i> Ajustes</a>
+          <div class="dropdown-content">
+            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
+            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+            <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+          </form>
+          </div>
+        </li>
+      </ul>
+    </nav>
+</header>
+
+<div class="calendar-container" data-year="{{ year }}" data-month="{{ month }}">
+    <div class="calendar-header">
+        <!-- agregar type="button" para evitar submit accidental -->
+        <button type="button" onclick="cambiarMes(-1)">&lt; Mes Anterior</button>
+        <h2>Calendario de Actividades</h2>
+        <button type="button" onclick="cambiarMes(1)">Mes Siguiente &gt;</button>
+    </div>
+    <!-- Descripción de símbolos -->
+    <div class="descripcion-simbolos">
+        <span><i class="fas fa-pencil-alt"></i> Planeación</span>
+        <span><i class="fas fa-bell"></i> Novedad</span>
+    </div> <!-- descripcion-simbolos -->
+
+    <!-- Tarjeta informativa para padres -->
+    <div class="info-card">
+      <div class="info-card-left">
+        <h3>¿Qué puedes hacer aquí?</h3>
+        <ul>
+          <li>Ver las planeaciones pedagógicas programadas para cada día.</li>
+          <li>Consultar novedades registradas sobre tu hijo (ausencias, observaciones, salud).</li>
+          <li>Abrir un día para ver detalles, materiales e indicaciones.</li>
+          <li>Contactar a la madre comunitaria o equipo si necesitas apoyo.</li>
+        </ul>
+        <a href="{% url 'padre_dashboard' %}" class="info-btn">Ver mi hijo</a>
+      </div>
+      <div class="info-card-right" aria-hidden="true">
+        <img src="{% static 'img/papas.jpg' %}" alt="Ilustración padres" class="info-illustration" />
+      </div>
+    </div>
+
+    <div class="calendar-header">
+        <h1 style="text-align:center; color:#7a3eb1; margin-bottom:12px;">{{ month_name }} {{ year }}</h1>
+    </div>
+
+    <div class="calendar-grid">
+        {% for day in "LMMJVSD" %}
+            <div><strong>{{ day }}</strong></div>
+        {% endfor %}
+
+        {% for _ in first_day|times %}
+            <div></div>
+        {% endfor %}
+
+        {% for dia in total_days|times %}
+        {% with dia|add:1 as dia_real %}
+        <div class="day" onclick="abrirModal('{{ year }}-{{ month }}-{{ dia_real }}')">
+            <strong>{{ dia_real }}</strong>
+
+            {% with eventos|get_item:dia_real as evento %}
+                {% if evento %}
+                <div class="icons">
+                    {% if evento.planeacion %}
+                        <i class="fas fa-pencil-alt icon"></i>
+                    {% endif %}
+                    {% if evento.novedad %}
+                        <i class="fas fa-bell icon"></i>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endwith %}
+
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="modal">
+    <div id="modal-content">
+        <button id="cerrar-modal" onclick="cerrarModal()">X</button>
+        <h3>Información del día</h3>
+        <div id="info"></div>
+    </div>
+</div>
+
+<script>
+function cambiarMes(delta) {
+    const params = new URLSearchParams(window.location.search);
+    const basePath = window.location.pathname;
+
+    // leer valores base desde atributos data- (evita insertar dobles llaves en el JS)
+    const container = document.querySelector('.calendar-container');
+    const baseYear = parseInt(container?.dataset.year) || new Date().getFullYear();
+    const baseMonth = parseInt(container?.dataset.month) || (new Date().getMonth() + 1);
+
+    let year = parseInt(params.get("year"));
+    let month = parseInt(params.get("month"));
+
+    if (!Number.isFinite(year)) year = baseYear;
+    if (!Number.isFinite(month)) month = baseMonth;
+
+    month += delta;
+    if (month < 1) { month = 12; year--; }
+    if (month > 12) { month = 1; year++; }
+
+    const newUrl = `${basePath}?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
+    window.location.href = newUrl;
+}
+
+function abrirModal(fecha) {
+    const urlInfo = "{% url 'obtener_info' %}";
+    fetch(`${urlInfo}?fecha=${encodeURIComponent(fecha)}`)
+        .then(res => res.json())
+        .then(data => {
+            let html = "";
+
+            if (data.planeacion) {
+                html += `
+                    <h4>Planeación</h4>
+                    <p><strong>${data.planeacion.nombre}</strong></p>
+                    <p><b>Intencionalidad:</b> ${data.planeacion.intencionalidad}</p>
+                    <p><b>Materiales:</b> ${data.planeacion.materiales}</p>
+                `;
+            }
+
+            if (data.novedad) {
+                html += `
+                    <h4>Novedad</h4>
+                    <p><b>Tipo:</b> ${data.novedad.tipo}</p>
+                    <p>${data.novedad.descripcion}</p>
+                `;
+            }
+
+            if (!data.planeacion && !data.novedad) {
+                html = "<p>No hay información para este día.</p>";
+            }
+
+            document.getElementById("info").innerHTML = html;
+            document.getElementById("modal").style.display = "flex";
+        });
+}
+
+function cerrarModal() {
+    document.getElementById("modal").style.display = "none";
+}
+</script>
+</body>
+</html>

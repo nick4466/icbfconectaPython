@@ -12,6 +12,10 @@ from core.custom_password_reset_form import CustomPasswordResetForm
 from core.forms import CustomAuthForm
 from django.conf import settings   
 from django.conf.urls.static import static
+from django.urls import path
+from core.views import calendario_padres, obtener_info
+
+
 
 
 
@@ -50,7 +54,9 @@ urlpatterns = [
 
     # --- Vistas para Padres (Ahora con ID de niño) ---
     path('padre/desarrollo/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
-    
+    path('padre/calendario/', calendario_padres, name='calendario_padres'),
+    path('padre/calendario/info/', obtener_info, name='obtener_info'),
+
     # --- Gestión de Perfil de Usuario ---
     path('perfil/cambiar-contrasena/', views.cambiar_contrasena, name='cambiar_contrasena'),
     path('perfil/editar/', views.editar_perfil, name='editar_perfil'),

@@ -21,6 +21,24 @@ from django.core.paginator import Paginator
 from django.template.loader import get_template
 import io
 from xhtml2pdf import pisa
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from datetime import date, datetime, timedelta
+import calendar
+from datetime import date
+from calendar import monthrange
+from django.shortcuts import render
+from django.http import JsonResponse
+from core.models import Nino
+from planeaciones.models import Planeacion
+from django.contrib.auth.decorators import login_required
+from novedades.models import Novedad
+from planeaciones.models import Planeacion
+from datetime import datetime as _datetime, date as _date
+
+
 
 # --- GENERAR REPORTE PDF DE MATRÍCULA DE UN NIÑO ---
 @login_required
@@ -1414,39 +1432,93 @@ def padre_ver_desarrollo(request, nino_id):
     except (Padre.DoesNotExist, Nino.DoesNotExist):
         return redirect('padre_dashboard') # pragma: no cover
 
-# core/views.py
-
-# ... (tus otras funciones) ...
+MESES = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+    5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+    9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+}
 
 @login_required
-def listar_ninos(request):
-    # Solo madres comunitarias pueden ver su listado
-    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
-        messages.error(request, 'Acceso denegado.')
-        return redirect('home')
+def calendario_padres(request):
+    tutor = request.user
+    hoy = _date.today()
+
+    year = int(request.GET.get("year", hoy.year))
+    month = int(request.GET.get("month", hoy.month))
+
+    first_day, total_days = monthrange(year, month)
+
+    # Obtener el niño del tutor (perfil Padre)
     try:
-        hogar = HogarComunitario.objects.get(madre=request.user.madre_profile)
-    except HogarComunitario.DoesNotExist:
-        messages.error(request, 'No tienes un hogar comunitario asignado.')
-        return redirect('madre_dashboard')
-    
-    ninos = Nino.objects.filter(hogar=hogar)
-    
-    # Contexto con información de matrícula exitosa si existe
-    context = {
-        'ninos': ninos
-    }
-    
-    # Renderizar el template
-    response = render(request, 'madre/nino_list.html', context)
-    
-    # Limpiar la sesión después de renderizar (para que el mensaje solo se muestre una vez)
-    if 'matricula_exitosa' in request.session:
-        del request.session['matricula_exitosa']
-    if 'cambio_padre_exitoso' in request.session:
-        del request.session['cambio_padre_exitoso']
-    
-    return response
+        padre = Padre.objects.get(usuario=request.user)
+        nino = Nino.objects.filter(padre=padre).first()
+    except Padre.DoesNotExist:
+        nino = None
+
+    # Planeaciones del mes
+    planeaciones = Planeacion.objects.filter(fecha__year=year, fecha__month=month)
+
+    # Novedades del niño (si existe)
+    novedades = Novedad.objects.filter(
+        nino=nino,
+        fecha__year=year,
+        fecha__month=month
+    ) if nino else []
+
+    eventos = {}
+
+    for p in planeaciones:
+        dia = p.fecha.day
+        eventos.setdefault(dia, {"planeacion": False, "novedad": False})
+        eventos[dia]["planeacion"] = True
+
+    for n in novedades:
+        dia = n.fecha.day
+        eventos.setdefault(dia, {"planeacion": False, "novedad": False})
+        eventos[dia]["novedad"] = True
+
+    return render(request, "padre/calendario_padres.html", {
+        "year": year,
+        "month": month,
+        "month_name": MESES.get(month, str(month)),
+        "first_day": first_day,
+        "total_days": total_days,
+        "eventos": eventos,
+        "hoy": hoy,
+    })
+
+
+@login_required
+def obtener_info(request):
+    fecha = request.GET.get("fecha")
+    # parsear fecha segura
+    fecha_obj = None
+    try:
+        fecha_obj = _datetime.strptime(fecha, "%Y-%m-%d").date()
+    except Exception:
+        return JsonResponse({"planeacion": None, "novedad": None})
+
+    # Obtener niño desde perfil Padre
+    try:
+        padre = Padre.objects.get(usuario=request.user)
+        nino = Nino.objects.filter(padre=padre).first()
+    except Padre.DoesNotExist:
+        nino = None
+
+    planeacion = Planeacion.objects.filter(fecha=fecha_obj).first()
+    novedad = Novedad.objects.filter(nino=nino, fecha=fecha_obj).first() if nino else None
+
+    return JsonResponse({
+        "planeacion": {
+            "nombre": planeacion.nombre_experiencia,
+            "intencionalidad": planeacion.intencionalidad_pedagogica,
+            "materiales": planeacion.materiales_utilizar
+        } if planeacion else None,
+        "novedad": {
+            "tipo": novedad.get_tipo_display() if novedad else None,
+            "descripcion": novedad.descripcion if novedad else None,
+        } if novedad else None
+    })
 
 @login_required
 def ver_ficha_nino(request, id):
@@ -1597,6 +1669,36 @@ def editar_perfil(request):
     return render(request, 'perfil/editar_perfil.html', {'form': form})
 
 @login_required
+def listar_ninos(request):
+    # Solo madres comunitarias pueden ver su listado
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, 'Acceso denegado.')
+        return redirect('home')
+    try:
+        hogar = HogarComunitario.objects.get(madre=request.user.madre_profile)
+    except HogarComunitario.DoesNotExist:
+        messages.error(request, 'No tienes un hogar comunitario asignado.')
+        return redirect('madre_dashboard')
+    
+    ninos = Nino.objects.filter(hogar=hogar)
+    
+    # Contexto con información de matrícula exitosa si existe
+    context = {
+        'ninos': ninos
+    }
+    
+    # Renderizar el template
+    response = render(request, 'madre/nino_list.html', context)
+    
+    # Limpiar la sesión después de renderizar (para que el mensaje solo se muestre una vez)
+    if 'matricula_exitosa' in request.session:
+        del request.session['matricula_exitosa']
+    if 'cambio_padre_exitoso' in request.session:
+        del request.session['cambio_padre_exitoso']
+    
+    return response
+
+@login_required
 def generar_reporte_ninos(request):
     # Aquí puedes generar el PDF o mostrar un mensaje temporal
     return render(request, 'madre/reporte_ninos.html')
@@ -1693,6 +1795,7 @@ def detalles_madre_json(request, id):
         return JsonResponse({'error': str(e)}, status=500)
 
 def cargar_ciudades(request):
+
     """
     Retorna JSON con las ciudades de la regional indicada.
     Parámetro: ?regional_id=ID
@@ -1979,3 +2082,4 @@ def cambiar_padre_de_nino(request):
         'buscar_form': buscar_form,
         'padre_form': padre_form,
     })
+
