@@ -422,6 +422,19 @@
     font-size: 26px;
     color: #7a3eb1;
   }
+
+    /* Estilos para la selección múltiple */
+    .selection-checkbox {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      transform: scale(1.6);
+      z-index: 3;
+      cursor: pointer;
+    }
+    .desarrollo-card.selected {
+      box-shadow: 0 0 0 3px var(--primary-color);
+    }
 </style>
 <body>
   <header>
@@ -481,60 +494,80 @@
         <a href="{% url 'desarrollo:listar_desarrollos' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-volver" style="margin-left: 5px;">Limpiar Filtro</a>
       </form>
 
-      <div>
+      <div id="action-buttons-container">
+        <button type="submit" form="bulk-delete-form" id="btn-eliminar-seleccionados" class="btn-rojo" style="display: none; margin-right: 10px;"><i class="fas fa-trash"></i> Eliminar Seleccionados</button>
         <a href="{% url 'gestion_ninos' %}" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a Gestión</a>
         <a href="{% url 'desarrollo:registrar_desarrollo' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-agregar">
           <i class="fas fa-plus"></i> Añadir Registro
         </a>
       </div>
     </div>
+    
+    <!-- El formulario para eliminación masiva envuelve la grilla -->
+    <form method="post" action="{% url 'desarrollo:eliminar_desarrollos_seleccionados' %}" id="bulk-delete-form">
+        {% csrf_token %}
+        {% if nino_id_filtro %}
+            <input type="hidden" name="nino_id_filtro" value="{{ nino_id_filtro }}">
+        {% endif %}
+        
+        {% if desarrollos %}
+        <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; padding-left: 5px;">
+            <input type="checkbox" id="seleccionar-todo" style="transform: scale(1.4);">
+            <label for="seleccionar-todo" style="font-weight: bold; color: #5e3370; cursor: pointer;">Seleccionar / Deseleccionar Todo</label>
+        </div>
+        {% endif %}
 
-    <div class="card-grid">
-      {% for desarrollo in desarrollos %}
-      <div class="desarrollo-card {{ desarrollo.accent }}"
-        data-nino="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}"
-        data-tutor="{{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}"
-        data-fecha="{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}"
-        data-eval-cognitiva="{{ desarrollo.evaluacion_cognitiva|default_if_none:''|escapejs }}"
-        data-eval-comunicativa="{{ desarrollo.evaluacion_comunicativa|default_if_none:''|escapejs }}"
-        data-eval-socioafectiva="{{ desarrollo.evaluacion_socio_afectiva|default_if_none:''|escapejs }}"
-        data-eval-corporal="{{ desarrollo.evaluacion_corporal|default_if_none:''|escapejs }}"
-        data-autonomia="{{ desarrollo.evaluacion_autonomia|default_if_none:''|escapejs }}"
-        data-fortalezas="{{ desarrollo.fortalezas_mes|default_if_none:''|escapejs }}"
-        data-mejorar="{{ desarrollo.aspectos_a_mejorar|default_if_none:''|escapejs }}"
-        data-alertas="{{ desarrollo.alertas_mes|default_if_none:''|escapejs }}"
-        data-conclusion="{{ desarrollo.conclusion_general|default_if_none:''|escapejs }}"
-        data-novedades="{{ desarrollo.novedades_mes|default_if_none:''|escapejs }}"
-      >
-        <span class="badge-promedio">Logro: {{ desarrollo.logro_mes|default:'N/A' }}</span>
-        <i class="fas fa-seedling card-icon"></i>
-        <div class="card-header">
-          <h3>{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}</h3>
-          <span class="fecha">{{ desarrollo.fecha_fin_mes|date:"F Y" }}</span>
+        <div class="card-grid">
+        {% for desarrollo in desarrollos %}
+        <div class="desarrollo-card {{ desarrollo.accent }}"
+            data-nino="{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}"
+            data-tutor="{{ desarrollo.nino.padre.usuario.nombres }} {{ desarrollo.nino.padre.usuario.apellidos }}"
+            data-fecha="{{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}"
+            data-eval-cognitiva="{{ desarrollo.evaluacion_cognitiva|default_if_none:''|escapejs }}"
+            data-eval-comunicativa="{{ desarrollo.evaluacion_comunicativa|default_if_none:''|escapejs }}"
+            data-eval-socioafectiva="{{ desarrollo.evaluacion_socio_afectiva|default_if_none:''|escapejs }}"
+            data-eval-corporal="{{ desarrollo.evaluacion_corporal|default_if_none:''|escapejs }}"
+            data-autonomia="{{ desarrollo.evaluacion_autonomia|default_if_none:''|escapejs }}"
+            data-fortalezas="{{ desarrollo.fortalezas_mes|default_if_none:''|escapejs }}"
+            data-mejorar="{{ desarrollo.aspectos_a_mejorar|default_if_none:''|escapejs }}"
+            data-alertas="{{ desarrollo.alertas_mes|default_if_none:''|escapejs }}"
+            data-conclusion="{{ desarrollo.conclusion_general|default_if_none:''|escapejs }}"
+            data-novedades="{{ desarrollo.novedades_mes|default_if_none:''|escapejs }}"
+        >
+            <input type="checkbox" name="desarrollo_ids" value="{{ desarrollo.id }}" class="selection-checkbox">
+            <span class="badge-promedio">Logro: {{ desarrollo.logro_mes|default:'N/A' }}</span>
+            <i class="fas fa-seedling card-icon" style="z-index: -1;"></i>
+            <div class="card-header">
+            <h3>{{ desarrollo.nino.nombres }} {{ desarrollo.nino.apellidos }}</h3>
+            <span class="fecha">{{ desarrollo.fecha_fin_mes|date:"F Y" }}</span>
+            </div>
+            <div class="card-body">
+            <p><i class="fas fa-chart-line"></i> <strong>Tendencia:</strong> {{ desarrollo.get_tendencia_valoracion_display|default:'-' }}</p>
+            <p><i class="fas fa-tasks"></i> <strong>Participación:</strong> {{ desarrollo.participacion_frecuente|default:'-' }}</p>
+            <p><i class="fas fa-calendar-check"></i> <strong>Asistencia:</strong> {{ desarrollo.porcentaje_asistencia|default:'N/A' }}%</p>
+            <p><i class="fas fa-smile"></i> <strong>Comportamiento:</strong> {{ desarrollo.comportamiento_frecuente|default:'-' }}</p>
+            </div>
+            <div class="card-footer acciones">
+            <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+            <!-- FIX: El botón de editar ahora apunta a la vista unificada 'registrar_desarrollo' -->
+            <a href="{% url 'desarrollo:registrar_desarrollo' %}?nino={{ desarrollo.nino.id }}&mes={{ desarrollo.fecha_fin_mes|date:'Y-m' }}" 
+                class="btn-accion btn-azul" 
+                title="Editar">
+                <i class="fas fa-pen"></i></a>
+            <a href="{% url 'desarrollo:eliminar_desarrollo' desarrollo.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este registro? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
+            <a href="{% url 'desarrollo:generar_reporte_pdf' desarrollo.nino.id %}?tipo_reporte=desarrollo&fecha_inicio={{ desarrollo.fecha_fin_mes|date:'Y-m-01' }}&fecha_fin={{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}" target="_blank" class="btn-accion btn-verde" title="PDF" style="background:#9B59B6; color:white;">
+                <i class="fas fa-file-pdf"></i>
+            </a>
+            <a href="#"  class="btn-accion btn-verde" title="Certificado" style="background:#17a2b8; color:white;">
+                <i class="fas fa-certificate"></i>
+            </a>
+            </div>
         </div>
-        <div class="card-body">
-          <p><i class="fas fa-chart-line"></i> <strong>Tendencia:</strong> {{ desarrollo.get_tendencia_valoracion_display|default:'-' }}</p>
-          <p><i class="fas fa-tasks"></i> <strong>Participación:</strong> {{ desarrollo.participacion_frecuente|default:'-' }}</p>
-          <p><i class="fas fa-calendar-check"></i> <strong>Asistencia:</strong> {{ desarrollo.porcentaje_asistencia|default:'N/A' }}%</p>
-          <p><i class="fas fa-smile"></i> <strong>Comportamiento:</strong> {{ desarrollo.comportamiento_frecuente|default:'-' }}</p>
+        {% empty %}
+            <p style="grid-column: 1 / -1; text-align: center; color: #777; font-size: 18px; padding: 40px 0;">No hay registros de desarrollo que coincidan con los filtros.</p>
+        {% endfor %}
         </div>
-        <div class="card-footer acciones">
-          <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-          <!-- FIX: El botón de editar ahora apunta a la vista unificada 'registrar_desarrollo' -->
-          <a href="{% url 'desarrollo:registrar_desarrollo' %}?nino={{ desarrollo.nino.id }}&mes={{ desarrollo.fecha_fin_mes|date:'Y-m' }}" 
-             class="btn-accion btn-azul" 
-             title="Editar">
-             <i class="fas fa-pen"></i></a>
-          <a href="{% url 'desarrollo:eliminar_desarrollo' desarrollo.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este registro? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
-          <a href="{% url 'desarrollo:generar_reporte_pdf' desarrollo.nino.id %}?tipo_reporte=desarrollo&fecha_inicio={{ desarrollo.fecha_fin_mes|date:'Y-m-01' }}&fecha_fin={{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}" target="_blank" class="btn-accion btn-verde" title="Certificado PDF" style="background:#27a9ae; color:white;">
-            <i class="fas fa-file-pdf"></i>
-          </a>
-        </div>
-      </div>
-      {% empty %}
-        <p style="grid-column: 1 / -1; text-align: center; color: #777; font-size: 18px; padding: 40px 0;">No hay registros de desarrollo que coincidan con los filtros.</p>
-      {% endfor %}
-    </div>
+    </form>
 
     <!-- Controles de Paginación -->
     <div class="pagination">
@@ -660,6 +693,53 @@
         setTimeout(() => { mensajeNotificacion.style.display = 'none'; }, 500);
       }, 5000);
     }
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const selectAllCheckbox = document.getElementById('seleccionar-todo');
+      const itemCheckboxes = document.querySelectorAll('.selection-checkbox');
+      const deleteButton = document.getElementById('btn-eliminar-seleccionados');
+      const bulkDeleteForm = document.getElementById('bulk-delete-form');
+
+      function updateDeleteButtonVisibility() {
+        const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
+        deleteButton.style.display = anyChecked ? 'inline-flex' : 'none';
+      }
+
+      if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+          itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+            const card = checkbox.closest('.desarrollo-card');
+            if (card) {
+              card.classList.toggle('selected', this.checked);
+            }
+          });
+          updateDeleteButtonVisibility();
+        });
+      }
+
+      itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const card = this.closest('.desarrollo-card');
+          if (card) {
+            card.classList.toggle('selected', this.checked);
+          }
+          if (!this.checked) {
+            selectAllCheckbox.checked = false;
+          }
+          updateDeleteButtonVisibility();
+        });
+      });
+
+      if (bulkDeleteForm) {
+        bulkDeleteForm.addEventListener('submit', function(e) {
+          if (!confirm('¿Estás segura de que deseas eliminar todos los registros seleccionados? Esta acción no se puede deshacer.')) {
+            e.preventDefault();
+          }
+        });
+      }
+    });
   </script>
 
 </body>

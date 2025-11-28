@@ -345,6 +345,12 @@
     .dim-adecuado { color: #5dade2; font-weight: bold; }
     .dim-proceso { color: #ffc107; font-weight: bold; }
     .dim-bajo { color: #e74c3c; font-weight: bold; }
+
+    .seguimiento-checkbox {
+      transform: scale(1.5);
+      margin-right: 15px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -407,6 +413,20 @@
       </div>
     </div>
 
+    <form method="post" action="{% url 'desarrollo:eliminar_seguimientos_lote' %}" id="bulk-delete-form">
+      {% csrf_token %}
+      {% if nino_id_filtro %}
+        <input type="hidden" name="nino_id" value="{{ nino_id_filtro }}">
+      {% endif %}
+
+      <div class="acciones-lote" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 8px;">
+        <div>
+          <input type="checkbox" id="seleccionar-todos" class="seguimiento-checkbox" style="margin-right: 8px;">
+          <label for="seleccionar-todos" style="font-weight: bold; color: #555;">Seleccionar/Deseleccionar Todos</label>
+        </div>
+        <button type="submit" id="btn-eliminar-seleccionados" class="btn-rojo" style="display: none; align-items: center; gap: 8px;"><i class="fas fa-trash"></i> Eliminar Seleccionados</button>
+      </div>
+
     {% if seguimientos.object_list %} 
       <!-- SIEMPRE VISTA DE LÍNEA DE TIEMPO -->
       <div class="timeline-vertical">
@@ -428,6 +448,7 @@
                          data-valoracion="{{ seguimiento.valoracion|default:0 }}"
                          data-obs-relevante="{{ seguimiento.observacion_relevante|yesno:'Sí,No' }}"                         data-evaluaciones='[{% for eval in seguimiento.evaluaciones_dimension.all %}{"dimension":"{{ eval.dimension.nombre|escapejs }}","desempeno":"{{ eval.get_desempeno_display|escapejs }}","observacion":"{{ eval.observacion|default_if_none:''|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
                       <div class="card-header-modern">
+                        <input type="checkbox" name="seguimiento_ids" value="{{ seguimiento.id }}" class="seguimiento-checkbox">
                         <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
                         <div>
                           <h3 style="margin-bottom: 2px;">{{ seguimiento.planeacion.nombre_experiencia }}</h3>
@@ -502,6 +523,7 @@
                            data-obs-relevante="{{ seguimiento.observacion_relevante|yesno:'Sí,No' }}"                           data-evaluaciones='[{% for eval in seguimiento.evaluaciones_dimension.all %}{"dimension":"{{ eval.dimension.nombre|escapejs }}","desempeno":"{{ eval.get_desempeno_display|escapejs }}","observacion":"{{ eval.observacion|default_if_none:''|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
                         <div class="card-header-modern">
                           <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
+                          <input type="checkbox" name="seguimiento_ids" value="{{ seguimiento.id }}" class="seguimiento-checkbox">
                           <div>
                             <h3 style="margin-bottom: 2px;">{{ seguimiento.planeacion.nombre_experiencia }}</h3>
                             <span class="planeacion-label" style="font-size: 17px; color: #7a3eb1; font-weight: bold;">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
@@ -574,6 +596,7 @@
                            data-obs-relevante="{{ seguimiento.observacion_relevante|yesno:'Sí,No' }}"                           data-evaluaciones='[{% for eval in seguimiento.evaluaciones_dimension.all %}{"dimension":"{{ eval.dimension.nombre|escapejs }}","desempeno":"{{ eval.get_desempeno_display|escapejs }}","observacion":"{{ eval.observacion|default_if_none:''|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
                         <div class="card-header-modern">
                           <span class="avatar-modern {{ color_class }}">{{ seguimiento.nino.nombres|slice:":1" }}{{ seguimiento.nino.apellidos|slice:":1" }}</span>
+                          <input type="checkbox" name="seguimiento_ids" value="{{ seguimiento.id }}" class="seguimiento-checkbox">
                           <div>
                             <h3 style="margin-bottom: 2px;">{{ seguimiento.planeacion.nombre_experiencia }}</h3>
                             <span class="planeacion-label" style="font-size: 17px; color: #7a3eb1; font-weight: bold;">{{ seguimiento.nino.nombres }} {{ seguimiento.nino.apellidos }}</span>
@@ -634,6 +657,11 @@
           {% endwith %}
         {% endfor %}
       </div>
+    {% else %}
+      <p class="empty-message">No hay seguimientos diarios registrados para la fecha seleccionada.</p>
+    {% endif %}
+    </form>
+
       <div class="pagination">
         {% if seguimientos.has_previous %}
           <a href="?page=1{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; Primera</a>
@@ -647,9 +675,6 @@
           <a href="?page={{ seguimientos.paginator.num_pages }}{% for key, value in filtros.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última &raquo;</a>
         {% endif %}
       </div>
-    {% else %}
-      <p class="empty-message">No hay seguimientos diarios registrados para la fecha seleccionada.</p>
-    {% endif %}
   </div>
 
   <!-- Modal Detalles -->
@@ -760,6 +785,41 @@
         setTimeout(() => { mensajeNotificacion.style.display = 'none'; }, 500);
       }, 5000);
     }
+
+    // --- LÓGICA PARA SELECCIÓN MÚLTIPLE ---
+    const seleccionarTodosCheckbox = document.getElementById('seleccionar-todos');
+    const seguimientoCheckboxes = document.querySelectorAll('.seguimiento-checkbox:not(#seleccionar-todos)');
+    const btnEliminarSeleccionados = document.getElementById('btn-eliminar-seleccionados');
+    const bulkDeleteForm = document.getElementById('bulk-delete-form');
+
+    function actualizarBotonEliminar() {
+      const algunoSeleccionado = Array.from(seguimientoCheckboxes).some(cb => cb.checked);
+      btnEliminarSeleccionados.style.display = algunoSeleccionado ? 'inline-flex' : 'none';
+    }
+
+    seleccionarTodosCheckbox.addEventListener('change', function() {
+      seguimientoCheckboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+      });
+      actualizarBotonEliminar();
+    });
+
+    seguimientoCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        if (!this.checked) {
+          seleccionarTodosCheckbox.checked = false;
+        } else if (Array.from(seguimientoCheckboxes).every(cb => cb.checked)) {
+          seleccionarTodosCheckbox.checked = true;
+        }
+        actualizarBotonEliminar();
+      });
+    });
+
+    bulkDeleteForm.addEventListener('submit', function(e) {
+      if (!confirm('¿Estás segura de que deseas eliminar todos los seguimientos seleccionados? Esta acción no se puede deshacer.')) {
+        e.preventDefault();
+      }
+    });
   </script>
 
 </body>

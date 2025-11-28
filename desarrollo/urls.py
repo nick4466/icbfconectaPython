@@ -13,6 +13,7 @@ urlpatterns = [
     path('ver/<int:id>/', views.ver_desarrollo, name='ver_desarrollo'),
     path('editar/<int:id>/', views.registrar_desarrollo, name='editar_desarrollo'),
     path('eliminar/<int:id>/', views.eliminar_desarrollo, name='eliminar_desarrollo'),
+    path('eliminar-seleccionados/', views.eliminar_desarrollos_seleccionados, name='eliminar_desarrollos_seleccionados'),
     
     # --- URL para el Padre de Familia ---
     path('ver/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
@@ -26,4 +27,5 @@ urlpatterns = [
     path('seguimiento/listado/', views.listar_seguimientos, name='listar_seguimientos'),
     path('seguimiento/editar/<int:id>/', views.editar_seguimiento_diario, name='editar_seguimiento'),
     path('seguimiento/eliminar/<int:id>/', views.eliminar_seguimiento, name='eliminar_seguimiento'),
+    path('seguimiento/eliminar-lote/', views.eliminar_seguimientos_lote, name='eliminar_seguimientos_lote'),
 ]

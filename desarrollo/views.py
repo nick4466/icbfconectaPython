@@ -18,6 +18,7 @@ import os
 from django.core.paginator import Paginator
 from django.templatetags.static import static
 import calendar
+from django.views.decorators.http import require_POST
 import re
 from django.utils.html import strip_tags
 
@@ -271,6 +272,42 @@ def eliminar_desarrollo(request, id):
     messages.error(request, "¡El registro de desarrollo ha sido eliminado correctamente!")
     
     return redirect(reverse('desarrollo:listar_desarrollos') + f'?nino={nino_id}')
+
+@require_POST
+@login_required
+def eliminar_desarrollos_seleccionados(request):
+    """
+    Vista para eliminar múltiples registros de desarrollo seleccionados mediante checkboxes.
+    """
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, "No tienes permiso para realizar esta acción.")
+        return redirect('role_redirect')
+
+    desarrollo_ids = request.POST.getlist('desarrollo_ids')
+    nino_id_filtro = request.POST.get('nino_id_filtro')
+
+    if not desarrollo_ids:
+        messages.warning(request, "No has seleccionado ningún registro para eliminar.")
+        return redirect('desarrollo:listar_desarrollos')
+
+    # Seguridad: Asegurarse de que la madre solo pueda eliminar registros de su propio hogar.
+    registros_a_eliminar = DesarrolloNino.objects.filter(
+        id__in=desarrollo_ids,
+        nino__hogar__madre__usuario=request.user
+    )
+
+    count = registros_a_eliminar.count()
+
+    if count > 0:
+        registros_a_eliminar.delete()
+        messages.success(request, f"Se han eliminado {count} registros de desarrollo exitosamente.")
+
+    # Construir la URL de redirección
+    redirect_url = reverse('desarrollo:listar_desarrollos')
+    if nino_id_filtro:
+        redirect_url += f'?nino={nino_id_filtro}'
+    
+    return redirect(redirect_url)
 
 @login_required
 def generar_reporte(request):
@@ -755,6 +792,35 @@ def eliminar_seguimiento(request, id):
     # Redirigir a la lista de seguimientos del niño específico
     redirect_url = reverse('desarrollo:listar_seguimientos')
     return redirect(f'{redirect_url}?nino={nino_id}')
+
+
+@login_required
+@require_POST
+def eliminar_seguimientos_lote(request):
+    """
+    Vista para eliminar múltiples registros de seguimiento diario seleccionados.
+    """
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, "No tienes permiso para realizar esta acción.")
+        return redirect('role_redirect')
+
+    seguimiento_ids = request.POST.getlist('seguimiento_ids')
+    if not seguimiento_ids:
+        messages.warning(request, 'No se seleccionó ningún seguimiento para eliminar.')
+    else:
+        try:
+            # Seguridad: Asegurarse de que la madre solo pueda eliminar seguimientos de su propio hogar.
+            seguimientos_a_eliminar = SeguimientoDiario.objects.filter(id__in=seguimiento_ids, nino__hogar__madre__usuario=request.user)
+            count = seguimientos_a_eliminar.count()
+            seguimientos_a_eliminar.delete()
+            messages.success(request, f'Se eliminaron {count} seguimientos exitosamente.')
+        except Exception as e:
+            messages.error(request, f'Ocurrió un error al intentar eliminar los seguimientos: {e}')
+    
+    # Redirigir a la misma página, manteniendo el filtro de niño si existe
+    nino_id = request.POST.get('nino_id')
+    redirect_url = reverse('desarrollo:listar_seguimientos')
+    return redirect(f'{redirect_url}?nino={nino_id}' if nino_id else redirect_url)
 
 
 @login_required
