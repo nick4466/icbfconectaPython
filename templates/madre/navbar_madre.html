@@ -1,0 +1,38 @@
+{% load static %}
+<!-- Navbar Unificada para Madre Comunitaria -->
+<link rel="stylesheet" href="{% static 'css/navbar_madre.css' %}">
+
+<header class="navbar-madre">
+    <div class="header-left">
+        <a href="{% url 'madre_dashboard' %}" class="logo-link">
+            <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF Conecta" class="navbar-logo">
+            <h1>ICBF Conecta</h1>
+        </a>
+    </div>
+
+    <nav class="navbar-menu">
+        <ul>
+            <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
+            <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-users"></i> Gestión de Niños</a></li>
+            <li><a href="{% url 'asistencia_form' %}"><i class="fas fa-clipboard-list"></i> Llamar a Lista</a></li>
+            <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-calendar-alt"></i> Planeaciones</a></li>
+            <li><a href="{% url 'novedades:novedades_list' %}"><i class="fas fa-exclamation-circle"></i> Novedades</a></li>
+        </ul>
+    </nav>
+
+    <div class="header-right">
+        <div class="user-menu">
+            <span class="user-name">{{ nombre_madre }}</span>
+            <a href="{% url 'editar_perfil' %}" class="nav-btn" title="Editar Perfil">
+                <i class="fas fa-user-circle"></i>
+            </a>
+            <a href="{% url 'cambiar_contrasena' %}" class="nav-btn" title="Cambiar Contraseña">
+                <i class="fas fa-key"></i>
+            </a>
+            <a href="{% url 'logout' %}" class="nav-btn logout-btn" title="Cerrar Sesión">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
+        </div>
+    </div>
+</header>

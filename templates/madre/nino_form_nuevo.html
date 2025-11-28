@@ -12,40 +12,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Poppins', sans-serif; background: #f5f7fa; color: #333; }
     
-    header {
-      background: linear-gradient(90deg, #7a3eb1 0%, #9B59B6 100%);
-      color: white;
-      padding: 20px 30px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-    
-    header img { height: 50px; }
-    
-    nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    
-    nav a, nav button {
-      color: white;
-      text-decoration: none;
-      font-weight: 500;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-family: 'Poppins', sans-serif;
-      font-size: 14px;
-      transition: opacity 0.3s;
-    }
-    
-    nav a:hover, nav button:hover { opacity: 0.8; }
+
     
     .container {
       max-width: 1000px;
@@ -298,22 +265,7 @@
   </style>
 </head>
 <body>
-  <header>
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
-    <nav>
-      <ul>
-        <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
-        <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-users"></i> Matrículas</a></li>
-        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión</a></li>
-        <li>
-          <form method="post" action="{% url 'logout' %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
-          </form>
-        </li>
-      </ul>
-    </nav>
-  </header>
+  {% include 'madre/navbar_madre.html' %}
 
   <div class="container">
     <h1>

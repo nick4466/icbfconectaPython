@@ -8,7 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
+</head>
+<body>
+{% include 'madre/navbar_madre.html' %}
+
+<style>
         * {
             margin: 0;
             padding: 0;
@@ -19,57 +23,6 @@
             font-family: 'Roboto', sans-serif;
             background-color: #f5f7fa;
             color: #333;
-        }
-
-        /* HEADER */
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .header-left img {
-            height: 50px;
-        }
-
-        .header-left h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 30px;
-        }
-
-        nav a, .nav-btn {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: opacity 0.3s;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 15px;
-        }
-
-        nav a:hover, .nav-btn:hover {
-            opacity: 0.8;
         }
 
         .container {
@@ -440,27 +393,6 @@
     </style>
 </head>
 <body>
-    <!-- HEADER -->
-    <header>
-        <div class="header-left">
-            <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF">
-            <h1>Dashboard ICBF</h1>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-users"></i> Matrículas</a></li>
-                <li><a href="{% url 'asistencia_form' %}"><i class="fas fa-clipboard-check"></i> Asistencia</a></li>
-                <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-calendar"></i> Planeaciones</a></li>
-                <li>
-                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="nav-btn"><i class="fas fa-sign-out-alt"></i> Salir</button>
-                    </form>
-                </li>
-            </ul>
-        </nav>
-    </header>
-
     <!-- CONTAINER -->
     <div class="container">
         <!-- INFO HEADER -->

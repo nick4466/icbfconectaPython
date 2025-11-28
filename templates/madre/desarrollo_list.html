@@ -18,99 +18,7 @@
       background-attachment: fixed;
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 15px 30px;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-      flex-wrap: wrap;
-    }
 
-    header img { height: 60px; }
-
-    nav ul { list-style: none; display: flex; gap: 20px; padding: 0; margin: 0; }
-
-    nav ul li a, nav ul li button {
-      text-decoration: none; color: #9B59B6; font-weight: bold; font-size: 16px;
-      padding: 8px 12px; border-radius: 6px; transition: background-color 0.3s ease;
-      background: none; border: none; cursor: pointer; font-family: 'Roboto', sans-serif;
-    }
-
-    nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
-
-    /* Estilos para el menú desplegable */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 15px 30px;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-      flex-wrap: wrap;
-    }
-
-    header img {
-      height: 60px;
-    }
-
-    nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      padding: 0;
-      margin: 0;
-    }
-
-    nav ul li a, nav ul li button {
-      text-decoration: none;
-      color: #9B59B6;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background-color 0.3s ease;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-family: 'Roboto', sans-serif;
-    }
-
-    nav ul li a:hover, nav ul li button:hover {
-      background-color: #f3c1e5;
-    }
-
-    /* Dropdown original */
-    nav ul .dropdown { position: relative; }
-
-    nav ul .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: rgba(255, 255, 255, 0.98);
-      min-width: 200px;
-      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-      z-index: 1;
-      border-radius: 8px;
-      padding: 8px 0;
-    }
-
-    nav ul .dropdown-content a {
-      color: #9B59B6;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: block;
-    }
-
-    nav ul .dropdown-content a:hover {
-      background-color: #f3c1e5;
-    }
-
-    nav ul .dropdown:hover .dropdown-content {
-      display: block;
-    }
     .tabla-registros {
       max-width: 1100px; margin: 40px auto; background-color: rgba(255, 255, 255, 0.9);
       border-radius: 14px; padding: 30px; box-shadow: 0 6px 12px rgba(0,0,0,0.1);
@@ -437,28 +345,7 @@
     }
 </style>
 <body>
-  <header>
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
-    <nav>
-      <ul>
-        <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
-        <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
-        <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
-        <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
-        <li class="dropdown">
-          <a href="javascript:void(0)"><i class="fas fa-cog"></i> Ajustes</a>
-          <div class="dropdown-content">
-            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar <br> Contraseña</a>
-            <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
-            </form>
-          </div>
-        </li>
-      </ul>
-    </nav>
-  </header>
+  {% include 'madre/navbar_madre.html' %}
 
   <div class="tabla-registros">
     <h1>
