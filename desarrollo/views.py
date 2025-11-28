@@ -811,6 +811,42 @@ def registrar_desarrollo(request):
                 desarrollo.observaciones_adicionales = request.POST.get('observaciones_adicionales', '')
                 desarrollo.recomendaciones_personales = request.POST.get('recomendaciones_personales', '')
                 
+                # --- LÓGICA AUTOMÁTICA DE ALERTAS GENERALES ---
+                # Analizar seguimientos del mes para alertas generales
+                seguimientos_mes = SeguimientoDiario.objects.filter(
+                    nino=nino,
+                    fecha__year=fecha_fin_mes.year,
+                    fecha__month=fecha_fin_mes.month
+                )
+                alertas_generales = []
+                # Bajón de rendimiento: comparar promedio con mes anterior
+                valoraciones = [s.valoracion for s in seguimientos_mes if s.valoracion is not None]
+                if valoraciones:
+                    promedio_actual = sum(valoraciones) / len(valoraciones)
+                    # Buscar mes anterior
+                    mes_anterior = fecha_fin_mes - relativedelta(months=1)
+                    seguimientos_anteriores = SeguimientoDiario.objects.filter(
+                        nino=nino,
+                        fecha__year=mes_anterior.year,
+                        fecha__month=mes_anterior.month
+                    )
+                    valoraciones_anteriores = [s.valoracion for s in seguimientos_anteriores if s.valoracion is not None]
+                    if valoraciones_anteriores:
+                        promedio_anterior = sum(valoraciones_anteriores) / len(valoraciones_anteriores)
+                        if promedio_actual < promedio_anterior - 1: # Bajón significativo
+                            alertas_generales.append(
+                                f"Alerta: Se detecta un bajón de rendimiento este mes (promedio {promedio_actual:.1f} vs {promedio_anterior:.1f} el mes anterior)."
+                            )
+                # Cambios de humor negativos frecuentes
+                estados_negativos = [s.estado_emocional for s in seguimientos_mes if s.estado_emocional in ['Triste', 'Enojado', 'Ansioso', 'Irritable']]
+                if len(estados_negativos) >= 3:
+                    alertas_generales.append(
+                        f"Alerta: Se observan cambios de humor negativos frecuentes ({len(estados_negativos)} días con estado emocional negativo)."
+                    )
+                # Agregar otras reglas automáticas aquí si se requiere
+                # Unir alertas automáticas con las manuales
+                if alertas_generales:
+                    desarrollo.alertas_mes = (desarrollo.alertas_mes or '') + '\n' + '\n'.join(alertas_generales)
                 desarrollo.save(run_generator=False) # Guardar sin regenerar todo
                 messages.success(request, f'El registro de {nino.nombres} se actualizó exitosamente.')
 
@@ -914,6 +950,13 @@ def registrar_desarrollo(request):
                 fecha__month=fecha_fin_mes.month
             ).count()
             
+            # --- CORRECCIÓN: Cargar las novedades para la vista previa en modo edición ---
+            alertas_novedades = Novedad.objects.filter(
+                nino=desarrollo_existente.nino,
+                fecha__year=fecha_fin_mes.year,
+                fecha__month=fecha_fin_mes.month
+            ).order_by('fecha')
+
             # Renderizar el formulario con el registro existente para edición
             return render(request, 'madre/desarrollo_form.html', {
                 'desarrollo': desarrollo_existente, 
@@ -921,7 +964,8 @@ def registrar_desarrollo(request):
                 'seguimientos_mes_count': seguimientos_mes_count,
                 'novedades_mes_count': novedades_mes_count,
                 'form_action': reverse('desarrollo:registrar_desarrollo'),
-                'alertas_novedades': getattr(desarrollo_existente, '_alertas_novedades', []),
+                # Pasamos las novedades consultadas a la plantilla
+                'alertas_novedades': alertas_novedades,
             })
         except (DesarrolloNino.DoesNotExist, ValueError):
             # Si no existe, redirigimos para evitar errores, mostrando un mensaje.

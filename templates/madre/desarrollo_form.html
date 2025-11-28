@@ -382,19 +382,19 @@
           <div class="form-grid">
             <div class="form-group">
               <label>Logro del mes:</label>
-              <input type="text" value="{{ desarrollo.logro_mes|default:'-' }}" disabled>
+              <input type="text" value="{{ desarrollo.logro_mes|default_if_none:'-' }}" disabled>
             </div>
             <div class="form-group">
               <label>Tendencia:</label>
-              <input type="text" value="{{ desarrollo.get_tendencia_valoracion_display|default:desarrollo.tendencia_valoracion|default:'-' }}" disabled>
+              <input type="text" value="{{ desarrollo.get_tendencia_valoracion_display|default_if_none:desarrollo.tendencia_valoracion|default_if_none:'-' }}" disabled>
             </div>
             <div class="form-group">
               <label>Participación más frecuente:</label>
-              <input type="text" value="{{ desarrollo.participacion_frecuente|default:'-' }}" disabled>
+              <input type="text" value="{{ desarrollo.participacion_frecuente|default_if_none:'-' }}" disabled>
             </div>
             <div class="form-group">
               <label>Comportamiento más frecuente:</label>
-              <input type="text" value="{{ desarrollo.comportamiento_frecuente|default:'-' }}" disabled>
+              <input type="text" value="{{ desarrollo.comportamiento_frecuente|default_if_none:'-' }}" disabled>
             </div>
           </div>
         </div>
@@ -427,7 +427,7 @@
           </div>
           <div class="form-group" style="margin-bottom:18px;">
             <label>Alertas del mes:</label>
-            <textarea name="alertas_mes" style="min-height:70px;max-height:200px;">{{ desarrollo.alertas_mes|default_if_none:''|striptags }}</textarea>
+            <textarea name="alertas_mes" style="min-height:70px;max-height:200px;">{{ desarrollo.alertas_mes|default_if_none:'' }}</textarea>
           </div>
           <div style="margin:18px 0 18px 0; padding: 14px 14px 10px 14px; background: #f8f6ff; border-radius: 8px; border: 1px solid #e5d5f5;">
             <strong style="font-size:1.08em;">Vista previa de novedades del mes:</strong>
@@ -435,7 +435,8 @@
               {% if alertas_novedades %}
                 {% for nov in alertas_novedades %}
                   <div style="margin-bottom:7px;">
-                    <span style="color:#7a3eb1; font-weight:bold;">{{ nov.tipo }}</span> ({{ nov.fecha }}):
+                    <span style="color:#3f833f; font-weight:bold;">{{ nov.tipo }}</span> :
+                    <span style="color:#3f833f; font-weight:bold;">{{ nov.get_tipo_display }}</span> :
                     <a href="/novedades/detalle/{{ nov.id }}/" target="_blank">Ver novedad</a>
                     {% if nov.descripcion %}<span style="color:#555;">- {{ nov.descripcion|truncatechars:60 }}</span>{% endif %}
                   </div>

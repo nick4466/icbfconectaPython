@@ -314,67 +314,214 @@ class GeneradorEvaluacionMensual:
         self.evaluacion.aspectos_a_mejorar = "- " + "\n- ".join(aspectos) if aspectos else "No se identificaron aspectos críticos a mejorar este mes."
 
     def _generar_alertas(self):
-        # --- Análisis de Dimensiones ---
-        desempenos_por_dimension = {
-            'Cognitiva': [], 'Comunicativa': [], 'Socio-afectiva': [], 'Corporal': []
-        }
-        map_dimensiones = {
-            'cognitiva': 'Cognitiva', 'comunicativa': 'Comunicativa', 
-            'socio-afectiva': 'Socio-afectiva', 'corporal': 'Corporal'
-        }
-        for seguimiento in self.seguimientos_mes.prefetch_related('evaluaciones_dimension__dimension'):
-            for ev in seguimiento.evaluaciones_dimension.all():
-                for key_lower, name_title in map_dimensiones.items():
-                    if key_lower in ev.dimension.nombre.lower():
-                        desempenos_por_dimension[name_title].append(ev.desempeno)
-                        break
-        # --- Fin Análisis ---
-
         alertas = []
-        # --- NUEVO: solo novedades mencionadas en los textos ---
-        textos = [
-            self.evaluacion.fortalezas_mes or '',
-            self.evaluacion.aspectos_a_mejorar or '',
-            self.evaluacion.alertas_mes or ''
+
+        # 1. Alerta por caída en el rendimiento general
+        valoraciones = [s.valoracion for s in self.seguimientos_mes if s.valoracion is not None]
+        if valoraciones:
+            promedio_actual = sum(valoraciones) / len(valoraciones)
+            mes_anterior_fin = self.fecha_inicio_mes - timedelta(days=1)
+            mes_anterior_inicio = mes_anterior_fin.replace(day=1)
+            seguimientos_anteriores = SeguimientoDiario.objects.filter(
+                nino=self.nino, fecha__gte=mes_anterior_inicio, fecha__lte=mes_anterior_fin
+            )
+            valoraciones_anteriores = [s.valoracion for s in seguimientos_anteriores if s.valoracion is not None]
+
+            if valoraciones_anteriores:
+                promedio_anterior = sum(valoraciones_anteriores) / len(valoraciones_anteriores)
+                # Se considera una caída significativa si el promedio baja más de 1.0 punto
+                if promedio_actual < promedio_anterior - 1.0:
+                    alertas.append(
+                        f"Disminución del rendimiento: Se ha detectado una caída notable en el rendimiento general del niño/a este mes (promedio actual: {promedio_actual:.1f}, mes anterior: {promedio_anterior:.1f}). Se recomienda investigar las posibles causas."
+                    )
+
+        # 2. Alerta por estados emocionales negativos recurrentes
+        estados_negativos = [
+            s.estado_emocional for s in self.seguimientos_mes 
+            if s.estado_emocional in ['triste', 'irritable', 'ansioso', 'frustrado', 'enojado']
         ]
-        mencionadas = set()
-        for texto in textos:
-            texto_lower = texto.lower()
-            for nov in self.novedades_mes:
-                tipo = nov.get_tipo_display().lower()
-                if tipo in texto_lower or nov.descripcion.lower() in texto_lower:
-                    mencionadas.add(nov.id)
-                if nov.tipo == 'c' and 'inasistencia' in texto_lower:
-                    mencionadas.add(nov.id)
-                if nov.tipo == 'a' and 'salud' in texto_lower:
-                    mencionadas.add(nov.id)
-                if nov.tipo == 'b' and 'emocional' in texto_lower:
-                    mencionadas.add(nov.id)
-        self.evaluacion._alertas_novedades = [
-            {
-                'id': nov.id,
-                'tipo': nov.get_tipo_display(),
-                'fecha': nov.fecha.strftime('%d/%m/%Y'),
-                'descripcion': nov.descripcion
-            }
-            for nov in self.novedades_mes if nov.id in mencionadas
-        ]
-        # Agrupar novedades críticas por tipo (más natural y sin repeticiones)
+        if len(estados_negativos) >= 4:  # Umbral de 4 o más días en el mes
+            alertas.append(
+                f"Estado emocional: Se han registrado estados emocionales negativos en {len(estados_negativos)} ocasiones durante el mes. Es importante ofrecer apoyo emocional y un espacio de diálogo."
+            )
+
+        # 3. Alerta por novedades críticas (salud, emocionales)
         novedades_criticas = [n for n in self.novedades_mes if n.tipo in ['a', 'b'] and n.get_prioridad() >= 4]
         if novedades_criticas:
             tipos = {}
-            # Mapear tipos a nombres naturales
-            tipo_natural = {
-                'Cambios en los estados de salud': 'salud',
-                'Cambios en el estado emocional': 'estado emocional',
-            }
             for nov in novedades_criticas:
-                tipo = tipo_natural.get(nov.get_tipo_display(), nov.get_tipo_display().lower())
+                tipo = 'salud' if nov.tipo == 'a' else 'emocional'
                 tipos[tipo] = tipos.get(tipo, 0) + 1
+            
             for tipo, cantidad in tipos.items():
-                if cantidad == 1:
+                plural = "novedad crítica" if cantidad == 1 else "novedades críticas"
+                mensaje = f"Novedades de {tipo}: Se ha registrado {cantidad} {plural} de alta prioridad este mes. Se requiere seguimiento cercano y articulación con la familia."
+                alertas.append(mensaje)
+
+        # 4. Alerta por inasistencia crítica
+        if self.evaluacion.porcentaje_asistencia is not None and self.evaluacion.porcentaje_asistencia < 70:
+            alertas.append(f"Inasistencia crítica: El porcentaje de asistencia ({self.evaluacion.porcentaje_asistencia}%) es muy bajo y requiere una intervención inmediata para garantizar la continuidad del proceso pedagógico.")
+
+        # 5. Alerta por comportamiento disruptivo frecuente
+        comportamientos_negativos = self.seguimientos_mes.filter(comportamiento_general__in=['agresivo', 'dificultad']).count()
+        if comportamientos_negativos >= 4:
+            alertas.append(f"Comportamiento: Se observó un comportamiento disruptivo en {comportamientos_negativos} días, lo que sugiere la necesidad de implementar estrategias de manejo conductual y apoyo.")
+
+        self.evaluacion.alertas_mes = "- " + "\n- ".join(alertas) if alertas else "No se generaron alertas automáticas este mes."
+
+    def _generar_conclusion_general(self):
+        if not self.seguimientos_mes.exists():
+            self.evaluacion.conclusion_general = "No es posible generar una conclusión debido a la falta de seguimientos diarios este mes."
+            return
+
+        # --- 1. Recopilación de datos adicionales ---
+        mes_nombre = calendar.month_name[self.fecha_fin_mes.month].capitalize()
+        logro = self.evaluacion.logro_mes
+        tendencia = self.evaluacion.tendencia_valoracion
+
+        # Estado emocional más frecuente
+        estados_emocionales = list(self.seguimientos_mes.values_list('estado_emocional', flat=True).exclude(estado_emocional__isnull=True))
+        estado_emocional_frecuente = Counter(estados_emocionales).most_common(1)[0][0] if estados_emocionales else None
+
+        # Observaciones relevantes del educador
+        obs_relevantes = list(self.seguimientos_mes.filter(observacion_relevante=True).values_list('observaciones', flat=True))
+        
+        # Novedades críticas (salud/emocional)
+        novedades_criticas = [n for n in self.novedades_mes.filter(tipo__in=['a', 'b']) if n.get_prioridad() >= 4]
+
+        # --- 2. Construcción de la conclusión por partes ---
+        partes_conclusion = []
+
+        # Parte A: Desempeño general
+        if logro == 'Alto':
+            estado = f"mostró un desarrollo sobresaliente, cumpliendo consistentemente con los objetivos esperados."
+        elif logro == 'Adecuado':
+            estado = f"mostró un progreso constante y adecuado a su etapa de desarrollo."
+        else: # En Proceso
+            estado = f"se encontró en un proceso que requiere apoyo para afianzar los aprendizajes."
+        partes_conclusion.append(f"Durante el mes de {mes_nombre}, el niño/a {estado}")
+
+        # Parte B: Comportamiento y estado emocional
+        if self.evaluacion.comportamiento_frecuente and estado_emocional_frecuente:
+            # Mapeo para un lenguaje más natural
+            map_emociones = {'alegre': 'alegría', 'tranquilo': 'tranquilidad', 'curioso': 'curiosidad', 'motivado': 'motivación'}
+            emocion_texto = map_emociones.get(estado_emocional_frecuente, estado_emocional_frecuente)
+            partes_conclusion.append(f"Su comportamiento predominante fue '{self.evaluacion.get_comportamiento_frecuente_display()}', manifestando principalmente un estado de {emocion_texto}.")
+
+        # Parte C: Tendencia y observaciones clave
+        if tendencia == 'Avanza':
+            partes_conclusion.append("Se destaca una clara tendencia de avance respecto al mes anterior.")
+        elif tendencia == 'Retrocede':
+            partes_conclusion.append("Se observó un retroceso en su desempeño general, lo cual requiere atención.")
+
+        if obs_relevantes:
+            resumen_obs = ". ".join(obs_relevantes[:2]) # Tomamos las primeras 2 para ser concisos
+            partes_conclusion.append(f"El educador destacó como observaciones relevantes: \"{resumen_obs}\".")
+
+        # Parte D: Recomendación final basada en todo el contexto
+        recomendacion = "La recomendación principal es continuar fomentando sus habilidades y mantener un seguimiento cercano a su proceso."
+        if "No se identificaron aspectos críticos" not in self.evaluacion.aspectos_a_mejorar or novedades_criticas:
+            recomendacion = "Se recomienda enfocar los esfuerzos en los 'aspectos a mejorar' identificados y atender las alertas generadas, trabajando en conjunto con la familia para establecer un plan de apoyo."
+        partes_conclusion.append(recomendacion)
+
+        # --- 3. Unión de las partes ---
+        conclusion = " ".join(partes_conclusion)
+        self.evaluacion.conclusion_general = conclusion
+        if cantidad == 1:
                     alertas.append(f"Alerta: Se registró 1 novedad crítica de {tipo} este mes.")
-                else:
+        else:
+                    alertas.append(f"Alerta: Se registraron {cantidad} novedades críticas de {tipo} este mes.")
+        if self.evaluacion.porcentaje_asistencia is not None and self.evaluacion.porcentaje_asistencia < 70:
+            alertas.append(f"Alerta de Inasistencia: El porcentaje de asistencia ({self.evaluacion.porcentaje_asistencia}%) es bajo y requiere atención.")
+        self.evaluacion.alertas_mes = "\n".join(alertas) if alertas else "No se generaron alertas automáticas este mes."
+
+    def _generar_conclusion_general(self):
+        if not self.seguimientos_mes.exists():
+            self.evaluacion.conclusion_general = "No es posible generar una conclusión debido a la falta de seguimientos diarios este mes."
+            return
+
+        # --- 1. Recopilación de datos adicionales ---
+        mes_nombre = calendar.month_name[self.fecha_fin_mes.month].capitalize()
+        logro = self.evaluacion.logro_mes
+        tendencia = self.evaluacion.tendencia_valoracion
+
+        # Estado emocional más frecuente
+        estados_emocionales = list(self.seguimientos_mes.values_list('estado_emocional', flat=True).exclude(estado_emocional__isnull=True))
+        estado_emocional_frecuente = Counter(estados_emocionales).most_common(1)[0][0] if estados_emocionales else None
+
+        # Observaciones relevantes del educador
+        obs_relevantes = list(self.seguimientos_mes.filter(observacion_relevante=True).values_list('observaciones', flat=True))
+        
+        # Novedades críticas (salud/emocional)
+        novedades_criticas = [n for n in self.novedades_mes.filter(tipo__in=['a', 'b']) if n.get_prioridad() >= 4]
+
+        # --- 2. Construcción de la conclusión por partes ---
+        partes_conclusion = []
+
+        # Parte A: Desempeño general
+        if logro == 'Alto':
+            estado = f"mostró un desarrollo sobresaliente, cumpliendo consistentemente con los objetivos esperados."
+        elif logro == 'Adecuado':
+            estado = f"mostró un progreso constante y adecuado a su etapa de desarrollo."
+        else: # En Proceso
+            estado = f"se encontró en un proceso que requiere apoyo para afianzar los aprendizajes."
+        partes_conclusion.append(f"Durante el mes de {mes_nombre}, el niño/a {estado}")
+
+        # Parte B: Comportamiento y estado emocional
+        if self.evaluacion.comportamiento_frecuente and estado_emocional_frecuente:
+            # Mapeo para un lenguaje más natural
+            map_emociones = {'alegre': 'alegría', 'tranquilo': 'tranquilidad', 'curioso': 'curiosidad', 'motivado': 'motivación'}
+            emocion_texto = map_emociones.get(estado_emocional_frecuente, estado_emocional_frecuente)
+            partes_conclusion.append(f"Su comportamiento predominante fue '{self.evaluacion.get_comportamiento_frecuente_display()}', manifestando principalmente un estado de {emocion_texto}.")
+
+        # Parte C: Tendencia y observaciones clave
+        if tendencia == 'Avanza':
+            partes_conclusion.append("Se destaca una clara tendencia de avance respecto al mes anterior.")
+        elif tendencia == 'Retrocede':
+            partes_conclusion.append("Se observó un retroceso en su desempeño general, lo cual requiere atención.")
+
+        if obs_relevantes:
+            resumen_obs = ". ".join(obs_relevantes[:2]) # Tomamos las primeras 2 para ser concisos
+            partes_conclusion.append(f"El educador destacó como observaciones relevantes: \"{resumen_obs}\".")
+
+        # Parte D: Recomendación final basada en todo el contexto
+        recomendacion = "La recomendación principal es continuar fomentando sus habilidades y mantener un seguimiento cercano a su proceso."
+        if "No se identificaron aspectos críticos" not in self.evaluacion.aspectos_a_mejorar or novedades_criticas:
+            recomendacion = "Se recomienda enfocar los esfuerzos en los 'aspectos a mejorar' identificados y atender las alertas generadas, trabajando en conjunto con la familia para establecer un plan de apoyo."
+        partes_conclusion.append(recomendacion)
+
+        # --- 3. Unión de las partes ---
+        conclusion = " ".join(partes_conclusion)
+        self.evaluacion.conclusion_general = conclusion
+        # Parte B: Comportamiento y estado emocional
+        if self.evaluacion.comportamiento_frecuente and estado_emocional_frecuente:
+            # Mapeo para un lenguaje más natural
+            map_emociones = {'alegre': 'alegría', 'tranquilo': 'tranquilidad', 'curioso': 'curiosidad', 'motivado': 'motivación'}
+            emocion_texto = map_emociones.get(estado_emocional_frecuente, estado_emocional_frecuente)
+            partes_conclusion.append(f"Su comportamiento predominante fue '{self.evaluacion.get_comportamiento_frecuente_display()}', manifestando principalmente un estado de {emocion_texto}.")
+
+        # Parte C: Tendencia y observaciones clave
+        if tendencia == 'Avanza':
+            partes_conclusion.append("Se destaca una clara tendencia de avance respecto al mes anterior.")
+        elif tendencia == 'Retrocede':
+            partes_conclusion.append("Se observó un retroceso en su desempeño general, lo cual requiere atención.")
+
+        if obs_relevantes:
+            resumen_obs = ". ".join(obs_relevantes[:2]) # Tomamos las primeras 2 para ser concisos
+            partes_conclusion.append(f"El educador destacó como observaciones relevantes: \"{resumen_obs}\".")
+
+        # Parte D: Recomendación final basada en todo el contexto
+        recomendacion = "La recomendación principal es continuar fomentando sus habilidades y mantener un seguimiento cercano a su proceso."
+        if "No se identificaron aspectos críticos" not in self.evaluacion.aspectos_a_mejorar or novedades_criticas:
+            recomendacion = "Se recomienda enfocar los esfuerzos en los 'aspectos a mejorar' identificados y atender las alertas generadas, trabajando en conjunto con la familia para establecer un plan de apoyo."
+        partes_conclusion.append(recomendacion)
+
+        # --- 3. Unión de las partes ---
+        conclusion = " ".join(partes_conclusion)
+        self.evaluacion.conclusion_general = conclusion
+        if cantidad == 1:
+                    alertas.append(f"Alerta: Se registró 1 novedad crítica de {tipo} este mes.")
+        else:
                     alertas.append(f"Alerta: Se registraron {cantidad} novedades críticas de {tipo} este mes.")
         if self.evaluacion.porcentaje_asistencia is not None and self.evaluacion.porcentaje_asistencia < 70:
             alertas.append(f"Alerta de Inasistencia: El porcentaje de asistencia ({self.evaluacion.porcentaje_asistencia}%) es bajo y requiere atención.")
