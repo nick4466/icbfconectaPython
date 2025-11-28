@@ -1121,14 +1121,204 @@ def role_redirect(request):
 # ----------------------------------------------------
 @login_required
 def madre_dashboard(request):
-    # Verificación de seguridad adicional
+    from django.db.models import Count, Q, F, Value, CharField
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+    from asistencia.models import Asistencia
+    from planeaciones.models import Planeacion
+    from novedades.models import Novedad
+    import json
+    
     if request.user.rol.nombre_rol != 'madre_comunitaria':
-        return redirect('role_redirect') # O a una página de acceso denegado
+        return redirect('role_redirect')
 
-    # Aquí cargarías datos específicos de la madre (niños asignados, asistencia, etc.)
+    # Obtener hogar de la madre
     hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+    
+    if not hogar_madre:
+        return render(request, 'madre/dashboard.html', {'error': 'No tienes un hogar asignado.'})
+    
+    # Obtener todos los niños del hogar
+    ninos = Nino.objects.filter(hogar=hogar_madre).select_related('padre', 'padre__usuario')
+    total_ninos = ninos.count()
+    
+    # Información del hogar
+    capacidad_maxima = hogar_madre.capacidad_maxima
+    disponibles = capacidad_maxima - total_ninos
+    porcentaje_ocupacion = round((total_ninos / capacidad_maxima) * 100) if capacidad_maxima > 0 else 0
+    
+    # Datos de género
+    ninos_masculino = ninos.filter(genero='masculino').count()
+    ninos_femenino = ninos.filter(genero='femenino').count()
+    
+    # Calcular edades
+    hoy = datetime.now().date()
+    edades_data = []
+    edad_promedio = 0
+    edad_minima = None
+    edad_maxima = None
+    
+    for nino in ninos:
+        if nino.fecha_nacimiento:
+            edad = (hoy - nino.fecha_nacimiento).days // 365
+            edades_data.append(edad)
+            if edad_minima is None or edad < edad_minima:
+                edad_minima = edad
+            if edad_maxima is None or edad > edad_maxima:
+                edad_maxima = edad
+    
+    if edades_data:
+        edad_promedio = round(sum(edades_data) / len(edades_data), 1)
+    
+    # Distribución por edad (para gráfica)
+    edad_0_2 = sum(1 for e in edades_data if e <= 2)
+    edad_3_4 = sum(1 for e in edades_data if 3 <= e <= 4)
+    edad_5 = sum(1 for e in edades_data if e >= 5)
+    
+    # Documentos
+    ninos_con_cedula = ninos.filter(documento__isnull=False).count()
+    ninos_con_vacunas = ninos.filter(carnet_vacunacion__isnull=False).count()
+    ninos_con_afiliacion = ninos.filter(certificado_eps__isnull=False).count()
+    
+    # Asistencia últimas 4 semanas
+    fecha_inicio = hoy - timedelta(days=28)
+    asistencias = Asistencia.objects.filter(
+        nino__hogar=hogar_madre,
+        fecha__gte=fecha_inicio
+    )
+    
+    asistencias_presentes = asistencias.filter(estado='Presente').count()
+    asistencias_ausentes = asistencias.filter(estado='Ausente').count()
+    total_dias_registro = (total_ninos * 28) if total_ninos > 0 else 1
+    porcentaje_asistencia = round((asistencias_presentes / total_dias_registro) * 100) if total_dias_registro > 0 else 0
+    
+    # Datos de asistencia por niño (para tabla)
+    ninos_asistencia = []
+    for nino in ninos:
+        asistencias_nino = Asistencia.objects.filter(
+            nino=nino,
+            fecha__gte=fecha_inicio
+        )
+        faltas = asistencias_nino.filter(estado='Ausente').count()
+        asistencias_nino_count = asistencias_nino.filter(estado='Presente').count()
+        porcentaje_nino = round((asistencias_nino_count / 28) * 100) if asistencias_nino_count > 0 else 0
+        
+        # Calcular edad
+        edad = 0
+        if nino.fecha_nacimiento:
+            edad = (hoy - nino.fecha_nacimiento).days // 365
+        
+        # Determinar estado
+        if faltas >= 7:
+            estado = 'Alto riesgo'
+            icono_estado = 'alert'
+        elif faltas >= 4:
+            estado = 'Advertencia'
+            icono_estado = 'warning'
+        else:
+            estado = 'Normal'
+            icono_estado = 'check'
+        
+        # Verificar documentos
+        documentos_completos = 0
+        if nino.documento:
+            documentos_completos += 1
+        if nino.carnet_vacunacion:
+            documentos_completos += 1
+        if nino.certificado_eps:
+            documentos_completos += 1
+        
+        ninos_asistencia.append({
+            'nino': nino,
+            'edad': edad,
+            'genero': nino.get_genero_display(),
+            'faltas': faltas,
+            'asistencias': asistencias_nino_count,
+            'porcentaje': porcentaje_nino,
+            'estado': estado,
+            'icono_estado': icono_estado,
+            'documentos': documentos_completos,
+            'documentos_total': 3
+        })
+    
+    # Novedades recientes
+    fecha_novedades = hoy - timedelta(days=7)
+    novedades_recientes = Novedad.objects.filter(
+        nino__hogar=hogar_madre,
+        fecha__gte=fecha_novedades
+    ).select_related('nino').order_by('-fecha')[:3]
+    
+    # Planeaciones de esta semana
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    planeaciones_semana = Planeacion.objects.filter(
+        madre=request.user,
+        fecha__gte=inicio_semana,
+        fecha__lte=inicio_semana + timedelta(days=6)
+    ).count()
+    
+    # Datos para gráficas
+    genero_data = json.dumps({
+        'Masculino': ninos_masculino,
+        'Femenino': ninos_femenino
+    })
+    
+    edad_distribucion = json.dumps({
+        '0-2 años': edad_0_2,
+        '3-4 años': edad_3_4,
+        '5+ años': edad_5
+    })
+    
+    documentos_data = json.dumps({
+        'Cédula': ninos_con_cedula,
+        'Vacunas': ninos_con_vacunas,
+        'Salud': ninos_con_afiliacion
+    })
+    
+    # Nombre completo de la madre
+    nombre_madre = f"{request.user.nombres} {request.user.apellidos}"
+    
+    # Hora actual
+    hora_actual = datetime.now().strftime('%H:%M')
+    meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    fecha_actual = f"{hoy.day} de {meses[hoy.month - 1]} de {hoy.year}"
+    
+    context = {
+        'nombre_madre': nombre_madre,
+        'hogar_madre': hogar_madre,
+        'hora_actual': hora_actual,
+        'fecha_actual': fecha_actual,
+        # Capacidad
+        'total_ninos': total_ninos,
+        'capacidad_maxima': capacidad_maxima,
+        'disponibles': disponibles,
+        'porcentaje_ocupacion': porcentaje_ocupacion,
+        # Información de niños
+        'ninos': ninos,
+        'ninos_asistencia': ninos_asistencia,
+        'ninos_masculino': ninos_masculino,
+        'ninos_femenino': ninos_femenino,
+        # Edades
+        'edad_promedio': edad_promedio,
+        'edad_minima': edad_minima,
+        'edad_maxima': edad_maxima,
+        # Documentos
+        'ninos_con_cedula': ninos_con_cedula,
+        'ninos_con_vacunas': ninos_con_vacunas,
+        'ninos_con_afiliacion': ninos_con_afiliacion,
+        # Asistencia
+        'asistencias_presentes': asistencias_presentes,
+        'asistencias_ausentes': asistencias_ausentes,
+        'porcentaje_asistencia': porcentaje_asistencia,
+        # Gráficas
+        'genero_data': genero_data,
+        'edad_distribucion': edad_distribucion,
+        'documentos_data': documentos_data,
+        # Otros
+        'novedades_recientes': novedades_recientes,
+        'planeaciones_semana': planeaciones_semana,
+    }
 
-    return render(request, 'madre/dashboard.html', {'hogar_madre': hogar_madre})
+    return render(request, 'madre/dashboard.html', context)
 
 
 # ----------------------------------------------------
