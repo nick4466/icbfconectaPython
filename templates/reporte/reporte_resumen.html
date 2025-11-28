@@ -258,24 +258,32 @@
       <thead>
         <tr>
           <th>Fecha</th>
-          <th>Participación</th>
+          <th>Planeación</th>
           <th>Comportamiento</th>
+          <th>Estado Emocional</th>
           <th>Valoración</th>
           <th>Observaciones</th>
+          <th>Evaluación Dimensiones</th>
         </tr>
       </thead>
       <tbody>
         {% for seguimiento in seguimientos %}
         <tr>
           <td>{{ seguimiento.fecha|date:"Y-m-d" }}</td>
-          <td>{{ seguimiento.get_participacion_display }}</td>
-          <td>{{ seguimiento.get_comportamiento_logro_display }}</td>
+          <td>{{ seguimiento.planeacion.nombre_experiencia|default:"N/A" }}</td>
+          <td>{{ seguimiento.get_comportamiento_general_display }}</td>
+          <td>{{ seguimiento.get_estado_emocional_display }}</td>
           <td>
-            {% for i in "12345" %}
-              {% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span style="color:#ddd;">★</span>{% endif %}
+            {% for i in "12345" %}{% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span style="color:#ddd;">★</span>{% endif %}{% endfor %}
+          </td>
+          <td>{{ seguimiento.observaciones|default:"-" }}</td>
+          <td>
+            {% for eval in seguimiento.evaluaciones_dimension.all %}
+              <p style="margin: 2px 0; font-size: 13px;"><b>{{ eval.dimension.nombre }}:</b> {{ eval.get_desempeno_display }}</p>
+            {% empty %}
+              Sin evaluación.
             {% endfor %}
           </td>
-          <td>{{ seguimiento.observaciones|default:"-"|truncatewords:10 }}</td>
         </tr>
         {% empty %}
         <tr class="empty-row">
@@ -328,17 +336,16 @@
       <p><b>Comportamiento frecuente:</b> {{ desarrollo.get_comportamiento_frecuente_display|default:"-" }}</p>
       <p><b>Porcentaje de asistencia:</b> {{ desarrollo.porcentaje_asistencia|default:"N/A" }}%</p>
       <hr>
-      <h4 style="color:#7a3eb1;">Evaluación por Dimensiones</h4>
+      <h4 style="color:#7a3eb1; margin-bottom: 10px;">Evaluación por Dimensiones</h4>
       <p><b>Cognitiva:</b> {{ desarrollo.evaluacion_cognitiva|default:"Sin información" }}</p>
       <p><b>Comunicativa:</b> {{ desarrollo.evaluacion_comunicativa|default:"Sin información" }}</p>
       <p><b>Socio-afectiva:</b> {{ desarrollo.evaluacion_socio_afectiva|default:"Sin información" }}</p>
       <p><b>Corporal:</b> {{ desarrollo.evaluacion_corporal|default:"Sin información" }}</p>
-      <p><b>Autonomía:</b> {{ desarrollo.evaluacion_autonomia|default:"Sin información" }}</p>
       <hr>
-      <div class="blockquote"><b>Fortalezas:</b> <br>{{ desarrollo.fortalezas_mes|default:"-" }}</div>
-      <div class="blockquote"><b>Aspectos a Mejorar:</b> <br>{{ desarrollo.aspectos_a_mejorar|default:"-" }}</div>
-      <div class="blockquote"><b>Alertas:</b> <br>{{ desarrollo.alertas_mes|default:"-" }}</div>
-      <div class="blockquote"><b>Conclusión:</b> <br>{{ desarrollo.conclusion_general|default:"-" }}</div>
+      <div class="blockquote"><b>Fortalezas:</b> <br>{{ desarrollo.fortalezas_mes|linebreaksbr|default:"-" }}</div>
+      <div class="blockquote"><b>Aspectos a Mejorar:</b> <br>{{ desarrollo.aspectos_a_mejorar|linebreaksbr|default:"-" }}</div>
+      <div class="blockquote"><b>Alertas:</b> <br>{{ desarrollo.alertas_mes|linebreaksbr|default:"-" }}</div>
+      <div class="blockquote"><b>Conclusión:</b> <br>{{ desarrollo.conclusion_general|linebreaksbr|default:"-" }}</div>
     </div>
     {% empty %}
     <div class="dimension-block">
