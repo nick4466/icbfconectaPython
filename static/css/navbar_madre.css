@@ -159,6 +159,7 @@
     align-items: center;
     justify-content: center;
     text-decoration: none;
+    font-family: inherit;
 }
 
 .nav-btn:hover {
@@ -172,6 +173,13 @@
 
 .nav-btn.logout-btn:hover {
     background-color: rgba(255, 68, 68, 0.4);
+}
+
+/* Formulario de logout en línea */
+.user-menu form {
+    display: inline;
+    margin: 0;
+    padding: 0;
 }
 
 /* Responsive Design */
