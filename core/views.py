@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
-from django.db import transaction, models
+from django.db import transaction
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q, Count
 from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional
@@ -37,6 +37,48 @@ from django.contrib.auth.decorators import login_required
 from novedades.models import Novedad
 from planeaciones.models import Planeacion
 from datetime import datetime as _datetime, date as _date
+
+# --- VISTAS PERSONALIZADAS DE AUTENTICACIÓN ---
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
+from django.conf import settings
+
+def custom_password_reset(request):
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            # --- VALIDACIÓN PERSONALIZADA ---
+            # Verificar si el correo existe en la base de datos
+            associated_users = Usuario.objects.filter(Q(correo__iexact=email))
+            if associated_users.exists():
+                for user in associated_users:
+                    # Lógica de envío de correo (la misma que usa Django por defecto)
+                    subject = "Restablecimiento de contraseña para ICBF Conecta"
+                    email_template_name = "password_reset/password_reset_email.html"
+                    c = {
+                        "email": user.email,
+                        'domain': request.get_host(),
+                        'site_name': 'ICBF Conecta',
+                        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                        "user": user,
+                        'token': default_token_generator.make_token(user),
+                        'protocol': 'http',
+                    }
+                    email_content = render_to_string(email_template_name, c)
+                    send_mail(subject, email_content, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
+                return redirect('password_reset_done')
+            else:
+                # Si el correo no existe, añadir un error al formulario
+                form.add_error('email', 'No existe una cuenta asociada a este correo electrónico.')
+    else:
+        form = PasswordResetForm()
+    return render(request, 'password_reset/password_reset_form.html', {'form': form})
 
 
 
@@ -1448,22 +1490,29 @@ def calendario_padres(request):
 
     first_day, total_days = monthrange(year, month)
 
-    # Obtener el niño del tutor (perfil Padre)
+    # Obtener los niños del tutor (perfil Padre)
     try:
         padre = Padre.objects.get(usuario=request.user)
-        nino = Nino.objects.filter(padre=padre).first()
+        ninos = Nino.objects.filter(padre=padre)
     except Padre.DoesNotExist:
-        nino = None
+        ninos = Nino.objects.none()
 
     # Planeaciones del mes
     planeaciones = Planeacion.objects.filter(fecha__year=year, fecha__month=month)
 
-    # Novedades del niño (si existe)
+    # Novedades de todos los niños del padre (si existen)
     novedades = Novedad.objects.filter(
-        nino=nino,
+        nino__in=ninos,
         fecha__year=year,
         fecha__month=month
-    ) if nino else []
+    ) if ninos.exists() else Novedad.objects.none()
+
+    # Seguimientos de todos los niños del padre (si existen)
+    seguimientos = SeguimientoDiario.objects.filter(
+        nino__in=ninos,
+        fecha__year=year,
+        fecha__month=month
+    ) if ninos.exists() else SeguimientoDiario.objects.none()
 
     eventos = {}
 
@@ -1476,6 +1525,11 @@ def calendario_padres(request):
         dia = n.fecha.day
         eventos.setdefault(dia, {"planeacion": False, "novedad": False})
         eventos[dia]["novedad"] = True
+
+    for s in seguimientos:
+        dia = s.fecha.day
+        eventos.setdefault(dia, {"planeacion": False, "novedad": False, "seguimiento": False})
+        eventos[dia]["seguimiento"] = True
 
     return render(request, "padre/calendario_padres.html", {
         "year": year,
@@ -1496,28 +1550,66 @@ def obtener_info(request):
     try:
         fecha_obj = _datetime.strptime(fecha, "%Y-%m-%d").date()
     except Exception:
-        return JsonResponse({"planeacion": None, "novedad": None})
+        return JsonResponse({"planeacion": None, "novedad": None, "seguimientos": []})
 
-    # Obtener niño desde perfil Padre
+    # Obtener los niños desde el perfil del Padre
     try:
         padre = Padre.objects.get(usuario=request.user)
-        nino = Nino.objects.filter(padre=padre).first()
+        ninos = Nino.objects.filter(padre=padre)
     except Padre.DoesNotExist:
-        nino = None
+        ninos = Nino.objects.none()
 
     planeacion = Planeacion.objects.filter(fecha=fecha_obj).first()
-    novedad = Novedad.objects.filter(nino=nino, fecha=fecha_obj).first() if nino else None
+    novedad = Novedad.objects.filter(nino__in=ninos, fecha=fecha_obj).first() if ninos.exists() else None # Mantenemos la primera novedad por simplicidad
+    
+    # --- NUEVA LÓGICA PARA SEGUIMIENTOS ---
+    seguimientos_del_dia = SeguimientoDiario.objects.filter(
+        nino__in=ninos, fecha=fecha_obj
+    ).select_related('nino').prefetch_related('evaluaciones_dimension__dimension') if ninos.exists() else []
+
+    seguimientos_data = []
+    for s in seguimientos_del_dia:
+        # Construir resumen para padres
+        resumen = f"Hoy {s.nino.nombres} se mostró principalmente {s.get_estado_emocional_display().lower()} y su comportamiento fue {s.get_comportamiento_general_display().lower()}."
+        if s.observacion_relevante and s.observaciones:
+            resumen += f" La madre comunitaria observó: \"{s.observaciones}\"."
+
+        # Obtener evaluaciones por dimensión
+        evaluaciones = []
+        for ev in s.evaluaciones_dimension.all():
+            evaluaciones.append({
+                "dimension": ev.dimension.nombre,
+                "desempeno": ev.get_desempeno_display()
+            })
+
+        seguimientos_data.append({
+            "nino_nombre": f"{s.nino.nombres} {s.nino.apellidos}",
+            "fecha": s.fecha.strftime("%d/%m/%Y"),
+            "resumen_dia": {
+                "comportamiento": s.get_comportamiento_general_display(),
+                "estado_emocional": s.get_estado_emocional_display(),
+                "observacion_relevante": s.observaciones if s.observacion_relevante else None,
+                "resumen_para_padres": resumen
+            },
+            "evaluaciones": evaluaciones,
+            "valoracion_dia": s.valoracion,
+            "valoracion_restante": 5 - (s.valoracion or 0)
+        })
 
     return JsonResponse({
         "planeacion": {
-            "nombre": planeacion.nombre_experiencia,
-            "intencionalidad": planeacion.intencionalidad_pedagogica,
-            "materiales": planeacion.materiales_utilizar
+            "nombre": planeacion.nombre_experiencia if planeacion else None,
+            "intencionalidad": planeacion.intencionalidad_pedagogica if planeacion else None,
+            "materiales": planeacion.materiales_utilizar if planeacion else None
         } if planeacion else None,
         "novedad": {
             "tipo": novedad.get_tipo_display() if novedad else None,
             "descripcion": novedad.descripcion if novedad else None,
-        } if novedad else None
+            # 💡 FIX: Añadir el nombre completo del niño a la respuesta JSON.
+            # Usamos .get_full_name() para asegurar que tengamos "Nombres Apellidos".
+            "nino_nombre": f"{novedad.nino.nombres} {novedad.nino.apellidos}" if novedad and novedad.nino else None,
+        } if novedad else None,
+        "seguimientos": seguimientos_data
     })
 
 @login_required
@@ -2082,4 +2174,3 @@ def cambiar_padre_de_nino(request):
         'buscar_form': buscar_form,
         'padre_form': padre_form,
     })
-

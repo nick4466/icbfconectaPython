@@ -414,7 +414,6 @@
             data-eval-comunicativa="{{ desarrollo.evaluacion_comunicativa|default_if_none:''|escapejs }}"
             data-eval-socioafectiva="{{ desarrollo.evaluacion_socio_afectiva|default_if_none:''|escapejs }}"
             data-eval-corporal="{{ desarrollo.evaluacion_corporal|default_if_none:''|escapejs }}"
-            data-autonomia="{{ desarrollo.evaluacion_autonomia|default_if_none:''|escapejs }}"
             data-fortalezas="{{ desarrollo.fortalezas_mes|default_if_none:''|escapejs }}"
             data-mejorar="{{ desarrollo.aspectos_a_mejorar|default_if_none:''|escapejs }}"
             data-alertas="{{ desarrollo.alertas_mes|default_if_none:''|escapejs }}"
@@ -435,7 +434,7 @@
             <p><i class="fas fa-smile"></i> <strong>Comportamiento:</strong> {{ desarrollo.comportamiento_frecuente|default:'-' }}</p>
             </div>
             <div class="card-footer acciones">
-            <button class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+            <button type="button" class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
             <!-- FIX: El botón de editar ahora apunta a la vista unificada 'registrar_desarrollo' -->
             <a href="{% url 'desarrollo:registrar_desarrollo' %}?nino={{ desarrollo.nino.id }}&mes={{ desarrollo.fecha_fin_mes|date:'Y-m' }}" 
                 class="btn-accion btn-azul" 

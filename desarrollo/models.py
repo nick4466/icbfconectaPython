@@ -228,6 +228,15 @@ class SeguimientoDiario(models.Model):
         unique_together = ('nino', 'fecha') # Asegura un solo seguimiento por niño y día
         ordering = ['-fecha', 'nino']
 
+    def get_full_name(self):
+        """Devuelve el nombre completo del niño."""
+        return self.nino.get_full_name() if self.nino else "Niño no asignado"
+
+    def valoracion_restante(self):
+        """Calcula el número de estrellas restantes para la valoración."""
+        valoracion_actual = self.valoracion or 0
+        return 5 - valoracion_actual
+
 
 class EvaluacionDimension(models.Model):
     """
