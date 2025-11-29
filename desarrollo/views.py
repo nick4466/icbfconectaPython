@@ -518,6 +518,16 @@ def generar_certificado_desarrollo_pdf(request, desarrollo_id):
         titulo_mensaje = "¡Tu Esfuerzo es Valioso!"
         mensaje = f"Cada día es una nueva oportunidad para aprender y crecer. Valoramos mucho tu esfuerzo y perseverancia. Recuerda que cada paso, grande o pequeño, es un avance. ¡Estamos aquí para apoyarte siempre!"
 
+    # --- Lógica para obtener el nombre del mes ---
+    # 💡 CORRECCIÓN: Se añade la lógica para pasar el nombre del mes a la plantilla.
+    import locale
+    try:
+        # Se establece el idioma a español para obtener el nombre del mes correctamente.
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+    except locale.Error:
+        locale.setlocale(locale.LC_TIME, '') # Fallback si el locale no está disponible
+    nombre_mes = desarrollo.fecha_fin_mes.strftime('%B').capitalize()
+
     # --- Rutas a las imágenes ---
     # 💡 CORRECCIÓN: Convertir las URLs estáticas a rutas absolutas del sistema de archivos
     # para que xhtml2pdf pueda encontrarlas directamente, evitando el uso de link_callback.
@@ -543,6 +553,7 @@ def generar_certificado_desarrollo_pdf(request, desarrollo_id):
         'mensaje': mensaje,
         'logo_url': logo_path,  # Se pasa la ruta del sistema de archivos
         'fondo_url': fondo_path, # Se pasa la ruta del sistema de archivos
+        'nombre_mes': nombre_mes, # Se añade el nombre del mes al contexto
         'fecha_emision': timezone.now(),
     }
     template = get_template(template_path)
