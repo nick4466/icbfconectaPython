@@ -134,7 +134,7 @@
     .btn-rojo  { background: #dc3545; color: white; }
     .empty-message { color: #777; margin-top: 20px; text-align: center; }
     .modal {
-      display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
+      display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%;
       background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center;
       overflow-y: auto;
       padding: 20px 0;
@@ -649,29 +649,29 @@
         document.getElementById('modal-nombres').textContent = fila.dataset.nombres;
         document.getElementById('modal-apellidos').textContent = fila.dataset.apellidos;
         document.getElementById('modal-documento').textContent = fila.dataset.documento;
-        document.getElementById('modal-fecha-nacimiento').textContent = fila.dataset.fechaNacimiento;
+        document.getElementById('modal-fecha-nacimiento').textContent = fila.getAttribute('data-fecha-nacimiento');
         document.getElementById('modal-genero').textContent = fila.dataset.genero;
-        document.getElementById('modal-tipo-sangre').textContent = fila.dataset.tipoSangre;
+        document.getElementById('modal-tipo-sangre').textContent = fila.getAttribute('data-tipo-sangre');
         
         // Nacionalidad (con otro país si aplica)
         let nacionalidad = fila.dataset.nacionalidad;
-        if (fila.dataset.otroPais && fila.dataset.otroPais.trim() !== '') {
-          nacionalidad += ` (${fila.dataset.otroPais})`;
+        if (fila.getAttribute('data-otro-pais') && fila.getAttribute('data-otro-pais').trim() !== '') {
+          nacionalidad += ` (${fila.getAttribute('data-otro-pais')})`;
         }
         document.getElementById('modal-nacionalidad').textContent = nacionalidad;
         
         document.getElementById('modal-parentesco').textContent = fila.dataset.parentesco;
-        document.getElementById('modal-fecha-ingreso').textContent = fila.dataset.fechaIngreso;
-        document.getElementById('modal-tiene-discapacidad').textContent = fila.dataset.tieneDiscapacidad;
+        document.getElementById('modal-fecha-ingreso').textContent = fila.getAttribute('data-fecha-ingreso');
+        document.getElementById('modal-tiene-discapacidad').textContent = fila.getAttribute('data-tiene-discapacidad');
         
         // Mostrar tipos de discapacidad si tiene
-        const tieneDiscapacidad = fila.dataset.tieneDiscapacidad === 'Sí';
+        const tieneDiscapacidad = fila.getAttribute('data-tiene-discapacidad') === 'Sí';
         const discapacidadDetalles = document.getElementById('discapacidad-detalles');
         
         if (tieneDiscapacidad) {
           discapacidadDetalles.style.display = 'block';
-          const tiposDiscapacidad = fila.dataset.tiposDiscapacidad;
-          const otraDiscapacidad = fila.dataset.otraDiscapacidad;
+          const tiposDiscapacidad = fila.getAttribute('data-tipos-discapacidad');
+          const otraDiscapacidad = fila.getAttribute('data-otra-discapacidad');
           
           let html = '';
           if (tiposDiscapacidad && tiposDiscapacidad.trim() !== '') {
@@ -692,35 +692,35 @@
         }
         
         // ===== DOCUMENTOS DEL NIÑO =====
-        mostrarDocumento('preview-foto-nino', fila.dataset.fotoUrl, 'descargar-foto-nino', 'no-foto-nino', 'Foto del niño');
-        mostrarDocumento('preview-carnet', fila.dataset.carnetUrl, 'descargar-carnet', 'no-carnet', 'Carné de vacunación');
-        mostrarDocumento('preview-eps', fila.dataset.epsUrl, 'descargar-eps', 'no-eps', 'Certificado EPS');
-        mostrarDocumento('preview-registro-civil', fila.dataset.registroCivilUrl, 'descargar-registro-civil', 'no-registro-civil', 'Registro Civil');
+        mostrarDocumento('preview-foto-nino', fila.getAttribute('data-foto-url'), 'descargar-foto-nino', 'no-foto-nino', 'Foto del niño');
+        mostrarDocumento('preview-carnet', fila.getAttribute('data-carnet-url'), 'descargar-carnet', 'no-carnet', 'Carné de vacunación');
+        mostrarDocumento('preview-eps', fila.getAttribute('data-eps-url'), 'descargar-eps', 'no-eps', 'Certificado EPS');
+        mostrarDocumento('preview-registro-civil', fila.getAttribute('data-registro-civil-url'), 'descargar-registro-civil', 'no-registro-civil', 'Registro Civil');
         
         // ===== DATOS DEL TUTOR =====
-        document.getElementById('modal-tutor-nombres').textContent = fila.dataset.tutorNombres;
-        document.getElementById('modal-tutor-apellidos').textContent = fila.dataset.tutorApellidos;
-        document.getElementById('modal-tutor-tipo-doc').textContent = fila.dataset.tutorTipoDoc;
-        document.getElementById('modal-tutor-doc').textContent = fila.dataset.tutorDoc;
-        document.getElementById('modal-tutor-email').textContent = fila.dataset.tutorEmail;
-        document.getElementById('modal-tutor-telefono').textContent = fila.dataset.tutorTelefono;
-        document.getElementById('modal-tutor-direccion').textContent = fila.dataset.tutorDireccion;
+        document.getElementById('modal-tutor-nombres').textContent = fila.getAttribute('data-tutor-nombres');
+        document.getElementById('modal-tutor-apellidos').textContent = fila.getAttribute('data-tutor-apellidos');
+        document.getElementById('modal-tutor-tipo-doc').textContent = fila.getAttribute('data-tutor-tipo-doc');
+        document.getElementById('modal-tutor-doc').textContent = fila.getAttribute('data-tutor-doc');
+        document.getElementById('modal-tutor-email').textContent = fila.getAttribute('data-tutor-email');
+        document.getElementById('modal-tutor-telefono').textContent = fila.getAttribute('data-tutor-telefono');
+        document.getElementById('modal-tutor-direccion').textContent = fila.getAttribute('data-tutor-direccion');
         
         // Ocupación (con otra ocupación si aplica)
-        let ocupacion = fila.dataset.tutorOcupacion;
-        if (fila.dataset.tutorOtraOcupacion && fila.dataset.tutorOtraOcupacion.trim() !== '') {
-          ocupacion += ` (${fila.dataset.tutorOtraOcupacion})`;
+        let ocupacion = fila.getAttribute('data-tutor-ocupacion');
+        if (fila.getAttribute('data-tutor-otra-ocupacion') && fila.getAttribute('data-tutor-otra-ocupacion').trim() !== '') {
+          ocupacion += ` (${fila.getAttribute('data-tutor-otra-ocupacion')})`;
         }
         document.getElementById('modal-tutor-ocupacion').textContent = ocupacion;
         
-        document.getElementById('modal-tutor-estrato').textContent = fila.dataset.tutorEstrato;
-        document.getElementById('modal-tutor-contacto-emergencia').textContent = fila.dataset.tutorContactoEmergencia;
-        document.getElementById('modal-tutor-telefono-emergencia').textContent = fila.dataset.tutorTelefonoEmergencia;
-        document.getElementById('modal-tutor-situacion-economica').textContent = fila.dataset.tutorSituacionEconomica;
+        document.getElementById('modal-tutor-estrato').textContent = fila.getAttribute('data-tutor-estrato');
+        document.getElementById('modal-tutor-contacto-emergencia').textContent = fila.getAttribute('data-tutor-contacto-emergencia');
+        document.getElementById('modal-tutor-telefono-emergencia').textContent = fila.getAttribute('data-tutor-telefono-emergencia');
+        document.getElementById('modal-tutor-situacion-economica').textContent = fila.getAttribute('data-tutor-situacion-economica');
         
         // ===== DOCUMENTOS DEL TUTOR =====
-        mostrarDocumento('preview-cedula-tutor', fila.dataset.tutorCedulaUrl, 'descargar-cedula-tutor', 'no-cedula-tutor', 'Cédula del tutor');
-        mostrarDocumento('preview-sisben-tutor', fila.dataset.tutorSisbenUrl, 'descargar-sisben-tutor', 'no-sisben-tutor', 'SISBEN del tutor');
+        mostrarDocumento('preview-cedula-tutor', fila.getAttribute('data-tutor-cedula-url'), 'descargar-cedula-tutor', 'no-cedula-tutor', 'Cédula del tutor');
+        mostrarDocumento('preview-sisben-tutor', fila.getAttribute('data-tutor-sisben-url'), 'descargar-sisben-tutor', 'no-sisben-tutor', 'SISBEN del tutor');
 
         modal.style.display = 'flex';
       });
