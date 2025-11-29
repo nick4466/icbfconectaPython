@@ -19,22 +19,25 @@
         }
         .borde2 {
             text-align: center;
-            background-color: rgba(155, 89, 182, 0.9);
+            background-color: #4DB6FF;
             color: white;
-            padding: 12px 0;
-            font-size: 26px;
+            padding: 10px 0;
+            font-size: 22px;
             font-weight: bold;
-            letter-spacing: 1px;
+            border-bottom: 3px solid #FFEE58;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
         }
         header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 15px 30px;
-            border-bottom: 2px solid #e5d5f5;
-            backdrop-filter: blur(4px);
-            flex-wrap: wrap;
+            background-color: rgba(255,255,255,0.95);
+            padding: 14px 24px;
+            border-bottom: 3px solid #FFB74D;
+            border-radius: 0 0 22px 22px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 10;
         }
         header img { height: 60px; }
         nav ul {
@@ -45,19 +48,19 @@
             margin: 0;
         }
         nav ul li a, nav ul li button {
-            color: #9B59B6;
+            color: #4DB6FF;
             font-weight: bold;
             text-decoration: none;
             font-size: 16px;
-            padding: 8px 12px;
-            border-radius: 6px;
+            padding: 10px 14px;
+            border-radius: 10px;
             transition: 0.3s;
             background: none;
             border: none;
             cursor: pointer;
         }
         nav ul li a:hover, nav ul li button:hover {
-            background-color: #f3c1e5;
+            background: #E3F2FD;
         }
         nav ul .dropdown { position: relative; }
         nav ul .dropdown-content {
@@ -65,20 +68,20 @@
             position: absolute;
             background: white;
             min-width: 180px;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 8px 0;
-            box-shadow: 0px 8px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
         }
         nav ul .dropdown:hover .dropdown-content { display: block; }
         nav ul .dropdown-content a {
             padding: 12px 16px;
             display: block;
-            color: #9B59B6;
+            color: #E57373;
             text-decoration: none;
         }
-        nav ul .dropdown-content a:hover { background-color: #f3c1e5; }
+        nav ul .dropdown-content a:hover { background: #FFEBEE; }
         .contenedor {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 30px auto;
             padding: 20px;
             display: grid;
@@ -93,12 +96,12 @@
         .card {
             background: rgba(255,255,255,0.96);
             padding: 22px;
-            border-radius: 14px;
-            border-left: 5px solid #9B59B6;
-            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            border: 3px solid #FFB74D;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.14);
         }
         .card h1, .card h2, .card h3 {
-            color: #7a3eb1;
+            color: #4DB6FF;
             margin: 0 0 10px 0;
         }
         .info-item {
@@ -116,7 +119,7 @@
             max-width: 350px;
             height: 350px;
             object-fit: cover;
-            border-radius: 18px;
+            border-radius: 20px;
             display: block;
             margin: 0 auto 10px auto;
             box-shadow: 0 10px 20px rgba(0,0,0,0.18);
@@ -135,16 +138,16 @@
         }
         .desarrollo-card {
             background: #f8f6fa;
-            border-radius: 18px;
+            border-radius: 20px;
             padding: 24px 22px 18px 22px;
-            box-shadow: 0 2px 10px rgba(155,89,182,0.07);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.14);
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
             transition: box-shadow .2s, transform .2s;
             min-height: 210px;
-            border-left: 10px solid var(--card-accent, #9B59B6);
+            border-left: 10px solid var(--card-accent, #4DB6FF);
         }
         .desarrollo-card:hover {
             box-shadow: 0 8px 24px rgba(155,89,182,0.13);
@@ -155,14 +158,14 @@
             top: 18px;
             left: 18px;
             background: #fff;
-            color: #7a3eb1;
+            color: #4DB6FF;
             font-weight: 700;
             font-size: 14px;
             border-radius: 16px;
             padding: 4px 12px;
             box-shadow: 0 2px 8px rgba(155,89,182,0.08);
             z-index: 2;
-            border: 2px solid var(--card-accent, #9B59B6);
+            border: 2px solid var(--card-accent, #4DB6FF);
         }
         .card-icon {
             position: absolute;
@@ -176,14 +179,14 @@
         .card-accent-alta { --card-accent: #28a745; }
         .card-accent-media { --card-accent: #f39c12; }
         .card-accent-baja { --card-accent: #e74c3c; }
-        .card-accent-default { --card-accent: #9B59B6; }
+        .card-accent-default { --card-accent: #4DB6FF; }
         .card-header {
             margin-bottom: 10px;
             text-align: left;
         }
         .card-header h3 {
             margin: 0;
-            color: #7a3eb1;
+            color: #4DB6FF;
             font-size: 1.15rem;
             font-weight: bold;
         }
@@ -200,7 +203,7 @@
         }
         .card-body i {
             margin-right: 7px;
-            color: #9B59B6;
+            color: #4DB6FF;
         }
         .card-footer {
             margin-top: 12px;
@@ -208,11 +211,11 @@
         }
         .btn-accion {
             background: #28a745;
-            color: #fff;
+            color: white;
             border: none;
-            border-radius: 6px;
-            padding: 7px 16px;
-            font-size: 15px;
+            border-radius: 10px;
+            padding: 10px 18px;
+            font-size: 14px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
@@ -235,7 +238,7 @@
         }
         .pagination a, .pagination span {
             display: inline-block;
-            color: #9B59B6;
+            color: #4DB6FF;
             padding: 8px 14px;
             text-decoration: none;
             transition: background-color .3s;
@@ -246,9 +249,9 @@
         }
         .pagination a:hover { background-color: #f1f1f1; }
         .pagination .current {
-            background-color: #9B59B6;
+            background-color: #4DB6FF;
             color: white;
-            border-color: #9B59B6;
+            border-color: #4DB6FF;
             cursor: default;
         }
         .pagination .disabled {
@@ -274,7 +277,7 @@
             background-color: #fff;
             margin: auto;
             padding: 30px;
-            border-radius: 15px;
+            border-radius: 20px;
             box-shadow: 0 8px 32px rgba(155,89,182,0.18);
             max-width: 600px;
             width: 90%;
@@ -288,7 +291,7 @@
             to { transform: scale(1); opacity: 1; }
         }
         .cerrar-modal {
-            color: #9B59B6;
+            color: #4DB6FF;
             position: absolute;
             top: 18px;
             right: 22px;
@@ -314,7 +317,7 @@
             margin: 0;
             padding: 0 10px;
             color: #555;
-            border-left: 4px solid #9B59B6;
+            border-left: 4px solid #4DB6FF;
             background: #f1f1f1;
             border-radius: 4px;
             font-size: 15px;
@@ -335,7 +338,6 @@
             <ul>
                 <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
                 <li><a href="{% url 'calendario_padres' %}"><i class="fas fa-calendar"></i> Calendario</a></li>
-                <li><a href="#"><i class="fas fa-bell"></i> Notificaciones</a></li>
                 <li class="dropdown">
                     <a><i class="fas fa-cog"></i> Ajustes</a>
                     <div class="dropdown-content">
@@ -363,22 +365,22 @@
                 <h1 style="text-align:center; margin-top:15px;">
                     {{ nino.nombres }} {{ nino.apellidos }}
                 </h1>
-                <p class="info-item"><strong>Nacimiento:</strong> {{ nino.fecha_nacimiento|date:"d \\d\\e F \\d\\e Y" }}</p>
-                <p class="info-item"><strong>Género:</strong> {{ nino.genero|capfirst }}</p>
+                <p class="info-item"><strong style="color: #E57373; font-size: 18px;">Nacimiento:</strong> {{ nino.fecha_nacimiento|date:"d \\d\\e F \\d\\e Y" }}</p>
+                <p class="info-item"><strong style="color: #E57373; font-size: 18px;">Género:</strong> {{ nino.genero|capfirst }}</p>
             </div>
             {% endif %}
         </div>
         <!-- Columna 2: Cards de desarrollo -->
         <div class="columna2">
-            <div class="card" style="margin-bottom: 18px;">
-                <h3 style="color:#7a3eb1; margin-bottom:12px;">Filtrar Registros</h3>
+            <div class="card" style="margin-bottom: 18px; border-color: #81C784;">
+                <h3 style="color:#4DB6FF; margin-bottom:12px;">Filtrar Registros</h3>
                 <form method="get" class="filtros-form" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
                     <div>
-                        <label for="mes" style="font-weight:bold; color:#7a3eb1;">Mes:</label>
+                        <label for="mes" style="font-weight:bold; color:#4DB6FF;">Mes:</label>
                         <input type="month" name="mes" id="mes" value="{{ filtros.mes }}"
-                            style="padding:7px 12px; border:1px solid #9B59B6; border-radius:6px; font-size:15px;">
+                            style="padding:7px 12px; border:1px solid #4DB6FF; border-radius:6px; font-size:15px;">
                     </div>
-                    <button type="submit" class="btn-accion btn-verde" style="background:#9B59B6;">
+                    <button type="submit" class="btn-accion" style="background:#4DB6FF;">
                         <i class="fas fa-filter"></i> Filtrar
                     </button>
                     <a href="{% url 'padre_ver_desarrollo' nino.id %}" class="btn-accion" style="background:#6c757d;">
@@ -413,8 +415,8 @@
                                     background:
                                         {% if desarrollo.tendencia_valoracion == 'alta' %}
                                         #28a745{% elif desarrollo.tendencia_valoracion == 'media' %}#f39c12
-                                        {% elif desarrollo.tendencia_valoracion == 'baja' %}#e74c3c
-                                        {% else %}#9B59B6{% endif %}; box-shadow:0 2px 8px rgba(155,89,182,0.09);">
+                                        {% elif desarrollo.tendencia_valoracion == 'baja' %}#e74c3c{% else %}#4DB6FF
+                                        {% endif %}; box-shadow:0 2px 8px rgba(155,89,182,0.09);">
                                     <i class="fas fa-chart-line"></i> Tendencia: {{ desarrollo.get_tendencia_valoracion_display|default:"N/A" }}
                                 </span>
                             </p>
@@ -474,13 +476,13 @@
     <div id="modalDetalles" class="modal">
         <div class="modal-contenido">
             <span class="cerrar-modal">&times;</span>
-            <h2 style="color: #7a3eb1; text-align: center;">Detalles del Desarrollo Mensual</h2>
+            <h2 style="color: #4DB6FF; text-align: center;">Detalles del Desarrollo Mensual</h2>
             <div class="modal-grid">
                 <div ><strong>Niño/a:</strong> <span id="modal-nino"></span></div>
                 <div><strong>Mes Evaluado:</strong> <span id="modal-fecha"></span></div>
             </div>
             <hr>
-            <h3 style="color: #7a3eb1; margin-top: 20px; margin-bottom: 15px;">Evaluación por Dimensiones</h3>
+            <h3 style="color: #4DB6FF; margin-top: 20px; margin-bottom: 15px;">Evaluación por Dimensiones</h3>
             <div class="modal-grid">
                 <div ><strong>Cognitiva:</strong> <span id="modal-cognitiva"></span></div>
                 <div ><strong>Comunicativa:</strong> <span id="modal-comunicativa"></span></div>

@@ -1390,7 +1390,6 @@ def madre_dashboard(request):
 def padre_dashboard(request):
     if request.user.rol.nombre_rol != 'padre':
         return redirect('role_redirect')
-
     # Importar modelos necesarios aquí para evitar importaciones circulares
     from novedades.models import Novedad
     from desarrollo.models import DesarrolloNino
@@ -1578,7 +1577,7 @@ def obtener_info(request):
         ninos = Nino.objects.none()
 
     planeacion = Planeacion.objects.filter(fecha=fecha_obj).first()
-    novedad = Novedad.objects.filter(nino__in=ninos, fecha=fecha_obj).first() if ninos.exists() else None # Mantenemos la primera novedad por simplicidad
+    novedades_del_dia = Novedad.objects.filter(nino__in=ninos, fecha=fecha_obj) if ninos.exists() else Novedad.objects.none()
     
     # --- NUEVA LÓGICA PARA SEGUIMIENTOS ---
     seguimientos_del_dia = SeguimientoDiario.objects.filter(
@@ -1614,20 +1613,24 @@ def obtener_info(request):
             "valoracion_restante": 5 - (s.valoracion or 0)
         })
 
+    # --- NUEVA LÓGICA PARA NOVEDADES ---
+    novedades_data = []
+    for n in novedades_del_dia:
+        novedades_data.append({
+            "tipo": n.get_tipo_display(),
+            "descripcion": n.descripcion,
+            "nino_nombre": f"{n.nino.nombres} {n.nino.apellidos}"
+        })
+
     return JsonResponse({
         "planeacion": {
             "nombre": planeacion.nombre_experiencia if planeacion else None,
             "intencionalidad": planeacion.intencionalidad_pedagogica if planeacion else None,
             "materiales": planeacion.materiales_utilizar if planeacion else None
         } if planeacion else None,
-        "novedad": {
-            "tipo": novedad.get_tipo_display() if novedad else None,
-            "descripcion": novedad.descripcion if novedad else None,
-            # 💡 FIX: Añadir el nombre completo del niño a la respuesta JSON.
-            # Usamos .get_full_name() para asegurar que tengamos "Nombres Apellidos".
-            "nino_nombre": f"{novedad.nino.nombres} {novedad.nino.apellidos}" if novedad and novedad.nino else None,
-        } if novedad else None,
-        "seguimientos": seguimientos_data
+        # Se envían como listas para manejar múltiples eventos por día
+        "novedades": novedades_data,
+        "seguimientos": seguimientos_data,
     })
 
 @login_required

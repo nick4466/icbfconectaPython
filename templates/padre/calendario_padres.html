@@ -22,12 +22,13 @@
 
     .borde2 {
       text-align: center;
-      background-color: rgba(155, 89, 182, 0.9);
+      background-color: #4DB6FF;
       color: white;
-      padding: 12px 0;
-      font-size: 26px;
+      padding: 10px 0;
+      font-size: 22px;
       font-weight: bold;
-      letter-spacing: 1px;
+      border-bottom: 3px solid #FFEE58;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
     }
 
     /* NAVBAR */
@@ -35,11 +36,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 15px 30px;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-      flex-wrap: wrap;
+      background-color: rgba(255,255,255,0.95);
+      padding: 14px 24px;
+      border-bottom: 3px solid #FFB74D;
+      border-radius: 0 0 22px 22px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      position: relative;
+      z-index: 10;
     }
 
     header img { height: 60px; }
@@ -54,7 +57,7 @@
 
     nav ul li a, nav ul li button {
       text-decoration: none;
-      color: #9B59B6;
+      color: #4DB6FF;
       font-weight: bold;
       font-size: 16px;
       padding: 8px 12px;
@@ -80,7 +83,7 @@
     }
     nav ul .dropdown:hover .dropdown-content { display: block; }
     nav ul .dropdown-content a {
-      color: #9B59B6;
+      color: #E57373;
       padding: 12px 16px;
       display: block;
       text-decoration: none;
@@ -106,7 +109,7 @@
 
     .calendar-header h2 {
       text-align: center;
-      color: #7a3eb1;
+      color: #4DB6FF;
       font-size: 28px;
       flex-grow: 1;
       margin: 0;
@@ -115,15 +118,15 @@
     .calendar-header button {
       padding: 8px 16px;
       border: none;
-      background-color: #3498db;
+      background-color: #4DB6FF;
       color: white;
       border-radius: 10px;
       cursor: pointer;
       font-weight: bold;
-      transition: background 0.3s ease;
+      transition: background 0.2s;
     }
 
-    .calendar-header button:hover { background-color: #2980b9; }
+    .calendar-header button:hover { background-color: #039BE5; }
 
     /* Descripción símbolos */
     .descripcion-simbolos {
@@ -134,13 +137,13 @@
       padding: 10px 20px;
       border-radius: 12px;
       margin-bottom: 20px;
-      border-left: 4px solid #9B59B6;
+      border-left: 4px solid #FFB74D;
       font-size: 16px;
       color: #333;
     }
 
     .descripcion-simbolos i {
-      color: #3498db;
+      color: #4DB6FF;
       margin-right: 6px;
     }
 
@@ -154,23 +157,23 @@
     .calendar-grid div strong {
       display: block;
       margin-bottom: 5px;
-      color: #7a3eb1;
+      color: #4DB6FF;
     }
 
     .day {
       padding: 15px;
-      background-color: #e6f2ff;
+      background-color: #E3F2FD;
       border-radius: 12px;
       min-height: 90px;
       cursor: pointer;
       position: relative;
       transition: transform .2s, background .3s;
-      border: 1px solid #a3c9f1;
+      border: 1px solid #BBDEFB;
     }
 
     .day:hover {
       transform: translateY(-4px);
-      background-color: #cce6ff;
+      background-color: #D6EBFF;
     }
 
     .icons {
@@ -182,7 +185,7 @@
 
     .icon {
       font-size: 18px;
-      color: #3498db;
+      color: #4DB6FF;
     }
 
     /* Modal */
@@ -226,17 +229,17 @@
       display: flex;
       gap: 18px;
       align-items: center;
-      background: linear-gradient(135deg, rgba(155,89,182,0.06), rgba(46,204,113,0.03));
-      border: 1px solid rgba(155,89,182,0.12);
+      background: #FFFDE7;
+      border: 1px solid #FFEE58;
       padding: 18px;
       border-radius: 12px;
       margin: 18px 0;
-      box-shadow: 0 6px 18px rgba(120, 70, 160, 0.06);
+      box-shadow: 0 6px 18px rgba(255, 238, 88, 0.1);
     }
     .info-card-left { flex: 1; }
     .info-card-left h3 {
       margin: 0 0 8px 0;
-      color: #7a3eb1;
+      color: #E57373;
       font-size: 20px;
     }
     .info-card-left ul {
@@ -247,16 +250,15 @@
     }
     .info-btn {
       display: inline-block;
-      background: linear-gradient(90deg,#7a3eb1,#5e3370);
+      background-color: #4DB6FF;
       color: #fff;
       padding: 8px 14px;
       border-radius: 8px;
       text-decoration: none;
       font-weight: 700;
-      transition: transform .15s ease, box-shadow .15s ease;
-      box-shadow: 0 6px 14px rgba(122,62,177,0.18);
+      transition: 0.3s;
     }
-    .info-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(122,62,177,0.22); }
+    .info-btn:hover { background-color: #039BE5; }
 
     .info-card-right {
       width: 220px;           /* aumentado */
@@ -313,8 +315,6 @@
       <ul>
         <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="{% url 'calendario_padres' %}"><i class="fas fa-calendar-alt"></i> Calendario</a></li>
-        <li><a href="#"><i class="fas fa-bell"></i> Notificaciones</a></li>
-
         <li class="dropdown">
           <a href="#"><i class="fas fa-cog"></i> Ajustes</a>
           <div class="dropdown-content">
@@ -363,7 +363,7 @@
     </div>
 
     <div class="calendar-header">
-        <h1 style="text-align:center; color:#7a3eb1; margin-bottom:12px;">{{ month_name }} {{ year }}</h1>
+        <h1 style="text-align:center; color:#4DB6FF; margin-bottom:12px;">{{ month_name }} {{ year }}</h1>
     </div>
 
     <div class="calendar-grid">
@@ -451,50 +451,37 @@ function abrirModal(fecha) {
                 `;
             }
 
-            // --- NUEVA LÓGICA PARA MOSTRAR SEGUIMIENTOS ---
+            // --- LÓGICA MEJORADA PARA MOSTRAR SEGUIMIENTOS Y NOVEDADES ---
             if (data.seguimientos && data.seguimientos.length > 0) {
                 html += `<hr style="margin: 20px 0;">`;
                 data.seguimientos.forEach(s => {
                     html += `<h4>Seguimiento de ${s.nino_nombre}</h4>`;
-                    
-                    // Resumen del día
                     html += `<p><b>Resumen del día:</b> ${s.resumen_dia.resumen_para_padres}</p>`;
-
-                    // Evaluaciones por dimensión
                     if (s.evaluaciones && s.evaluaciones.length > 0) {
                         html += `<p><b>Evaluación por dimensiones:</b></p><ul>`;
-                        s.evaluaciones.forEach(ev => {
-                            html += `<li>${ev.dimension}: <b>${ev.desempeno}</b></li>`;
-                        });
+                        s.evaluaciones.forEach(ev => { html += `<li>${ev.dimension}: <b>${ev.desempeno}</b></li>`; });
                         html += `</ul>`;
                     }
-
-                    // Valoración del día (estrellas)
                     if (s.valoracion_dia) {
-                        let estrellas = '';
-                        for (let i = 0; i < s.valoracion_dia; i++) {
-                            estrellas += '<i class="fas fa-star" style="color: #f39c12;"></i>';
-                        }
-                        for (let i = 0; i < s.valoracion_restante; i++) {
-                            estrellas += '<i class="far fa-star" style="color: #f39c12;"></i>';
-                        }
+                        let estrellas = Array(s.valoracion_dia).fill('<i class="fas fa-star" style="color: #f39c12;"></i>').join('');
+                        estrellas += Array(s.valoracion_restante).fill('<i class="far fa-star" style="color: #f39c12;"></i>').join('');
                         html += `<p><b>Valoración general del día:</b> ${estrellas}</p>`;
                     }
-
                     html += `<hr style="margin: 15px 0; border-style: dashed;">`;
                 });
             }
 
-            if (data.novedad) {
-                html += `
-                    <h4 style="margin-top:20px;">Novedad Registrada</h4>
-                    <p><b>Tipo:</b> ${data.novedad.tipo}</p>
-                    <p><b>Niño/a:</b> ${data.novedad.nino_nombre}</p>
-                    <p><b>Descripcion:</b>${data.novedad.descripcion}</p>
-                `;
+            if (data.novedades && data.novedades.length > 0) {
+                html += `<hr style="margin: 20px 0;">`;
+                data.novedades.forEach(n => {
+                    html += `<h4>Novedad Registrada para ${n.nino_nombre}</h4>`;
+                    html += `<p><b>Tipo:</b> ${n.tipo}</p>`;
+                    html += `<p><b>Descripción:</b> ${n.descripcion}</p>`;
+                    html += `<hr style="margin: 15px 0; border-style: dashed;">`;
+                });
             }
 
-            if (!data.planeacion && !data.novedad && (!data.seguimientos || data.seguimientos.length === 0)) {
+            if (!data.planeacion && (!data.novedades || data.novedades.length === 0) && (!data.seguimientos || data.seguimientos.length === 0)) {
                 html = "<p>No hay información para este día.</p>";
             }
 

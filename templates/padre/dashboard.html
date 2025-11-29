@@ -10,120 +10,85 @@
 
   <style>
     body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-image: url("{% static 'img/fondopadres.jpg' %}");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-    }
-
-    /* BARRA SUPERIOR */
-    .borde2 {
-      text-align: center;
-      background-color: #4DB6FF;
-      color: white;
-      padding: 10px 0;
-      font-size: 22px;
-      font-weight: bold;
-      border-bottom: 3px solid #FFEE58;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-    }
-
-    /* NAVBAR */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: rgba(255,255,255,0.95);
-      padding: 14px 24px;
-      border-bottom: 3px solid #FFB74D;
-      border-radius: 0 0 22px 22px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-      position: relative;
-      z-index: 10;
-    }
-
-    header img {
-      height: 60px;
-    }
-
-    nav ul {
-      display: flex;
-      list-style: none;
-      gap: 16px;
-      margin: 0;
-      padding: 0;
-      position: relative;
-    }
-
-    nav ul li a,
-    nav ul li button {
-      background: none;
-      border: none;
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 16px;
-      text-decoration: none;
-      color: #4DB6FF;
-      transition: 0.3s;
-    }
-
-    nav ul li a:hover,
-    nav ul li button:hover {
-      background: #E3F2FD;
-      transform: translateY(-2px);
-    }
-
-    /* --- MENÚ DESPLEGABLE REINSTALADO TAL CUAL --- */
-    .dropdown {
-      position: relative;
-    }
-
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      right: 0;
-      background: white;
-      min-width: 190px;
-      border-radius: 12px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-      padding: 10px 0;
-      z-index: 20;
-      animation: fadeDropdown 0.2s ease-out;
-    }
-
-    @keyframes fadeDropdown {
-      from { opacity: 0; transform: translateY(-6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .dropdown-content a,
-    .dropdown-content button {
-      padding: 12px 15px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      background: none;
-      border: none;
-      color: #E57373;
-      text-align: left;
-      font-size: 15px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .dropdown-content a:hover,
-    .dropdown-content button:hover {
-      background: #FFEBEE;
-    }
-
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-image: url("{% static 'img/fondopadres.jpg' %}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .borde2 {
+            text-align: center;
+            background-color: #4DB6FF;
+            color: white;
+            padding: 10px 0;
+            font-size: 22px;
+            font-weight: bold;
+            border-bottom: 3px solid #FFEE58;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+        }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(255,255,255,0.95);
+            padding: 14px 24px;
+            border-bottom: 3px solid #FFB74D;
+            border-radius: 0 0 22px 22px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 10;
+        }
+        header img { height: 60px; }
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+            padding: 0;
+            margin: 0;
+        }
+        nav ul li a, nav ul li button {
+            color: #4DB6FF;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            transition: 0.3s;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        nav ul li a:hover, nav ul li button:hover {
+            background: #E3F2FD;
+        }
+        nav ul .dropdown { position: relative; }
+        nav ul .dropdown-content {
+            display: none;
+            position: absolute;
+            background: white;
+            min-width: 180px;
+            border-radius: 12px;
+            padding: 8px 0;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+        }
+        nav ul .dropdown:hover .dropdown-content { display: block; }
+        nav ul .dropdown-content a {
+            padding: 12px 16px;
+            display: block;
+            color: #E57373;
+            text-decoration: none;
+        }
+        nav ul .dropdown-content a:hover { background: #FFEBEE; }
+        .contenedor {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 30% 1fr;
+            gap: 25px;
+        }
 
     /* CONTENEDOR PRINCIPAL */
     .dashboard-container {
@@ -183,9 +148,9 @@
     }
 
     .card-header img {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
+      width: 90px;
+      height: 90px;
+      border-radius: 40%;
       object-fit: cover;
       border: 4px solid #FFEE58;
     }
@@ -279,8 +244,6 @@
       <ul>
         <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="{% url 'calendario_padres' %}"><i class="fas fa-calendar"></i> Calendario</a></li>
-        <li><a href="#"><i class="fas fa-bell"></i> Notificaciones</a></li>
-
         <li class="dropdown">
           <a href="#"><i class="fas fa-cog"></i> Ajustes</a>
           <div class="dropdown-content">
