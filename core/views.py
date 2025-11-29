@@ -37,6 +37,7 @@ from django.contrib.auth.decorators import login_required
 from novedades.models import Novedad
 from planeaciones.models import Planeacion
 from datetime import datetime as _datetime, date as _date
+from desarrollo.models import SeguimientoDiario
 
 # --- VISTAS PERSONALIZADAS DE AUTENTICACIÓN ---
 from django.contrib.auth.forms import PasswordResetForm
