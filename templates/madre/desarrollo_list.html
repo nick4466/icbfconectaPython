@@ -444,7 +444,7 @@
             <a href="{% url 'desarrollo:generar_reporte_pdf' desarrollo.nino.id %}?tipo_reporte=desarrollo&fecha_inicio={{ desarrollo.fecha_fin_mes|date:'Y-m-01' }}&fecha_fin={{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}" target="_blank" class="btn-accion btn-verde" title="PDF" style="background:#9B59B6; color:white;">
                 <i class="fas fa-file-pdf"></i>
             </a>
-            <a href="#"  class="btn-accion btn-verde" title="Certificado" style="background:#17a2b8; color:white;">
+            <a href="{% url 'desarrollo:generar_certificado_desarrollo' desarrollo.id %}" target="_blank" class="btn-accion btn-verde" title="Certificado" style="background:#17a2b8; color:white;">
                 <i class="fas fa-certificate"></i>
             </a>
             </div>
