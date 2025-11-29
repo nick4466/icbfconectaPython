@@ -485,6 +485,93 @@ def generar_reporte_pdf(request, nino_id):
 
     return response
 
+@login_required
+def generar_certificado_desarrollo_pdf(request, desarrollo_id):
+    """
+    Genera un certificado en PDF para un registro de desarrollo específico.
+    """
+    desarrollo = get_object_or_404(DesarrolloNino, id=desarrollo_id)
+    nino = desarrollo.nino
+
+    # --- Lógica de Seguridad ---
+    if request.user.rol.nombre_rol == 'madre_comunitaria':
+        if nino.hogar.madre.usuario != request.user:
+            messages.error(request, "No tienes permiso para generar este certificado.")
+            return redirect('desarrollo:listar_desarrollos')
+    elif request.user.rol.nombre_rol == 'padre':
+        if nino.padre.usuario != request.user:
+            messages.error(request, "No tienes permiso para ver este certificado.")
+            return redirect('padre_dashboard')
+    else:
+        messages.error(request, "Acceso no autorizado.")
+        return redirect('home')
+
+    # --- Mensajes Motivacionales según el Logro ---
+    logro = desarrollo.logro_mes
+    if logro == 'Alto':
+        titulo_mensaje = "¡Un Logro Extraordinario!"
+        mensaje = f"Tu dedicación y entusiasmo te han llevado a alcanzar un desempeño sobresaliente. Eres una estrella brillante que ilumina nuestro hogar cada día. ¡Sigue así, estamos muy orgullosos de ti!"
+    elif logro == 'Adecuado':
+        titulo_mensaje = "¡Vas por un Excelente Camino!"
+        mensaje = f"Has demostrado un progreso maravilloso y un gran esfuerzo en tus actividades. Cada paso que das es importante y nos llena de alegría. ¡Sigue explorando, aprendiendo y divirtiéndote!"
+    else: # 'En Proceso'
+        titulo_mensaje = "¡Tu Esfuerzo es Valioso!"
+        mensaje = f"Cada día es una nueva oportunidad para aprender y crecer. Valoramos mucho tu esfuerzo y perseverancia. Recuerda que cada paso, grande o pequeño, es un avance. ¡Estamos aquí para apoyarte siempre!"
+
+    # --- Lógica para obtener el nombre del mes ---
+    # 💡 CORRECCIÓN: Se añade la lógica para pasar el nombre del mes a la plantilla.
+    import locale
+    try:
+        # Se establece el idioma a español para obtener el nombre del mes correctamente.
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+    except locale.Error:
+        locale.setlocale(locale.LC_TIME, '') # Fallback si el locale no está disponible
+    nombre_mes = desarrollo.fecha_fin_mes.strftime('%B').capitalize()
+
+    # --- Rutas a las imágenes ---
+    # 💡 CORRECCIÓN: Convertir las URLs estáticas a rutas absolutas del sistema de archivos
+    # para que xhtml2pdf pueda encontrarlas directamente, evitando el uso de link_callback.
+    try:
+        # os.path.join construye la ruta correcta para el sistema operativo
+        logo_path = os.path.join(settings.STATIC_ROOT, 'img', 'logoSinFondo.png')
+    except Exception: # pragma: no cover
+        logo_path = '' # Se asigna una cadena vacía si falla
+
+    try:
+        fondo_path = os.path.join(settings.STATIC_ROOT, 'img', 'certificadoDesarrollo.jpg')
+    except Exception: # pragma: no cover
+        fondo_path = '' # Se asigna una cadena vacía si falla
+
+    # --- Renderizar plantilla HTML ---
+    template_path = 'reporte/certificado_desarrollo_pdf.html'
+    context = {
+        'desarrollo': desarrollo,
+        'nino': nino,
+        'hogar': nino.hogar,
+        'madre_comunitaria': nino.hogar.madre,
+        'titulo_mensaje': titulo_mensaje,
+        'mensaje': mensaje,
+        'logo_url': logo_path,  # Se pasa la ruta del sistema de archivos
+        'fondo_url': fondo_path, # Se pasa la ruta del sistema de archivos
+        'nombre_mes': nombre_mes, # Se añade el nombre del mes al contexto
+        'fecha_emision': timezone.now(),
+    }
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # --- Generar PDF ---
+    response = HttpResponse(content_type='application/pdf')
+    # Con 'inline' se abre en el navegador, con 'attachment' se descarga.
+    response['Content-Disposition'] = f'inline; filename="certificado_{nino.nombres}_{desarrollo.fecha_fin_mes.strftime("%Y-%m")}.pdf"'
+    
+    # Al pasar rutas de archivo absolutas, ya no necesitamos un 'link_callback'.
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    
+    if pisa_status.err:
+        return HttpResponse('Error al generar el certificado en PDF. <pre>' + html + '</pre>')
+
+    return response
+
 # -----------------------------------------------------------------
 # CRUD SEGUIMIENTO DIARIO PARA MADRE COMUNITARIA
 # -----------------------------------------------------------------
@@ -1047,6 +1134,25 @@ def registrar_desarrollo(request):
         'nino_preseleccionado': nino_preseleccionado,
         'form_action': reverse('desarrollo:registrar_desarrollo'),
     })
+
+    # Procesar alertas para el contexto de la plantilla
+    alertas_mes = desarrollo.alertas_mes or ""
+    lineas = alertas_mes.splitlines()
+
+    alertas_generales = []
+    alertas_criticas = []
+
+    for linea in lineas:
+        if "Ver detalle:" in linea:
+            alertas_criticas.append(linea)
+        else:
+            # Limpia HTML para el textarea
+            texto_plano = strip_tags(linea).strip()
+            if texto_plano:
+                alertas_generales.append(texto_plano)
+
+    context['alertas_generales'] = "\n".join(alertas_generales)
+    context['alertas_criticas'] = alertas_criticas
 
     # Procesar alertas para el contexto de la plantilla
     alertas_mes = desarrollo.alertas_mes or ""

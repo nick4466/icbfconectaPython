@@ -334,7 +334,7 @@
         <nav>
             <ul>
                 <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
-                <li><a href="#"><i class="fas fa-calendar"></i> Calendario</a></li>
+                <li><a href="{% url 'calendario_padres' %}"><i class="fas fa-calendar"></i> Calendario</a></li>
                 <li><a href="#"><i class="fas fa-bell"></i> Notificaciones</a></li>
                 <li class="dropdown">
                     <a><i class="fas fa-cog"></i> Ajustes</a>
@@ -401,7 +401,7 @@
                         </div>
                         <div class="card-body">
                             <p><i class="fas fa-calendar-check"></i> <strong>Asistencia:</strong> {{ desarrollo.porcentaje_asistencia|default:'N/A' }}%</p>
-                            <p><i class="fas fa-tasks"></i> <strong>Participación:</strong> {{ desarrollo.get_participacion_frecuente_display|default:'-' }}</p>
+                            <p><i class="fas fa-tasks"></i> <strong>Participación:</strong> {{ desarrollo.participacion_frecuente|default:'-' }}</p>
                             <p><i class="fas fa-smile"></i> <strong>Comportamiento:</strong> {{ desarrollo.get_comportamiento_frecuente_display|default:'-' }}</p>
                             <p class="info-item" style="margin-top:10px;">
                                 <span style="
@@ -425,7 +425,6 @@
                                 data-comunicativa="{{ desarrollo.evaluacion_comunicativa|default_if_none:'' }}"
                                 data-socioafectiva="{{ desarrollo.evaluacion_socio_afectiva|default_if_none:'' }}"
                                 data-corporal="{{ desarrollo.evaluacion_corporal|default_if_none:'' }}"
-                                data-autonomia="{{ desarrollo.evaluacion_autonomia|default_if_none:'' }}"
                                 data-fortalezas="{{ desarrollo.fortalezas_mes|default_if_none:'' }}"
                                 data-mejorar="{{ desarrollo.aspectos_a_mejorar|default_if_none:'' }}"
                                 data-alertas="{{ desarrollo.alertas_mes|default_if_none:'' }}"
@@ -487,7 +486,6 @@
                 <div ><strong>Comunicativa:</strong> <span id="modal-comunicativa"></span></div>
                 <div ><strong>Socio-Afectiva:</strong> <span id="modal-socioafectiva"></span></div>
                 <div ><strong>Corporal:</strong> <span id="modal-corporal"></span></div>
-                <div class="modal-item full-width"><strong>Autonomía e Independencia:</strong> <span id="modal-autonomia"></span></div>
             </div>
             <hr>
             <div class="modal-grid" style="grid-template-columns: 1fr; gap: 20px; margin-top: 20px;">
@@ -518,17 +516,21 @@
         window.onclick = function(event) { if (event.target === modal) { cerrarModal(); } };
         document.querySelectorAll('.ver-detalles').forEach(button => {
             button.addEventListener('click', function() {
+                function formatText(text) {
+                    if (!text) return 'Sin información registrada';
+                    // Reemplaza los saltos de línea (\n, \r\n, \r) por etiquetas <br>
+                    return text.replace(/\r\n|\n|\r/g, '<br>');
+                }
                 document.getElementById('modal-nino').textContent = this.dataset.nino;
                 document.getElementById('modal-fecha').textContent = this.dataset.fecha;
-                document.getElementById('modal-cognitiva').textContent = this.dataset.cognitiva;
-                document.getElementById('modal-comunicativa').textContent = this.dataset.comunicativa;
-                document.getElementById('modal-socioafectiva').textContent = this.dataset.socioafectiva;
-                document.getElementById('modal-corporal').textContent = this.dataset.corporal;
-                document.getElementById('modal-autonomia').textContent = this.dataset.autonomia;
-                document.getElementById('modal-fortalezas').textContent = this.dataset.fortalezas;
-                document.getElementById('modal-mejorar').textContent = this.dataset.mejorar;
-                document.getElementById('modal-alertas').textContent = this.dataset.alertas;
-                document.getElementById('modal-conclusion').textContent = this.dataset.conclusion;
+                document.getElementById('modal-cognitiva').innerHTML = formatText(this.dataset.cognitiva);
+                document.getElementById('modal-comunicativa').innerHTML = formatText(this.dataset.comunicativa);
+                document.getElementById('modal-socioafectiva').innerHTML = formatText(this.dataset.socioafectiva);
+                document.getElementById('modal-corporal').innerHTML = formatText(this.dataset.corporal);
+                document.getElementById('modal-fortalezas').innerHTML = formatText(this.dataset.fortalezas);
+                document.getElementById('modal-mejorar').innerHTML = formatText(this.dataset.mejorar);
+                document.getElementById('modal-alertas').innerHTML = formatText(this.dataset.alertas);
+                document.getElementById('modal-conclusion').innerHTML = formatText(this.dataset.conclusion);
                 modal.style.display = 'flex';
             });
         });

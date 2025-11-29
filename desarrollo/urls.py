@@ -21,6 +21,7 @@ urlpatterns = [
     # --- URLs para Reportes ---
     path('reporte/resumen/<int:nino_id>/', views.reporte_resumen, name='reporte_resumen'),
     path('reporte/pdf/<int:nino_id>/', views.generar_reporte_pdf, name='generar_reporte_pdf'),
+    path('certificado/<int:desarrollo_id>/', views.generar_certificado_desarrollo_pdf, name='generar_certificado_desarrollo'),
 
     # --- 💡 NUEVO: URLs para Seguimiento Diario ---
     path('seguimiento/registrar/', views.registrar_seguimiento_diario, name='registrar_seguimiento'),
