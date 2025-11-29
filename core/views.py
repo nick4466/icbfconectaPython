@@ -37,6 +37,7 @@ from django.contrib.auth.decorators import login_required
 from novedades.models import Novedad
 from planeaciones.models import Planeacion
 from datetime import datetime as _datetime, date as _date
+from asistencia.models import Asistencia
 from desarrollo.models import SeguimientoDiario
 
 # --- VISTAS PERSONALIZADAS DE AUTENTICACIÓN ---
@@ -1390,23 +1391,39 @@ def padre_dashboard(request):
     if request.user.rol.nombre_rol != 'padre':
         return redirect('role_redirect')
 
+    # Importar modelos necesarios aquí para evitar importaciones circulares
+    from novedades.models import Novedad
+    from desarrollo.models import DesarrolloNino
+
     try:
-        # Encontrar el perfil del padre y luego a su hijo
         padre = Padre.objects.get(usuario=request.user)
-        # 💡 CAMBIO: Obtener TODOS los niños asociados al padre
         ninos_qs = Nino.objects.filter(padre=padre).order_by('nombres')
 
-        # 💡 MEJORA: Añadir el último desarrollo a cada niño para mostrarlo en el dashboard
-        ninos_con_desarrollo = []
+        ninos_data = []
         for nino in ninos_qs:
+            # Obtener la última asistencia registrada para el niño
+            ultima_asistencia_obj = Asistencia.objects.filter(nino=nino).order_by('-fecha').first()
+            if ultima_asistencia_obj:
+                asistencia_info = {
+                    'estado': ultima_asistencia_obj.estado,
+                    'mensaje': f"El día {ultima_asistencia_obj.fecha.strftime('%d/%m/%Y')} estuvo {ultima_asistencia_obj.estado.lower()}."
+                }
+            else:
+                asistencia_info = None
+
+            # Obtener el último desarrollo y la última novedad
             ultimo_desarrollo = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes').first()
-            ninos_con_desarrollo.append({
+            ultima_novedad = Novedad.objects.filter(nino=nino).order_by('-fecha').first()
+
+            ninos_data.append({
                 'nino': nino,
-                'ultimo_desarrollo': ultimo_desarrollo
+                'ultima_asistencia': asistencia_info,
+                'ultimo_desarrollo': ultimo_desarrollo,
+                'ultima_novedad': ultima_novedad
             })
 
         return render(request, 'padre/dashboard.html', {
-            'ninos_data': ninos_con_desarrollo,
+            'ninos_data': ninos_data,
         })
     except Padre.DoesNotExist:
         # Manejar el caso donde el padre no tiene un hijo asignado

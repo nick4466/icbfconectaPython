@@ -8,183 +8,182 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
     <style>
-        * {
-            box-sizing: border-box;
-        }
+  * { box-sizing: border-box; }
 
-        body {
-            margin: 0;
-            font-family: 'Roboto', sans-serif;
-            background-color: #f8f6fb; /* Color de fondo si la imagen no carga */
-            background-image: url("{% static 'img/fondo2.jpg' %}");
-            background-size: cover;
-            background-position: center;
-        }
+  body {
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+    background-color: #fffbe6; /* fondo cálido */
+    background-image: url("{% static 'img/fondo2.jpg' %}");
+    background-size: cover;
+    background-position: center;
+  }
 
-        header {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 10px 40px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
-        }
+  header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 12px 30px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+  }
 
-        header img {
-            height: 65px;
-        }
+  header img {
+    height: 70px;
+  }
 
-        header nav ul {
-            list-style: none;
-            display: flex;
-            align-items: center;
-            gap: 25px;
-            margin: 0;
-            padding: 0;
-        }
+  header nav ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+  }
 
-        header nav ul li a {
-            text-decoration: none;
-            color: #8e44ad;
-            font-weight: 600;
-            font-size: 16px;
-            transition: color 0.3s ease, transform 0.2s ease;
-        }
+  header nav ul li a {
+    text-decoration: none;
+    color: #ff6f61; /* coral alegre */
+    font-weight: 700;
+    font-size: 16px;
+    transition: color 0.3s ease, transform 0.2s ease;
+  }
 
-        header nav ul li a:hover {
-            color: #6c3483;
-            transform: scale(1.05);
-        }
+  header nav ul li a:hover {
+    color: #ff9f80;
+    transform: scale(1.1);
+  }
 
-        main {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: calc(100vh - 100px);
-            padding: 20px;
-            margin-top: 80px; /* Separación para el header fijo */
-        }
+  main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 100px);
+    padding: 20px;
+    margin-top: 80px;
+  }
 
-        /* INICIO DE CORRECCIONES DE DISEÑO */
+  /* --- LOGIN CONTAINER --- */
+  .login-container {
+    background-color: #ffffff;
+    padding: 35px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    width: 100%;
+    max-width: 420px;
+    border: 3px solid #f9d65c; /* borde amarillo infantil */
+  }
 
-        .login-container {
-            background-color: #ffffff;
-            padding: 30px; /* Reducido un poco el padding */
-            border-radius: 12px; /* Más redondeado */
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Sombra más definida */
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid #f0f0f0; /* Borde sutil */
-        }
+  .login-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #3498db; /* azul cielo */
+    font-size: 28px;
+    font-weight: 700;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+  }
 
-        .login-container h2 {
-            text-align: center;
-            margin-bottom: 30px; /* Más espacio abajo */
-            color: #9B59B6;
-            font-size: 28px; /* Tamaño de fuente ligeramente mayor */
-            font-weight: 700;
-        }
-        
-        /* Contenedor principal para cada campo */
-        .form-field {
-            margin-bottom: 20px;
-        }
+  .form-field {
+    margin-bottom: 20px;
+  }
 
-        .form-field label {
-            display: block;
-            margin-bottom: 6px;
-            color: #333;
-            font-size: 14px;
-            font-weight: 700; /* Etiqueta en negrita */
-        }
+  .form-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: #333;
+    font-size: 14px;
+    font-weight: 700;
+  }
 
-        .form-field input, .form-field select {
-            width: 100%;
-            padding: 12px; /* Un poco más de padding */
-            font-size: 16px;
-            border: 1px solid #ddd; /* Borde más claro */
-            border-radius: 6px; /* Borde más redondeado */
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
+  .form-field input, .form-field select {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
 
-        .form-field input:focus, .form-field select:focus {
-            border-color: #9B59B6;
-            box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.2); /* Sombra de enfoque sutil */
-            outline: none;
-        }
+  .form-field input:focus, .form-field select:focus {
+    border-color: #27ae60; /* verde alegre */
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+    outline: none;
+  }
 
-        /* Contenedor para el input de contraseña y el ícono */
-        .password-wrapper {
-            position: relative;
-            display: flex; /* Asegura que el input ocupe el espacio */
-            align-items: center;
-        }
+  /* --- PASSWORD ICON --- */
+  .password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
 
-        /* Estilo para el ícono de ver/ocultar contraseña */
-        .password-wrapper i {
-            position: absolute;
-            right: 12px; 
-            cursor: pointer;
-            color: #999;
-            padding: 10px; /* Área de clic más grande */
-            transition: color 0.3s;
-        }
-        .password-wrapper i:hover {
-            color: #9B59B6;
-        }
+  .password-wrapper i {
+    position: absolute;
+    right: 12px;
+    cursor: pointer;
+    color: #999;
+    padding: 10px;
+    transition: color 0.3s;
+  }
 
-        /* Estilo para el botón Ingresar (ahora con la clase .btn-submit) */
-        .btn-submit {
-            width: 100%;
-            background-color: #9B59B6;
-            color: white;
-            border: none;
-            padding: 14px; /* Un poco más de padding */
-            font-size: 18px; /* Fuente más grande */
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-            transition: background-color 0.3s, transform 0.1s;
-            margin-top: 10px; /* Pequeño espacio extra arriba */
-        }
+  .password-wrapper i:hover {
+    color: #f39c12; /* naranja brillante */
+  }
 
-        .btn-submit:hover {
-            background-color: #8e44ad;
-        }
+  /* --- BOTÓN INGRESAR --- */
+  .btn-submit {
+    width: 100%;
+    background-color: #f39c12; /* naranja brillante */
+    color: white;
+    border: none;
+    padding: 14px;
+    font-size: 18px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    transition: background-color 0.3s, transform 0.1s;
+    margin-top: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
 
-        .btn-submit:active {
-            transform: scale(0.99); /* Efecto de clic */
-        }
+  .btn-submit:hover {
+    background-color: #e67e22;
+    transform: translateY(-2px);
+  }
 
-        /* FIN DE CORRECCIONES DE DISEÑO */
+  .btn-submit:active {
+    transform: scale(0.98);
+  }
 
-        .form-footer {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
-        }
+  /* --- FOOTER DEL FORMULARIO --- */
+  .form-footer {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+  }
 
-        .form-footer a {
-            color: #9B59B6;
-            text-decoration: none;
-        }
+  .form-footer a {
+    color: #27ae60; /* verde alegre */
+    text-decoration: none;
+    font-weight: 600;
+  }
 
-        .form-footer a:hover {
-            text-decoration: underline;
-        }
+  .form-footer a:hover {
+    text-decoration: underline;
+  }
 
-        .error {
-            color: red;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-    </style>
+  .error {
+    color: #e74c3c; /* rojo suave */
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+</style>
 </head>
 
 <body>

@@ -21,6 +21,7 @@ import calendar
 from django.views.decorators.http import require_POST
 import re
 from django.utils.html import strip_tags
+from pathlib import Path
 
 
 # -----------------------------------------------------------------
@@ -520,6 +521,7 @@ def generar_certificado_desarrollo_pdf(request, desarrollo_id):
 
     # --- Lógica para obtener el nombre del mes ---
     # 💡 CORRECCIÓN: Se añade la lógica para pasar el nombre del mes a la plantilla.
+    from pathlib import Path
     import locale
     try:
         # Se establece el idioma a español para obtener el nombre del mes correctamente.
@@ -538,9 +540,18 @@ def generar_certificado_desarrollo_pdf(request, desarrollo_id):
         logo_path = '' # Se asigna una cadena vacía si falla
 
     try:
-        fondo_path = os.path.join(settings.STATIC_ROOT, 'img', 'certificadoDesarrollo.jpg')
+        # --- CORRECCIÓN ---
+        # Se construye la ruta absoluta a la imagen de fondo.
+        # Luego, se convierte a un formato URI (file://...) que xhtml2pdf puede interpretar
+        # correctamente para encontrar el archivo en el sistema local.
+        from pathlib import Path
+
+        ruta_img = os.path.join(settings.BASE_DIR, 'core', 'static', 'img', 'certificadoDesarrollo.jpg')
+        fondo_url = Path(ruta_img).as_uri()  # Esto genera 'file:///C:/...'
+
+
     except Exception: # pragma: no cover
-        fondo_path = '' # Se asigna una cadena vacía si falla
+        fondo_url = '' # Se asigna una cadena vacía si falla
 
     # --- Renderizar plantilla HTML ---
     template_path = 'reporte/certificado_desarrollo_pdf.html'
@@ -552,7 +563,7 @@ def generar_certificado_desarrollo_pdf(request, desarrollo_id):
         'titulo_mensaje': titulo_mensaje,
         'mensaje': mensaje,
         'logo_url': logo_path,  # Se pasa la ruta del sistema de archivos
-        'fondo_url': fondo_path, # Se pasa la ruta del sistema de archivos
+        'fondo_url': fondo_url, # Se pasa la ruta del sistema de archivos
         'nombre_mes': nombre_mes, # Se añade el nombre del mes al contexto
         'fecha_emision': timezone.now(),
     }

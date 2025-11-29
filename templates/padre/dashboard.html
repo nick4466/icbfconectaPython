@@ -15,196 +15,258 @@
       background-image: url("{% static 'img/fondopadres.jpg' %}");
       background-size: cover;
       background-position: center;
-      background-repeat: no-repeat;
       background-attachment: fixed;
     }
+
+    /* BARRA SUPERIOR */
     .borde2 {
       text-align: center;
-      background-color: rgba(155, 89, 182, 0.9);
+      background-color: #4DB6FF;
       color: white;
-      padding: 12px 0;
-      font-size: 26px;
+      padding: 10px 0;
+      font-size: 22px;
       font-weight: bold;
-      letter-spacing: 1px;
+      border-bottom: 3px solid #FFEE58;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
     }
 
-    /* ──────────────────────────────── */
-    /* NAVBAR – LA DEJÉ IGUAL */
-    /* ──────────────────────────────── */
+    /* NAVBAR */
     header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      background-color: rgba(255, 255, 255, 0.85);
-      padding: 15px 30px;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-      flex-wrap: wrap;
+      align-items: center;
+      background-color: rgba(255,255,255,0.95);
+      padding: 14px 24px;
+      border-bottom: 3px solid #FFB74D;
+      border-radius: 0 0 22px 22px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      position: relative;
+      z-index: 10;
     }
 
-    header img { height: 60px; }
+    header img {
+      height: 60px;
+    }
 
     nav ul {
-      list-style: none;
       display: flex;
-      gap: 20px;
-      padding: 0;
+      list-style: none;
+      gap: 16px;
       margin: 0;
+      padding: 0;
+      position: relative;
     }
 
-    nav ul li a, nav ul li button {
-      text-decoration: none;
-      color: #9B59B6;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background-color 0.3s ease;
+    nav ul li a,
+    nav ul li button {
       background: none;
       border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
       cursor: pointer;
-      font-family: 'Roboto', sans-serif;
+      font-weight: bold;
+      font-size: 16px;
+      text-decoration: none;
+      color: #4DB6FF;
+      transition: 0.3s;
     }
 
-    nav ul li a:hover, nav ul li button:hover {
-      background-color: #f3c1e5;
+    nav ul li a:hover,
+    nav ul li button:hover {
+      background: #E3F2FD;
+      transform: translateY(-2px);
     }
 
-    nav ul .dropdown { position: relative; }
+    /* --- MENÚ DESPLEGABLE REINSTALADO TAL CUAL --- */
+    .dropdown {
+      position: relative;
+    }
 
-    nav ul .dropdown-content {
+    .dropdown-content {
       display: none;
       position: absolute;
-      background-color: white;
-      min-width: 180px;
-      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-      border-radius: 8px;
-      padding: 8px 0;
-      z-index: 1;
+      right: 0;
+      background: white;
+      min-width: 190px;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+      padding: 10px 0;
+      z-index: 20;
+      animation: fadeDropdown 0.2s ease-out;
     }
 
-    nav ul .dropdown:hover .dropdown-content { display: block; }
-    nav ul .dropdown-content a {
-      color: #9B59B6;
-      padding: 12px 16px;
+    @keyframes fadeDropdown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-content a,
+    .dropdown-content button {
+      padding: 12px 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      background: none;
+      border: none;
+      color: #E57373;
+      text-align: left;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .dropdown-content a:hover,
+    .dropdown-content button:hover {
+      background: #FFEBEE;
+    }
+
+    .dropdown:hover .dropdown-content {
       display: block;
-      text-decoration: none;
     }
-    nav ul .dropdown-content a:hover { background:#f3c1e5; }
 
-    /* ──────────────────────────────── */
-    /* CONTENEDOR */
-    /* ──────────────────────────────── */
+    /* CONTENEDOR PRINCIPAL */
     .dashboard-container {
-      max-width: 1100px;
-      margin: 40px auto;
-      background-color: rgba(255, 255, 255, 0.96);
-      border-radius: 18px;
-      padding: 35px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      width: 92%;
+      max-width: 1000px;
+      margin: 35px auto;
+      background: rgba(255,255,255,0.97);
+      padding: 32px;
+      border-radius: 24px;
+      border: 3px solid #81C784;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
 
     h1 {
       text-align: center;
-      font-size: 30px;
-      color: #7a3eb1;
-      margin-bottom: 10px;
+      font-size: 28px;
+      color: #4DB6FF;
+      font-weight: 800;
+      margin-bottom: 8px;
     }
 
     .bienvenida p {
       text-align: center;
-      font-size: 18px;
-      color: #5e3370;
-      margin-bottom: 35px;
+      font-size: 16px;
+      color: #E57373;
+      margin-bottom: 25px;
     }
 
-    /* ──────────────────────────────── */
-    /* NUEVO DISEÑO DE TARJETAS */
-    /* ──────────────────────────────── */
+    /* GRID */
     .grid-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 28px;
     }
 
+    /* TARJETAS */
     .card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 22px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      transition: transform 0.25s, box-shadow 0.25s;
-      border: 1px solid #eee;
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      border: 3px solid #FFB74D;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+      transition: 0.3s;
     }
 
     .card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.18);
     }
 
-    /* HEADER DE LA CARD */
+    /* HEADER */
     .card-header {
       display: flex;
       align-items: center;
       gap: 18px;
-      margin-bottom: 15px;
+      margin-bottom: 16px;
     }
 
-    /* FOTO RECTANGULAR (no redonda) */
     .card-header img {
-      width: 105px;
-      height: 105px;
-      border-radius: 12px;     /* ← ya no es círculo */
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
       object-fit: cover;
-      border: 3px solid #e4d6ff;
+      border: 4px solid #FFEE58;
     }
 
     .card-header-info h3 {
       margin: 0;
-      color: #5e3370;
-      font-size: 21px;
-      font-weight: bold;
+      font-size: 20px;
+      color: #E57373;
+      font-weight: 700;
     }
 
     .card-header-info p {
-      margin: 5px 0 0;
-      font-size: 15px;
-      color: #777;
-    }
-
-    /* CUERPO */
-    .card-body p {
       margin: 0;
+      font-size: 13px;
       color: #555;
-      line-height: 1.5;
     }
 
-    .resumen-desarrollo {
-      background: #f3edfb;
+    /* INFO SECTIONS */
+    .info-section {
+      background: #FFFDE7;
+      border-left: 6px solid #FFEE58;
       padding: 12px;
-      border-radius: 10px;
-      border-left: 4px solid #9B59B6;
-      margin-top: 8px;
-      font-style: italic;
-      color: #633d85;
+      border-radius: 12px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .info-section h4 {
+      margin: 0 0 4px;
+      font-size: 15px;
+      color: #F57C00;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .novedad-reciente {
+      background: #FFEBEE;
+      border-left-color: #E57373;
+    }
+
+    .novedad-reciente h4 {
+      color: #D32F2F;
     }
 
     /* FOOTER */
-    .btn-ver-desarrollo {
-      display: inline-block;
-      background-color: #9B59B6;
+    .card-footer {
+      border-top: 1px solid #E0E0E0;
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-principal {
+      background-color: #4DB6FF;
       color: white;
       padding: 10px 18px;
       border-radius: 10px;
-      font-weight: bold;
+      font-weight: 700;
       text-decoration: none;
-      transition: background 0.2s;
-      margin-top: 18px;
+      transition: 0.3s;
+      font-size: 14px;
     }
 
-    .btn-ver-desarrollo:hover {
-      background-color: #7d3cbf;
+    .btn-principal:hover {
+      background-color: #039BE5;
     }
-  </style>
+
+    .quick-actions a {
+      font-size: 22px;
+      color: #81C784;
+      transition: 0.2s;
+    }
+
+    .quick-actions a:hover {
+      color: #66BB6A;
+      transform: scale(1.1);
+    }
+</style>
+
 </head>
 
 <body>
@@ -244,7 +306,10 @@
 
     <div class="grid-container">
       {% for data in ninos_data %}
-        <div class="card" style="margin-bottom:28px; position:relative;">
+        <div class="card">
+
+
+          <!-- Encabezado de la tarjeta -->
           <div class="card-header">
             {% if data.nino.foto %}
               <img src="{{ data.nino.foto.url }}" alt="Foto de {{ data.nino.nombres }}">
@@ -252,35 +317,41 @@
               <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto de {{ data.nino.nombres }}">
             {% endif %}
             <div class="card-header-info">
-              <h3 style="font-size:22px;color:#7a3eb1;font-weight:700;margin-bottom:2px;">{{ data.nino.nombres }} {{ data.nino.apellidos }}</h3>
+              <h3>{{ data.nino.nombres }} {{ data.nino.apellidos }}</h3>
+              <p>Hogar: {{ data.nino.hogar.nombre_hogar }}</p>
             </div>
           </div>
+
+          <!-- Cuerpo de la tarjeta con secciones -->
           <div class="card-body">
+            
+
+            <!-- Sección de Desarrollo Mensual -->
             {% if data.ultimo_desarrollo %}
-              <div style="margin-bottom:12px; color:#555; font-size:15px; display:flex; align-items:center; gap:8px;">
-                <i class="fas fa-calendar-alt" style="color:#7a3eb1;"></i>
-                <strong>Último registro:</strong>
-                <span style="background:#eaf6ff;padding:2px 10px;border-radius:12px; font-weight:600; color:#7a3eb1;">{{ data.ultimo_desarrollo.fecha_fin_mes|date:"d \d\e F \d\e Y" }}</span>
+              <div class="info-section">
+                <h4><i class="fas fa-chart-line"></i> Resumen del Desarrollo ({{ data.ultimo_desarrollo.fecha_fin_mes|date:"F" }})</h4>
+                <p>{{ data.ultimo_desarrollo.conclusion_general|truncatewords:25 }}</p>
               </div>
-              <p class="resumen-desarrollo" style="margin-bottom:12px;">
-                <i class="fas fa-quote-left" style="opacity:0.6;margin-right:5px;"></i>
-                {{ data.ultimo_desarrollo.conclusion_general|truncatewords:20 }}
-              </p>
-              {% if data.ultimo_desarrollo.logro_mes %}
-                <span style="display:inline-block;background:#fff;color:#7a3eb1;font-weight:700;padding:5px 16px;border-radius:16px;font-size:15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(155,89,182,0.08);border:2px solid #7a3eb1; position:absolute; top:18px; right:18px;">
-                  {% if data.ultimo_desarrollo.logro_mes == 'Alto' %}<i class="fas fa-seedling" style="color:#27ae60; margin-right:6px;"></i>
-                  {% elif data.ultimo_desarrollo.logro_mes == 'Adecuado' %}<i class="fas fa-child" style="color:#2980b9; margin-right:6px;"></i>
-                  {% else %}<i class="fas fa-hourglass-half" style="color:#f39c12; margin-right:6px;"></i>{% endif %}
-                  Logro: {{ data.ultimo_desarrollo.logro_mes }}
-                </span>
-              {% endif %}
             {% else %}
-              <p>Aún no hay registros de desarrollo para {{ data.nino.nombres }}.</p>
+              <div class="info-section"><p>Aún no hay registros de desarrollo para este niño.</p></div>
+            {% endif %}
+
+            <!-- Sección de Novedades Recientes (Opcional) -->
+            {% if data.ultima_novedad %}
+              <div class="info-section novedad-reciente">
+                <h4><i class="fas fa-exclamation-triangle"></i> Novedad Reciente</h4>
+                <p><strong>{{ data.ultima_novedad.get_tipo_display }}:</strong> {{ data.ultima_novedad.descripcion|truncatewords:15 }}</p>
+              </div>
             {% endif %}
           </div>
-          <a href="{% url 'padre_ver_desarrollo' data.nino.id %}" class="btn-ver-desarrollo">
-            <i class="fas fa-chart-line"></i> Ver desarrollo
-          </a>
+
+          <!-- Pie de la tarjeta con acciones -->
+          <div class="card-footer">
+            <a href="{% url 'padre_ver_desarrollo' data.nino.id %}" class="btn-principal">Ver Desarrollo Completo</a>
+            <div class="quick-actions">
+              <a href="{% url 'calendario_padres' %}" title="Ver Calendario"><i class="fas fa-calendar-alt"></i></a>
+            </div>
+          </div>
         </div>
       {% empty %}
         <div class="card" style="padding:30px;">
