@@ -1,96 +1,121 @@
-  {% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Página Principal - Padres de Familia</title>
+
+  <!-- Fuentes y recursos -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
 
   <style>
+    /* ======================== */
+    /*     ESTILOS GLOBALES     */
+    /* ======================== */
     body {
-            margin: 0;
-            font-family: 'Roboto', sans-serif;
-            background-image: url("{% static 'img/fondopadres.jpg' %}");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }
-        .borde2 {
-            text-align: center;
-            background-color: #4DB6FF;
-            color: white;
-            padding: 10px 0;
-            font-size: 22px;
-            font-weight: bold;
-            border-bottom: 3px solid #FFEE58;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-        }
-        header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: rgba(255,255,255,0.95);
-            padding: 14px 24px;
-            border-bottom: 3px solid #FFB74D;
-            border-radius: 0 0 22px 22px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            position: relative;
-            z-index: 10;
-        }
-        header img { height: 60px; }
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 20px;
-            padding: 0;
-            margin: 0;
-        }
-        nav ul li a, nav ul li button {
-            color: #4DB6FF;
-            font-weight: bold;
-            text-decoration: none;
-            font-size: 16px;
-            padding: 10px 14px;
-            border-radius: 10px;
-            transition: 0.3s;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-        nav ul li a:hover, nav ul li button:hover {
-            background: #E3F2FD;
-        }
-        nav ul .dropdown { position: relative; }
-        nav ul .dropdown-content {
-            display: none;
-            position: absolute;
-            background: white;
-            min-width: 180px;
-            border-radius: 12px;
-            padding: 8px 0;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-        }
-        nav ul .dropdown:hover .dropdown-content { display: block; }
-        nav ul .dropdown-content a {
-            padding: 12px 16px;
-            display: block;
-            color: #E57373;
-            text-decoration: none;
-        }
-        nav ul .dropdown-content a:hover { background: #FFEBEE; }
-        .contenedor {
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: 30% 1fr;
-            gap: 25px;
-        }
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondopadres.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
 
-    /* CONTENEDOR PRINCIPAL */
+    .borde2 {
+      text-align: center;
+      background-color: #4DB6FF;
+      color: white;
+      padding: 10px 0;
+      font-size: 22px;
+      font-weight: bold;
+      border-bottom: 3px solid #FFEE58;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+
+    /* ======================== */
+    /*          HEADER          */
+    /* ======================== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(255,255,255,0.95);
+      padding: 14px 24px;
+      border-bottom: 3px solid #FFB74D;
+      border-radius: 0 0 22px 22px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      position: relative;
+      z-index: 10;
+    }
+
+    header img { height: 60px; }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav ul li a,
+    nav ul li button {
+      color: #4DB6FF;
+      font-weight: bold;
+      font-size: 16px;
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      transition: 0.3s;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    nav ul li a:hover,
+    nav ul li button:hover {
+      background: #E3F2FD;
+    }
+
+    .dropdown { position: relative; }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background: white;
+      min-width: 180px;
+      border-radius: 12px;
+      padding: 8px 0;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+
+    .dropdown:hover .dropdown-content { display: block; }
+
+    .dropdown-content a,
+    .dropdown-content button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 12px 16px;
+      color: #E57373;
+      text-decoration: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .dropdown-content a:hover,
+    .dropdown-content button:hover {
+      background: #FFEBEE;
+    }
+
+    /* ======================== */
+    /*      CONTENEDOR MAIN     */
+    /* ======================== */
     .dashboard-container {
       width: 92%;
       max-width: 1000px;
@@ -112,23 +137,24 @@
 
     .bienvenida p {
       text-align: center;
-      font-size: 16px;
       color: #E57373;
       margin-bottom: 25px;
+      font-size: 16px;
     }
 
-    /* GRID */
+    /* ======================== */
+    /*       TARJETAS GRID      */
+    /* ======================== */
     .grid-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 28px;
     }
 
-    /* TARJETAS */
     .card {
       background: white;
-      border-radius: 20px;
       padding: 20px;
+      border-radius: 20px;
       border: 3px solid #FFB74D;
       box-shadow: 0 6px 16px rgba(0,0,0,0.14);
       transition: 0.3s;
@@ -139,11 +165,13 @@
       box-shadow: 0 14px 28px rgba(0,0,0,0.18);
     }
 
-    /* HEADER */
+    /* ======================== */
+    /*          HEADER CARD      */
+    /* ======================== */
     .card-header {
       display: flex;
-      align-items: center;
       gap: 18px;
+      align-items: center;
       margin-bottom: 16px;
     }
 
@@ -168,7 +196,9 @@
       color: #555;
     }
 
-    /* INFO SECTIONS */
+    /* ======================== */
+    /*        INFO SECTIONS     */
+    /* ======================== */
     .info-section {
       background: #FFFDE7;
       border-left: 6px solid #FFEE58;
@@ -196,7 +226,9 @@
       color: #D32F2F;
     }
 
-    /* FOOTER */
+    /* ======================== */
+    /*         FOOTER CARD      */
+    /* ======================== */
     .card-footer {
       border-top: 1px solid #E0E0E0;
       padding-top: 12px;
@@ -212,8 +244,8 @@
       border-radius: 10px;
       font-weight: 700;
       text-decoration: none;
-      transition: 0.3s;
       font-size: 14px;
+      transition: 0.3s;
     }
 
     .btn-principal:hover {
@@ -230,98 +262,130 @@
       color: #66BB6A;
       transform: scale(1.1);
     }
-</style>
-
+  </style>
 </head>
 
-<body>
-     <div class="borde2"></div>
 
-  <!-- NAVBAR SE MANTIENE IGUAL -->
+<body>
+
+  <div class="borde2"></div>
+
+  <!-- ======================== -->
+  <!--        NAVBAR           -->
+  <!-- ======================== -->
   <header>
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
+
     <nav>
       <ul>
         <li><a href="{% url 'padre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="{% url 'calendario_padres' %}"><i class="fas fa-calendar"></i> Calendario</a></li>
+
         <li class="dropdown">
           <a href="#"><i class="fas fa-cog"></i> Ajustes</a>
           <div class="dropdown-content">
-            <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-            <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+
+            <a href="{% url 'editar_perfil' %}">
+              <i class="fa-solid fa-user-pen"></i> Editar Perfil
+            </a>
+
+            <a href="{% url 'cambiar_contrasena' %}">
+              <i class="fa-solid fa-key"></i> Cambiar Contraseña
+            </a>
+
             <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
-          </form>
+              {% csrf_token %}
+              <button type="submit">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+              </button>
+            </form>
           </div>
         </li>
 
-        
       </ul>
     </nav>
   </header>
 
+
+  <!-- ======================== -->
+  <!--       CONTENIDO         -->
+  <!-- ======================== -->
   <div class="dashboard-container">
+
     <div class="bienvenida">
       <h1>¡Bienvenido, <strong>{{ user.nombres }}!</strong></h1>
       <p>Aquí puedes ver el desarrollo y la actividad diaria de tus hijos.</p>
     </div>
 
     <div class="grid-container">
+
       {% for data in ninos_data %}
+
         <div class="card">
 
-
-          <!-- Encabezado de la tarjeta -->
+          <!-- HEADER TARJETA -->
           <div class="card-header">
             {% if data.nino.foto %}
               <img src="{{ data.nino.foto.url }}" alt="Foto de {{ data.nino.nombres }}">
             {% else %}
               <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto de {{ data.nino.nombres }}">
             {% endif %}
+
             <div class="card-header-info">
               <h3>{{ data.nino.nombres }} {{ data.nino.apellidos }}</h3>
               <p>Hogar: {{ data.nino.hogar.nombre_hogar }}</p>
             </div>
           </div>
 
-          <!-- Cuerpo de la tarjeta con secciones -->
+          <!-- CUERPO TARJETA -->
           <div class="card-body">
-            
 
-            <!-- Sección de Desarrollo Mensual -->
             {% if data.ultimo_desarrollo %}
-              <div class="info-section">
-                <h4><i class="fas fa-chart-line"></i> Resumen del Desarrollo ({{ data.ultimo_desarrollo.fecha_fin_mes|date:"F" }})</h4>
-                <p>{{ data.ultimo_desarrollo.conclusion_general|truncatewords:25 }}</p>
-              </div>
+            <div class="info-section">
+              <h4><i class="fas fa-chart-line"></i> Resumen del Desarrollo ({{ data.ultimo_desarrollo.fecha_fin_mes|date:"F" }})</h4>
+              <p>{{ data.ultimo_desarrollo.conclusion_general|truncatewords:25 }}</p>
+            </div>
             {% else %}
-              <div class="info-section"><p>Aún no hay registros de desarrollo para este niño.</p></div>
+            <div class="info-section">
+              <p>Aún no hay registros de desarrollo para este niño.</p>
+            </div>
             {% endif %}
 
-            <!-- Sección de Novedades Recientes (Opcional) -->
             {% if data.ultima_novedad %}
-              <div class="info-section novedad-reciente">
-                <h4><i class="fas fa-exclamation-triangle"></i> Novedad Reciente</h4>
-                <p><strong>{{ data.ultima_novedad.get_tipo_display }}:</strong> {{ data.ultima_novedad.descripcion|truncatewords:15 }}</p>
-              </div>
+            <div class="info-section novedad-reciente">
+              <h4><i class="fas fa-exclamation-triangle"></i> Novedad Reciente</h4>
+              <p><strong>{{ data.ultima_novedad.get_tipo_display }}:</strong>
+                {{ data.ultima_novedad.descripcion|truncatewords:15 }}
+              </p>
+            </div>
             {% endif %}
+
           </div>
 
-          <!-- Pie de la tarjeta con acciones -->
+          <!-- FOOTER TARJETA -->
           <div class="card-footer">
-            <a href="{% url 'padre_ver_desarrollo' data.nino.id %}" class="btn-principal">Ver Desarrollo Completo</a>
+            <a href="{% url 'padre_ver_desarrollo' data.nino.id %}" class="btn-principal">
+              Ver Desarrollo Completo
+            </a>
+
             <div class="quick-actions">
-              <a href="{% url 'calendario_padres' %}" title="Ver Calendario"><i class="fas fa-calendar-alt"></i></a>
+              <a href="{% url 'calendario_padres' %}" title="Ver Calendario">
+                <i class="fas fa-calendar-alt"></i>
+              </a>
             </div>
           </div>
+
         </div>
+
       {% empty %}
+
         <div class="card" style="padding:30px;">
           <h3>No hay niños asignados</h3>
           <p>Si crees que es un error, contacta a la madre comunitaria.</p>
         </div>
+
       {% endfor %}
+
     </div>
   </div>
 

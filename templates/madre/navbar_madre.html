@@ -12,7 +12,7 @@
 
     <nav class="navbar-menu">
         <ul>
-            <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
             <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
             <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-users"></i> Gestión de Niños</a></li>
             <li><a href="{% url 'asistencia_form' %}"><i class="fas fa-clipboard-list"></i> Llamar a Lista</a></li>
@@ -22,20 +22,24 @@
     </nav>
 
     <div class="header-right">
-        <div class="user-menu">
-            <span class="user-name">{{ nombre_madre }}</span>
-            <a href="{% url 'editar_perfil' %}" class="nav-btn" title="Editar Perfil">
+        <div class="user-menu-dropdown">
+            <button class="user-menu-button nav-btn">
                 <i class="fas fa-user-circle"></i>
-            </a>
-            <a href="{% url 'cambiar_contrasena' %}" class="nav-btn" title="Cambiar Contraseña">
-                <i class="fas fa-key"></i>
-            </a>
-            <form method="post" action="{% url 'logout' %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="nav-btn logout-btn" title="Cerrar Sesión">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </form>
+            </button>
+            <div class="user-menu-content">
+                <div class="user-info">
+                    <img src="{% if foto_perfil_url %}{{ foto_perfil_url }}{% else %}{% static 'img/default_user.png' %}{% endif %}" 
+                         alt="Foto de perfil" 
+                         class="profile-picture">
+                    <span class="user-name">{{ nombre_madre }}</span>
+                </div>
+                <a href="{% url 'editar_perfil' %}"><i class="fas fa-user-edit"></i> Editar Perfil</a>
+                <a href="{% url 'cambiar_contrasena' %}"><i class="fas fa-key"></i> Cambiar Contraseña</a>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+                </form>
+            </div>
         </div>
     </div>
 </header>

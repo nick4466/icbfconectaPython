@@ -10,7 +10,7 @@ La navbar unificada es un componente reutilizable que se incluye en todos los te
 - **templates/madre/navbar_madre.html** - Componente navbar (con include de CSS)
 
 ### Archivo de Estilos
-- **templates/madre/css/navbar_madre.css** - Estilos centralizados de la navbar
+- **static/css/navbar_madre.css** - Estilos centralizados de la navbar
 
 ## 🔗 Cómo Usar
 
@@ -55,10 +55,11 @@ Contiene los siguientes enlaces:
 - **Novedades** - `/novedades/` - Registro de novedades/incidentes
 
 ### 3. **Menú de Usuario** (user-menu)
-- Nombre de la madre comunitaria (con truncado automático)
-- Botón **Editar Perfil** - `/editar_perfil/`
-- Botón **Cambiar Contraseña** - `/cambiar_contrasena/`
-- Botón **Cerrar Sesión** - `/logout/`
+Es un menú desplegable que se activa al pasar el cursor sobre el ícono de usuario. Contiene:
+- **Nombre de la madre comunitaria**.
+- Enlace para **Editar Perfil** (`/editar_perfil/`).
+- Enlace para **Cambiar Contraseña** (`/cambiar_contrasena/`).
+- Botón para **Cerrar Sesión** (`/logout/`).
 
 ## 🎨 Diseño
 
@@ -153,7 +154,7 @@ Verifica que todas estas URLs estén definidas en tu `urls.py`.
 ## 🛠️ Personalización
 
 ### Cambiar Colores
-Edita `templates/madre/css/navbar_madre.css` y modifica las variables CSS en `:root`:
+Edita `static/css/navbar_madre.css` y modifica las variables CSS en `:root`:
 
 ```css
 :root {
@@ -186,7 +187,7 @@ Y reemplaza `fa-sitemap` con otro ícono de Font Awesome.
 ### Los estilos no se aplican
 1. Limpia el caché del navegador (Ctrl+F5)
 2. Verifica que `{% load static %}` esté en el template
-3. Revisa que la ruta del CSS sea correcta: `{% static 'madre/css/navbar_madre.css' %}`
+3. Revisa que la ruta del CSS sea correcta: `{% static 'css/navbar_madre.css' %}`
 
 ### Los enlaces no funcionan
 1. Verifica que las URLs estén definidas en `urls.py`
@@ -197,7 +198,7 @@ Y reemplaza `fa-sitemap` con otro ícono de Font Awesome.
 
 Para actualizar la navbar en el futuro:
 1. Edita `templates/madre/navbar_madre.html` para cambios HTML
-2. Edita `templates/madre/css/navbar_madre.css` para cambios de estilos
+2. Edita `static/css/navbar_madre.css` para cambios de estilos
 3. Los cambios se aplicarán automáticamente a todos los templates que incluyan la navbar
 
 No necesitas actualizar cada template individualmente.

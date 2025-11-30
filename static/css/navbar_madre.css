@@ -1,5 +1,5 @@
 /* Navbar Unificada para Madre Comunitaria - Estilos Centralizados */
-
+/* Versión 1.1 - Con Menú Desplegable */
 :root {
     --primary-gradient-start: #667eea;
     --primary-gradient-end: #764ba2;
@@ -54,12 +54,6 @@
     transition: transform 0.3s ease;
 }
 
-.navbar-logo {
-    height: 45px;
-    width: auto;
-    transition: transform 0.3s ease;
-}
-
 .logo-link:hover .navbar-logo {
     transform: scale(1.05);
 }
@@ -69,6 +63,12 @@
     font-weight: 700;
     margin: 0;
     letter-spacing: 0.5px;
+}
+
+.navbar-logo {
+    height: 45px;
+    width: auto;
+    transition: transform 0.3s ease;
 }
 
 /* Navbar Menu */
@@ -145,7 +145,14 @@
     text-overflow: ellipsis;
 }
 
-/* Nav Buttons */
+/* Formulario de logout en línea (obsoleto con menú desplegable, pero se mantiene por si acaso) */
+.user-menu form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+/* Nav Buttons (Iconos de la barra de navegación) */
 .nav-btn {
     color: var(--white);
     background: none;
@@ -160,6 +167,7 @@
     justify-content: center;
     text-decoration: none;
     font-family: inherit;
+    position: relative;
 }
 
 .nav-btn:hover {
@@ -175,11 +183,105 @@
     background-color: rgba(255, 68, 68, 0.4);
 }
 
-/* Formulario de logout en línea */
-.user-menu form {
-    display: inline;
-    margin: 0;
-    padding: 0;
+/* === Estilos para el Menú Desplegable de Usuario === */
+
+/* Contenedor principal del menú desplegable */
+.user-menu-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Botón que activa el menú */
+.user-menu-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem; /* Ajusta el tamaño del ícono */
+    color: var(--white); /* Hereda el color blanco de la navbar */
+}
+
+/* Contenido del menú desplegable (oculto por defecto) */
+.user-menu-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: #f9f9f9;
+    min-width: 220px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 100;
+    border-radius: 8px;
+    padding: 8px 0;
+    border: 1px solid #ddd;
+}
+
+/* Muestra el menú cuando se pasa el cursor sobre el contenedor */
+.user-menu-dropdown:hover .user-menu-content {
+    display: block;
+}
+
+/* Estilos para la información del usuario dentro del menú */
+.user-menu-content .user-info {
+    display: flex; /* Cambiado a flexbox */
+    flex-direction: column; /* Apila los elementos verticalmente */
+    align-items: center;
+    gap: 8px; /* Espacio entre la foto y el nombre */
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 8px;
+    text-align: center; /* Centra el texto del nombre */
+}
+
+.user-menu-content .profile-picture {
+    width: 70px; /* Un poco más grande */
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-color);
+}
+
+.user-menu-content .user-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+/* Estilos para los enlaces y el formulario dentro del menú */
+.user-menu-content a,
+.user-menu-content .logout-btn {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.user-menu-content a i,
+.user-menu-content .logout-btn i {
+    margin-right: 10px;
+    width: 20px; /* Alinea los íconos */
+    text-align: center;
+}
+
+/* Cambio de color al pasar el cursor sobre los elementos del menú */
+.user-menu-content a:hover,
+.user-menu-content .logout-btn:hover {
+    background-color: #f1f1f1;
+}
+
+/* Estilo específico para el botón de cerrar sesión */
+.user-menu-content .logout-btn {
+    color: #d9534f; /* Un color rojo para indicar una acción destructiva */
+}
+
+.user-menu-content .logout-btn:hover {
+    color: white;
+    background-color: #c9302c;
 }
 
 /* Responsive Design */
