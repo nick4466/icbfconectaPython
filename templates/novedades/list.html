@@ -207,6 +207,67 @@ nav ul {
   background-color: #5e35b1;
 }
 
+.logout-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.logout-btn i {
+  margin-right: 5px;
+}
+
+
+.busqueda-form {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.busqueda-input,
+.busqueda-form input[type="date"] {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.busqueda-input:focus,
+.busqueda-form input[type="date"]:focus {
+  border-color: #7a3eb1;
+  outline: none;
+}
+
+.busqueda-form button {
+  background-color: #7a3eb1;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.busqueda-form button:hover {
+  background-color: #5a2a85;
+}
+
+.busqueda-form .btn-secondary {
+  background-color: #ccc;
+  color: #333;
+}
+
+.busqueda-form .btn-secondary:hover {
+  background-color: #aaa;
+}
+
+
+
   </style>
 </head>
 <body>
@@ -216,7 +277,17 @@ nav ul {
     <nav>
       <ul>
         <li><a href="{% url 'asistencia_form' %}"><i class="fas fa-arrow-left"></i> Volver</a></li>
-        <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+
+
+        <li>
+  <form method="post" action="{% url 'logout' %}" style="display:inline;" id="logout-form">
+    {% csrf_token %}
+    <button type="submit" class="nav-btn logout-btn" title="Cerrar Sesión" onclick="return confirmarLogout();">
+      <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+    </button>
+  </form>
+</li>
+
         
       </ul>
     </nav>
@@ -226,9 +297,7 @@ nav ul {
   <!-- contenido aquí -->
 
 
-  <form method="get" class="busqueda-form" style="margin-bottom: 20px;">
-  <input type="text" name="q" placeholder="Buscar novedad..." value="{{ query }}" class="busqueda-input">
-  <button type="submit" class="btn btn-sm btn-purple">Buscar</button>
+
 </form>
 
 
@@ -240,6 +309,18 @@ nav ul {
   <a href="{% url 'novedades:novedades_create' %}" class="btn btn-primary">Registrar nueva novedad</a>
 
 </div>
+
+
+<!-- filtro de busqueda por fecha -->
+<form method="get" class="busqueda-form">
+  <input type="text" name="q" placeholder="Buscar novedad..." value="{{ query }}" class="busqueda-input">
+  <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}">
+  <input type="date" name="fecha_fin" value="{{ fecha_fin }}">
+  <button type="submit" class="btn">Filtrar</button>
+  <a href="{% url 'novedades:novedades_list' %}" class="btn btn-secondary">Limpiar filtros</a>
+</form>
+
+
 
 
   <div class="card">
@@ -300,3 +381,12 @@ nav ul {
 
 </body>
 </html>
+
+<script>
+  //para confirmar logout
+  function confirmarLogout() {
+    return confirm("¿Seguro que quieres cerrar sesión?");
+  }
+</script>
+
+

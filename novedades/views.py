@@ -7,6 +7,8 @@ from core.models import Nino, Asistencia, HogarComunitario
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from core.views import rol_requerido
+from datetime import datetime
+from django.utils.dateparse import parse_date
 
 
 @login_required
@@ -17,8 +19,12 @@ def novedades_list(request):
     ninos_madre = Nino.objects.filter(hogar=hogar_madre)
 
     query = request.GET.get('q')
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+
     novedades = Novedad.objects.select_related('nino').filter(nino__in=ninos_madre).order_by('-fecha')
 
+    # Filtro por texto
     if query:
         filtros = (
             Q(nino__nombres__icontains=query) |
@@ -35,7 +41,19 @@ def novedades_list(request):
 
         novedades = novedades.filter(filtros)
 
-    return render(request, 'novedades/list.html', {'novedades': novedades, 'query': query})
+    # Filtro por rango de fechas
+    if fecha_inicio:
+        novedades = novedades.filter(fecha__gte=parse_date(fecha_inicio))
+    if fecha_fin:
+        novedades = novedades.filter(fecha__lte=parse_date(fecha_fin))
+
+    context = {
+        'novedades': novedades,
+        'query': query,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin,
+    }
+    return render(request, 'novedades/list.html', context)
 
 
 
@@ -136,3 +154,34 @@ def detalle_novedad(request, novedad_id):
     novedad = get_object_or_404(Novedad, id=novedad_id, nino__hogar=hogar_madre)
     return render(request, 'novedades/detalle.html', {'novedad': novedad})
 
+
+from django.template.loader import get_template
+from django.http import HttpResponse
+from xhtml2pdf import pisa
+from novedades.models import Novedad
+
+from django.template.loader import get_template
+from django.http import HttpResponse
+from xhtml2pdf import pisa
+from django.shortcuts import get_object_or_404
+from core.views import rol_requerido
+from django.contrib.auth.decorators import login_required
+from novedades.models import Novedad
+
+@login_required
+@rol_requerido('madre_comunitaria')
+def novedades_pdf(request, novedad_id):
+    novedad = get_object_or_404(Novedad, id=novedad_id)
+
+    context = {
+        'novedad': novedad,
+    }
+
+    template = get_template("novedades/novedades_pdf.html")  # <-- plural
+    html = template.render(context)
+
+    response = HttpResponse(content_type="application/pdf")
+    response['Content-Disposition'] = f'attachment; filename="novedad_{novedad.id}.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response

@@ -10,12 +10,15 @@ from django.contrib.auth.decorators import login_required
 from core.views import rol_requerido  # si lo tienes definido ahí
 from core.models import HogarComunitario
 from asistencia.utils import verificar_ausencias
+from django.template.loader import get_template
+from django.http import HttpResponse
+from xhtml2pdf import pisa
+
 
 
 
 @login_required
 @rol_requerido('madre_comunitaria')
-
 def asistencia_form(request):
     madre_profile = request.user.madre_profile
     hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
@@ -33,25 +36,23 @@ def asistencia_form(request):
                     fecha=fecha_hoy,
                     defaults={'estado': estado}
                 )
-                verificar_ausencias(nino)  # Llama a la función para verificar ausencias
+                verificar_ausencias(nino, request.user)  # Verifica ausencias después de guardar
 
-        # Notificaciones
-        notifications = Notification.objects.filter(read=False).order_by('-created_at')
-        notif_count = notifications.count()
+        # 🔔 Notificaciones del usuario
+        notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+        notif_count = notifications.filter(read=False).count()
 
         return render(request, 'asistencia/asistencia_form.html', {
             'ninos': ninos,
-            'fecha_hoy': fecha_hoy,
+            'fecha_hoy': fecha_hoy.strftime('%Y-%m-%d'),
             'mensaje': 'Asistencia registrada exitosamente ✅',
             'notifications': notifications,
             'notif_count': notif_count,
         })
 
-    fecha_hoy = date.today()
-
-    # Notificaciones también en GET
-    notifications = Notification.objects.filter(read=False).order_by('-created_at')
-    notif_count = notifications.count()
+    fecha_hoy = date.today().strftime('%Y-%m-%d')
+    notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+    notif_count = notifications.filter(read=False).count()
 
     return render(request, 'asistencia/asistencia_form.html', {
         'ninos': ninos,
@@ -59,6 +60,8 @@ def asistencia_form(request):
         'notifications': notifications,
         'notif_count': notif_count,
     })
+
+
 
 
 @login_required
@@ -141,3 +144,30 @@ def crear_novedad_desde_asistencia(request):
 
         return JsonResponse({"success": True})
     return JsonResponse({"success": False})
+
+
+@login_required
+@rol_requerido('madre_comunitaria')
+def historial_asistencia_pdf(request, nino_id):
+    madre_profile = request.user.madre_profile
+    hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
+    nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
+    historial = Asistencia.objects.filter(nino=nino).order_by('-fecha')
+
+    # Contexto igual al HTML
+    context = {
+        'nino': nino,
+        'historial': historial,
+        'presentes': historial.filter(estado="Presente").count(),
+        'ausentes': historial.filter(estado="Ausente").count(),
+        'justificados': historial.filter(estado="Justificado").count(),
+    }
+
+    template = get_template("asistencia/historial_pdf.html")  # nuevo template para PDF
+    html = template.render(context)
+
+    response = HttpResponse(content_type="application/pdf")
+    response['Content-Disposition'] = f'attachment; filename="historial_{nino.nombres}.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+    return response

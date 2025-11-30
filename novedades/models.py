@@ -1,6 +1,8 @@
 from django.db import models
 from core.models import Nino  # Ajusta si el modelo Niño está en otra app
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 class Novedad(models.Model):    
     nino = models.ForeignKey(Nino, on_delete=models.CASCADE)
     docente = models.CharField(max_length=100)
@@ -11,6 +13,7 @@ class Novedad(models.Model):
     disposicion = models.TextField(blank=True)
     acuerdos = models.TextField(blank=True)
     observaciones = models.TextField(blank=True)
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  # 🔔 quién creó la novedad
 
     archivo_pdf = models.FileField(upload_to='novedades_pdfs/', blank=True, null=True)
 

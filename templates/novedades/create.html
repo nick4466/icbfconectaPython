@@ -124,6 +124,17 @@ nav ul {
       .form-card { padding: 20px; }
       input, select, textarea { font-size: 14px; }
     }
+
+         li {
+        text-decoration: none;
+        color: #9B59B6;
+        font-weight: bold;
+        font-size: 16px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background-color 0.3s ease;
+      }
+
   </style>
 </head>
 <body>
@@ -135,6 +146,7 @@ nav ul {
       {% csrf_token %}
       {{ form.as_p }}
       <button type="submit" class="btn-guardar">Guardar Novedad</button>
+      <li><a href="{% url 'novedades:novedades_list' %}">Regresar Novedad</a></li>
     </form>
   </div>
 

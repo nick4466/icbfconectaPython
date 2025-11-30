@@ -151,9 +151,22 @@ nav ul {
     <!-- Botón volver -->
     <a href="{% url 'novedades:novedades_list' %}" class="btn-secondary">Regresar a novedades</a>
     <br>
+<a href="{% url 'novedades:novedades_pdf' novedad.id %}" class="btn-secondary">
+  <i class="fas fa-file-pdf"></i> Descargar PDF de esta novedad
+</a>
+
+
+
+<br>
+
     <a href="{% url 'historial_asistencia' novedad.nino.id %}" class="btn-secondary">Ir a historial</a>
 
   </div>
+
+  <footer style="text-align: center; padding: 20px; color: #7a3eb1; font-size: 14px;">
+  © 2025 ICBF Conecta. Todos los derechos reservados.
+</footer>
+
 
 </body>
 </html>

@@ -150,5 +150,16 @@ nav ul {
     <li><strong>Soporte PDF:</strong> No se adjuntó archivo</li>
   {% endif %}
 
+<a href="{% url 'novedades:novedades_pdf' novedad.id %}" class="btn-mini-historial">
+  <i class="fas fa-file-pdf"></i> Descargar PDF de esta novedad
+</a>
+
+
+<footer style="text-align: center; padding: 20px; color: #7a3eb1; font-size: 14px;">
+  © 2025 ICBF Conecta. Todos los derechos reservados.
+</footer>
+
+
+
 </body>
 </html>

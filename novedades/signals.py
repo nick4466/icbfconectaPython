@@ -18,6 +18,7 @@ def crear_notificacion(sender, instance, created, **kwargs):
             title=f"Novedad registrada: {instance.nino}",
             message=instance.descripcion,
             level=level,
+            recipient=instance.usuario,
             content_type=ContentType.objects.get_for_model(instance),
             object_id=instance.id,
         )

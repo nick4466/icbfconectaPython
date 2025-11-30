@@ -37,7 +37,7 @@ from django.contrib.auth.decorators import login_required
 from novedades.models import Novedad
 from planeaciones.models import Planeacion
 from datetime import datetime as _datetime, date as _date
-from asistencia.models import Asistencia
+from core.models import Asistencia
 from desarrollo.models import SeguimientoDiario
 
 # --- VISTAS PERSONALIZADAS DE AUTENTICACIÓN ---
@@ -1186,7 +1186,6 @@ def madre_dashboard(request):
     from django.db.models import Count, Q, F, Value, CharField
     from django.utils import timezone
     from datetime import datetime, timedelta
-    from asistencia.models import Asistencia
     from planeaciones.models import Planeacion
     from novedades.models import Novedad
     import json

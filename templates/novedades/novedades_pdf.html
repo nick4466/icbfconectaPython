@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+    {% load static %}
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      margin: 40px;
+      color: #333;
+      background-color: #fff;
+    }
+
+    /* Encabezado institucional */
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #7a3eb1;
+      padding-bottom: 15px;
+      margin-bottom: 30px;
+    }
+    .header img {
+      height: 80px;
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      font-size: 22pt;
+      color: #7a3eb1;
+      margin: 0;
+    }
+    .header p {
+      font-size: 11pt;
+      color: #555;
+      margin: 0;
+    }
+
+    /* Sección de campos */
+    .campo {
+      margin: 10px 0;
+      font-size: 12pt;
+    }
+    .campo strong {
+      color: #7a3eb1;
+      display: inline-block;
+      width: 150px;
+    }
+
+    /* Caja de observaciones */
+    .observaciones {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      border-radius: 6px;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 10pt;
+      color: #777;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF Conecta">
+    <h1>Reporte de Novedad</h1>
+    <p>Generado automáticamente por ICBF Conecta</p>
+  </div>
+
+  <div class="campo"><strong>Niño:</strong> {{ novedad.nino.nombres }} {{ novedad.nino.apellidos }}</div>
+  <div class="campo"><strong>Fecha:</strong> {{ novedad.fecha|date:"d/m/Y" }}</div>
+  <div class="campo"><strong>Clase:</strong> {{ novedad.clase }}</div>
+  <div class="campo"><strong>Tipo:</strong> {{ novedad.tipo }}</div>
+  <div class="campo"><strong>Docente:</strong> {{ novedad.docente }}</div>
+  <div class="campo"><strong>Descripción:</strong> {{ novedad.descripcion }}</div>
+  <div class="campo"><strong>Causa:</strong> {{ novedad.causa }}</div>
+  <div class="campo"><strong>Disposición:</strong> {{ novedad.disposicion }}</div>
+  <div class="campo"><strong>Acuerdos:</strong> {{ novedad.acuerdos }}</div>
+
+  <div class="observaciones">
+    <strong>Observaciones:</strong><br>
+    {{ novedad.observaciones }}
+  </div>
+
+  {% if novedad.archivo_pdf %}
+    <div class="campo"><strong>Soporte PDF:</strong> Adjuntado</div>
+  {% else %}
+    <div class="campo"><strong>Soporte PDF:</strong> No se adjuntó archivo</div>
+  {% endif %}
+
+  <div class="footer">
+    📄 Documento oficial de seguimiento de novedades
+  </div>
+</body>
+</html>

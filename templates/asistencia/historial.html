@@ -131,9 +131,10 @@
       font-size: 14px;
       animation: expand 0.6s ease-out;
     }
-    .barra.presente { background: #2ecc71; }
-    .barra.ausente { background: #e74c3c; }
-    .barra.justificado { background: #7a3eb1; }
+.barra.presente { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+.barra.ausente { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+.barra.justificado { background: linear-gradient(135deg, #8e44ad, #7a3eb1); }
+
 
     @keyframes expand {
       from { flex-grow: 0; opacity: 0; }
@@ -157,6 +158,52 @@
       font-size: 16px;
       text-align: center;
     }
+
+
+
+    /* ---------- Estilos para el filtro ---------- */
+  .filtro-fechas {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filtro-fechas label {
+  font-weight: bold;
+  color: #7a3eb1;
+  margin-right: 5px;
+}
+
+.filtro-fechas input[type="date"] {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.filtro-fechas input[type="date"]:focus {
+  border-color: #7a3eb1;
+  outline: none;
+}
+
+.filtro-fechas button {
+  background-color: #7a3eb1;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.filtro-fechas button:hover {
+  background-color: #5a2a85;
+}
+
+
   </style>
 </head>
 <body>
@@ -165,13 +212,15 @@
   <p><strong>Niño:</strong> {{ nino.nombres }} {{ nino.apellidos }}</p>
 
   <!-- Filtro por fechas -->
-  <form method="get" style="text-align:center;">
-    <label>Desde:</label>
-    <input type="date" name="start_date" value="{{ start_date }}">
-    <label>Hasta:</label>
-    <input type="date" name="end_date" value="{{ end_date }}">
-    <button type="submit">Filtrar</button>
-  </form>
+<form method="get" class="filtro-fechas">
+  <label>Desde:</label>
+  <input type="date" name="start_date" value="{{ start_date }}">
+  <label>Hasta:</label>
+  <input type="date" name="end_date" value="{{ end_date }}">
+  <button type="submit"><i class="fas fa-filter"></i> Filtrar</button>
+  <a href="{% url 'historial_asistencia' nino.id %}" class="btn btn-secondary">Limpiar</a>
+</form>
+
 
   <!-- Layout horizontal -->
   <div class="contenido-horizontal">
@@ -231,6 +280,10 @@
 
   <!-- Botón volver -->
   <a href="{% url 'asistencia_form' %}" class="volver"><i class="fas fa-arrow-left"></i> Volver</a>
+  <a href="{% url 'historial_pdf' nino.id %}" class="volver">
+  <i class="fas fa-file-pdf"></i> Descargar PDF
+</a>
+
 </div>
 
 <!-- Script calendario -->

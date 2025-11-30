@@ -1,4 +1,3 @@
-      
   {% load static %}
   <!DOCTYPE html>
   <html lang="es">
@@ -315,8 +314,75 @@
 }
 
 
+.btn-presente {
+  display: inline-block;
+  margin: 15px 0;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.btn-presente i {
+  margin-right: 6px;
+}
+
+.btn-presente:hover {
+  background: linear-gradient(135deg, #27ae60, #1e8449);
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-presente:active {
+  transform: scale(0.97);
+}
 
 
+
+.btn-ausente {
+  display: inline-block;
+  margin: 15px 0;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.btn-ausente i {
+  margin-right: 6px;
+}
+
+.btn-ausente:hover {
+  background: linear-gradient(135deg, #c0392b, #922b21);
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-ausente:active {
+  transform: scale(0.97);
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.logout-btn i {
+  margin-right: 5px;
+}
 
     </style>
   </head>
@@ -335,7 +401,16 @@
         </button>
       </li>
 
-      <li><a href="#"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+<li>
+  <form method="post" action="{% url 'logout' %}" style="display:inline;" id="logout-form">
+    {% csrf_token %}
+    <button type="submit" class="nav-btn logout-btn" title="Cerrar Sesión" onclick="return confirmarLogout();">
+      <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+    </button>
+  </form>
+</li>
+
+
     </ul>
   </nav>
 
@@ -348,12 +423,14 @@
     <ul class="notif-list">
       {% for n in notifications %}
         <li class="notif-item {% if not n.read %}unread{% endif %}">
-          <a href="{{ n.related_object.get_absolute_url }}">
+          
             <span class="label level-{{ n.level }}">{{ n.level|title }}</span>
             <span class="title">{{ n.title }}</span>
             <span class="time">{{ n.created_at|timesince }} atrás</span>
-          </a>
+          
         </li>
+        {% empty %}
+        <li>no tiene notificaciones</li>
       {% endfor %}
     </ul>
   </div>
@@ -372,6 +449,15 @@
           <label for="fecha">Fecha:</label>
           <input type="date" id="fecha" name="fecha" value="{{ fecha_hoy }}" required>
         </div>
+        <button type="button" id="select-all" class="btn-presente">
+  <i class="fas fa-check-circle"></i>Todos presentes
+</button>
+
+<button type="button" id="select-all-ausentes" class="btn-ausente">
+  <i class="fas fa-times-circle"></i>Todos ausentes
+</button>
+
+
 
         <table>
     <thead>
@@ -470,6 +556,11 @@
     panel.hidden = !panel.hidden;
   });
 </script>
+
+
+  <footer style="text-align: center; padding: 20px; color: #7a3eb1; font-size: 14px;">
+  © 2025 ICBF Conecta. Todos los derechos reservados.
+</footer>
 
 
 
@@ -632,4 +723,39 @@ const csrftoken = getCookie('csrftoken');
   });
 </script>
 
+<!-- de aqui para bajo, scrips para seleccionar todos presentes o ausentes -->
+
+<script>
+  document.getElementById("select-all").addEventListener("click", function() {
+    // Buscar todos los radios de tipo "Presente"
+    const radios = document.querySelectorAll("input[type='radio'][value='Presente']");
+    radios.forEach(radio => {
+      radio.checked = true;  // marcar todos como presentes
+    });
+
+    // Ocultar modal si estaba abierto
+    document.getElementById("modal-justificar").style.display = "none";
+  });
+</script>
+
+
+<script>
+  document.getElementById("select-all-ausentes").addEventListener("click", function() {
+    const radios = document.querySelectorAll("input[type='radio'][value='Ausente']");
+    radios.forEach(radio => {
+      radio.checked = true;  // marcar todos como ausentes
+    });
+
+    // Mostrar modal si quieres justificar en masa (opcional)
+    document.getElementById("modal-justificar").style.display = "none";
+  });
+</script>
+
+
+<script>
+  //para confirmar logout
+  function confirmarLogout() {
+    return confirm("¿Seguro que quieres cerrar sesión?");
+  }
+</script>
 
