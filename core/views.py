@@ -2194,3 +2194,29 @@ def cambiar_padre_de_nino(request):
         'buscar_form': buscar_form,
         'padre_form': padre_form,
     })
+
+@login_required
+def actualizar_foto_perfil(request):
+    """
+    Vista AJAX para que la madre comunitaria actualice su foto de perfil
+    directamente desde el navbar.
+    """
+    if request.method == 'POST' and request.user.rol.nombre_rol == 'madre_comunitaria':
+        try:
+            madre_profile = get_object_or_404(MadreComunitaria, usuario=request.user)
+            
+            # El nombre del input en el form debe ser 'foto_madre'
+            new_photo = request.FILES.get('foto_madre')
+
+            if new_photo:
+                madre_profile.foto_madre = new_photo
+                madre_profile.save()
+                
+                # Devolver la URL de la nueva foto
+                return JsonResponse({'success': True, 'new_photo_url': madre_profile.foto_madre.url})
+            else:
+                return JsonResponse({'success': False, 'error': 'No se recibió ningún archivo.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'error': 'Método no permitido o rol incorrecto.'}, status=405)

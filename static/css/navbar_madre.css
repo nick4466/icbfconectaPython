@@ -152,6 +152,19 @@
     padding: 0;
 }
 
+/* Nombre de usuario en la barra de navegación */
+.navbar-user-name {
+    color: var(--white);
+    font-weight: 500;
+    font-size: 15px;
+    margin-right: -10px; /* Ajusta el espacio con el ícono */
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+    transform: translateX(0);
+    white-space: nowrap;
+    pointer-events: none; /* Evita que interfiera con el hover del menú */
+}
+
 /* Nav Buttons (Iconos de la barra de navegación) */
 .nav-btn {
     color: var(--white);
@@ -219,6 +232,13 @@
     display: block;
 }
 
+/* Oculta el nombre en la navbar cuando el menú desplegable está activo (hover) */
+.user-menu-dropdown:hover ~ .navbar-user-name,
+.user-menu-dropdown:hover .navbar-user-name { /* Doble selector por compatibilidad */
+    opacity: 0;
+    transform: translateX(10px);
+}
+
 /* Estilos para la información del usuario dentro del menú */
 .user-menu-content .user-info {
     display: flex; /* Cambiado a flexbox */
@@ -232,8 +252,8 @@
 }
 
 .user-menu-content .profile-picture {
-    width: 70px; /* Un poco más grande */
-    height: 70px;
+    width: 90px; /* Un poco más grande */
+    height: 90px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--primary-color);
