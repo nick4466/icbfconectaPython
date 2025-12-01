@@ -276,21 +276,7 @@
 
 <body>
 
-<header>
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF Conecta"/>
-    <nav>
-        <ul>
-            <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
-            <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
-            <li>
-                <form method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
-                </form>
-            </li>
-        </ul>
-    </nav>
-</header>
+{% include 'madre/navbar_madre.html' %}
 
 <div class="main-title1">Detalle de Planeación</div>
 

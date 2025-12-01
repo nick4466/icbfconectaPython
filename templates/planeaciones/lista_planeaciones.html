@@ -9,7 +9,7 @@
     <!-- Fuentes e Iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-
+   
     <style>
       /* === ESTILOS ORIGINALES (sin modificar) === */
       body {
@@ -286,33 +286,7 @@
 
   <body>
 
-    <header>
-      <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF Conecta">
-
-      <nav>
-        <ul>
-          <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
-          <li><a href="{% url 'listar_ninos' %}"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
-          <li><a href="{% url 'planeaciones:lista_planeaciones' %}"><i class="fas fa-book"></i> Planeaciones</a></li>
-          <li><a href="{% url 'gestion_ninos' %}"><i class="fas fa-child"></i> Gestión De Niños</a></li>
-
-          <li class="dropdown">
-            <a href="#"><i class="fas fa-cog"></i> Ajustes</a>
-            <div class="dropdown-content">
-              <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-              <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
-            </div>
-          </li>
-
-          <li>
-            <form method="post" action="{% url 'logout' %}">
-              {% csrf_token %}
-              <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
-            </form>
-          </li>
-        </ul>
-      </nav>
-    </header>
+   {% include 'madre/navbar_madre.html' %}
 
     <div class="contenedor-tabla">
 
