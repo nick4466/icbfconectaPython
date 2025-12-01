@@ -1338,16 +1338,21 @@ def madre_dashboard(request):
     # Nombre completo de la madre
     nombre_madre = f"{request.user.nombres} {request.user.apellidos}"
     
-    # Hora actual
-    hora_actual = datetime.now().strftime('%H:%M')
+    # Fecha de creación del hogar
     meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-    fecha_actual = f"{hoy.day} de {meses[hoy.month - 1]} de {hoy.year}"
+    if hogar_madre.fecha_registro:
+        fecha_registro_hogar = hogar_madre.fecha_registro
+        fecha_creacion_hogar = f"{fecha_registro_hogar.day} de {meses[fecha_registro_hogar.month - 1]} de {fecha_registro_hogar.year}"
+        hora_creacion_hogar = fecha_registro_hogar.strftime('%H:%M')
+    else:
+        fecha_creacion_hogar = "No disponible"
+        hora_creacion_hogar = "--:--"
     
     context = {
         'nombre_madre': nombre_madre,
         'hogar_madre': hogar_madre,
-        'hora_actual': hora_actual,
-        'fecha_actual': fecha_actual,
+        'hora_actual': hora_creacion_hogar,
+        'fecha_actual': fecha_creacion_hogar,
         # Capacidad
         'total_ninos': total_ninos,
         'capacidad_maxima': capacidad_maxima,
