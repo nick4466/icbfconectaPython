@@ -368,7 +368,7 @@
           </div>
         </li>
 
-      </ul>
+            </ul>
     </nav>
   </header>
 
@@ -404,7 +404,6 @@
               </div>
             </div>
 
-            <a href="{% url 'padre_ver_desarrollo' data.nino.id %}" class="btn-principal" style="flex-shrink: 0;">Ver Desarrollo</a>
           </div>
 
           <!-- CUERPO TARJETA -->
@@ -413,7 +412,11 @@
             {% if data.ultimo_desarrollo %}
             <div class="info-section">
               <h4><i class="fas fa-chart-line"></i> Resumen del Desarrollo ({{ data.ultimo_desarrollo.fecha_fin_mes|date:"F" }})</h4>
-              <p>{{ data.ultimo_desarrollo.conclusion_general|truncatewords:25 }}</p>
+              <p>{{ data.ultimo_desarrollo.conclusion_general|truncatewords:25 }}</p> <br>
+              <div style="text-align: right; margin-top: 10px;">
+                <a href="{% url 'padre_ver_desarrollo' data.nino.id %}" class="btn-principal">Ver Desarrollo</a>
+              </div>
+
             </div>
             {% else %}
             <div class="info-section">
