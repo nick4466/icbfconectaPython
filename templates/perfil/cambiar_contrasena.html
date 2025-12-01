@@ -136,12 +136,11 @@
 </head>
 <body class="{% if user.rol.nombre_rol == 'administrador' %}admin-body
             {% elif user.rol.nombre_rol == 'padre' %}padre-body
-            {% else %}madre-padre-body{% endif %}">
+            {% elif user.rol.nombre_rol == 'madre_comunitaria' %}{% else %}madre-padre-body{% endif %}">
 
   {% if user.rol.nombre_rol == 'padre' %}
-    <div class="borde2"></div>
-  {% endif %}
-  {% if user.rol.nombre_rol == 'administrador' %}
+    {% include 'padre/navbar_padre.html' %}
+  {% elif user.rol.nombre_rol == 'administrador' %}
     <!-- === SIDEBAR PARA ADMINISTRADOR === -->
     <div class="sidebar">
       <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
@@ -161,6 +160,8 @@
         </form>
       </div>
     </div>
+  {% elif user.rol.nombre_rol == 'madre_comunitaria' %}
+    {% include 'madre/navbar_madre.html' %}
   {% else %}
     <!-- === HEADER PARA MADRE Y PADRE === -->
     <header class="main-header">
