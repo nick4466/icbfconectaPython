@@ -26,6 +26,7 @@
             <button class="user-menu-button nav-btn">
                 <i class="fas fa-user-circle"></i>
             </button>
+
             <div class="user-menu-content">
                 <div class="user-info">
                     <img src="{% if foto_perfil_url %}{{ foto_perfil_url }}{% else %}{% static 'img/default_user.png' %}{% endif %}" 
@@ -33,25 +34,21 @@
                          class="profile-picture">
                     <span class="user-name">{{ nombre_madre }}</span>
                 </div>
-                <a href="{% url 'editar_perfil' %}"><i class="fas fa-user-edit"></i> Editar Perfil</a>
-                <a href="{% url 'cambiar_contrasena' %}"><i class="fas fa-key"></i> Cambiar Contraseña</a>
+
+                <a href="{% url 'editar_perfil' %}">
+                    <i class="fas fa-user-edit"></i> Editar Perfil
+                </a>
+                <a href="{% url 'cambiar_contrasena' %}">
+                    <i class="fas fa-key"></i> Cambiar Contraseña
+                </a>
+
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
-                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+                    <button type="submit" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </button>
                 </form>
             </div>
-            </a>
-            <a href="{% url 'cambiar_contrasena' %}" class="nav-btn" title="Cambiar Contraseña">
-                <i class="fas fa-key"></i>
-            </a>
-
-            
-            <form method="post" action="{% url 'logout' %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="nav-btn logout-btn" title="Cerrar Sesión" onclick="return confirmarLogout();">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </form>
         </div>
     </div>
 </header>
