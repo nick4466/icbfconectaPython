@@ -222,13 +222,6 @@
 <div class="container">
     <h1>Enviar Correos Masivos</h1>
 
-    {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
-        </div>
-    {% endif %}
 
     <label for="buscar_nino">Buscar niño:</label>
     <input type="text" id="buscar_nino" placeholder="Escriba nombre o apellido..." onkeyup="filtrarCheckboxes()">

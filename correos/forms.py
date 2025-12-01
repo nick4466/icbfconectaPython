@@ -5,6 +5,7 @@ class EmailMassForm(forms.Form):
         widget=forms.CheckboxSelectMultiple
     )
     asunto = forms.CharField(max_length=255)
+    
     cuerpo = forms.CharField(widget=forms.Textarea)
     
 
