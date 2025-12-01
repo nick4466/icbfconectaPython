@@ -223,6 +223,7 @@
     <h1>Enviar Correos Masivos</h1>
 
 
+
     <label for="buscar_nino">Buscar niño:</label>
     <input type="text" id="buscar_nino" placeholder="Escriba nombre o apellido..." onkeyup="filtrarCheckboxes()">
 
@@ -236,10 +237,10 @@
             {{ form.destinatarios }}
         </div>
 
-        <label for="id_asunto" aria-placeholder="Escriba accion requerida/Tema Principal ">Asunto:</label>
+        <label for="id_asunto">Asunto:</label>
         {{ form.asunto }}
 
-        <label for="id_cuerpo" aria-placeholder="Escriba el contenido del correo">Cuerpo del correo:</label>
+        <label for="id_cuerpo">Cuerpo del correo:</label>
         {{ form.cuerpo }}
 
         <label for="id_archivos">Adjuntar archivos:</label>
