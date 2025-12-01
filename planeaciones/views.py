@@ -219,3 +219,16 @@ def reporte_menu(request):
     return render(request, 'planeaciones/reporte_menu.html', {
         "planeaciones": planeaciones
     })
+@login_required
+def eliminar_masivo(request):
+    if request.method == 'POST':
+        ids = request.POST.getlist('planeaciones_ids')
+
+        if ids:
+            Planeacion.objects.filter(id__in=ids).delete()
+            messages.success(request, "Planeaciones eliminadas correctamente.")
+        else:
+            messages.warning(request, "No seleccionaste ninguna planeación.")
+
+    return redirect('planeaciones:lista_planeaciones')
+

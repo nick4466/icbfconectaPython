@@ -302,22 +302,6 @@ textarea {
 
 <div class="main-title1">Registrar Planeación </div>
 
-<div class="main-title">
-    {% if messages %}
-    <div style="width:80%; margin:10px auto;">
-        {% for message in messages %}
-            <div class="alert" style="
-                background: #ffdddd;
-                color: #cc0000;
-                padding: 10px;
-                border-radius: 3px;">
-                {{ message }}
-            </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-</div>
-
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
 
