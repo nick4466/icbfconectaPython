@@ -60,6 +60,7 @@ urlpatterns = [
     # --- Gestión de Perfil de Usuario ---
     path('perfil/cambiar-contrasena/', views.cambiar_contrasena, name='cambiar_contrasena'),
     path('perfil/editar/', views.editar_perfil, name='editar_perfil'),
+    path('perfil/actualizar-foto/', views.actualizar_foto_perfil, name='actualizar_foto_perfil'),
 
     # Logout
     # next_page='home' es correcto si 'home' es la URL de aterrizaje después de cerrar sesión

@@ -22,6 +22,9 @@
     </nav>
 
     <div class="header-right">
+        <!-- Nombre de usuario visible en la barra de navegación -->
+        <span class="navbar-user-name">{{ nombre_madre }}</span>
+
         <div class="user-menu-dropdown">
             <button class="user-menu-button nav-btn">
                 <i class="fas fa-user-circle"></i>
@@ -29,9 +32,15 @@
 
             <div class="user-menu-content">
                 <div class="user-info">
-                    <img src="{% if foto_perfil_url %}{{ foto_perfil_url }}{% else %}{% static 'img/default_user.png' %}{% endif %}" 
-                         alt="Foto de perfil" 
-                         class="profile-picture">
+                    <form id="form-foto-perfil" method="post" action="{% url 'actualizar_foto_perfil' %}" enctype="multipart/form-data" style="display: inline;">
+                        {% csrf_token %}
+                        <label for="input-foto-perfil" class="profile-picture-link" style="cursor: pointer;" title="Haz clic para cambiar tu foto">
+                            <img id="img-foto-perfil" src="{% if foto_perfil_url %}{{ foto_perfil_url }}{% else %}{% static 'img/default_user.png' %}{% endif %}"
+                             alt="Foto de perfil"
+                             class="profile-picture">
+                        </label>
+                        <input type="file" id="input-foto-perfil" name="foto_madre" accept="image/*" style="display: none;">
+                    </form>
                     <span class="user-name">{{ nombre_madre }}</span>
                 </div>
 
@@ -52,3 +61,31 @@
         </div>
     </div>
 </header>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('input-foto-perfil');
+    const form = document.getElementById('form-foto-perfil');
+    const profileImage = document.getElementById('img-foto-perfil');
+
+    fileInput.addEventListener('change', function() {
+        if (fileInput.files && fileInput.files[0]) {
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.new_photo_url) {
+                    profileImage.src = data.new_photo_url;
+                }
+            });
+        }
+    });
+});
+</script>
