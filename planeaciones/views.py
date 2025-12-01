@@ -82,6 +82,7 @@ def editar_planeacion(request, id):
     planeacion = get_object_or_404(Planeacion, pk=id)
     documentos = Documentacion.objects.filter(planeacion=planeacion)
 
+    form = PlaneacionForm(request.POST or None, request.FILES or None, instance=planeacion)
     if request.method == 'POST':
         form = PlaneacionForm(request.POST, request.FILES, instance=planeacion)
 

@@ -1,387 +1,345 @@
-  {% load static %}
-  <!DOCTYPE html>
-  <html lang="es">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desarrollo Infantil</title>
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planeaciones Pedagógicas</title>
 
-    <!-- Fuentes e Iconos -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-   
-    <style>
-      /* === ESTILOS ORIGINALES (sin modificar) === */
-      body {
-        margin: 0;
-        font-family: 'Roboto', sans-serif;
-        background-color: #f5f7fa;
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+<style>
+
+/* PALETA UNIFICADA */
+:root {
+    --primary-gradient-start: #667eea;
+    --primary-gradient-end: #764ba2;
+    --primary: #667eea;
+    --secondary: #764ba2;
+    --light-bg: #f3f5ff;
+    --white: #ffffff;
+    --dark: #333;
 }
 
-      header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: rgba(255, 255, 255, 0.85);
-        padding: 15px 30px;
-        border-bottom: 2px solid #e5d5f5;
-        backdrop-filter: blur(4px);
-        flex-wrap: wrap;
-      }
+/* FONDO GENERAL */
+body {
+    margin: 0;
+    font-family: "Roboto", sans-serif;
+    background: var(--light-bg);
+}
 
-      header img { height: 60px; }
 
-      nav ul {
-        list-style: none;
-        display: flex;
-        gap: 20px;
-        padding: 0;
-        margin: 0;
-      }
+/* CONTENEDOR PRINCIPAL */
+.contenedor-tabla {
+    max-width: 1150px;
+    margin: 40px auto;
+    background: var(--white);
+    padding: 35px;
+    border-radius: 18px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
 
-      nav ul li a,
-      nav ul li button {
-        text-decoration: none;
-        color: #9B59B6;
-        font-weight: bold;
-        font-size: 16px;
-        padding: 8px 12px;
-        border-radius: 6px;
-        transition: background-color 0.3s ease;
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-family: 'Roboto', sans-serif;
-      }
+/* TITULO */
+h1 {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 700;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+    -webkit-background-clip: text;
+    color: transparent;
+}
 
-      nav ul li a:hover,
-      nav ul li button:hover {
-        background-color: #f3c1e5;
-      }
+/* --- ACCIONES SUPERIORES --- */
+.acciones-superiores {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 25px;
+}
 
-      nav ul .dropdown { position: relative; }
-      nav ul .dropdown-content {
-        display: none;
-        position: absolute;
-        background-color: rgba(255, 255, 255, 0.98);
-        min-width: 200px;
-        box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-        z-index: 1;
-        border-radius: 8px;
-        padding: 8px 0;
-      }
-
-      nav ul .dropdown-content a {
-        color: #9B59B6;
-        padding: 12px 16px;
-        display: block;
-      }
-
-      nav ul .dropdown-content a:hover {
-        background-color: #f3c1e5;
-      }
-
-      nav ul .dropdown:hover .dropdown-content { display: block; }
-
-      h1 {
-        text-align: center;
-        margin: 30px 0 25px;
-        font-size: 32px;
-        color: #7a3eb1;
-      }
-
-      .contenedor-tabla {
-        max-width: 1100px;
-        margin: 0 auto 40px;
-        background-color: rgba(255, 255, 255, 0.9);
-        border-radius: 14px;
-        padding: 30px;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-      }
-
-      .acciones-superiores {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 15px;
-        margin-bottom: 25px;
-      }
-
-      .btn-nuevo {
-        background-color: #921fc0;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        text-decoration: none;
-        font-size: 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: background-color 0.3s ease;
-        
-      }
-
-      .btn-nuevo:hover { background-color: #b931d1; }
-      
-      .filtro-mes {
+/* BOTÓN NUEVO */
+.btn-nuevo {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    padding: 10px 22px;
+    font-size: 16px;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 16px;
-
-    background: rgba(255, 255, 255, 0.65);
-    padding: 12px 18px;
-    border-radius: 10px;
-
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    backdrop-filter: blur(4px);
-
-    width: fit-content;
-  }
-
-  .filtro-mes label {
+    gap: 8px;
     font-weight: 600;
-    color: #6c4ea5;
-  }
+    transition: 0.3s ease;
+}
 
-  .filtro-mes select {
-    padding: 5px 7;
-    border: 1px solid #d1cbe6;
+.btn-nuevo:hover {
+    opacity: 0.85;
+    transform: translateY(-2px);
+}
+
+/* BOTÓN PDF */
+.btn-pdf {
+    background: #ff6f61;
+    padding: 10px 22px;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    transition: 0.3s ease;
+}
+
+.btn-pdf:hover {
+    background: #ff846f;
+}
+
+/* FILTRO */
+.filtro-mes {
+    background: rgba(255,255,255,0.8);
+    padding: 12px 20px;
+    border-radius: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    backdrop-filter: blur(3px);
+}
+
+.filtro-mes label {
+    color: var(--secondary);
+    font-weight: 600;
+}
+
+.filtro-mes select {
+    padding: 8px 12px;
     border-radius: 6px;
-    background-color: white;
+    border: 1px solid #cfcfea;
     outline: none;
-    transition: all 0.25s ease;
-  }
+}
 
-  .filtro-mes select:focus {
-    border-color: #921fc0;
-    box-shadow: 0 0 6px rgba(122, 62, 177, 0.3);
-  }
+.filtro-mes select:focus {
+    border-color: var(--secondary);
+}
 
-      table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 8px; /* filas separadas */
-        font-size: 16px;
+/* TABLA */
+table {
+    width: 100%;
+    border-spacing: 0 10px;
+    font-size: 16px;
+}
 
-      }
+thead {
+    background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+    color: white;
+}
 
-      thead {
-        background-color: #6d178d;
-        color: #fff;
-        font-family: 'Roboto', sans-serif;
-        border-radius: 8px;
-      }
+thead th {
+    padding: 14px;
+    text-transform: uppercase;
+    font-size: 14px;
+}
 
-      thead th {
-        padding: 14px;
-        font-size: 15px;
-        text-transform: uppercase;
-      }
+tbody tr {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
 
-      tbody tr {
-        background-color: #ffffff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        border-radius: 8px;
-      }
+tbody td {
+    padding: 14px;
+    color: #444;
+}
 
-      tbody td {
-        padding: 14px;
-        font-size: 15px;
-        color: #444;
-      }
+tbody tr:hover {
+    background: #e8e4ff;
+    transition: 0.2s ease;
+}
 
-      tbody tr:hover {
-        background-color: #f6e6ff !important;
-        transform: scale(1.01);
-        transition: 0.2s;
-      }
+/* ACCIONES */
+.acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
 
-      .acciones {
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-      }
+.btn-accion {
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    transition: 0.3s;
+}
 
-      .btn-accion {
-        padding: 7px 10px;
-        border-radius: 6px;
-        color: white;
-        font-size: 15px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        transition: transform 0.2s;
-      }
+.btn-accion:hover {
+    transform: scale(1.1);
+}
 
-      .btn-accion:hover {
-        transform: scale(1.1);
-      }
+.btn-verde { background: #28a745; }
+.btn-azul { background: var(--primary); }
+.btn-rojo { background: #dc3545; }
 
-      .btn-verde { background: #28a745; }
-      .btn-azul  { background: #007bff; }
-      .btn-rojo  { background: #dc3545; }
+/* PAGINACIÓN */
+.pagination {
+    margin-top: 30px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
 
-  
-      .btn-volver {
-          display: inline-block;
-          background-color: #f3c1e5;
-          color: #5e3370;
-          padding: 10px 20px;
-          border-radius: 8px;
-          text-decoration: none;
-          font-weight: bold;
-          margin: 20px;
-      }
+.pagination a, .pagination span {
+    padding: 8px 14px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    color: var(--secondary);
+    text-decoration: none;
+    font-weight: 500;
+}
 
-      .btn-volver:hover { background-color: #e8a9d6; }
-      
-      
-      .contenedor-volver {
-      text-align: center;
-      margin-top: 20px;
-      }
+.pagination a:hover {
+    background: #f0efff;
+}
 
-          .btn-pdf {
-      background-color: #ff6f61;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
+.pagination .current {
+    background: var(--secondary);
+    color: white;
+    border-color: var(--secondary);
+}
 
-    .btn-pdf:hover {
-      background-color: #ff8a7d;
-    }
-        /* --- ESTILOS DE PAGINACIÓN --- */
-    .pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-top: 30px;
-      gap: 8px;
-    }
-    .pagination a, .pagination span {
-      color: #9B59B6;
-      padding: 8px 14px;
-      text-decoration: none;
-      transition: background-color .3s;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      background-color: white;
-    }
-    .pagination a:hover { background-color: #f1f1f1; }
-    .pagination .current { background-color: #9B59B6; color: white; border-color: #9B59B6; }
-    .pagination .disabled { color: #ccc; border-color: #ddd; background-color: #f8f9fa; }
+/* BOTÓN VOLVER */
+.contenedor-volver {
+    text-align: center;
+    margin-top: 25px;
+}
 
-        </style>
-  </head>
+.btn-volver {
+    background: var(--primary);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.3s ease;
+}
 
-  <body>
+.btn-volver:hover {
+    opacity: 0.85;
+    transform: translateY(-2px);
+}
 
-   {% include 'madre/navbar_madre.html' %}
+</style>
 
-    <div class="contenedor-tabla">
+</head>
 
-      <h1>Planeaciones Pedagógicas</h1>
+<body>
 
-      <!-- ACCIONES SUPERIORES -->
-      <div class="acciones-superiores">
+{% include 'madre/navbar_madre.html' %}
+
+<div class="contenedor-tabla">
+
+    <h1>Planeaciones Pedagógicas</h1>
+
+    <div class="acciones-superiores">
+
         <a href="{% url 'planeaciones:registrar_planeacion' %}" class="btn-nuevo">
-          <i class="fas fa-plus"></i> Nueva Planeación
+            <i class="fas fa-plus"></i> Nueva Planeación
         </a>
-            <a href="{% url 'planeaciones:reporte_menu' %}" class="btn-pdf">
-      <i class="fas fa-file-pdf"></i> Generar PDF
-    </a>
 
+        <a href="{% url 'planeaciones:reporte_menu' %}" class="btn-pdf">
+            <i class="fas fa-file-pdf"></i> Generar PDF
+        </a>
 
         <form method="get" class="filtro-mes">
-          <label><strong>Filtrar por mes:</strong></label>
-          <select name="mes" onchange="this.form.submit()">
-            <option value="">Todos</option>
-            {% for codigo, nombre in meses %}
-            <option value="{{ codigo }}" {% if mes_seleccionado == codigo %}selected{% endif %}>{{ nombre }}</option>
-            {% endfor %}
-          </select>
+            <label>Mes:</label>
+            <select name="mes" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                {% for codigo, nombre in meses %}
+                <option value="{{ codigo }}" {% if mes_seleccionado == codigo %}selected{% endif %}>
+                    {{ nombre }}
+                </option>
+                {% endfor %}
+            </select>
         </form>
-      </div>
-
-      <!-- TABLA MODERNA -->
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Fecha</th>
-            <th>Nombre Actividad</th>
-            <th>Intencionalidad</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {% if planeaciones %}
-            {% for p in planeaciones %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td>{{ p.fecha }}</td>
-              <td>{{ p.nombre_experiencia }}</td>
-              <td>{{ p.intencionalidad_pedagogica }}</td>
-
-              <td class="acciones">
-                <a href="{% url 'planeaciones:detalle_planeacion' p.id %}" class="btn-accion btn-verde"><i class="fas fa-eye"></i></a>
-                <a href="{% url 'planeaciones:editar_planeacion' p.id %}" class="btn-accion btn-azul"><i class="fas fa-pen"></i></a>
-                <a href="{% url 'planeaciones:eliminar_planeacion' p.id %}" class="btn-accion btn-rojo"
-                  onclick="return confirm('¿Eliminar la planeación? No se puede deshacer.');">
-                  <i class="fas fa-trash"></i>
-                </a>
-              </td>
-            </tr>
-            {% endfor %}
-          {% else %}
-            <tr>
-              <td colspan="5">No tienes planeaciones registradas.</td>
-            </tr>
-          {% endif %}
-        </tbody>
-      </table>
-        <!-- Controles de Paginación -->
-<div class="pagination">
-  {% if planeaciones.has_previous %}
-    <a href="?page=1{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">&laquo; Primera</a>
-    <a href="?page={{ planeaciones.previous_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Anterior</a>
-  {% else %}
-    <span class="disabled">&laquo; Primera</span>
-    <span class="disabled">Anterior</span>
-  {% endif %}
-
-  <span class="current">
-    Página {{ planeaciones.number }} de {{ planeaciones.paginator.num_pages }}.
-  </span>
-
-  {% if planeaciones.has_next %}
-    <a href="?page={{ planeaciones.next_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Siguiente</a>
-    <a href="?page={{ planeaciones.paginator.num_pages }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Última &raquo;</a>
-  {% else %}
-    <span class="disabled">Siguiente</span>
-    <span class="disabled">Última &raquo;</span>
-  {% endif %}
-</div>
-
-      <!-- BOTÓN VOLVER CENTRADO -->
-      <div class="contenedor-volver">
-        <a href="{% url 'madre_dashboard' %}" class="btn-volver">
-          <i class="fas fa-arrow-left"></i> Volver
-        </a>
-      </div>
 
     </div>
 
-  </body>
-  </html>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Actividad</th>
+                <th>Intencionalidad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% if planeaciones %}
+                {% for p in planeaciones %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ p.fecha }}</td>
+                    <td>{{ p.nombre_experiencia }}</td>
+                    <td>{{ p.intencionalidad_pedagogica }}</td>
+                    <td class="acciones">
+                        <a href="{% url 'planeaciones:detalle_planeacion' p.id %}" class="btn-accion btn-verde">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'planeaciones:editar_planeacion' p.id %}" class="btn-accion btn-azul">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                        <a href="{% url 'planeaciones:eliminar_planeacion' p.id %}" class="btn-accion btn-rojo"
+                            onclick="return confirm('¿Eliminar la planeación? No se puede deshacer.');">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="5">No tienes planeaciones registradas.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- PAGINACIÓN -->
+    <div class="pagination">
+        {% if planeaciones.has_previous %}
+            <a href="?page=1{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">&laquo; Primera</a>
+            <a href="?page={{ planeaciones.previous_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Anterior</a>
+        {% else %}
+            <span class="disabled">&laquo; Primera</span>
+            <span class="disabled">Anterior</span>
+        {% endif %}
+
+        <span class="current">Página {{ planeaciones.number }} de {{ planeaciones.paginator.num_pages }}</span>
+
+        {% if planeaciones.has_next %}
+            <a href="?page={{ planeaciones.next_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Siguiente</a>
+            <a href="?page={{ planeaciones.paginator.num_pages }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Última &raquo;</a>
+        {% else %}
+            <span class="disabled">Siguiente</span>
+            <span class="disabled">Última &raquo;</span>
+        {% endif %}
+    </div>
+
+    <div class="contenedor-volver">
+        <a href="{% url 'madre_dashboard' %}" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,5 +1,4 @@
 from django import forms
-from .models import Planeacion, Documentacion
 from .models import Planeacion, Documentacion, Dimension
 
 class PlaneacionForm(forms.ModelForm):
@@ -13,13 +12,12 @@ class PlaneacionForm(forms.ModelForm):
 
     class Meta:
         model = Planeacion
-        exclude = ['madre']  # El usuario se asigna en la vista
+        exclude = ['madre']
         widgets = {
             'fecha': forms.DateInput(
-                attrs={
-                    'type': 'date',
-                    'placeholder': 'Seleccione la fecha'
-                }
+                format='%Y-%m-%d',
+                attrs={'type': 'date',
+                       'placeholder': 'Selecciona una fecha'}
             ),
             'nombre_experiencia': forms.TextInput(
                 attrs={
@@ -81,7 +79,6 @@ class PlaneacionForm(forms.ModelForm):
         }
 
 
-# Form para Documentacion
 class DocumentacionForm(forms.ModelForm):
     class Meta:
         model = Documentacion
