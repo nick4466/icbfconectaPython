@@ -337,6 +337,28 @@
       z-index: 3;
       cursor: pointer;
     }
+
+    /* Estilos para el botón de eliminar seleccionados */
+    #btn-eliminar-seleccionados {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease, opacity 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #btn-eliminar-seleccionados:disabled {
+      background-color: #e9ecef;
+      color: #adb5bd;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
     .desarrollo-card.selected {
       box-shadow: 0 0 0 3px var(--primary-color);
     }
@@ -379,7 +401,7 @@
       </form>
 
       <div id="action-buttons-container">
-        <button type="submit" form="bulk-delete-form" id="btn-eliminar-seleccionados" class="btn-rojo" style="display: none; margin-right: 10px;"><i class="fas fa-trash"></i> Eliminar Seleccionados</button>
+        <button type="submit" form="bulk-delete-form" id="btn-eliminar-seleccionados" disabled><i class="fas fa-trash"></i> Eliminar Seleccionados</button>
         <a href="{% url 'gestion_ninos' %}" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a Gestión</a>
         <a href="{% url 'desarrollo:registrar_desarrollo' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-agregar">
           <i class="fas fa-plus"></i> Añadir Registro
@@ -437,7 +459,6 @@
                 class="btn-accion btn-azul" 
                 title="Editar">
                 <i class="fas fa-pen"></i></a>
-            <a href="{% url 'desarrollo:eliminar_desarrollo' desarrollo.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este registro? Esta acción no se puede deshacer.');"><i class="fas fa-trash"></i></a>
             <a href="{% url 'desarrollo:generar_reporte_pdf' desarrollo.nino.id %}?tipo_reporte=desarrollo&fecha_inicio={{ desarrollo.fecha_fin_mes|date:'Y-m-01' }}&fecha_fin={{ desarrollo.fecha_fin_mes|date:'Y-m-d' }}" target="_blank" class="btn-accion btn-verde" title="PDF" style="background:#9B59B6; color:white;">
                 <i class="fas fa-file-pdf"></i>
             </a>
@@ -584,9 +605,9 @@
       const deleteButton = document.getElementById('btn-eliminar-seleccionados');
       const bulkDeleteForm = document.getElementById('bulk-delete-form');
 
-      function updateDeleteButtonVisibility() {
+      function actualizarBotonEliminar() {
         const anyChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
-        deleteButton.style.display = anyChecked ? 'inline-flex' : 'none';
+        deleteButton.disabled = !anyChecked;
       }
 
       if (selectAllCheckbox) {
@@ -598,7 +619,7 @@
               card.classList.toggle('selected', this.checked);
             }
           });
-          updateDeleteButtonVisibility();
+          actualizarBotonEliminar();
         });
       }
 
@@ -611,7 +632,7 @@
           if (!this.checked) {
             selectAllCheckbox.checked = false;
           }
-          updateDeleteButtonVisibility();
+          actualizarBotonEliminar();
         });
       });
 

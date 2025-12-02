@@ -310,6 +310,28 @@
       margin-right: 15px;
       cursor: pointer;
     }
+
+    /* Estilos para el botón de eliminar seleccionados */
+    #btn-eliminar-seleccionados {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease, opacity 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #btn-eliminar-seleccionados:disabled {
+      background-color: #e9ecef;
+      color: #adb5bd;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
@@ -362,7 +384,7 @@
           <input type="checkbox" id="seleccionar-todos" class="seguimiento-checkbox" style="margin-right: 8px;">
           <label for="seleccionar-todos" style="font-weight: bold; color: #555;">Seleccionar/Deseleccionar Todos</label>
         </div>
-        <button type="submit" id="btn-eliminar-seleccionados" class="btn-rojo" style="display: none; align-items: center; gap: 8px;"><i class="fas fa-trash"></i> Eliminar Seleccionados</button>
+        <button type="submit" id="btn-eliminar-seleccionados" disabled><i class="fas fa-trash"></i> Eliminar Seleccionados</button>
       </div>
 
     {% if seguimientos.object_list %} 
@@ -436,7 +458,6 @@
                         <div class="acciones">
                             <button type="button" class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
                             <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-edit"></i></a>
-                            <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash-alt"></i></a>
                         </div>
                       </div>
                     </div>
@@ -510,7 +531,6 @@
                           <div class="acciones">
                             <button type="button" class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
                             <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-edit"></i></a>
-                            <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash-alt"></i></a>
                           </div>
                         </div>
                       </div>
@@ -583,7 +603,6 @@
                           <div class="acciones">
                             <button type="button" class="btn-accion btn-verde ver-detalles" title="Ver Detalles"><i class="fas fa-eye"></i></button>
                             <a href="{% url 'desarrollo:editar_seguimiento' seguimiento.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-edit"></i></a>
-                            <a href="{% url 'desarrollo:eliminar_seguimiento' seguimiento.id %}" class="btn-accion btn-rojo" title="Eliminar" onclick="return confirm('¿Estás segura de que deseas eliminar este seguimiento? Esta acción no se puede deshacer.');"><i class="fas fa-trash-alt"></i></a>
                           </div>
                         </div>
                       </div>
@@ -732,7 +751,7 @@
 
     function actualizarBotonEliminar() {
       const algunoSeleccionado = Array.from(seguimientoCheckboxes).some(cb => cb.checked);
-      btnEliminarSeleccionados.style.display = algunoSeleccionado ? 'inline-flex' : 'none';
+      btnEliminarSeleccionados.disabled = !algunoSeleccionado;
     }
 
     seleccionarTodosCheckbox.addEventListener('change', function() {
