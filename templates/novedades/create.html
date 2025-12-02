@@ -5,150 +5,145 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registrar Novedad - ICBF Conecta</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-image: url("{% static 'img/fondito.jpg' %}");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      background-color: rgba(0, 0, 0, 0.4);
-    }
 
+<style>
 
-        header {
-      background-color: rgba(231, 231, 231, 0.795);
-      padding: 15px 30px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-    }
-    header img { height: 60px; }
-nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      padding: 0;
-      margin: 0;
-    }
-    nav ul li a {
-      text-decoration: none;
-      color: #9B59B6;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background-color 0.3s ease;
-    }
-    nav ul li a:hover { background-color: #f3c1e5; }
-    .main-title {
-      text-align: center;
-      margin-top: 20px;
-      padding: 20px;
-      font-size: 26px;
-      font-weight: bold;
-      color: #7a3eb1;
-      background-color: rgba(234, 233, 233, 0.7);
-      margin: 20px auto;
-      width: 80%;
-      border-radius: 10px;
-    }
+/* ===========================
+   ESTILOS GENERALES
+=========================== */
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    background: #f4f7fc;
+    padding-bottom: 40px;
+}
 
-    .main-title {
-      text-align: center;
-      margin-top: 20px;
-      padding: 20px;
-      font-size: 26px;
-      font-weight: bold;
-      color: #7a3eb1;
-      background-color: rgba(255, 255, 255, 0.7);
-      width: 80%;
-      margin: 20px auto;
-      border-radius: 10px;
-    }
+/* ===========================
+   TITULO PRINCIPAL
+=========================== */
+.main-title {
+    text-align: center;
+    font-size: 30px;
+    color: #0051d4;
+    margin-top: 40px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
 
-    .form-card {
-      background-color: rgba(255, 255, 255, 0.55);
-      backdrop-filter: blur(6px) saturate(120%);
-      -webkit-backdrop-filter: blur(6px) saturate(120%);
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      max-width: 800px;
-      margin: 0 auto 40px;
-    }
+/* ===========================
+   TARJETA DEL FORMULARIO
+=========================== */
+.form-card {
+    background: #ffffff;
+    width: 90%;
+    max-width: 600px;
+    margin: 35px auto;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+    animation: fadeIn 0.5s ease-in-out;
+}
 
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-      color: #5e3370;
-    }
+/* Animación suave */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      border: 1px solid #d5b4f3;
-      border-radius: 6px;
-      font-size: 15px;
-      background-color: rgba(255, 255, 255, 0.9);
-    }
+/* ===========================
+   CAMPOS DEL FORMULARIO
+=========================== */
+form p {
+    margin-bottom: 20px;
+}
 
-    .btn-guardar {
-      background-color: #9B59B6;
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      display: block;
-      margin: 0 auto;
-      transition: background-color 0.3s ease;
-    }
+form label {
+    font-weight: 600;
+    color: #003a99;
+}
 
-    .btn-guardar:hover {
-      background-color: #8e44ad;
-    }
+form input, form select, form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #c7d7ff;
+    border-radius: 10px;
+    background: #f4f7ff;
+    margin-top: 5px;
+    font-size: 15px;
+    box-sizing: border-box;
+}
 
-    @media (max-width: 768px) {
-      .main-title { font-size: 22px; width: 90%; }
-      .form-card { padding: 20px; }
-      input, select, textarea { font-size: 14px; }
-    }
+form textarea {
+    min-height: 110px;
+}
 
-         li {
-        text-decoration: none;
-        color: #9B59B6;
-        font-weight: bold;
-        font-size: 16px;
-        padding: 8px 12px;
-        border-radius: 6px;
-        transition: background-color 0.3s ease;
-      }
+/* ===========================
+   BOTÓN GUARDAR
+=========================== */
+.btn-guardar {
+    width: 100%;
+    background: linear-gradient(90deg,#0043c0,#006bff);
+    color: white;
+    padding: 14px 18px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 16px;
+    margin-top: 10px;
+    transition: 0.2s ease-in-out;
+}
 
-  </style>
+.btn-guardar:hover {
+    background: #0049d1;
+    transform: scale(1.02);
+}
+
+/* ===========================
+   BOTÓN REGRESAR
+=========================== */
+.btn-regresar {
+    display: block;
+    text-align: center;
+    background: #8a8a8a;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    width: 100%;
+    margin-top: 15px;
+    transition: 0.2s;
+}
+
+.btn-regresar:hover {
+    background: #6a6a6a;
+    transform: scale(1.02);
+}
+
+</style>
 </head>
-<body>
-{% include 'madre/navbar_madre.html' %}
-  <h2 class="main-title">Registrar Nueva Novedad</h2>
 
-  <div class="form-card">
+<body>
+
+<h2 class="main-title">Registrar Nueva Novedad</h2>
+
+<div class="form-card">
+
     <form method="post">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn-guardar">Guardar Novedad</button>
-      <li><a href="{% url 'novedades:novedades_list' %}">Regresar Novedad</a></li>
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit" class="btn-guardar">Guardar Novedad</button>
+
+        <a href="{% url 'novedades:novedades_list' %}" class="btn-regresar">
+            Regresar a novedades
+        </a>
     </form>
-  </div>
+
+</div>
 
 </body>
 </html>

@@ -32,7 +32,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.29);
   
   position: sticky;
   top: 0;
@@ -315,7 +315,85 @@ input[type="radio"]:checked + label {
   padding:6px 12px;
   font-size:13px;
   border-radius:8px;
+
 }
+/* -------- Botones "Todos presentes / Todos ausentes" -------- */
+
+.btn-presente, .btn-ausente {
+  padding: 10px 18px;
+  font-size: 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.25s ease-in-out;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
+
+/* Botón verde */
+.btn-presente {
+  background: linear-gradient(135deg, #1f8c4b, #27ae60);
+}
+
+.btn-presente:hover {
+  background: linear-gradient(135deg, #18723d, #1e964f);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+}
+
+/* Botón rojo */
+.btn-ausente {
+  background: linear-gradient(135deg, #b13228, #e74c3c);
+}
+
+.btn-ausente:hover {
+  background: linear-gradient(135deg, #92271f, #c44135);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+}
+
+/* Pequeño efecto al presionar */
+.btn-presente:active, .btn-ausente:active {
+  transform: scale(0.97);
+}
+
+/* -------- Botón Guardar Registro -------- */
+
+.btn-guardar {
+  padding: 12px 22px;
+  background: linear-gradient(135deg, #4c1caf, #7a3eb1); /* Morado profesional */
+  border: none;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: 0.25s ease-in-out;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.btn-guardar i {
+  font-size: 18px; 
+}
+
+.btn-guardar:hover {
+  background: linear-gradient(135deg, #3a1485, #6a33a1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.22);
+}
+
+.btn-guardar:active {
+  transform: scale(0.97);
+}
+
+
 
 /* Fin del CSS */
 </style>
@@ -391,11 +469,16 @@ input[type="radio"]:checked + label {
         <label for="fecha" style="font-weight:700;color:#7a3eb1;">Fecha:</label>
         <input type="date" id="fecha" name="fecha" value="{{ fecha_hoy }}" required>
       </div>
+<div style="margin-bottom:10px; text-align:center;">
+  <button type="button" id="select-all" class="btn-presente">
+    <i class="fas fa-check-circle"></i> Todos presentes
+  </button>
 
-      <div style="margin-bottom:6px;">
-        <button type="button" id="select-all" class="btn-presente"><i class="fas fa-check-circle"></i> Todos presentes</button>
-        <button type="button" id="select-all-ausentes" class="btn-ausente"><i class="fas fa-times-circle"></i> Todos ausentes</button>
-      </div>
+  <button type="button" id="select-all-ausentes" class="btn-ausente">
+    <i class="fas fa-times-circle"></i> Todos ausentes
+  </button>
+</div>
+
 
       <table>
         <thead>
@@ -425,7 +508,10 @@ input[type="radio"]:checked + label {
       </table>
 
       <div style="margin-top:20px;">
-        <button type="submit" class="btn-guardar">Guardar Registro</button>
+        <button type="submit" class="btn-guardar">
+  <i class="fas fa-save"></i> Guardar Registro
+</button>
+
       </div>
     </form>
   </div>
