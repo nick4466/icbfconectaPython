@@ -16,13 +16,49 @@
 *{ box-sizing:border-box; margin:0; padding:0; font-family:'Poppins',sans-serif; }
 
 /* ================================
+   ANIMACIONES
+================================ */
+
+/* Tarjeta: Fade + Slide */
+@keyframes fadeSlide {
+    0% { opacity:0; transform: translateY(30px); }
+    100% { opacity:1; transform: translateY(0); }
+}
+
+/* Header: Fade desde arriba */
+@keyframes fadeDown {
+    0% { opacity:0; transform: translateY(-25px); }
+    100% { opacity:1; transform: translateY(0); }
+}
+
+/* Entrada lateral suave (para "Iniciar sesión" o botones del nav) */
+@keyframes fadeSlideRight {
+    0% { opacity:0; transform: translateX(25px); }
+    100% { opacity:1; transform: translateX(0); }
+}
+
+/* Input pulse */
+@keyframes inputPulse {
+    0% { box-shadow:0 0 0 0 rgba(255, 107, 107, 0.0); }
+    100% { box-shadow:0 0 0 6px rgba(255, 107, 107, 0.15); }
+}
+
+/* Botón respiración */
+@keyframes softPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.015); }
+    100% { transform: scale(1); }
+}
+
+/* ================================
    FONDO COMPLETO
 ================================ */
 body {
-    background: #f5f7fa; /* Un fondo gris muy claro para dar contraste a la tarjeta */
+    background: #f5f7fa;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    animation: fadeDown 0.7s ease;
 }
 
 /* ================================
@@ -46,8 +82,11 @@ body {
     padding: 40px;
     border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    border-top: 5px solid #ff6b6b; /* Rojo principal del home */
+    border-top: 5px solid #ff6b6b;
     text-align: center;
+
+    /* ANIMACIÓN NUEVA */
+    animation: fadeSlide 0.8s ease;
 }
 
 .login-box .logo-login {
@@ -59,7 +98,7 @@ body {
     font-size:40px;
     font-weight:800;
     margin-bottom:15px;
-    color:#ff6b6b; /* Rojo del home */
+    color:#ff6b6b;
 }
 .login-box h4{
     margin-bottom:25px;
@@ -69,6 +108,7 @@ body {
     text-align: center;
 }
 
+/* LABEL */
 label{
     font-size:14px;
     font-weight:600;
@@ -76,6 +116,7 @@ label{
     text-align: left;
 }
 
+/* INPUT */
 input{
     width:100%;
     padding:12px;
@@ -87,9 +128,10 @@ input{
     transition:0.3s;
 }
 
+/* INPUT ANIMADO */
 input:focus{
-    border-color:#ff6b6b; /* Rojo principal del home */
-    box-shadow:0 0 0 3px rgba(255, 107, 107, 0.2);
+    border-color:#ff6b6b;
+    animation: inputPulse 0.4s ease;
     outline:none;
 }
 
@@ -101,7 +143,7 @@ input:focus{
 .password-wrapper i{
     position:absolute;
     right:12px;
-    top: 40%; /* Ajuste para centrar verticalmente */
+    top: 40%;
     transform: translateY(-40%);
     cursor:pointer;
     color:#999;
@@ -110,7 +152,7 @@ input:focus{
 /* BOTÓN */
 .btn-submit{
     width: 100%;
-    background: #e6d600; /* Amarillo del botón del home */
+    background: #e6d600;
     color: #000;
     padding: 14px;
     border: none;
@@ -120,23 +162,24 @@ input:focus{
     cursor:pointer;
     transition:0.3s;
     box-shadow:0 4px 10px rgba(0,0,0,0.2);
+
+    /* SUAVE LATIDO */
+    animation: softPulse 2.5s infinite ease-in-out;
 }
 
 .btn-submit:hover{
-    background: #d4c400; /* Amarillo más oscuro para hover */
+    background: #d4c400;
     transform:translateY(-2px);
 }
 
-/* ================================
-   ENLACES
-================================ */
+/* ENLACES */
 .form-footer{
     margin-top:12px;
     text-align:center;
 }
 
 .form-footer a{
-    color:#52c41a; /* Verde del home */
+    color:#52c41a;
     text-decoration:none;
     font-weight:600;
 }
@@ -145,51 +188,57 @@ input:focus{
     text-decoration:underline;
 }
 
- /* ---------------------- HEADER ---------------------- */
-    header{
-        width:100%;
-        padding:20px 45px;
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        background-color:#5dd3db; /* VERDE MUCHO MÁS AGRADABLE */
-        box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    }
+/* ---------------------- HEADER ---------------------- */
+header{
+    width:100%;
+    padding:20px 45px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background-color:#5dd3db;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
 
-    header img{ height:60px; }
+    /* ANIMACIÓN */
+    animation: fadeDown 0.9s ease;
+}
 
-    nav ul{
-        list-style:none;
-        display:flex;
-        gap:25px;
-        align-items:center;
-    }
+header img{ height:60px; }
 
-    nav a{
-        text-decoration:none;
-        color:#ffffff;
-        font-weight:600;
-        font-size:15px;
-        transition:0.3s;
-    }
+nav ul{
+    list-style:none;
+    display:flex;
+    gap:25px;
+    align-items:center;
+}
 
-    nav a:hover{
-        opacity:0.8;
-    }
+nav a{
+    text-decoration:none;
+    color:#ffffff;
+    font-weight:600;
+    font-size:15px;
+    transition:0.3s;
 
-    .search-btn{
-        background:#fd1d1d;
-        color:white;
-        padding:9px 18px;
-        border-radius:20px;
-        font-weight:600;
-        text-decoration:none;
-        transition:0.3s;
-    }
+    /* ✨ ANIMACIÓN PARA ENLACES DEL NAV */
+    animation: fadeSlideRight 0.8s ease;
+}
 
-    .search-btn:hover{
-        background:#0a6ed1;
-    }
+nav a:hover{
+    opacity:0.8;
+}
+
+.search-btn{
+    background:#fd1d1d;
+    color:white;
+    padding:9px 18px;
+    border-radius:20px;
+    font-weight:600;
+    text-decoration:none;
+    transition:0.3s;
+}
+
+.search-btn:hover{
+    background:#0a6ed1;
+}
 
 /* ================================
    RESPONSIVE
@@ -198,8 +247,9 @@ input:focus{
     .login-box { padding: 30px 25px; }
     header { padding: 15px 25px; }
 }
-
 </style>
+
+
 </head>
 
 <body>

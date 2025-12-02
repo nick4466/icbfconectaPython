@@ -12,14 +12,18 @@
   <style>
     /* ======= ESTILO BASE TOMADO DEL DISEÑO QUE PROVISTE ======= */
 
-    body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-image: url("{% static 'img/fondito.jpg' %}");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-    }
+    * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
 
     header {
       display: flex;
@@ -220,23 +224,7 @@
 
 <body>
 
-<header>
-  <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo">
-  <nav>
-    <ul>
-      <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-home"></i> Inicio</a></li>
-      <li><a href="{% url 'listar_ninos' %}">Matrículas</a></li>
-      <li><a href="{% url 'planeaciones:lista_planeaciones' %}">Planeaciones</a></li>
-      <li><a href="{% url 'gestion_ninos' %}">Gestión de Niños</a></li>
-      <li>
-        <form method="post" action="{% url 'logout' %}" style="display:inline;">
-          {% csrf_token %}
-          <button type="submit"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
-        </form>
-      </li>
-    </ul>
-  </nav>
-</header>
+{% include 'madre/navbar_madre.html' %}
 
 <div class="tabla-registros">
 
