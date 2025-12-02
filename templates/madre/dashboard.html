@@ -424,28 +424,28 @@
         <div class="main-grid">
             <!-- CAPACIDAD DEL HOGAR -->
             <div class="card">
-                <h2><span class="card-icon"><i class="fas fa-child"></i></span> Capacidad del Hogar</h2>
+                <h2><span class="card-icon" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);"><i class="fas fa-child"></i></span> Capacidad del Hogar</h2>
                 
                 <div class="capacidad-section">
-                    <div class="capacidad-numero">{{ total_ninos }}/{{ capacidad_maxima }}</div>
+                    <div class="capacidad-numero" style="color: #f39c12;">{{ total_ninos }}/{{ capacidad_maxima }}</div>
                     <div class="capacidad-texto">Niños matriculados</div>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ porcentaje_ocupacion }}%"></div>
+                        <div class="progress-fill" style="width: {{ porcentaje_ocupacion }}%; background: linear-gradient(90deg, #f39c12 0%, #e67e22 100%);"></div>
                     </div>
                     <div class="capacidad-texto">{{ porcentaje_ocupacion }}% de capacidad utilizada</div>
                 </div>
 
                 <div class="stat-grid">
                     <div class="stat-item">
-                        <div class="stat-number">{{ total_ninos }}</div>
+                        <div class="stat-number" style="color: #f39c12;">{{ total_ninos }}</div>
                         <div class="stat-label">Activos</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">{{ disponibles }}</div>
+                        <div class="stat-number" style="color: #f39c12;">{{ disponibles }}</div>
                         <div class="stat-label">Disponibles</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">{{ capacidad_maxima }}</div>
+                        <div class="stat-number" style="color: #f39c12;">{{ capacidad_maxima }}</div>
                         <div class="stat-label">Capacidad</div>
                     </div>
                 </div>
@@ -453,19 +453,19 @@
 
             <!-- INFORMACIÓN GENERAL -->
             <div class="card">
-                <h2><span class="card-icon"><i class="fas fa-info-circle"></i></span> Información General</h2>
+                <h2><span class="card-icon" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);"><i class="fas fa-info-circle"></i></span> Información General</h2>
                 
                 <div class="stat-grid" style="gap: 20px;">
                     <div class="stat-item">
-                        <div class="stat-number">{{ edad_promedio }}</div>
+                        <div class="stat-number" style="color: #27ae60;">{{ edad_promedio }}</div>
                         <div class="stat-label">Edad Promedio</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">{{ ninos_masculino }}</div>
+                        <div class="stat-number" style="color: #27ae60;">{{ ninos_masculino }}</div>
                         <div class="stat-label">Niños</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">{{ ninos_femenino }}</div>
+                        <div class="stat-number" style="color: #27ae60;">{{ ninos_femenino }}</div>
                         <div class="stat-label">Niñas</div>
                     </div>
                 </div>
@@ -481,19 +481,19 @@
 
             <!-- DOCUMENTACIÓN -->
             <div class="card">
-                <h2><span class="card-icon"><i class="fas fa-file-alt"></i></span> Documentación</h2>
+                <h2><span class="card-icon" style="background: linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%);"><i class="fas fa-file-alt"></i></span> Documentación</h2>
                 
                 <div class="stat-grid" style="gap: 20px;">
                     <div class="stat-item">
-                        <div class="stat-number">{{ ninos_con_cedula }}</div>
+                        <div class="stat-number" style="color: #7f8c8d;">{{ ninos_con_cedula }}</div>
                         <div class="stat-label">Con Cédula</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">{{ ninos_con_vacunas }}</div>
+                        <div class="stat-number" style="color: #7f8c8d;">{{ ninos_con_vacunas }}</div>
                         <div class="stat-label">Vacunados</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">{{ ninos_con_afiliacion }}</div>
+                        <div class="stat-number" style="color: #7f8c8d;">{{ ninos_con_afiliacion }}</div>
                         <div class="stat-label">Afiliados Salud</div>
                     </div>
                 </div>
@@ -509,14 +509,14 @@
 
             <!-- ASISTENCIA -->
             <div class="card">
-                <h2><span class="card-icon"><i class="fas fa-check-circle"></i></span> Asistencia (Últimas 4 sem)</h2>
+                <h2><span class="card-icon" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);"><i class="fas fa-check-circle"></i></span> Asistencia (Últimas 4 sem)</h2>
                 
-                <div class="capacidad-numero" style="color: #27ae60;">{{ porcentaje_asistencia }}%</div>
+                <div class="capacidad-numero" style="color: #3498db;">{{ porcentaje_asistencia }}%</div>
                 <div class="capacidad-texto">Promedio de asistencia general</div>
 
                 <div class="stat-grid" style="margin-top: 20px; gap: 20px;">
                     <div class="stat-item">
-                        <div class="stat-number" style="color: #27ae60;">{{ asistencias_presentes }}</div>
+                        <div class="stat-number" style="color: #3498db;">{{ asistencias_presentes }}</div>
                         <div class="stat-label">Presentes</div>
                     </div>
                     <div class="stat-item">
