@@ -5,279 +5,260 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ICBF Conecta - Inicio</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 
   <style>
-  * { box-sizing: border-box; }
+    *{
+        margin:0; padding:0;
+        box-sizing:border-box;
+        font-family:'Poppins', sans-serif;
+    }
 
-  body {
-    margin: 0;
-    font-family: 'Roboto', sans-serif;
-    background-color: #fef9e7; /* fondo cálido */
-    background-image: url('{% static "img/fondo2.jpg" %}');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    display: flex;
-    flex-direction: column;
+    body{
+        background:white;
+    }
+
+    /* ---------------------- HEADER ---------------------- */
+    header{
+        width:100%;
+        padding:20px 45px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        background-color:#5dd3db; /* VERDE MUCHO MÁS AGRADABLE */
+        box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    header img{ height:60px; }
+
+    nav ul{
+        list-style:none;
+        display:flex;
+        gap:25px;
+        align-items:center;
+    }
+
+    nav a{
+        text-decoration:none;
+        color:#ffffff;
+        font-weight:600;
+        font-size:15px;
+        transition:0.3s;
+    }
+
+    nav a:hover{
+        opacity:0.8;
+    }
+
+    .search-btn{
+        background:#fd1d1d;
+        color:white;
+        padding:9px 18px;
+        border-radius:20px;
+        font-weight:600;
+        text-decoration:none;
+        transition:0.3s;
+    }
+
+    .search-btn:hover{
+        background:#0a6ed1;
+    }
+
+    /* ---------------------- MAIN ---------------------- */
+    .container{
+    width:100%;
+    display:flex;
+    justify-content:center;   /* YA NO LOS MANDA A LOS EXTREMOS */
+    align-items:center;
+    padding:60px 40px;
+    gap:30px;                 /* SE ACERCA AÚN MÁS */
+    flex-wrap:wrap;
+}
+
+.left{
+    width:42%;                /* MENOS ANCHO -> MÁS CERCA */
+    min-width:320px;
+}
+    .left h1{
+        font-size:60px;
+        font-weight:800;
+        line-height:1.1;
+    }
+
+    .left .t-red{ color:#ff6b6b; }
+    .left .t-green{ color:#52c41a; }
+
+    .subtitle{
+        margin-top:18px;
+        font-size:16px;
+        color:#ff6b6b;
+        font-weight:700;
+        letter-spacing:1px;
+    }
+
+    .desc{
+        margin-top:10px;
+        font-size:15px;
+        color:#555;
+        max-width:380px;
+        line-height:1.6;
+    }
+
+    .btn-learn{
+        display:inline-block;
+        margin-top:25px;
+        padding:12px 28px;
+        background:#e6d600;
+        color:white;
+        border-radius:25px;
+        font-weight:600;
+        text-decoration:none;
+        font-size:15px;
+        transition:0.3s;
+    }
+
+    .btn-learn:hover{
+        background:#0a6ed1;
+    }
+
+    .right{
+    width:42%;
+    min-width:320px;
+    display:flex;
+    justify-content:flex-start;  /* Mueve más hacia el centro */
   }
 
-  /* --- BARRA DE NAVEGACIÓN --- */
-  header {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 12px 30px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    backdrop-filter: blur(6px);
-    z-index: 1000;
-  }
+    .illus-box img{
+        width:100%;
+        max-width:450px;
+    }
 
-  header img {
-    height: 70px;
-  }
+    /* ---------------------- FOOTER ---------------------- */
+    footer{
+        margin-top:50px;
+        width:100%;
+        background:#1e88fada;
+        padding:25px 20px;
+        text-align:center;
+        color:white;
+        font-size:14px;
+        line-height:1.6;
+    }
 
-  nav ul {
-    list-style: none;
-    display: flex;
-    gap: 20px;
-    margin: 0;
-    padding: 0;
-  }
+    footer span{ font-weight:600; }
 
-  nav ul li a {
-    text-decoration: none;
-    color: #ff6f61; /* coral alegre */
-    font-weight: 700;
-    font-size: 16px;
-    transition: color 0.3s ease, transform 0.2s ease;
-  }
+    /* ---------------------- RESPONSIVE ---------------------- */
 
-  nav ul li a:hover {
-    color: #ff9f80;
-    transform: scale(1.1);
-  }
+    @media (max-width:1024px){
+        .container{
+            padding:50px 40px;
+        }
 
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 120px 20px 40px 20px;
-    text-align: center;
-  }
+        .left h1{
+            font-size:50px;
+        }
+    }
 
-  h1 {
-    color: #3498db; /* azul cielo */
-    margin-bottom: 25px;
-    font-size: 2.5rem;
-    font-weight: 700;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-  }
+    @media (max-width:850px){
+        header{
+            padding:15px 25px;
+        }
 
-  .intro-text {
-    color: #444;
-    font-size: 1.2rem;
-    max-width: 700px;
-    margin: -10px auto 35px auto;
-  }
+        nav ul{
+            gap:15px;
+        }
 
-  /* --- TARJETAS --- */
-  .card-wrapper {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    width: 90%;
-    max-width: 650px;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 25px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    padding: 40px;
-  }
+        .container{
+            flex-direction:column;
+            text-align:center;
+            padding:40px 30px;
+        }
 
-  .card-container {
-    position: relative;
-    width: 100%;
-    padding: 30px 20px;
-  }
+        .left, .right{
+            width:100%;
+        }
 
-  .card {
-    opacity: 0;
-    transform: scale(0.95);
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
-  }
+        .desc{
+            margin-left:auto;
+            margin-right:auto;
+        }
 
-  .card.active {
-    opacity: 1;
-    transform: scale(1);
-    position: relative;
-  }
+        .illus-box img{
+            max-width:380px;
+        }
+    }
 
-  .card img {
-    width: 100%;
-    height: 200px;
-    border-radius: 15px;
-    object-fit: cover;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
+    @media (max-width:500px){
+        .left h1{
+            font-size:40px;
+        }
 
-  .card h2 {
-    color: #27ae60; /* verde alegre */
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 10px;
-  }
+        header img{
+            height:50px;
+        }
 
-  .card p {
-    color: #555;
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-bottom: 20px;
-  }
+        .btn-learn{
+            padding:10px 20px;
+        }
 
-  .card button {
-    background-color: #f39c12; /* naranja brillante */
-    border: none;
-    color: white;
-    font-weight: 700;
-    font-size: 1rem;
-    padding: 12px 28px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-  }
+        nav a{
+            font-size:13px;
+        }
+    }
 
-  .card button:hover {
-    background-color: #e67e22;
-    transform: translateY(-2px);
-  }
-
-  /* --- BOTONES DE CONTROL --- */
-  .control-btn {
-    background-color: #ff6f61;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
-    font-size: 22px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 10;
-  }
-
-  .control-btn:hover {
-    background-color: #ff9f80;
-  }
-
-  #prev { left: -22px; }
-  #next { right: -22px; }
-
-  @media (max-width: 768px) {
-    header { flex-direction: column; gap: 10px; }
-    .card-container { padding: 20px; }
-    .control-btn { width: 38px; height: 38px; font-size: 18px; }
-    #prev { left: 0; } #next { right: 0; }
-  }
-
-  footer {
-    background-color: #3498db; /* azul cielo */
-    text-align: center;
-    padding: 12px;
-    font-size: 14px;
-    color: #fff;
-    box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
-  }
-</style>
+  </style>
 </head>
+
 <body>
 
-  <header>
+<!-- HEADER -->
+<header>
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
+
     <nav>
-      <ul>
-        <li><a href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a></li>
-      </ul>
+        <ul>
+            <li><a href="{% url 'home' %}">Home</a></li>
+            <li><a href="{% url 'login' %}" class="search-btn">Iniciar Sesión</a></li>
+        </ul>
     </nav>
-  </header>
+</header>
 
-  <main>
-    <h1>Bienvenido a ICBF Conecta</h1>
+<!-- CONTENIDO -->
+<section class="container">
 
-    <p class="intro-text">
-      La plataforma que conecta a madres comunitarias, padres de familia y administradores
-      para el bienestar y desarrollo de la primera infancia.
-    </p>
+    <!-- TEXTO -->
+    <div class="left">
+        <h1>
+            <span class="t-red">ICBF</span><br>
+            <span class="t-green">CONECTA</span>
+        </h1>
 
-    <div class="card-wrapper">
-      <button class="control-btn" id="prev"><i class="fas fa-chevron-left"></i></button>
+        <p class="subtitle">NUEVAS METAS POR ALCANZAR</p>
 
-      <div class="card-container">
-        <div class="card active">
-          <img src="{% static 'img/madresComunitarias.jpg' %}" alt="Madre Comunitaria">
-          <h2>Madres Comunitarias</h2>
-          <p>Registra actividades, gestiona la asistencia de los niños y envía reportes al sistema de forma rápida y organizada.</p>
-          <button onclick="location.href='{% url 'login' %}'">Ingresar</button>
-        </div>
+        <p class="desc">
+            Bienvenido a ICBF Conecta. Una plataforma que comunica a madres comunitarias,
+            familias y administradores para impulsar el bienestar de la primera infancia.
+        </p>
 
-        <div class="card">
-          <img src="{% static 'img/padres.jpg' %}" alt="Padre de Familia">
-          <h2>Padres de Familia</h2>
-          <p>Consulta información de tus hijos, comunícate con la madre comunitaria y revisa su progreso desde cualquier lugar.</p>
-          <button onclick="location.href='{% url 'login' %}'">Ingresar</button>
-        </div>
-
-        <div class="card">
-          <img src="{% static 'img/administradores.jpg' %}" alt="Administrador">
-          <h2>Administradores</h2>
-          <p>Supervisa la información del sistema, administra usuarios y genera reportes globales con facilidad.</p>
-          <button onclick="location.href='{% url 'login' %}'">Ingresar</button>
-        </div>
-      </div>
-
-      <button class="control-btn" id="next"><i class="fas fa-chevron-right"></i></button>
+        <a href="{% url 'login' %}" class="btn-learn">INGRESAR</a>
     </div>
-  </main>
 
-  <footer>
-    Contáctanos: contacto@icbf-conecta.com <br>
-    Llámanos: +57 333336565
-  </footer>
+    <!-- ILUSTRACIÓN -->
+    <div class="right">
+        <div class="illus-box">
+            <img src="{% static 'img/homeninos.jpg' %}" alt="Ilustración">
+        </div>
+    </div>
 
-  <script>
-    const cards = document.querySelectorAll('.card');
-    let current = 0;
+</section>
 
-    document.getElementById('next').addEventListener('click', () => {
-      cards[current].classList.remove('active');
-      current = (current + 1) % cards.length;
-      cards[current].classList.add('active');
-    });
-
-    document.getElementById('prev').addEventListener('click', () => {
-      cards[current].classList.remove('active');
-      current = (current - 1 + cards.length) % cards.length;
-      cards[current].classList.add('active');
-    });
-
-    if (cards.length > 0) cards[0].classList.add('active');
-  </script>
+<!-- FOOTER -->
+<footer>
+    <span>Contáctanos:</span> contacto@icbf-conecta.com<br>
+    <span>Teléfono:</span> +57 333 336 565<br>
+    © 2025 ICBF Conecta - Todos los derechos reservados
+</footer>
 
 </body>
 </html>
