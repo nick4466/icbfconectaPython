@@ -123,6 +123,71 @@
     transform: scale(1.1);
 }
 
+/* Estilo especial para el botón de Matrículas */
+.navbar-menu a.btn-matriculas {
+    color: #007bff;
+}
+
+.navbar-menu a.btn-matriculas:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.navbar-menu a.btn-matriculas:active {
+    background-color: rgba(0, 123, 255, 0.2);
+}
+
+/* Estilo especial para el botón de Gestión de Niños */
+.navbar-menu a.btn-gestion {
+    color: #28a745;
+}
+
+.navbar-menu a.btn-gestion:hover {
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.navbar-menu a.btn-gestion:active {
+    background-color: rgba(40, 167, 69, 0.2);
+}
+
+/* Estilo especial para el botón de Llamar a Lista */
+.navbar-menu a.btn-asistencia {
+    color: #0047AB;
+}
+
+.navbar-menu a.btn-asistencia:hover {
+    background-color: rgba(0, 71, 171, 0.1);
+}
+
+.navbar-menu a.btn-asistencia:active {
+    background-color: rgba(0, 71, 171, 0.2);
+}
+
+/* Estilo especial para el botón de Novedades */
+.navbar-menu a.btn-novedades {
+    color: #ff6b35;
+}
+
+.navbar-menu a.btn-novedades:hover {
+    background-color: rgba(255, 107, 53, 0.1);
+}
+
+.navbar-menu a.btn-novedades:active {
+    background-color: rgba(255, 107, 53, 0.2);
+}
+
+/* Estilo especial para el botón de Enviar Correos */
+.navbar-menu a.btn-correos {
+    color: #ffa500;
+}
+
+.navbar-menu a.btn-correos:hover {
+    background-color: rgba(255, 165, 0, 0.1);
+}
+
+.navbar-menu a.btn-correos:active {
+    background-color: rgba(255, 165, 0, 0.2);
+}
+
 /* Header Right - User Menu */
 .header-right {
     display: flex;
