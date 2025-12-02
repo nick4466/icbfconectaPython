@@ -13,8 +13,8 @@
 
 /* Navbar Principal */
 .navbar-madre {
-    background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
-    color: var(--white);
+    background: #ffffff;
+    color: #764ba2;
     padding: 15px 30px;
     display: flex;
     justify-content: space-between;
@@ -37,7 +37,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--white);
+    color: #764ba2;
     text-decoration: none;
     transition: opacity 0.3s ease;
     font-weight: 600;
@@ -91,7 +91,7 @@
 }
 
 .navbar-menu a {
-    color: var(--white);
+    color: #764ba2;
     text-decoration: none;
     font-weight: 500;
     padding: 8px 16px;
@@ -106,12 +106,12 @@
 }
 
 .navbar-menu a:hover {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(118, 75, 162, 0.1);
     transform: translateY(-2px);
 }
 
 .navbar-menu a:active {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(118, 75, 162, 0.2);
 }
 
 .navbar-menu a i {
@@ -154,7 +154,7 @@
 
 /* Nombre de usuario en la barra de navegación */
 .navbar-user-name {
-    color: var(--white);
+    color: #764ba2;
     font-weight: 500;
     font-size: 15px;
     margin-right: -10px; /* Ajusta el espacio con el ícono */
@@ -167,7 +167,7 @@
 
 /* Nav Buttons (Iconos de la barra de navegación) */
 .nav-btn {
-    color: var(--white);
+    color: #764ba2;
     background: none;
     border: none;
     cursor: pointer;
@@ -184,12 +184,12 @@
 }
 
 .nav-btn:hover {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(118, 75, 162, 0.1);
     transform: scale(1.1);
 }
 
 .nav-btn:active {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(118, 75, 162, 0.2);
 }
 
 .nav-btn.logout-btn:hover {
@@ -210,7 +210,7 @@
     border: none;
     cursor: pointer;
     font-size: 1.5rem; /* Ajusta el tamaño del ícono */
-    color: var(--white); /* Hereda el color blanco de la navbar */
+    color: #764ba2; /* Color morado para el menú de usuario */
 }
 
 /* Contenido del menú desplegable (oculto por defecto) */
@@ -424,7 +424,7 @@
 /* Focus states para accesibilidad */
 .navbar-menu a:focus,
 .nav-btn:focus {
-    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline: 2px solid rgba(118, 75, 162, 0.5);
     outline-offset: 2px;
 }
 
