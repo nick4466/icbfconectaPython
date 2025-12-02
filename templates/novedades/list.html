@@ -5,10 +5,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Listado de Novedades - ICBF Conecta</title>
+  <link rel="stylesheet" href="{% static 'css/navbar_madre.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
 </head>
 <style>
+
 /* ===========================
    ESTILOS GENERALES
 =========================== */
@@ -403,38 +406,9 @@ footer {
 
 </style>
 <body>
+    {% include 'madre/navbar_madre.html' %}
     
-<header class="mc-header">
 
-    <!-- IZQUIERDA -->
-    <div class="mc-header-left">
-        <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo" class="mc-logo">
-        <h1 class="mc-title">ICBF Conecta</h1>
-    </div>
-
-    <!-- CENTRO -->
-    <nav class="mc-header-nav">
-        <ul>
-            <li>
-                <a href="{% url 'asistencia_form' %}">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </a>
-            </li>
-        </ul>
-    </nav>
-
-    <!-- DERECHA -->
-    <div class="mc-header-right">
-        <!-- Logout -->
-        <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="logout-btn" onclick="return confirmarLogout();">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </form>
-    </div>
-
-</header>
 
 
   <div style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.050); z-index: -1;"></div>
