@@ -90,8 +90,10 @@
     position: relative;
 }
 
+/* Estilos base para todos los botones del navbar */
 .navbar-menu a {
-    color: #764ba2;
+    background-color: #ffffff;
+    color: #4a4a4a;
     text-decoration: none;
     font-weight: 500;
     padding: 8px 16px;
@@ -105,15 +107,6 @@
     cursor: pointer;
 }
 
-.navbar-menu a:hover {
-    background-color: rgba(118, 75, 162, 0.1);
-    transform: translateY(-2px);
-}
-
-.navbar-menu a:active {
-    background-color: rgba(118, 75, 162, 0.2);
-}
-
 .navbar-menu a i {
     font-size: 16px;
     transition: transform 0.3s ease;
@@ -123,69 +116,88 @@
     transform: scale(1.1);
 }
 
-/* Estilo especial para el botón de Matrículas */
+/* Estilo para el botón de Inicio (morado) */
+.navbar-menu a.btn-inicio {
+    background-color: #ffffff;
+    color: #4a4a4a;
+}
+
+.navbar-menu a.btn-inicio:hover {
+    background-color: #9b59b6;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* Estilo para el botón de Matrículas (morado) */
 .navbar-menu a.btn-matriculas {
-    color: #007bff;
+    background-color: #ffffff;
+    color: #4a4a4a;
 }
 
 .navbar-menu a.btn-matriculas:hover {
-    background-color: rgba(0, 123, 255, 0.1);
+    background-color: #9b59b6;
+    color: #ffffff;
+    transform: translateY(-2px);
 }
 
-.navbar-menu a.btn-matriculas:active {
-    background-color: rgba(0, 123, 255, 0.2);
-}
-
-/* Estilo especial para el botón de Gestión de Niños */
+/* Estilo para el botón de Gestión de Niños (verde) */
 .navbar-menu a.btn-gestion {
-    color: #28a745;
+    background-color: #ffffff;
+    color: #4a4a4a;
 }
 
 .navbar-menu a.btn-gestion:hover {
-    background-color: rgba(40, 167, 69, 0.1);
+    background-color: #27ae60;
+    color: #ffffff;
+    transform: translateY(-2px);
 }
 
-.navbar-menu a.btn-gestion:active {
-    background-color: rgba(40, 167, 69, 0.2);
-}
-
-/* Estilo especial para el botón de Llamar a Lista */
+/* Estilo para el botón de Llamar a Lista (azul) */
 .navbar-menu a.btn-asistencia {
-    color: #0047AB;
+    background-color: #ffffff;
+    color: #4a4a4a;
 }
 
 .navbar-menu a.btn-asistencia:hover {
-    background-color: rgba(0, 71, 171, 0.1);
+    background-color: #3498db;
+    color: #ffffff;
+    transform: translateY(-2px);
 }
 
-.navbar-menu a.btn-asistencia:active {
-    background-color: rgba(0, 71, 171, 0.2);
+/* Estilo para el botón de Planeaciones (azul cielo/turquesa) */
+.navbar-menu a.btn-planeaciones {
+    background-color: #ffffff;
+    color: #4a4a4a;
 }
 
-/* Estilo especial para el botón de Novedades */
+.navbar-menu a.btn-planeaciones:hover {
+    background-color: #5dade2;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* Estilo para el botón de Novedades (rojo) */
 .navbar-menu a.btn-novedades {
-    color: #ff6b35;
+    background-color: #ffffff;
+    color: #4a4a4a;
 }
 
 .navbar-menu a.btn-novedades:hover {
-    background-color: rgba(255, 107, 53, 0.1);
+    background-color: #e74c3c;
+    color: #ffffff;
+    transform: translateY(-2px);
 }
 
-.navbar-menu a.btn-novedades:active {
-    background-color: rgba(255, 107, 53, 0.2);
-}
-
-/* Estilo especial para el botón de Enviar Correos */
+/* Estilo para el botón de Enviar Correos (naranja) */
 .navbar-menu a.btn-correos {
-    color: #ffa500;
+    background-color: #ffffff;
+    color: #4a4a4a;
 }
 
 .navbar-menu a.btn-correos:hover {
-    background-color: rgba(255, 165, 0, 0.1);
-}
-
-.navbar-menu a.btn-correos:active {
-    background-color: rgba(255, 165, 0, 0.2);
+    background-color: #f39c12;
+    color: #ffffff;
+    transform: translateY(-2px);
 }
 
 /* Header Right - User Menu */
