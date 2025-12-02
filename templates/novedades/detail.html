@@ -6,160 +6,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Detalle de Novedad</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-image: url("{% static 'img/fondito.jpg' %}");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      background-color: rgba(0, 0, 0, 0.4);
-    }
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
 
-    header {
-      background-color: rgba(231, 231, 231, 0.795);
-      padding: 15px 30px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid #e5d5f5;
-      backdrop-filter: blur(4px);
-    }
-    header img { height: 60px; }
-nav ul {
-      list-style: none;
-      display: flex;
-      gap: 20px;
-      padding: 0;
-      margin: 0;
-    }
-    nav ul li a {
-      text-decoration: none;
-      color: #9B59B6;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background-color 0.3s ease;
-    }
-    nav ul li a:hover { background-color: #f3c1e5; }
-    .main-title {
-      text-align: center;
-      margin-top: 20px;
-      padding: 20px;
-      font-size: 26px;
-      font-weight: bold;
-      color: #7a3eb1;
-      background-color: rgba(234, 233, 233, 0.7);
-      margin: 20px auto;
-      width: 80%;
-      border-radius: 10px;
-    }
-    
-    .main-title {
-      text-align: center;
-      margin-top: 20px;
-      padding: 20px;
-      font-size: 26px;
-      font-weight: bold;
-      color: #7a3eb1;
-      background-color: rgba(255, 255, 255, 0.7);
-      width: 80%;
-      margin: 20px auto;
-      border-radius: 10px;
-    }
+<style>
 
-    .detail-card {
-      background-color: rgba(238, 238, 238, 0.55);
-      backdrop-filter: blur(6px) saturate(120%);
-      -webkit-backdrop-filter: blur(6px) saturate(120%);
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      max-width: 800px;
-      margin: 0 auto 40px;
-    }
+/* ===========================
+   ESTILO GENERAL
+=========================== */
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    background: #f4f7fc;
+    color: #333;
+}
 
-    .detail-card ul {
-      list-style: none;
-      padding: 0;
-    }
+/* ===========================
+   HEADER
+=========================== */
+header {
+    background: #ffffff;
+    padding: 12px 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
 
-    .detail-card li {
-      padding: 12px 18px;
-      margin-bottom: 10px;
-      background-color: rgba(243, 193, 229, 0.3);
-      border-radius: 8px;
-      font-size: 16px;
-      color: #5e3370;
-    }
+header img {
+    height: 60px;
+}
 
-    .btn-secondary {
-      display: block;
-      margin: 0 auto;
-      background-color: #7a3eb1;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
+/* ===========================
+   TÍTULO PRINCIPAL
+=========================== */
+.main-title {
+    text-align: center;
+    font-size: 28px;
+    color: #0051d4;
+    margin-top: 25px;
+    font-weight: 700;
+}
 
-    .btn-secondary:hover {
-      background-color: #9B59B6;
-    }
+/* ===========================
+   TARJETA DE DETALLE
+=========================== */
+.detail-card {
+    background: #ffffff;
+    width: 90%;
+    max-width: 800px;
+    margin: 25px auto;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
 
-    @media (max-width: 768px) {
-      .main-title { font-size: 22px; width: 90%; }
-      .detail-card { padding: 20px; }
-      .detail-card li { font-size: 15px; }
-    }
-  </style>
+.detail-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.detail-card li {
+    background: #f0f5ff;
+    margin-bottom: 12px;
+    padding: 12px 15px;
+    border-radius: 10px;
+    font-size: 16px;
+    border-left: 4px solid #0059ff;
+}
+
+/* ===========================
+   BOTÓN "DESCARGAR PDF"
+=========================== */
+.btn-mini-historial {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(90deg,#0043c0,#006bff);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 15px;
+}
+
+.btn-mini-historial:hover {
+    background: #0051c8;
+}
+
+/* ===========================
+   FOOTER
+=========================== */
+footer {
+    margin-top: 30px;
+    background: transparent;
+    font-size: 14px;
+    color: #7a3eb1;
+    text-align: center;
+    padding: 25px 0;
+}
+
+</style>
+
 </head>
 <body>
 
-      <header>
+<header>
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software" />
-  </header>
+</header>
 
+<h2 class="main-title">Detalle de Novedad por Excusa Médica</h2>
 
-
-  <h2 class="main-title">Detalle de Novedad por excusa medica</h2>
-
-
-  <div class="detail-card">
+<div class="detail-card">
     <ul>
-
 
       <li><strong>Tipo:</strong> {{ novedad.get_tipo_display }}</li>
       <li><strong>Descripción:</strong> {{ novedad.descripcion }}</li>
-      
-      
       <li><strong>Observaciones:</strong> {{ novedad.observaciones }}</li>
 
-       {% if novedad.archivo_pdf %}
-    <li>
-      <strong>Soporte PDF:</strong>
-      <a href="{{ novedad.archivo_pdf.url }}" target="_blank">Ver PDF</a> |
-      <a href="{{ novedad.archivo_pdf.url }}" download>Descargar PDF</a>
-    </li>
-  {% else %}
-    <li><strong>Soporte PDF:</strong> No se adjuntó archivo</li>
-  {% endif %}
+      {% if novedad.archivo_pdf %}
+      <li>
+        <strong>Soporte PDF:</strong>
+        <a href="{{ novedad.archivo_pdf.url }}" target="_blank">Ver PDF</a> |
+        <a href="{{ novedad.archivo_pdf.url }}" download>Descargar PDF</a>
+      </li>
+      {% else %}
+      <li><strong>Soporte PDF:</strong> No se adjuntó archivo</li>
+      {% endif %}
 
-<a href="{% url 'novedades:novedades_pdf' novedad.id %}" class="btn-mini-historial">
-  <i class="fas fa-file-pdf"></i> Descargar PDF de esta novedad
-</a>
+    </ul>
 
+    <a href="{% url 'novedades:novedades_pdf' novedad.id %}" class="btn-mini-historial">
+        <i class="fas fa-file-pdf"></i> Descargar PDF de esta novedad
+    </a>
 
-<footer style="text-align: center; padding: 20px; color: #7a3eb1; font-size: 14px;">
+    </ul>
+    <a href="{% url 'historial_asistencia' novedad.nino.id %}" class="btn-mini-historial">Volver al listado</a>
+
+</div>
+
+<footer>
   © 2025 ICBF Conecta. Todos los derechos reservados.
 </footer>
-
-
 
 </body>
 </html>
