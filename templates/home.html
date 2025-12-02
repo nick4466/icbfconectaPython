@@ -17,7 +17,10 @@
     }
 
     body{
-        background:white;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
     }
 
     /* ---------------------- HEADER ---------------------- */
@@ -69,6 +72,7 @@
     /* ---------------------- MAIN ---------------------- */
     .container{
     width:100%;
+    flex-grow: 1; /* Hace que el contenido principal crezca y empuje el footer */
     display:flex;
     justify-content:center;   /* YA NO LOS MANDA A LOS EXTREMOS */
     align-items:center;
@@ -137,18 +141,49 @@
 
     /* ---------------------- FOOTER ---------------------- */
     footer{
-        margin-top:50px;
-        width:100%;
-        background:#1e88fada;
-        padding:25px 20px;
-        text-align:center;
-        color:white;
-        font-size:14px;
-        line-height:1.6;
+        width: 100%;
+        background: #5dd3db; /* Mismo color que el header para consistencia */
+        color: white;
+        padding: 30px 40px;
+        margin-top: auto; /* Empuja el footer al final con flexbox */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
     }
 
-    footer span{ font-weight:600; }
+    .footer-contact p {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+    }
 
+    .footer-contact span {
+        font-weight: 600;
+    }
+
+    .footer-social a {
+        color: white;
+        font-size: 22px;
+        margin: 0 8px;
+        text-decoration: none;
+        transition: opacity 0.3s;
+    }
+
+    .footer-social a:hover {
+        opacity: 0.8;
+    }
+
+    .footer-copy {
+        width: 100%;
+        text-align: center;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.8);
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        margin-top: 20px;
+    }
+    
     /* ---------------------- RESPONSIVE ---------------------- */
 
     @media (max-width:1024px){
@@ -183,6 +218,12 @@
         .desc{
             margin-left:auto;
             margin-right:auto;
+        }
+
+        footer {
+            flex-direction: column;
+            text-align: center;
+            padding: 25px;
         }
 
         .illus-box img{
@@ -256,9 +297,20 @@
 
 <!-- FOOTER -->
 <footer>
-    <span>Contáctanos:</span> contacto@icbf-conecta.com<br>
-    <span>Teléfono:</span> +57 333 336 565<br>
-    © 2025 ICBF Conecta - Todos los derechos reservados
+    <div class="footer-contact">
+        <p><span>Contáctanos:</span> contacto@icbf-conecta.com</p>
+        <p><span>Teléfono:</span> +57 333 336 565</p>
+    </div>
+
+    <div class="footer-social">
+        <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+        <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+    </div>
+
+    <div class="footer-copy">
+        © 2025 ICBF Conecta - Todos los derechos reservados
+    </div>
 </footer>
 
 </body>
