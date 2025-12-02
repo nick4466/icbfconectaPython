@@ -96,6 +96,7 @@ urlpatterns = [
     path('ninos/<int:id>/ver/', views.ver_ficha_nino, name='ver_ficha_nino'),
     path('ninos/<int:id>/editar/', views.editar_nino, name='editar_nino'),
     path('ninos/<int:id>/eliminar/', views.eliminar_nino, name='eliminar_nino'),
+    path('ninos/subir-documentos/', views.subir_documentos_nino, name='subir_documentos_nino'),
     path('gestion-ninos/', views.gestion_ninos, name='gestion_ninos'),
      path('ninos/<int:nino_id>/reporte_pdf/', views.reporte_matricula_nino_pdf, name='reporte_matricula_nino_pdf'),
      path('ninos/<int:nino_id>/certificado/', views.certificado_matricula_pdf, name='certificado_matricula_pdf'),

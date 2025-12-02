@@ -1335,6 +1335,56 @@ def madre_dashboard(request):
         'Salud': ninos_con_afiliacion
     })
     
+    # Calcular niños con documentos faltantes
+    ninos_documentos_faltantes = []
+    ninos_sin_documentos_completos = 0
+    
+    for nino in ninos:
+        documentos_faltantes = []
+        
+        # Verificar registro civil
+        if not nino.registro_civil_img:
+            documentos_faltantes.append({
+                'nombre': 'Registro Civil',
+                'campo': 'registro_civil_img',
+                'requerido': True
+            })
+        
+        # Verificar carnet de vacunación
+        if not nino.carnet_vacunacion:
+            documentos_faltantes.append({
+                'nombre': 'Carnet de Vacunación',
+                'campo': 'carnet_vacunacion',
+                'requerido': True
+            })
+        
+        # Verificar certificado EPS
+        if not nino.certificado_eps:
+            documentos_faltantes.append({
+                'nombre': 'Certificado de Afiliación a Salud (EPS)',
+                'campo': 'certificado_eps',
+                'requerido': True
+            })
+        
+        # Verificar foto
+        if not nino.foto:
+            documentos_faltantes.append({
+                'nombre': 'Foto del Niño',
+                'campo': 'foto',
+                'requerido': False
+            })
+        
+        if documentos_faltantes:
+            ninos_sin_documentos_completos += 1
+            ninos_documentos_faltantes.append({
+                'id': nino.id,
+                'nombre': f"{nino.nombres} {nino.apellidos}",
+                'documentos_faltantes': documentos_faltantes
+            })
+    
+    # Convertir a JSON para JavaScript
+    ninos_documentos_faltantes_json = json.dumps(ninos_documentos_faltantes)
+    
     # Nombre completo de la madre
     nombre_madre = f"{request.user.nombres} {request.user.apellidos}"
     
@@ -1371,6 +1421,8 @@ def madre_dashboard(request):
         'ninos_con_cedula': ninos_con_cedula,
         'ninos_con_vacunas': ninos_con_vacunas,
         'ninos_con_afiliacion': ninos_con_afiliacion,
+        'ninos_sin_documentos_completos': ninos_sin_documentos_completos,
+        'ninos_documentos_faltantes': ninos_documentos_faltantes_json,
         # Asistencia
         'asistencias_presentes': asistencias_presentes,
         'asistencias_ausentes': asistencias_ausentes,
@@ -2225,3 +2277,71 @@ def actualizar_foto_perfil(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
     return JsonResponse({'success': False, 'error': 'Método no permitido o rol incorrecto.'}, status=405)
+
+
+@login_required
+def subir_documentos_nino(request):
+    """
+    Vista AJAX para subir documentos faltantes de un niño desde el dashboard de la madre.
+    """
+    if request.method == 'POST':
+        try:
+            # Verificar que sea madre comunitaria
+            if request.user.rol.nombre_rol != 'madre_comunitaria':
+                return JsonResponse({'success': False, 'error': 'No tienes permisos para realizar esta acción.'}, status=403)
+            
+            # Obtener el hogar de la madre
+            hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+            if not hogar_madre:
+                return JsonResponse({'success': False, 'error': 'No tienes un hogar asignado.'}, status=400)
+            
+            # Obtener el ID del niño
+            nino_id = request.POST.get('nino_id')
+            if not nino_id:
+                return JsonResponse({'success': False, 'error': 'No se especificó el niño.'}, status=400)
+            
+            # Verificar que el niño pertenezca al hogar de la madre
+            nino = get_object_or_404(Nino, id=nino_id, hogar=hogar_madre)
+            
+            # Actualizar documentos
+            documentos_actualizados = []
+            
+            # Registro civil
+            if 'registro_civil_img' in request.FILES:
+                nino.registro_civil_img = request.FILES['registro_civil_img']
+                documentos_actualizados.append('Registro Civil')
+            
+            # Carnet de vacunación
+            if 'carnet_vacunacion' in request.FILES:
+                nino.carnet_vacunacion = request.FILES['carnet_vacunacion']
+                documentos_actualizados.append('Carnet de Vacunación')
+            
+            # Certificado EPS
+            if 'certificado_eps' in request.FILES:
+                nino.certificado_eps = request.FILES['certificado_eps']
+                documentos_actualizados.append('Certificado EPS')
+            
+            # Foto
+            if 'foto' in request.FILES:
+                nino.foto = request.FILES['foto']
+                documentos_actualizados.append('Foto')
+            
+            # Guardar cambios
+            if documentos_actualizados:
+                nino.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Documentos actualizados: {", ".join(documentos_actualizados)}',
+                    'documentos_actualizados': documentos_actualizados
+                })
+            else:
+                return JsonResponse({'success': False, 'error': 'No se seleccionó ningún documento para subir.'}, status=400)
+            
+        except Nino.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'El niño no existe o no pertenece a tu hogar.'}, status=404)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'success': False, 'error': f'Error al procesar los documentos: {str(e)}'}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido.'}, status=405)
