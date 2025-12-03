@@ -18,6 +18,7 @@ import os
 from django.core.paginator import Paginator
 from django.templatetags.static import static
 import calendar
+import json
 from django.views.decorators.http import require_POST
 import re
 from django.utils.html import strip_tags
@@ -144,23 +145,27 @@ def listar_desarrollos(request):
         else:
             desarrollo.is_actual = False
 
-        # Obtener novedades del mes para el niño
-        novedades_qs = Novedad.objects.filter(
-            nino=desarrollo.nino,
-            fecha__year=desarrollo.fecha_fin_mes.year,
-            fecha__month=desarrollo.fecha_fin_mes.month
-        ).order_by('fecha')
-        if novedades_qs.exists():
-            novedades_html = []
-            for novedad in novedades_qs:
-                tipo = novedad.get_tipo_display() if hasattr(novedad, 'get_tipo_display') else novedad.tipo
-                # fecha = novedad.fecha.strftime('%d/%m/%Y')  # Eliminamos la fecha
-                descripcion = novedad.descripcion or ''
-                url = reverse('novedades:novedades_detail', args=[novedad.id])
-                novedades_html.append(
-                    f'<div style="margin-bottom:8px;"><b>{tipo}</b>: {descripcion} <a href="{url}" target="_blank" style="color:#5dade2;">Ver detalle</a></div>'
-                )
-            desarrollo.novedades_mes = "".join(novedades_html)
+        # --- CORRECCIÓN: Obtener solo las novedades mencionadas en el informe ---
+        # Se importa el generador para usar su lógica de detección de novedades.
+        from .services import GeneradorEvaluacionMensual
+        generador = GeneradorEvaluacionMensual(desarrollo)
+        # Se ejecutan los métodos que identifican las novedades en los textos.
+        generador._generar_aspectos_a_mejorar()
+        generador._generar_alertas()
+        
+        # Se obtienen las novedades mencionadas (sin duplicados).
+        novedades_mencionadas = list(set(generador.novedades_mencionadas))
+
+        if novedades_mencionadas:
+            novedades_data = []
+            for novedad in novedades_mencionadas:
+                novedades_data.append({
+                    'id': novedad.id,
+                    'tipo': novedad.get_tipo_display(),
+                    'descripcion': novedad.descripcion or ''
+                })
+            # Se convierte la lista a una cadena JSON para que el JavaScript la procese.
+            desarrollo.novedades_mes = json.dumps(novedades_data)
         else:
             desarrollo.novedades_mes = ""
         desarrollos_list.append(desarrollo)
@@ -1075,6 +1080,9 @@ def registrar_desarrollo(request):
             # Contadores para la vista previa
             seguimientos_count = generador.seguimientos_mes.count()
             novedades_count = generador.novedades_mes.count()
+            # --- CORRECCIÓN: Usar las novedades mencionadas directamente desde el generador ---
+            # Se eliminan duplicados por si una novedad se menciona en alertas y aspectos a mejorar
+            desarrollo_preview.novedades_mes = list(set(generador.novedades_mencionadas))
 
             # Renderizar el formulario con los datos generados, listo para ser guardado
             return render(request, 'madre/desarrollo_form.html', {
@@ -1084,7 +1092,6 @@ def registrar_desarrollo(request):
                 'form_action': reverse('desarrollo:registrar_desarrollo'),
                 'seguimientos_mes_count': seguimientos_count,
                 'novedades_mes_count': novedades_count,
-                'alertas_novedades': getattr(desarrollo_preview, '_alertas_novedades', []),
             })
 
     # GET: mostrar formulario de selección de niño y mes
@@ -1115,21 +1122,22 @@ def registrar_desarrollo(request):
             ).count()
             
             # --- CORRECCIÓN: Cargar las novedades para la vista previa en modo edición ---
-            alertas_novedades = Novedad.objects.filter(
-                nino=desarrollo_existente.nino,
-                fecha__year=fecha_fin_mes.year,
-                fecha__month=fecha_fin_mes.month
-            ).order_by('fecha')
+            # Re-ejecutamos la lógica del generador para saber qué novedades se mencionaron
+            from .services import GeneradorEvaluacionMensual
+            generador = GeneradorEvaluacionMensual(desarrollo_existente)
+            # Solo necesitamos ejecutar los métodos que mencionan novedades
+            generador._generar_aspectos_a_mejorar()
+            generador._generar_alertas()
+            # Adjuntamos las novedades mencionadas al objeto
+            desarrollo_existente.novedades_mes = list(set(generador.novedades_mencionadas))
 
             # Renderizar el formulario con el registro existente para edición
-            return render(request, 'madre/desarrollo_form.html', {
+            return render(request, 'madre/desarrollo_form.html', { # Aquí se renderiza el form con el objeto que tiene 'novedades_mes'
                 'desarrollo': desarrollo_existente, 
                 'titulo_form': f'Editar Desarrollo para {desarrollo_existente.nino.nombres}',
                 'seguimientos_mes_count': seguimientos_mes_count,
                 'novedades_mes_count': novedades_mes_count,
                 'form_action': reverse('desarrollo:registrar_desarrollo'),
-                # Pasamos las novedades consultadas a la plantilla
-                'alertas_novedades': alertas_novedades,
             })
         except (DesarrolloNino.DoesNotExist, ValueError):
             # Si no existe, redirigimos para evitar errores, mostrando un mensaje.
@@ -1171,6 +1179,18 @@ def registrar_desarrollo(request):
 
     alertas_generales = []
     alertas_criticas = []
+
+    for linea in lineas:
+        if "Ver detalle:" in linea:
+            alertas_criticas.append(linea)
+        else:
+            # Limpia HTML para el textarea
+            texto_plano = strip_tags(linea).strip()
+            if texto_plano:
+                alertas_generales.append(texto_plano)
+
+    context['alertas_generales'] = "\n".join(alertas_generales)
+    context['alertas_criticas'] = alertas_criticas
 
     for linea in lineas:
         if "Ver detalle:" in linea:

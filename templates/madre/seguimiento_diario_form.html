@@ -412,11 +412,20 @@ input[type="text"]:focus, select:focus {
       // --- Recopilación de datos del formulario ---
       const desempenoSelects = Array.from(document.querySelectorAll('.desempeno-select'));
       const comportamiento = document.getElementById('comportamiento_general').value;
+      const estadoEmocional = document.getElementById('estado_emocional').value;
       const valoracionChecked = document.querySelector('input[name="valoracion"]:checked');
       const valoracion = valoracionChecked ? parseInt(valoracionChecked.value, 10) : 0;
 
       const hayDesempenoBajo = desempenoSelects.some(s => s.value === 'bajo');
-      const todosDesempenosBuenos = desempenoSelects.every(s => ['alto', 'adecuado'].includes(s.value));
+      const todosDesempenosAltos = desempenoSelects.every(s => s.value === 'alto');
+      const todosDesempenosBuenos = desempenoSelects.every(s => ['alto', 'adecuado', 'proceso'].includes(s.value));
+
+      // Clasificación de estados emocionales según tu indicación
+      const esEstadoEmocionalPositivo = ['alegre', 'tranquilo', 'curioso', 'motivado', 'carinoso'].includes(estadoEmocional);
+      const esEstadoEmocionalNeutro = ['cansado', 'timido', 'aislado'].includes(estadoEmocional);
+      const esEstadoEmocionalNegativo = ['triste', 'ansioso', 'frustrado', 'enojado'].includes(estadoEmocional);
+
+      // Clasificación de comportamiento (se mantiene la lógica anterior para este campo)
       const esComportamientoNegativo = ['aislado', 'impulsivo', 'inquieto'].includes(comportamiento);
       const esComportamientoPositivo = ['participativo', 'colaborador', 'tranquilo'].includes(comportamiento); // Asumiendo 'tranquilo' como positivo/neutral
 
@@ -426,18 +435,24 @@ input[type="text"]:focus, select:focus {
       if (hayDesempenoBajo && valoracion > 3) {
         isValid = false;
         firstErrorMessage = "Si alguna dimensión tiene desempeño 'Bajo', la valoración máxima permitida es de 3 estrellas.";
-      } else if (esComportamientoNegativo && valoracion > 4) {
+      } else if ((esComportamientoNegativo || esEstadoEmocionalNegativo) && valoracion > 4) {
         isValid = false;
-        firstErrorMessage = "Si el comportamiento es negativo (Aislado, Impulsivo, Inquieto), la valoración máxima permitida es de 4 estrellas.";
+        firstErrorMessage = "Con un comportamiento o estado emocional negativo, la valoración máxima permitida es de 4 estrellas.";
+      } else if ((esEstadoEmocionalNeutro || (!esComportamientoPositivo && !esComportamientoNegativo)) && valoracion === 5) {
+        isValid = false;
+        firstErrorMessage = "Con un comportamiento o estado emocional neutral, la valoración máxima permitida es de 4 estrellas.";
       }
 
       // 2. Validaciones de mínimo permitido
-      if (todosDesempenosBuenos && esComportamientoPositivo && valoracion < 4) { // Mínimo 4 estrellas
+      if (todosDesempenosAltos && esComportamientoPositivo && esEstadoEmocionalPositivo && valoracion < 5) {
         isValid = false;
-        firstErrorMessage = "Con desempeños 'Altos' o 'Adecuados' y un comportamiento positivo, la valoración mínima debe ser de 4 estrellas.";
-      } else if (todosDesempenosBuenos && !esComportamientoPositivo && !esComportamientoNegativo && valoracion < 2) { // Comportamiento neutral
+        firstErrorMessage = "Con todos los desempeños en 'Alto' y un estado emocional y comportamiento positivos, la valoración debe ser de 5 estrellas.";
+      } else if (todosDesempenosBuenos && esComportamientoPositivo && esEstadoEmocionalPositivo && valoracion < 4) { // Mínimo 4 estrellas
         isValid = false;
-        firstErrorMessage = "Con buenos desempeños y un comportamiento neutral, la valoración mínima es de 2 estrellas.";
+        firstErrorMessage = "Con buenos desempeños, comportamiento y estado emocional positivos, la valoración mínima debe ser de 4 estrellas.";
+      } else if (todosDesempenosBuenos && (esEstadoEmocionalNeutro || (!esComportamientoPositivo && !esComportamientoNegativo)) && valoracion < 2) { // Comportamiento o estado emocional neutral
+        isValid = false;
+        firstErrorMessage = "Con buenos desempeños y un estado emocional/comportamiento neutral, la valoración mínima es de 2 estrellas.";
       }
 
       // 3. Validación de campos obligatorios (si no hay otro error)

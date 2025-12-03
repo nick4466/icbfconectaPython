@@ -402,7 +402,9 @@
 
       <div id="action-buttons-container">
         <button type="submit" form="bulk-delete-form" id="btn-eliminar-seleccionados" disabled><i class="fas fa-trash"></i> Eliminar Seleccionados</button>
-        <a href="{% url 'gestion_ninos' %}" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a Gestión</a>
+        <a href="{% url 'gestion_ninos' %}{% if request.GET.from_page %}?page={{ request.GET.from_page }}{% endif %}" class="btn-volver">
+          <i class="fas fa-arrow-left"></i> Volver a Gestión
+        </a>
         <a href="{% url 'desarrollo:registrar_desarrollo' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-agregar">
           <i class="fas fa-plus"></i> Añadir Registro
         </a>
@@ -437,7 +439,7 @@
             data-mejorar="{{ desarrollo.aspectos_a_mejorar|default_if_none:''|escapejs }}"
             data-alertas="{{ desarrollo.alertas_mes|default_if_none:''|escapejs }}"
             data-conclusion="{{ desarrollo.conclusion_general|default_if_none:''|escapejs }}"
-            data-novedades="{{ desarrollo.novedades_mes|default_if_none:''|escapejs }}"
+            data-novedades="{{ desarrollo.novedades_mes|default_if_none:'' }}"
         >
             <input type="checkbox" name="desarrollo_ids" value="{{ desarrollo.id }}" class="selection-checkbox">
             <span class="badge-promedio">Logro: {{ desarrollo.logro_mes|default:'N/A' }}</span>
@@ -584,7 +586,37 @@
         document.getElementById('modal-mejorar').innerHTML = mostrarDimension(card.dataset.mejorar);
         document.getElementById('modal-alertas').innerHTML = mostrarDimension(card.dataset.alertas);
         document.getElementById('modal-conclusion').innerHTML = mostrarDimension(card.dataset.conclusion);
-        document.getElementById('modal-novedades').innerHTML = (card.dataset.novedades && card.dataset.novedades !== 'undefined') ? mostrarDimension(card.dataset.novedades) : '<span style="color:#888;">No hay novedades registradas este mes.</span>';
+
+        // --- CORRECCIÓN: Lógica para parsear el JSON de novedades ---
+        const novedadesContainer = document.getElementById('modal-novedades');
+        const novedadesData = card.dataset.novedades;
+
+        if (novedadesData && novedadesData.trim() !== '' && novedadesData.trim() !== '[]') {
+            try {
+                // 1. Parsear el string JSON a un objeto de JavaScript
+                const novedades = JSON.parse(novedadesData);
+                let novedadesHtml = '';
+                const urlTemplate = "{% url 'novedades:detalle' 0 %}"; // Plantilla de URL de Django
+
+                // 2. Iterar sobre cada novedad para construir el HTML
+                novedades.forEach(nov => {
+                    const url = urlTemplate.replace('0', nov.id);
+                    const descripcion = nov.descripcion ? `- ${nov.descripcion.substring(0, 60)}...` : '';
+                    novedadesHtml += `
+                        <div style="margin-bottom:7px;">
+                            <span style="color:#3f833f; font-weight:bold;">${nov.tipo}</span> :
+                            <a href="${url}" target="_blank" style="color:#5dade2;">Ver novedad</a>
+                            <span style="color:#555;"> ${descripcion}</span>
+                        </div>`;
+                });
+                novedadesContainer.innerHTML = novedadesHtml;
+            } catch (e) {
+                novedadesContainer.innerHTML = '<span style="color:#888;">Error al procesar las novedades.</span>';
+            }
+        } else {
+            novedadesContainer.innerHTML = '<span style="color:#888;">No hay novedades mencionadas en este informe.</span>';
+        }
+
         modal.style.display = 'flex';
       });
     });

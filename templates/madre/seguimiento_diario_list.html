@@ -366,7 +366,9 @@
       </form>
 
       <div>
-        <a href="{% url 'gestion_ninos' %}" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a Gestión</a>
+        <a href="{% url 'gestion_ninos' %}{% if request.GET.from_page %}?page={{ request.GET.from_page }}{% endif %}" class="btn-volver">
+          <i class="fas fa-arrow-left"></i> Volver a Gestión
+        </a>
         <a href="{% url 'desarrollo:registrar_seguimiento' %}{% if nino_id_filtro %}?nino={{ nino_id_filtro }}{% endif %}" class="btn-agregar">
           <i class="fas fa-plus"></i> Añadir Seguimiento
         </a>
