@@ -27,22 +27,42 @@ urlpatterns = [
     auth_views.LoginView.as_view(template_name='login.html',authentication_form=CustomAuthForm),name='login'),
 
     # --- URLs para Restablecimiento de Contraseña ---
-    path('reset_password/', 
-         auth_views.PasswordResetView.as_view(
-             template_name="password_reset/password_reset_form.html",
-             form_class=CustomPasswordResetForm
-         ), 
-         name="password_reset"),
-    path('reset_password_sent/', 
-         auth_views.PasswordResetDoneView.as_view(template_name="password_reset/password_reset_done.html"), 
-         name="password_reset_done"),
-    path('reset/<uidb64>/<token>/', 
-         auth_views.PasswordResetConfirmView.as_view(template_name="password_reset/password_reset_confirm.html"), 
-         name="password_reset_confirm"),
-    path('reset_password_complete/', 
-         auth_views.PasswordResetCompleteView.as_view(template_name="password_reset/password_reset_complete.html"), 
-         name="password_reset_complete"),
-    
+     path(
+    'reset_password/',
+    auth_views.PasswordResetView.as_view(
+        template_name="password_reset/password_reset_form.html",
+        form_class=CustomPasswordResetForm,
+        email_template_name="password_reset/password_reset_email.html",
+        subject_template_name="password_reset/password_reset_subject.txt",
+        html_email_template_name="password_reset/password_reset_email.html"  # 👈 ESTA ES LA QUE FALTABA
+    ),
+    name="password_reset"
+     ),
+
+     path(
+     'reset_password_sent/',
+     auth_views.PasswordResetDoneView.as_view(
+          template_name="password_reset/password_reset_done.html"
+     ), 
+     name="password_reset_done"
+     ),
+
+     path(
+     'reset/<uidb64>/<token>/',
+     auth_views.PasswordResetConfirmView.as_view(
+          template_name="password_reset/password_reset_confirm.html"
+     ), 
+     name="password_reset_confirm"
+     ),
+
+     path(
+     'reset_password_complete/',
+     auth_views.PasswordResetCompleteView.as_view(
+          template_name="password_reset/password_reset_complete.html"
+     ), 
+     name="password_reset_complete"
+     ),
+
     # URL de Redirección por Rol (Nuevo Punto de Entrada después del Login)
     path('dashboard/', views.role_redirect, name='role_redirect'),
     
