@@ -345,8 +345,12 @@
 
     {% if messages %}
       {% for message in messages %}
-        <div class="mensaje-{{ message.tags }}" id="mensajeNotificacion" style="display: flex; align-items: center; gap: 12px; font-size: 17px; box-shadow: 0 4px 16px rgba(40,167,69,0.13);">
-          <i class="fas fa-check-circle" style="font-size: 22px; color: #fff; background: #28a745; border-radius: 50%; padding: 4px;"></i>
+        <div class="mensaje-{{ message.tags }}">
+          {% if message.tags == "success" %}
+            <i class="fas fa-check-circle" style="font-size: 22px; color: #fff; background: #28a745; border-radius: 50%; padding: 4px;"></i>
+          {% elif message.tags == "error" or message.tags == "danger" or message.tags == "warning" %}
+            <i class="fas fa-times-circle" style="font-size: 22px; color: #fff; background: #dc3545; border-radius: 50%; padding: 4px;"></i>
+          {% endif %}
           <span>{{ message }}</span>
         </div>
       {% endfor %}
@@ -736,14 +740,16 @@
       });
     });
 
-    // Ocultar el mensaje de éxito después de 5 segundos
-    const mensajeNotificacion = document.getElementById('mensajeNotificacion');
-    if (mensajeNotificacion) {
-      setTimeout(() => {
-        mensajeNotificacion.style.opacity = '0';
-        setTimeout(() => { mensajeNotificacion.style.display = 'none'; }, 500);
-      }, 5000);
-    }
+    // Ocultar el mensaje de éxito después de 5 segundos (solo si existe)
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.mensaje-success, .mensaje-error').forEach(function(mensaje) {
+        mensaje.style.opacity = '1';
+        setTimeout(() => {
+          mensaje.style.opacity = '0';
+          setTimeout(() => { mensaje.style.display = 'none'; }, 500);
+        }, 5000);
+      });
+    });
 
     // --- LÓGICA PARA SELECCIÓN MÚLTIPLE ---
     const seleccionarTodosCheckbox = document.getElementById('seleccionar-todos');
