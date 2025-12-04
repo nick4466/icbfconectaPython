@@ -119,7 +119,9 @@ class Usuario(AbstractUser):
     apellidos = models.CharField(max_length=50)
     correo = models.EmailField(max_length=100, unique=True)
     direccion = models.CharField(max_length=100, null=True, blank=True)
+    barrio = models.CharField(max_length=100, null=True, blank=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
+    nivel_educativo = models.CharField(max_length=50, null=True, blank=True)
     rol = models.ForeignKey(Rol, on_delete=models.PROTECT, null=True)
     # Foto de perfil para administradores (y opcional para cualquier usuario)
     foto_admin = models.ImageField(upload_to=admin_upload_path, null=True, blank=True)
@@ -388,6 +390,18 @@ class Nino(models.Model):
     certificado_eps = models.FileField(upload_to='ninos/eps/', null=True, blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
     registro_civil_img = models.FileField(upload_to='ninos/registro_civil/', null=True, blank=True)
+    
+    # Campos adicionales
+    observaciones_medicas = models.TextField(null=True, blank=True, verbose_name="Observaciones médicas")
+    estado = models.CharField(
+        max_length=20,
+        choices=[
+            ('activo', 'Activo'),
+            ('inactivo', 'Inactivo'),
+            ('retirado', 'Retirado')
+        ],
+        default='activo'
+    )
 
     class Meta:
         db_table = 'ninos'
@@ -517,6 +531,43 @@ class SolicitudMatriculacion(models.Model):
         """Verifica si el token aún es válido"""
         from django.utils import timezone
         return timezone.now() < self.fecha_expiracion and self.estado in ['pendiente', 'correccion']
+
+# ------------------------
+# Historial de Cambios
+# ------------------------
+class HistorialCambio(models.Model):
+    """Registra todos los cambios realizados en solicitudes y niños para auditoría"""
+    TIPO_MODELO_CHOICES = [
+        ('solicitud', 'Solicitud de Matriculación'),
+        ('nino', 'Niño'),
+        ('padre', 'Padre/Acudiente'),
+    ]
+    
+    # Relación con el objeto modificado
+    tipo_modelo = models.CharField(max_length=20, choices=TIPO_MODELO_CHOICES)
+    objeto_id = models.PositiveIntegerField()  # ID del objeto modificado
+    
+    # Información del cambio
+    campo_modificado = models.CharField(max_length=100)  # Nombre del campo que cambió
+    valor_anterior = models.TextField(null=True, blank=True)  # Valor antes del cambio
+    valor_nuevo = models.TextField(null=True, blank=True)  # Valor después del cambio
+    
+    # Información de auditoría
+    accion = models.CharField(max_length=50, default='modificacion')  # crear, modificar, eliminar, corregir
+    usuario = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True, blank=True)
+    fecha_cambio = models.DateTimeField(auto_now_add=True)
+    observaciones = models.TextField(null=True, blank=True)  # Contexto adicional
+    
+    class Meta:
+        db_table = 'historial_cambios'
+        ordering = ['-fecha_cambio']
+        indexes = [
+            models.Index(fields=['tipo_modelo', 'objeto_id']),
+            models.Index(fields=['fecha_cambio']),
+        ]
+    
+    def __str__(self):
+        return f"{self.tipo_modelo} #{self.objeto_id} - {self.campo_modificado} - {self.fecha_cambio.strftime('%Y-%m-%d %H:%M')}"
     
 # ------------------------ JUANITO ------------------------
 # sistema de notificaciones 

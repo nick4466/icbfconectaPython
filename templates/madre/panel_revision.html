@@ -284,6 +284,17 @@
       box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
     }
 
+    .btn-historial {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-historial:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #65408b 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
     .btn-aprobar {
       background: #28a745;
       color: white;
@@ -315,6 +326,17 @@
       background: #e0a800;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    }
+
+    .btn-eliminar {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-eliminar:hover {
+      background: #dc3545;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
     }
 
     .btn-action:disabled {
@@ -707,6 +729,9 @@
                 <button class="btn-action btn-ver" onclick="verFormulario(${solicitud.id})">
                   <i class="fas fa-eye"></i> Ver Formulario
                 </button>
+                <button class="btn-action btn-historial" onclick="verHistorial(${solicitud.id})" title="Ver historial de cambios">
+                  <i class="fas fa-history"></i> Historial
+                </button>
                 <button class="btn-action btn-aprobar" onclick="aprobarSolicitud(${solicitud.id})">
                   <i class="fas fa-check"></i> Aprobar
                 </button>
@@ -716,9 +741,15 @@
                 <button class="btn-action btn-corregir" onclick="toggleCorreccion(${solicitud.id})">
                   <i class="fas fa-edit"></i> Solicitar Corrección
                 </button>
+                <button class="btn-action btn-eliminar" onclick="eliminarSolicitud(${solicitud.id})">
+                  <i class="fas fa-trash-alt"></i> Eliminar
+                </button>
               ` : `
                 <button class="btn-action" disabled title="Esperando completar formulario">
                   <i class="fas fa-hourglass-half"></i> Pendiente de Completar
+                </button>
+                <button class="btn-action btn-eliminar" onclick="eliminarSolicitud(${solicitud.id})">
+                  <i class="fas fa-trash-alt"></i> Eliminar
                 </button>
               `}
             </div>
@@ -817,6 +848,7 @@
         { id: 'nombres_padre', label: 'Nombres del acudiente' },
         { id: 'apellidos_padre', label: 'Apellidos del acudiente' },
         { id: 'documento_padre', label: 'Documento del acudiente' },
+        { id: 'correo_padre', label: 'Correo del acudiente' },
         { id: 'telefono_padre', label: 'Teléfono del acudiente' },
         { id: 'direccion_padre', label: 'Dirección' },
         { id: 'ocupacion_padre', label: 'Ocupación' },
@@ -1105,6 +1137,240 @@
       } catch (error) {
         console.error('Error:', error);
         Swal.fire('Error', 'No se pudo enviar para corrección', 'error');
+      }
+    }
+
+    async function eliminarSolicitud(solicitudId) {
+      const result = await Swal.fire({
+        title: '¿Eliminar Solicitud?',
+        html: `
+          <p>Esta acción es <strong>permanente</strong> y eliminará completamente la solicitud.</p>
+          <p style="color: #dc3545; margin-top: 10px;">⚠️ No se podrá recuperar después de eliminarla.</p>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, Eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
+        const formData = new FormData();
+        formData.append('solicitud_id', solicitudId);
+
+        const response = await fetch('{% url "eliminar_solicitud_matricula" %}', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'ok') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Solicitud Eliminada',
+            text: data.mensaje || 'La solicitud ha sido eliminada exitosamente.',
+            confirmButtonColor: '#28a745',
+            timer: 2000,
+            timerProgressBar: true
+          }).then(() => {
+            cargarSolicitudes();
+          });
+        } else {
+          Swal.fire('Error', data.mensaje || 'No se pudo eliminar la solicitud', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+      }
+    }
+
+    async function verHistorial(solicitudId) {
+      try {
+        const response = await fetch(`/solicitudes/${solicitudId}/historial/`);
+        const data = await response.json();
+
+        if (data.status !== 'ok') {
+          Swal.fire('Error', data.mensaje || 'No se pudo cargar el historial', 'error');
+          return;
+        }
+
+        if (data.historial.length === 0) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Sin Historial',
+            text: 'Esta solicitud aún no tiene cambios registrados.',
+            confirmButtonColor: '#28a745'
+          });
+          return;
+        }
+
+        // Construir HTML del historial
+        let historialHTML = `
+          <div style="text-align: left; max-height: 500px; overflow-y: auto;">
+            <div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+              <p style="margin: 0; color: #666; font-size: 14px;">
+                <i class="fas fa-info-circle"></i> 
+                Total de cambios registrados: <strong>${data.total}</strong>
+              </p>
+            </div>
+            
+            <div class="timeline-historial">
+        `;
+
+        data.historial.forEach((cambio, index) => {
+          let iconoAccion = 'fa-edit';
+          let colorAccion = '#667eea';
+          
+          if (cambio.accion === 'crear') {
+            iconoAccion = 'fa-plus-circle';
+            colorAccion = '#28a745';
+          } else if (cambio.accion === 'aprobar') {
+            iconoAccion = 'fa-check-circle';
+            colorAccion = '#28a745';
+          } else if (cambio.accion === 'rechazar') {
+            iconoAccion = 'fa-times-circle';
+            colorAccion = '#dc3545';
+          } else if (cambio.accion === 'corregir') {
+            iconoAccion = 'fa-exclamation-triangle';
+            colorAccion = '#ffc107';
+          }
+
+          historialHTML += `
+            <div class="timeline-item">
+              <div class="timeline-icon" style="background: ${colorAccion};">
+                <i class="fas ${iconoAccion}"></i>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <strong>${cambio.campo}</strong>
+                  <span class="timeline-date">${cambio.fecha}</span>
+                </div>
+                ${cambio.accion === 'crear' ? `
+                  <div class="timeline-body">
+                    <p style="color: #666; margin: 5px 0 0 0;">
+                      <i class="fas fa-arrow-right" style="color: ${colorAccion};"></i> ${cambio.valor_nuevo}
+                    </p>
+                  </div>
+                ` : `
+                  <div class="timeline-body">
+                    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin: 5px 0;">
+                      <div style="padding: 8px; background: #fee; border-radius: 5px; font-size: 13px;">
+                        <strong>Anterior:</strong> ${cambio.valor_anterior}
+                      </div>
+                      <i class="fas fa-arrow-right" style="color: ${colorAccion};"></i>
+                      <div style="padding: 8px; background: #efe; border-radius: 5px; font-size: 13px;">
+                        <strong>Nuevo:</strong> ${cambio.valor_nuevo}
+                      </div>
+                    </div>
+                  </div>
+                `}
+                ${cambio.observaciones ? `
+                  <div style="margin-top: 5px; padding: 8px; background: #f8f9fa; border-radius: 5px; font-size: 12px; color: #666;">
+                    <i class="fas fa-comment"></i> ${cambio.observaciones}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        });
+
+        historialHTML += `
+            </div>
+          </div>
+
+          <style>
+            .timeline-historial {
+              position: relative;
+              padding-left: 30px;
+            }
+            
+            .timeline-historial::before {
+              content: '';
+              position: absolute;
+              left: 15px;
+              top: 0;
+              bottom: 0;
+              width: 2px;
+              background: linear-gradient(to bottom, #667eea, #764ba2);
+            }
+            
+            .timeline-item {
+              position: relative;
+              margin-bottom: 25px;
+              padding-left: 30px;
+            }
+            
+            .timeline-icon {
+              position: absolute;
+              left: -23px;
+              top: 0;
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 14px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            }
+            
+            .timeline-content {
+              background: white;
+              border-radius: 8px;
+              padding: 15px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              border-left: 3px solid #667eea;
+            }
+            
+            .timeline-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 10px;
+              padding-bottom: 8px;
+              border-bottom: 1px solid #eee;
+            }
+            
+            .timeline-header strong {
+              color: #333;
+              font-size: 15px;
+            }
+            
+            .timeline-date {
+              font-size: 12px;
+              color: #999;
+              font-weight: normal;
+            }
+            
+            .timeline-body {
+              color: #555;
+            }
+          </style>
+        `;
+
+        Swal.fire({
+          title: '<i class="fas fa-history"></i> Historial de Cambios',
+          html: historialHTML,
+          width: '800px',
+          confirmButtonText: 'Cerrar',
+          confirmButtonColor: '#28a745',
+          showClass: {
+            popup: 'animate__animated animate__fadeInDown'
+          }
+        });
+
+      } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo cargar el historial de cambios', 'error');
       }
     }
 

@@ -12,7 +12,7 @@
 
     <nav class="navbar-menu">
         <ul>
-            <li><a href="{% url 'madre_dashboard' %}" class="btn-inicio"><i class="fas fa-home"></i> Inicio</a></li>
+            <li><a href="{% url 'madre_dashboard' %}" class="btn-inicio" title="Inicio"><i class="fas fa-home"></i></a></li>
             <li><a href="{% url 'listar_ninos' %}" class="btn-matriculas"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
             <li><a href="{% url 'gestion_ninos' %}" class="btn-gestion"><i class="fas fa-users"></i> Gestión de Niños</a></li>
             <li><a href="{% url 'asistencia_form' %}" class="btn-asistencia"><i class="fas fa-clipboard-list"></i> Llamar a Lista</a></li>
@@ -46,7 +46,12 @@
                 <div class="notifications-list">
                     {% if notifications %}
                         {% for notification in notifications %}
-                        <div class="notification-item {% if not notification.read %}unread{% endif %}" data-level="{{ notification.level }}">
+                        <div class="notification-item {% if not notification.read %}unread{% endif %}" 
+                             data-level="{{ notification.level }}"
+                             {% if notification.object_id %}
+                             onclick="irASolicitud({{ notification.object_id }}, {{ notification.id }})"
+                             style="cursor: pointer;"
+                             {% endif %}>
                             <div class="notification-icon">
                                 {% if notification.level == 'grave' %}
                                     <i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>
@@ -62,7 +67,7 @@
                                 <div class="notification-time">{{ notification.created_at|timesince }} atrás</div>
                             </div>
                             {% if not notification.read %}
-                            <button class="mark-read-btn" onclick="markAsRead({{ notification.id }})">
+                            <button class="mark-read-btn" onclick="event.stopPropagation(); markAsRead({{ notification.id }})">
                                 <i class="fas fa-check"></i>
                             </button>
                             {% endif %}
@@ -320,6 +325,27 @@ function markAsRead(notificationId) {
         }
     })
     .catch(error => console.error('Error:', error));
+}
+
+function irASolicitud(solicitudId, notificationId) {
+    // Marcar notificación como leída
+    fetch(`/notifications/${notificationId}/mark-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Redirigir al panel de revisión
+        window.location.href = "{% url 'panel_revision_solicitudes' %}";
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Redirigir de todas formas
+        window.location.href = "{% url 'panel_revision_solicitudes' %}";
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function() {

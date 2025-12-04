@@ -128,9 +128,11 @@ urlpatterns = [
     path('solicitudes/panel-revision/', views.panel_revision_solicitudes, name='panel_revision_solicitudes'),
     path('solicitudes/pendientes/', views.listar_solicitudes_matricula, name='listar_solicitudes_matricula'),
     path('solicitudes/<int:solicitud_id>/detalle/', views.detalle_solicitud_matricula, name='detalle_solicitud_matricula'),
+    path('solicitudes/<int:solicitud_id>/historial/', views.historial_solicitud, name='historial_solicitud'),
     path('solicitudes/aprobar/', views.aprobar_solicitud_matricula, name='aprobar_solicitud_matricula'),
     path('solicitudes/rechazar/', views.rechazar_solicitud_matricula, name='rechazar_solicitud_matricula'),
     path('solicitudes/correccion/', views.devolver_correccion_matricula, name='devolver_correccion_matricula'),
+    path('solicitudes/eliminar/', views.eliminar_solicitud_matricula, name='eliminar_solicitud_matricula'),
     path('matricula/publico/<str:token>/', views.formulario_matricula_publico, name='formulario_matricula_publico'),
 
     # --- URLs de Desarrollo (Ahora en su propia app) ---

@@ -2628,35 +2628,48 @@ def aprobar_solicitud_matricula(request):
                 # Obtener o crear el rol de padre
                 rol_padre, _ = Rol.objects.get_or_create(nombre_rol='padre')
                 
-                # Crear usuario para el padre
-                usuario_padre = Usuario.objects.create(
-                    username=solicitud.documento_padre,
-                    documento=solicitud.documento_padre,
-                    tipo_documento=solicitud.tipo_documento_padre or 'CC',
-                    nombres=solicitud.nombres_padre,
-                    apellidos=solicitud.apellidos_padre,
-                    telefono=solicitud.telefono_padre,
-                    email=solicitud.correo_padre,
-                    correo=solicitud.correo_padre,
-                    rol=rol_padre,
-                    is_active=True,
-                )
+                # Verificar si ya existe un usuario con ese documento o correo
+                usuario_padre = Usuario.objects.filter(documento=solicitud.documento_padre).first()
                 
-                # Establecer contraseña hasheada
-                if solicitud.password_padre:
-                    usuario_padre.password = solicitud.password_padre
-                    usuario_padre.save()
-                
-                # Crear perfil de padre
-                padre = Padre.objects.create(
-                    usuario=usuario_padre,
-                    direccion=solicitud.direccion_padre or '',
-                    barrio=solicitud.barrio_padre or '',
-                    nivel_educativo=solicitud.nivel_educativo_padre or '',
-                    ocupacion=solicitud.ocupacion_padre or '',
-                    documento_identidad=solicitud.documento_identidad_padre,
-                    clasificacion_sisben=solicitud.clasificacion_sisben_padre,
-                )
+                if usuario_padre:
+                    # Si el usuario ya existe, verificar si tiene perfil de padre
+                    padre = Padre.objects.filter(usuario=usuario_padre).first()
+                    if not padre:
+                        # Crear perfil de padre si no existe
+                        padre = Padre.objects.create(
+                            usuario=usuario_padre,
+                            ocupacion=solicitud.ocupacion_padre or '',
+                            documento_identidad_img=solicitud.documento_identidad_padre,
+                            clasificacion_sisben=solicitud.clasificacion_sisben_padre,
+                        )
+                else:
+                    # Crear nuevo usuario para el padre
+                    usuario_padre = Usuario.objects.create(
+                        documento=solicitud.documento_padre,
+                        tipo_documento=solicitud.tipo_documento_padre or 'CC',
+                        nombres=solicitud.nombres_padre,
+                        apellidos=solicitud.apellidos_padre,
+                        telefono=solicitud.telefono_padre,
+                        correo=solicitud.correo_padre,
+                        direccion=solicitud.direccion_padre or '',
+                        barrio=solicitud.barrio_padre or '',
+                        nivel_educativo=solicitud.nivel_educativo_padre or '',
+                        rol=rol_padre,
+                        is_active=True,
+                    )
+                    
+                    # Establecer contraseña hasheada
+                    if solicitud.password_padre:
+                        usuario_padre.password = solicitud.password_padre
+                        usuario_padre.save()
+                    
+                    # Crear perfil de padre
+                    padre = Padre.objects.create(
+                        usuario=usuario_padre,
+                        ocupacion=solicitud.ocupacion_padre or '',
+                        documento_identidad_img=solicitud.documento_identidad_padre,
+                        clasificacion_sisben=solicitud.clasificacion_sisben_padre,
+                    )
                 
                 # Crear niño
                 nino = Nino.objects.create(
@@ -2896,6 +2909,146 @@ def devolver_correccion_matricula(request):
             }, status=500)
     
     return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+
+def eliminar_solicitud_matricula(request):
+    """
+    2.8. Endpoint: Eliminar solicitud de matriculación
+    URL: POST /solicitudes/eliminar/
+    """
+    if request.method == 'POST':
+        try:
+            # Verificar que sea madre comunitaria
+            if request.user.rol.nombre_rol != 'madre_comunitaria':
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes permisos.'}, status=403)
+            
+            # Obtener el hogar de la madre
+            hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+            if not hogar_madre:
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes un hogar asignado.'}, status=400)
+            
+            # Obtener ID de la solicitud
+            solicitud_id = request.POST.get('solicitud_id')
+            
+            if not solicitud_id:
+                return JsonResponse({'status': 'error', 'mensaje': 'ID de solicitud no proporcionado.'}, status=400)
+            
+            # Obtener la solicitud y verificar que pertenezca al hogar
+            solicitud = get_object_or_404(SolicitudMatriculacion, id=solicitud_id, hogar=hogar_madre)
+            
+            # Guardar datos para el mensaje
+            email_acudiente = solicitud.email_acudiente
+            nombre_nino = f"{solicitud.nombres_nino or ''} {solicitud.apellidos_nino or ''}".strip() or "Sin nombre"
+            
+            # Eliminar las notificaciones relacionadas con esta solicitud
+            from django.contrib.contenttypes.models import ContentType
+            from notifications.models import Notification
+            
+            content_type = ContentType.objects.get_for_model(SolicitudMatriculacion)
+            Notification.objects.filter(content_type=content_type, object_id=solicitud_id).delete()
+            
+            # Eliminar la solicitud (esto también eliminará los archivos asociados)
+            solicitud.delete()
+            
+            # Opcional: Enviar email de notificación al acudiente
+            try:
+                from django.template.loader import render_to_string
+                from django.core.mail import send_mail
+                from django.conf import settings
+                
+                asunto = f'Solicitud de Matriculación Cancelada - {hogar_madre.nombre_hogar}'
+                
+                mensaje_html = f"""
+                <html>
+                <body style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2 style="color: #dc3545;">Solicitud Cancelada</h2>
+                    <p>Estimado acudiente,</p>
+                    <p>Le informamos que la solicitud de matriculación para <strong>{nombre_nino}</strong> ha sido cancelada por el hogar comunitario <strong>{hogar_madre.nombre_hogar}</strong>.</p>
+                    <p>Si desea volver a solicitar la matriculación, puede contactar directamente con el hogar comunitario.</p>
+                    <br>
+                    <p>Saludos cordiales,<br><strong>{hogar_madre.nombre_hogar}</strong></p>
+                </body>
+                </html>
+                """
+                
+                send_mail(
+                    asunto,
+                    '',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email_acudiente],
+                    fail_silently=True,
+                    html_message=mensaje_html
+                )
+            except Exception as e:
+                print(f"Error al enviar email de cancelación: {e}")
+            
+            return JsonResponse({
+                'status': 'ok',
+                'mensaje': f'La solicitud de {nombre_nino} ha sido eliminada exitosamente.'
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Error al eliminar la solicitud: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+
+def historial_solicitud(request, solicitud_id):
+    """
+    2.9. Endpoint: Obtener historial de cambios de una solicitud
+    URL: GET /solicitudes/<id>/historial/
+    """
+    try:
+        from core.models import HistorialCambio
+        
+        # Verificar que sea madre comunitaria
+        if request.user.rol.nombre_rol != 'madre_comunitaria':
+            return JsonResponse({'status': 'error', 'mensaje': 'No tienes permisos.'}, status=403)
+        
+        # Obtener el hogar de la madre
+        hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+        if not hogar_madre:
+            return JsonResponse({'status': 'error', 'mensaje': 'No tienes un hogar asignado.'}, status=400)
+        
+        # Verificar que la solicitud pertenezca al hogar
+        solicitud = get_object_or_404(SolicitudMatriculacion, id=solicitud_id, hogar=hogar_madre)
+        
+        # Obtener historial de cambios
+        cambios = HistorialCambio.objects.filter(
+            tipo_modelo='solicitud',
+            objeto_id=solicitud_id
+        ).order_by('-fecha_cambio')[:50]  # Últimos 50 cambios
+        
+        historial = []
+        for cambio in cambios:
+            historial.append({
+                'campo': cambio.campo_modificado,
+                'valor_anterior': cambio.valor_anterior,
+                'valor_nuevo': cambio.valor_nuevo,
+                'accion': cambio.accion,
+                'fecha': cambio.fecha_cambio.strftime('%d/%m/%Y %H:%M'),
+                'usuario': cambio.usuario.get_full_name() if cambio.usuario else 'Sistema',
+                'observaciones': cambio.observaciones or ''
+            })
+        
+        return JsonResponse({
+            'status': 'ok',
+            'historial': historial,
+            'total': len(historial)
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'status': 'error',
+            'mensaje': f'Error al obtener historial: {str(e)}'
+        }, status=500)
 
 
 def formulario_matricula_publico(request, token):

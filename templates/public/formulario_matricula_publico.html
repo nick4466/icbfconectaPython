@@ -150,6 +150,20 @@
       background-color: #fff3cd;
     }
     
+    /* Error de validación de edad */
+    input.error-edad {
+      border-color: #dc3545 !important;
+      background-color: #f8d7da !important;
+    }
+    
+    .mensaje-error-edad {
+      color: #dc3545;
+      font-size: 13px;
+      margin-top: 5px;
+      font-weight: 500;
+      display: none;
+    }
+    
     input.editable:focus,
     select.editable:focus,
     textarea.editable:focus {
@@ -476,10 +490,11 @@
                 Fecha de Nacimiento <span class="required">*</span>
                 {% if 'fecha_nacimiento_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="date" name="fecha_nacimiento_nino" 
+              <input type="date" name="fecha_nacimiento_nino" id="fecha_nacimiento_nino"
                      value="{% if solicitud.fecha_nacimiento_nino %}{{ solicitud.fecha_nacimiento_nino|date:'Y-m-d' }}{% endif %}" 
                      {% if en_correccion and 'fecha_nacimiento_nino' not in campos_corregir %}disabled{% endif %}
                      {% if 'fecha_nacimiento_nino' in campos_corregir %}class="editable"{% endif %} required>
+              <div class="mensaje-error-edad" id="error-edad"></div>
             </div>
 
             <div class="form-group">
@@ -1104,11 +1119,63 @@
       });
     });
 
+    // Validación de fecha de nacimiento
+    const fechaNacimientoInput = document.getElementById('fecha_nacimiento_nino');
+    const errorEdadDiv = document.getElementById('error-edad');
+    
+    if (fechaNacimientoInput) {
+      fechaNacimientoInput.addEventListener('change', function() {
+        const fechaNacimiento = new Date(this.value);
+        const hoy = new Date();
+        
+        // Calcular edad en años
+        let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+        const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+          edad--;
+        }
+        
+        // Calcular edad en meses
+        let meses = (hoy.getFullYear() - fechaNacimiento.getFullYear()) * 12;
+        meses -= fechaNacimiento.getMonth();
+        meses += hoy.getMonth();
+        if (hoy.getDate() < fechaNacimiento.getDate()) {
+          meses--;
+        }
+        
+        // Validar rangos
+        if (meses < 12) {
+          this.classList.add('error-edad');
+          errorEdadDiv.style.display = 'block';
+          errorEdadDiv.textContent = '⚠️ El niño debe tener al menos 12 meses de edad para matricularse.';
+        } else if (edad > 5) {
+          this.classList.add('error-edad');
+          errorEdadDiv.style.display = 'block';
+          errorEdadDiv.textContent = '⚠️ El niño supera los 5 años de edad. Solo se pueden matricular niños de 1 a 5 años.';
+        } else {
+          this.classList.remove('error-edad');
+          errorEdadDiv.style.display = 'none';
+          errorEdadDiv.textContent = '';
+        }
+      });
+    }
+
     // Envío del formulario
     const form = document.getElementById('formularioMatricula');
     if (form) {
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
+        
+        // Validar fecha de nacimiento antes de enviar
+        if (fechaNacimientoInput && fechaNacimientoInput.classList.contains('error-edad')) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Edad no válida',
+            text: errorEdadDiv.textContent.replace('⚠️ ', ''),
+            confirmButtonColor: '#dc3545'
+          });
+          return;
+        }
 
         // Validar contraseñas
         const password = document.getElementById('password');
