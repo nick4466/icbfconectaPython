@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud Aprobada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .success-icon {
+            text-align: center;
+            font-size: 60px;
+            margin: 20px 0;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .credentials-box {
+            background-color: #fff3cd;
+            border: 2px dashed #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 ¡Solicitud Aprobada!</h1>
+        </div>
+        
+        <div class="content">
+            <div class="success-icon">🎊</div>
+            
+            <h2 style="text-align: center; color: #3498db;">¡Felicitaciones!</h2>
+            
+            <p>Nos complace informarte que tu solicitud de matriculación para <strong>{{ nombre_nino }}</strong> ha sido <strong>APROBADA</strong>.</p>
+            
+            <div class="info-box">
+                <p><strong>🏠 Hogar Comunitario:</strong> {{ hogar.nombre_hogar }}</p>
+                <p><strong>📍 Dirección:</strong> {{ hogar.direccion }}</p>
+            </div>
+            
+            <h3>🔑 Acceso al Sistema</h3>
+            <p>Ya puedes acceder al sistema ICBF Conecta con las siguientes credenciales:</p>
+            
+            <div class="credentials-box">
+                <p><strong>Usuario:</strong> {{ documento_padre }}</p>
+                <p><strong>Contraseña:</strong> La que configuraste en el formulario</p>
+                <p style="margin-top: 15px; font-size: 12px; color: #666;">
+                    (Guarda estas credenciales en un lugar seguro)
+                </p>
+            </div>
+            
+            <h3>📱 ¿Qué puedes hacer en el sistema?</h3>
+            <ul>
+                <li>Ver el desarrollo y seguimiento diario de tu hijo(a)</li>
+                <li>Consultar el calendario de actividades y planeaciones</li>
+                <li>Recibir novedades y notificaciones del hogar</li>
+                <li>Actualizar información de contacto</li>
+            </ul>
+            
+            <div class="info-box">
+                <p><strong>📅 Próximos pasos:</strong></p>
+                <ol>
+                    <li>Comunícate con el hogar para coordinar la fecha de ingreso</li>
+                    <li>Prepara los documentos físicos originales</li>
+                    <li>Asiste a la reunión de bienvenida (si aplica)</li>
+                </ol>
+            </div>
+            
+            <p>¡Bienvenido a nuestra comunidad educativa!</p>
+            
+            <p style="margin-top: 30px;">Saludos cordiales,<br><strong>{{ hogar.nombre_hogar }}</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>Este es un correo automático generado por el sistema ICBF Conecta.</p>
+            <p>Por favor, no respondas a este mensaje.</p>
+        </div>
+    </div>
+</body>
+</html>

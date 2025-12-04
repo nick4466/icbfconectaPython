@@ -1,0 +1,267 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones | ICBF Conecta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 i {
+            color: #667eea;
+        }
+
+        .mark-all-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+
+        .mark-all-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .notifications-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .notification-item {
+            padding: 20px 25px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            transition: background-color 0.2s;
+        }
+
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .notification-item.unread {
+            background-color: #f0f4ff;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .notification-message {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .notification-meta {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .notification-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .notification-level {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .notification-level.info {
+            background-color: #d4e8fc;
+            color: #1e73be;
+        }
+
+        .notification-level.warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .notification-level.grave {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    {% include 'madre/navbar_madre.html' %}
+
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-bell"></i>
+                Notificaciones
+            </h1>
+            {% if notificaciones %}
+            <button class="mark-all-btn" onclick="marcarTodasLeidas()">
+                <i class="fas fa-check-double"></i> Marcar todas como leídas
+            </button>
+            {% endif %}
+        </div>
+
+        <div class="notifications-container">
+            {% if notificaciones %}
+                {% for notif in notificaciones %}
+                <div class="notification-item {% if not notif.read %}unread{% endif %}">
+                    <div class="notification-icon">
+                        {% if notif.level == 'grave' %}
+                            <i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>
+                        {% elif notif.level == 'warning' %}
+                            <i class="fas fa-exclamation-triangle" style="color: #f39c12;"></i>
+                        {% else %}
+                            <i class="fas fa-info-circle" style="color: #3498db;"></i>
+                        {% endif %}
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">{{ notif.title }}</div>
+                        <div class="notification-message">{{ notif.message }}</div>
+                        <div class="notification-meta">
+                            <span class="notification-time">
+                                <i class="far fa-clock"></i> {{ notif.created_at|timesince }} atrás
+                            </span>
+                            <span class="notification-level {{ notif.level }}">{{ notif.level }}</span>
+                            {% if not notif.read %}
+                            <span style="color: #667eea; font-size: 12px; font-weight: 500;">
+                                <i class="fas fa-circle" style="font-size: 8px;"></i> Nueva
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No tienes notificaciones</p>
+                    <a href="{% url 'madre_dashboard' %}" class="back-btn">
+                        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function marcarTodasLeidas() {
+            if (confirm('¿Marcar todas las notificaciones como leídas?')) {
+                fetch('/notifications/marcar-todo-leido/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+    </script>
+</body>
+</html>

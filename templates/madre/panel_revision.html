@@ -1,0 +1,1122 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Revisión de Solicitudes | ICBF Conecta</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f7fa;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    /* Header de la página */
+    .page-header {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+    }
+
+    .page-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .page-header p {
+      font-size: 16px;
+      opacity: 0.95;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+    }
+
+    .stat-icon.pendiente {
+      background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    }
+
+    .stat-icon.completo {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .stat-icon.sin-completar {
+      background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    }
+
+    .stat-icon.correccion {
+      background: linear-gradient(135deg, #fd7e14 0%, #dc3545 100%);
+    }
+
+    .stat-content h3 {
+      font-size: 14px;
+      color: #666;
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    .stat-content .number {
+      font-size: 32px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    /* Filtros */
+    .filters-bar {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-btn {
+      padding: 10px 20px;
+      border: 2px solid #e0e0e0;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-btn:hover {
+      border-color: #28a745;
+      color: #28a745;
+    }
+
+    .filter-btn.active {
+      background: #28a745;
+      color: white;
+      border-color: #28a745;
+    }
+
+    /* Lista de solicitudes */
+    .solicitudes-container {
+      display: grid;
+      gap: 20px;
+    }
+
+    .solicitud-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.3s;
+      border-left: 5px solid #28a745;
+    }
+
+    .solicitud-card.sin-completar {
+      border-left-color: #6c757d;
+      opacity: 0.85;
+    }
+
+    .solicitud-card.correccion {
+      border-left-color: #ffc107;
+    }
+
+    .solicitud-card:hover {
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      transform: translateY(-2px);
+    }
+
+    .solicitud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      gap: 20px;
+    }
+
+    .solicitud-info h3 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .solicitud-info h3.sin-datos {
+      color: #999;
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .solicitud-info p {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .solicitud-info p i {
+      width: 18px;
+      color: #28a745;
+    }
+
+    .solicitud-info .warning {
+      color: #f39c12;
+      font-weight: 500;
+    }
+
+    .estado-badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .estado-pendiente {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .estado-correccion {
+      background: #ffe5b4;
+      color: #d35400;
+    }
+
+    .estado-aprobado {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .estado-rechazado {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .solicitud-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-top: 15px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .btn-action {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-ver {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .btn-ver:hover {
+      background: #138496;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+    }
+
+    .btn-aprobar {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-aprobar:hover {
+      background: #218838;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-rechazar {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-rechazar:hover {
+      background: #c82333;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    .btn-corregir {
+      background: #ffc107;
+      color: #333;
+    }
+
+    .btn-corregir:hover {
+      background: #e0a800;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    }
+
+    .btn-action:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-action:disabled:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Estado vacío */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .empty-state i {
+      font-size: 80px;
+      color: #e0e0e0;
+      margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+      font-size: 24px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      color: #999;
+    }
+
+    /* Modales inline */
+    .modal-inline {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid;
+    }
+
+    .modal-inline.show {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+
+    .modal-inline.motivo {
+      border-left-color: #dc3545;
+    }
+
+    .modal-inline.correccion {
+      border-left-color: #ffc107;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-inline h4 {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-inline textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+    }
+
+    .campos-lista {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .campo-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .campo-checkbox:hover {
+      border-color: #ffc107;
+      background: #fffbf0;
+    }
+
+    .campo-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .campo-checkbox label {
+      cursor: pointer;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .btn-modal {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .btn-modal-primary {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-modal-primary:hover {
+      background: #218838;
+    }
+
+    .btn-modal-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-modal-secondary:hover {
+      background: #5a6268;
+    }
+
+    .btn-modal-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-modal-danger:hover {
+      background: #c82333;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .loading i {
+      font-size: 48px;
+      color: #28a745;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  {% include 'madre/navbar_madre.html' %}
+
+  <div class="container">
+    <!-- Header -->
+    <div class="page-header">
+      <h1>
+        <i class="fas fa-clipboard-check"></i>
+        Panel de Revisión de Solicitudes
+      </h1>
+      <p>Revisa, aprueba o solicita correcciones en las solicitudes de matriculación pendientes</p>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon pendiente">
+          <i class="fas fa-hourglass-half"></i>
+        </div>
+        <div class="stat-content">
+          <h3>Total Pendientes</h3>
+          <div class="number" id="stat-total">0</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon completo">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-content">
+          <h3>Formularios Completos</h3>
+          <div class="number" id="stat-completos">0</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon sin-completar">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-content">
+          <h3>Sin Completar</h3>
+          <div class="number" id="stat-sin-completar">0</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon correccion">
+          <i class="fas fa-edit"></i>
+        </div>
+        <div class="stat-content">
+          <h3>En Corrección</h3>
+          <div class="number" id="stat-correccion">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-bar">
+      <button class="filter-btn active" data-filter="todas" onclick="filtrarSolicitudes('todas')">
+        <i class="fas fa-list"></i> Todas
+      </button>
+      <button class="filter-btn" data-filter="completas" onclick="filtrarSolicitudes('completas')">
+        <i class="fas fa-check-circle"></i> Completas
+      </button>
+      <button class="filter-btn" data-filter="sin-completar" onclick="filtrarSolicitudes('sin-completar')">
+        <i class="fas fa-clock"></i> Sin Completar
+      </button>
+      <button class="filter-btn" data-filter="correccion" onclick="filtrarSolicitudes('correccion')">
+        <i class="fas fa-edit"></i> En Corrección
+      </button>
+    </div>
+
+    <!-- Lista de solicitudes -->
+    <div id="loading" class="loading">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Cargando solicitudes...</p>
+    </div>
+
+    <div id="solicitudesContainer" class="solicitudes-container" style="display: none;">
+      <!-- Las solicitudes se cargarán dinámicamente aquí -->
+    </div>
+  </div>
+
+  <script>
+    let solicitudesPendientes = [];
+    let filtroActual = 'todas';
+
+    // Cargar solicitudes al iniciar
+    document.addEventListener('DOMContentLoaded', function() {
+      cargarSolicitudes();
+    });
+
+    async function cargarSolicitudes() {
+      try {
+        const response = await fetch('{% url "listar_solicitudes_matricula" %}');
+        const data = await response.json();
+
+        if (data.success) {
+          solicitudesPendientes = data.solicitudes;
+          actualizarEstadisticas();
+          renderizarSolicitudes();
+          
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('solicitudesContainer').style.display = 'grid';
+        } else {
+          mostrarError('Error al cargar las solicitudes');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        mostrarError('Error de conexión al cargar las solicitudes');
+      }
+    }
+
+    function actualizarEstadisticas() {
+      const total = solicitudesPendientes.length;
+      const completos = solicitudesPendientes.filter(s => s.tiene_datos).length;
+      const sinCompletar = solicitudesPendientes.filter(s => !s.tiene_datos).length;
+      const enCorreccion = solicitudesPendientes.filter(s => s.estado === 'correccion').length;
+
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-completos').textContent = completos;
+      document.getElementById('stat-sin-completar').textContent = sinCompletar;
+      document.getElementById('stat-correccion').textContent = enCorreccion;
+    }
+
+    function filtrarSolicitudes(filtro) {
+      filtroActual = filtro;
+      
+      // Actualizar botones activos
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`[data-filter="${filtro}"]`).classList.add('active');
+      
+      renderizarSolicitudes();
+    }
+
+    function renderizarSolicitudes() {
+      const container = document.getElementById('solicitudesContainer');
+      
+      // Aplicar filtro
+      let solicitudesFiltradas = solicitudesPendientes;
+      
+      if (filtroActual === 'completas') {
+        solicitudesFiltradas = solicitudesPendientes.filter(s => s.tiene_datos);
+      } else if (filtroActual === 'sin-completar') {
+        solicitudesFiltradas = solicitudesPendientes.filter(s => !s.tiene_datos);
+      } else if (filtroActual === 'correccion') {
+        solicitudesFiltradas = solicitudesPendientes.filter(s => s.estado === 'correccion');
+      }
+
+      if (solicitudesFiltradas.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>No hay solicitudes ${filtroActual === 'todas' ? '' : 'que coincidan con el filtro'}</h3>
+            <p>Las solicitudes de matriculación aparecerán aquí cuando sean enviadas</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      solicitudesFiltradas.forEach(solicitud => {
+        const tieneDatos = solicitud.tiene_datos;
+        const estadoClass = `estado-${solicitud.estado}`;
+        const estadoTexto = solicitud.estado === 'pendiente' ? 'Pendiente' :
+                           solicitud.estado === 'aprobado' ? 'Aprobado' :
+                           solicitud.estado === 'rechazado' ? 'Rechazado' :
+                           'En Corrección';
+        
+        const cardClass = !tieneDatos ? 'sin-completar' : 
+                         solicitud.estado === 'correccion' ? 'correccion' : '';
+
+        html += `
+          <div class="solicitud-card ${cardClass}" id="solicitud-${solicitud.id}">
+            <div class="solicitud-header">
+              <div class="solicitud-info">
+                <h3 ${!tieneDatos ? 'class="sin-datos"' : ''}>
+                  ${tieneDatos ? solicitud.nombre_nino : 'Formulario pendiente de completar'}
+                </h3>
+                <p>
+                  <i class="fas fa-calendar"></i>
+                  ${tieneDatos ? 'Enviado' : 'Invitación enviada'} el ${solicitud.fecha_envio}
+                </p>
+                <p>
+                  <i class="fas fa-envelope"></i>
+                  ${solicitud.email_acudiente}
+                </p>
+                ${!tieneDatos ? `
+                  <p class="warning">
+                    <i class="fas fa-hourglass-half"></i>
+                    Esperando que el acudiente complete el formulario
+                  </p>
+                ` : ''}
+              </div>
+              <span class="estado-badge ${estadoClass}">${estadoTexto}</span>
+            </div>
+
+            <div class="solicitud-actions">
+              ${tieneDatos ? `
+                <button class="btn-action btn-ver" onclick="verFormulario(${solicitud.id})">
+                  <i class="fas fa-eye"></i> Ver Formulario
+                </button>
+                <button class="btn-action btn-aprobar" onclick="aprobarSolicitud(${solicitud.id})">
+                  <i class="fas fa-check"></i> Aprobar
+                </button>
+                <button class="btn-action btn-rechazar" onclick="toggleMotivo(${solicitud.id})">
+                  <i class="fas fa-times"></i> Rechazar
+                </button>
+                <button class="btn-action btn-corregir" onclick="toggleCorreccion(${solicitud.id})">
+                  <i class="fas fa-edit"></i> Solicitar Corrección
+                </button>
+              ` : `
+                <button class="btn-action" disabled title="Esperando completar formulario">
+                  <i class="fas fa-hourglass-half"></i> Pendiente de Completar
+                </button>
+              `}
+            </div>
+
+            <!-- Modal inline para rechazo -->
+            <div class="modal-inline motivo" id="modal-motivo-${solicitud.id}">
+              <h4>
+                <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+                Motivo del Rechazo
+              </h4>
+              <textarea id="textarea-motivo-${solicitud.id}" placeholder="Explique claramente el motivo del rechazo..." required></textarea>
+              <div class="modal-buttons">
+                <button class="btn-modal btn-modal-secondary" onclick="toggleMotivo(${solicitud.id})">
+                  <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn-modal btn-modal-danger" onclick="confirmarRechazo(${solicitud.id})">
+                  <i class="fas fa-paper-plane"></i> Enviar Rechazo
+                </button>
+              </div>
+            </div>
+
+            <!-- Modal inline para corrección -->
+            <div class="modal-inline correccion" id="modal-correccion-${solicitud.id}">
+              <h4>
+                <i class="fas fa-edit" style="color: #ffc107;"></i>
+                Seleccionar Campos a Corregir
+              </h4>
+              <p style="color: #666; margin-bottom: 15px;">Marque los campos que el acudiente debe revisar y corregir:</p>
+              
+              <div class="campos-lista" id="campos-${solicitud.id}">
+                <!-- Los campos se cargarán dinámicamente -->
+              </div>
+
+              <div class="modal-buttons">
+                <button class="btn-modal btn-modal-secondary" onclick="toggleCorreccion(${solicitud.id})">
+                  <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn-modal btn-modal-primary" style="background: #ffc107; color: #333;" onclick="confirmarCorreccion(${solicitud.id})">
+                  <i class="fas fa-paper-plane"></i> Enviar para Corrección
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function toggleMotivo(solicitudId) {
+      const modal = document.getElementById(`modal-motivo-${solicitudId}`);
+      modal.classList.toggle('show');
+      
+      // Cerrar modal de corrección si está abierto
+      const modalCorreccion = document.getElementById(`modal-correccion-${solicitudId}`);
+      if (modalCorreccion) {
+        modalCorreccion.classList.remove('show');
+      }
+    }
+
+    async function toggleCorreccion(solicitudId) {
+      const modal = document.getElementById(`modal-correccion-${solicitudId}`);
+      const isOpening = !modal.classList.contains('show');
+      
+      modal.classList.toggle('show');
+      
+      // Cerrar modal de motivo si está abierto
+      const modalMotivo = document.getElementById(`modal-motivo-${solicitudId}`);
+      if (modalMotivo) {
+        modalMotivo.classList.remove('show');
+      }
+
+      // Cargar campos disponibles si estamos abriendo el modal
+      if (isOpening) {
+        await cargarCamposCorreccion(solicitudId);
+      }
+    }
+
+    async function cargarCamposCorreccion(solicitudId) {
+      const container = document.getElementById(`campos-${solicitudId}`);
+      
+      const campos = [
+        { id: 'nombres_nino', label: 'Nombres del niño' },
+        { id: 'apellidos_nino', label: 'Apellidos del niño' },
+        { id: 'documento_nino', label: 'Documento del niño' },
+        { id: 'fecha_nacimiento_nino', label: 'Fecha de nacimiento' },
+        { id: 'genero_nino', label: 'Género' },
+        { id: 'tipo_sangre_nino', label: 'Tipo de sangre' },
+        { id: 'tiene_discapacidad', label: '¿Tiene discapacidad?' },
+        { id: 'tipos_discapacidad', label: 'Tipos de discapacidad' },
+        { id: 'otra_discapacidad', label: 'Otra discapacidad' },
+        { id: 'foto_nino', label: 'Foto del niño' },
+        { id: 'carnet_vacunacion_nino', label: 'Carnet de vacunación' },
+        { id: 'certificado_eps_nino', label: 'Certificado EPS' },
+        { id: 'registro_civil_nino', label: 'Registro civil' },
+        { id: 'nombres_padre', label: 'Nombres del acudiente' },
+        { id: 'apellidos_padre', label: 'Apellidos del acudiente' },
+        { id: 'documento_padre', label: 'Documento del acudiente' },
+        { id: 'telefono_padre', label: 'Teléfono del acudiente' },
+        { id: 'direccion_padre', label: 'Dirección' },
+        { id: 'ocupacion_padre', label: 'Ocupación' },
+        { id: 'documento_identidad_padre', label: 'Doc. identidad acudiente' },
+        { id: 'clasificacion_sisben_padre', label: 'Clasificación SISBEN' }
+      ];
+
+      let html = '';
+      campos.forEach(campo => {
+        html += `
+          <div class="campo-checkbox">
+            <input type="checkbox" id="campo-${solicitudId}-${campo.id}" value="${campo.id}">
+            <label for="campo-${solicitudId}-${campo.id}">${campo.label}</label>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    async function verFormulario(solicitudId) {
+      try {
+        const response = await fetch(`/solicitudes/${solicitudId}/detalle/`);
+        const data = await response.json();
+
+        if (data.error) {
+          Swal.fire('Error', data.error, 'error');
+          return;
+        }
+
+        // Función auxiliar para renderizar documentos
+        const renderDocumento = (url, nombre) => {
+          if (!url) {
+            return `<div style="padding: 10px; background: #fee; border-radius: 5px; color: #c33;">
+              <i class="fas fa-exclamation-triangle"></i> ${nombre} no subido
+            </div>`;
+          }
+
+          const extension = url.split('.').pop().toLowerCase();
+          
+          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+            // Es una imagen - mostrar miniatura clickeable
+            return `
+              <div style="margin: 10px 0;">
+                <strong>${nombre}:</strong>
+                <div style="margin-top: 5px;">
+                  <a href="${url}" target="_blank" title="Click para ver en tamaño completo">
+                    <img src="${url}" alt="${nombre}" 
+                         style="max-width: 100%; max-height: 200px; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;"
+                         onmouseover="this.style.transform='scale(1.05)'"
+                         onmouseout="this.style.transform='scale(1)'">
+                  </a>
+                  <div style="margin-top: 5px; font-size: 12px; color: #666;">
+                    <i class="fas fa-external-link-alt"></i> Click en la imagen para ampliar
+                  </div>
+                </div>
+              </div>
+            `;
+          } else if (extension === 'pdf') {
+            // Es un PDF - mostrar botón de descarga y preview
+            return `
+              <div style="margin: 10px 0;">
+                <strong>${nombre}:</strong>
+                <div style="margin-top: 5px;">
+                  <a href="${url}" target="_blank" class="btn-ver-documento">
+                    <i class="fas fa-file-pdf"></i> Ver PDF
+                  </a>
+                  <div style="margin-top: 10px;">
+                    <embed src="${url}" type="application/pdf" width="100%" height="300px" style="border-radius: 8px; border: 1px solid #ddd;" />
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            // Otro tipo de archivo
+            return `
+              <div style="margin: 10px 0;">
+                <strong>${nombre}:</strong>
+                <a href="${url}" target="_blank" class="btn-ver-documento">
+                  <i class="fas fa-download"></i> Descargar archivo
+                </a>
+              </div>
+            `;
+          }
+        };
+
+        // Construir HTML con los detalles
+        let detallesHTML = `
+          <div style="text-align: left; max-height: 600px; overflow-y: auto; padding: 10px;">
+            <h3 style="color: #28a745; margin-bottom: 15px; border-bottom: 2px solid #28a745; padding-bottom: 10px;">
+              <i class="fas fa-child"></i> Información del Niño
+            </h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+              <p><strong>Nombres:</strong> ${data.nino.nombres}</p>
+              <p><strong>Apellidos:</strong> ${data.nino.apellidos}</p>
+              <p><strong>Documento:</strong> ${data.nino.documento}</p>
+              <p><strong>Fecha de Nacimiento:</strong> ${data.nino.fecha_nacimiento}</p>
+              <p><strong>Género:</strong> ${data.nino.genero}</p>
+              <p><strong>Tipo de Sangre:</strong> ${data.nino.tipo_sangre}</p>
+            </div>
+
+            <h3 style="color: #28a745; margin: 20px 0 15px; border-bottom: 2px solid #28a745; padding-bottom: 10px;">
+              <i class="fas fa-user"></i> Información del Acudiente
+            </h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+              <p><strong>Nombres:</strong> ${data.padre.nombres}</p>
+              <p><strong>Apellidos:</strong> ${data.padre.apellidos}</p>
+              <p><strong>Documento:</strong> ${data.padre.tipo_documento} ${data.padre.documento}</p>
+              <p><strong>Teléfono:</strong> ${data.padre.telefono}</p>
+              <p><strong>Correo:</strong> ${data.padre.correo}</p>
+              <p><strong>Dirección:</strong> ${data.padre.direccion}</p>
+              <p><strong>Ocupación:</strong> ${data.padre.ocupacion}</p>
+              <p><strong>Nivel Educativo:</strong> ${data.padre.nivel_educativo}</p>
+            </div>
+
+            <h3 style="color: #28a745; margin: 20px 0 15px; border-bottom: 2px solid #28a745; padding-bottom: 10px;">
+              <i class="fas fa-file-medical"></i> Documentos Adjuntos
+            </h3>
+            <div style="margin-bottom: 15px;">
+              ${renderDocumento(data.documentos.foto_nino, 'Foto del Niño')}
+              ${renderDocumento(data.documentos.carnet_vacunacion_nino, 'Carnet de Vacunación')}
+              ${renderDocumento(data.documentos.certificado_eps_nino, 'Certificado EPS')}
+              ${renderDocumento(data.documentos.registro_civil_nino, 'Registro Civil')}
+              ${renderDocumento(data.documentos.documento_identidad_padre, 'Documento de Identidad del Acudiente')}
+              ${renderDocumento(data.documentos.clasificacion_sisben_padre, 'Clasificación SISBEN')}
+            </div>
+
+            <style>
+              .btn-ver-documento {
+                display: inline-block;
+                padding: 8px 16px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                font-size: 14px;
+                transition: all 0.3s;
+                margin: 5px 0;
+              }
+              .btn-ver-documento:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+              }
+            </style>
+          </div>
+        `;
+
+        Swal.fire({
+          title: 'Detalle de la Solicitud',
+          html: detallesHTML,
+          width: '900px',
+          confirmButtonText: 'Cerrar',
+          confirmButtonColor: '#28a745'
+        });
+
+      } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo cargar el detalle de la solicitud', 'error');
+      }
+    }
+
+    async function aprobarSolicitud(solicitudId) {
+      const result = await Swal.fire({
+        title: '¿Aprobar Solicitud?',
+        text: 'Se creará la matrícula del niño y se notificará al acudiente',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, Aprobar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
+        const formData = new FormData();
+        formData.append('solicitud_id', solicitudId);
+
+        const response = await fetch('{% url "aprobar_solicitud_matricula" %}', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'ok') {
+          Swal.fire({
+            icon: 'success',
+            title: '¡Solicitud Aprobada!',
+            text: data.mensaje,
+            confirmButtonColor: '#28a745'
+          }).then(() => {
+            cargarSolicitudes();
+          });
+        } else {
+          Swal.fire('Error', data.mensaje, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo aprobar la solicitud', 'error');
+      }
+    }
+
+    async function confirmarRechazo(solicitudId) {
+      const motivo = document.getElementById(`textarea-motivo-${solicitudId}`).value.trim();
+
+      if (!motivo) {
+        Swal.fire('Error', 'Debe especificar un motivo de rechazo', 'warning');
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('solicitud_id', solicitudId);
+        formData.append('motivo_rechazo', motivo);
+
+        const response = await fetch('{% url "rechazar_solicitud_matricula" %}', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'ok') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Solicitud Rechazada',
+            text: data.mensaje,
+            confirmButtonColor: '#28a745'
+          }).then(() => {
+            cargarSolicitudes();
+          });
+        } else {
+          Swal.fire('Error', data.mensaje, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo rechazar la solicitud', 'error');
+      }
+    }
+
+    async function confirmarCorreccion(solicitudId) {
+      const checkboxes = document.querySelectorAll(`#campos-${solicitudId} input[type="checkbox"]:checked`);
+      
+      if (checkboxes.length === 0) {
+        Swal.fire('Error', 'Debe seleccionar al menos un campo a corregir', 'warning');
+        return;
+      }
+
+      const campos = Array.from(checkboxes).map(cb => cb.value);
+
+      try {
+        const formData = new FormData();
+        formData.append('solicitud_id', solicitudId);
+        formData.append('campos_corregir', JSON.stringify(campos));
+
+        const response = await fetch('{% url "devolver_correccion_matricula" %}', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'ok') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Solicitud Devuelta',
+            text: data.mensaje,
+            confirmButtonColor: '#28a745'
+          }).then(() => {
+            cargarSolicitudes();
+          });
+        } else {
+          Swal.fire('Error', data.mensaje, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo enviar para corrección', 'error');
+      }
+    }
+
+    function mostrarError(mensaje) {
+      document.getElementById('loading').innerHTML = `
+        <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+        <p style="color: #dc3545;">${mensaje}</p>
+        <button class="btn-action btn-ver" onclick="location.reload()">
+          <i class="fas fa-redo"></i> Reintentar
+        </button>
+      `;
+    }
+  </script>
+</body>
+</html>

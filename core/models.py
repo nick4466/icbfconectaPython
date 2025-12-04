@@ -439,6 +439,84 @@ class Planeacion(models.Model):
 
     def __str__(self):
         return f"{self.nombre_actividad} - {self.fecha}"
+
+# ------------------------
+# Solicitud de Matriculación
+# ------------------------
+class SolicitudMatriculacion(models.Model):
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('aprobado', 'Aprobado'),
+        ('rechazado', 'Rechazado'),
+        ('correccion', 'En Corrección'),
+    ]
+    
+    hogar = models.ForeignKey(HogarComunitario, on_delete=models.CASCADE, related_name='solicitudes_matricula')
+    email_acudiente = models.EmailField(max_length=100)
+    token = models.CharField(max_length=100, unique=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_expiracion = models.DateTimeField()
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    
+    # Datos del niño
+    nombres_nino = models.CharField(max_length=100, null=True, blank=True)
+    apellidos_nino = models.CharField(max_length=100, null=True, blank=True)
+    documento_nino = models.CharField(max_length=50, null=True, blank=True)
+    fecha_nacimiento_nino = models.DateField(null=True, blank=True)
+    genero_nino = models.CharField(max_length=20, null=True, blank=True)
+    tipo_sangre_nino = models.CharField(max_length=5, null=True, blank=True)
+    parentesco = models.CharField(max_length=50, null=True, blank=True)
+    observaciones_nino = models.TextField(null=True, blank=True)
+    
+    # Discapacidad del niño
+    tiene_discapacidad = models.BooleanField(default=False, null=True, blank=True)
+    tipos_discapacidad = models.JSONField(null=True, blank=True)  # Lista de IDs de discapacidades
+    otra_discapacidad = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Documentos del niño
+    foto_nino = models.FileField(upload_to='solicitudes/ninos/fotos/', null=True, blank=True)
+    carnet_vacunacion_nino = models.FileField(upload_to='solicitudes/ninos/vacunacion/', null=True, blank=True)
+    certificado_eps_nino = models.FileField(upload_to='solicitudes/ninos/eps/', null=True, blank=True)
+    registro_civil_nino = models.FileField(upload_to='solicitudes/ninos/registro_civil/', null=True, blank=True)
+    
+    # Datos del padre
+    tipo_documento_padre = models.CharField(max_length=5, null=True, blank=True)
+    documento_padre = models.CharField(max_length=50, null=True, blank=True)
+    nombres_padre = models.CharField(max_length=100, null=True, blank=True)
+    apellidos_padre = models.CharField(max_length=100, null=True, blank=True)
+    correo_padre = models.EmailField(max_length=100, null=True, blank=True)
+    telefono_padre = models.CharField(max_length=20, null=True, blank=True)
+    direccion_padre = models.CharField(max_length=200, null=True, blank=True)
+    barrio_padre = models.CharField(max_length=100, null=True, blank=True)
+    ocupacion_padre = models.CharField(max_length=100, null=True, blank=True)
+    nivel_educativo_padre = models.CharField(max_length=50, null=True, blank=True)
+    
+    # Contraseña para el padre
+    password_padre = models.CharField(max_length=255, null=True, blank=True)
+    
+    # Documentos del padre
+    documento_identidad_padre = models.FileField(upload_to='solicitudes/padres/cedulas/', null=True, blank=True)
+    clasificacion_sisben_padre = models.FileField(upload_to='solicitudes/padres/sisben/', null=True, blank=True)
+    
+    # Campos para corrección y rechazo
+    campos_corregir = models.JSONField(null=True, blank=True)  # Lista de campos a corregir
+    motivo_rechazo = models.TextField(null=True, blank=True)
+    intentos_correccion = models.IntegerField(default=0)  # Contador de intentos de corrección
+    
+    # Fechas de seguimiento
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'solicitudes_matriculacion'
+        ordering = ['-fecha_creacion']
+    
+    def __str__(self):
+        return f"Solicitud {self.id} - {self.email_acudiente} ({self.estado})"
+    
+    def is_valido(self):
+        """Verifica si el token aún es válido"""
+        from django.utils import timezone
+        return timezone.now() < self.fecha_expiracion and self.estado in ['pendiente', 'correccion']
     
 # ------------------------ JUANITO ------------------------
 # sistema de notificaciones 

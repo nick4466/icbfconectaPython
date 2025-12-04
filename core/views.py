@@ -3,9 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 from django.db import transaction
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q, Count
-from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional
+from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional, SolicitudMatriculacion, Discapacidad
 from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
@@ -39,6 +39,10 @@ from planeaciones.models import Planeacion
 from datetime import datetime as _datetime, date as _date
 from core.models import Asistencia
 from desarrollo.models import SeguimientoDiario
+import uuid
+import json
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 # --- VISTAS PERSONALIZADAS DE AUTENTICACIÓN ---
 from django.contrib.auth.forms import PasswordResetForm
@@ -1868,6 +1872,26 @@ def listar_ninos(request):
     return response
 
 @login_required
+def panel_revision_solicitudes(request):
+    """
+    Vista para el panel de revisión de solicitudes de matriculación
+    """
+    # Verificar que sea madre comunitaria
+    if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'madre_comunitaria':
+        messages.error(request, 'Acceso denegado.')
+        return redirect('home')
+    
+    # Verificar que tenga hogar asignado
+    try:
+        hogar = HogarComunitario.objects.get(madre=request.user.madre_profile)
+    except HogarComunitario.DoesNotExist:
+        messages.error(request, 'No tienes un hogar comunitario asignado.')
+        return redirect('madre_dashboard')
+    
+    return render(request, 'madre/panel_revision.html')
+
+
+@login_required
 def generar_reporte_ninos(request):
     # Aquí puedes generar el PDF o mostrar un mensaje temporal
     return render(request, 'madre/reporte_ninos.html')
@@ -2343,5 +2367,783 @@ def subir_documentos_nino(request):
             import traceback
             traceback.print_exc()
             return JsonResponse({'success': False, 'error': f'Error al procesar los documentos: {str(e)}'}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido.'}, status=405)
+
+
+# ============================================
+# SISTEMA DE INVITACIONES DE MATRICULACIÓN
+# ============================================
+
+@login_required
+def enviar_invitacion_matricula(request):
+    """
+    2.1. Endpoint: Enviar invitación de matriculación
+    URL: POST /solicitudes/enviar-invitacion/
+    """
+    if request.method == 'POST':
+        try:
+            # Verificar que sea madre comunitaria
+            if request.user.rol.nombre_rol != 'madre_comunitaria':
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes permisos para realizar esta acción.'}, status=403)
+            
+            # Obtener el hogar de la madre
+            hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+            if not hogar_madre:
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes un hogar asignado.'}, status=400)
+            
+            # Obtener email del acudiente
+            email_acudiente = request.POST.get('email_acudiente', '').strip()
+            
+            # Validar que el correo sea válido y termine en @gmail.com
+            if not email_acudiente:
+                return JsonResponse({'status': 'error', 'mensaje': 'El correo electrónico es obligatorio.'}, status=400)
+            
+            if not email_acudiente.endswith('@gmail.com'):
+                return JsonResponse({'status': 'error', 'mensaje': 'Solo se permiten correos de Gmail (@gmail.com).'}, status=400)
+            
+            # Validar formato de email
+            import re
+            email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+            if not re.match(email_regex, email_acudiente):
+                return JsonResponse({'status': 'error', 'mensaje': 'El formato del correo electrónico no es válido.'}, status=400)
+            
+            # Generar token único (UUID4)
+            token = str(uuid.uuid4())
+            
+            # Generar fecha de expiración (48 horas desde ahora)
+            fecha_expiracion = timezone.now() + timedelta(hours=48)
+            
+            # Crear la solicitud de matriculación
+            solicitud = SolicitudMatriculacion.objects.create(
+                hogar=hogar_madre,
+                email_acudiente=email_acudiente,
+                token=token,
+                fecha_expiracion=fecha_expiracion,
+                estado='pendiente'
+            )
+            
+            # Construir el link de invitación
+            protocolo = 'https' if request.is_secure() else 'http'
+            dominio = request.get_host()
+            link_invitacion = f"{protocolo}://{dominio}/matricula/publico/{token}/"
+            
+            # Enviar email al acudiente
+            asunto = f'Invitación de Matriculación - {hogar_madre.nombre_hogar}'
+            
+            # Renderizar el template de email
+            from django.template.loader import render_to_string
+            mensaje_html = render_to_string('emails/invitacion_matricula.html', {
+                'hogar': hogar_madre,
+                'link': link_invitacion,
+                'fecha_expiracion': fecha_expiracion,
+            })
+            
+            # Enviar email
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            send_mail(
+                asunto,
+                '',  # Mensaje de texto plano (vacío porque usamos HTML)
+                settings.DEFAULT_FROM_EMAIL,
+                [email_acudiente],
+                fail_silently=False,
+                html_message=mensaje_html
+            )
+            
+            return JsonResponse({
+                'status': 'ok',
+                'mensaje': f'Invitación enviada exitosamente a {email_acudiente}. El enlace es válido por 48 horas.'
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Error al enviar la invitación: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+
+@login_required
+def listar_solicitudes_matricula(request):
+    """
+    2.2. Endpoint: Cargar solicitudes pendientes para el panel de revisión
+    URL: GET /solicitudes/pendientes/
+    """
+    try:
+        # Verificar que sea madre comunitaria
+        if request.user.rol.nombre_rol != 'madre_comunitaria':
+            return JsonResponse({'error': 'No tienes permisos para ver las solicitudes.'}, status=403)
+        
+        # Obtener el hogar de la madre
+        hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+        if not hogar_madre:
+            return JsonResponse({'error': 'No tienes un hogar asignado.'}, status=400)
+        
+        # Obtener solicitudes del hogar (pendientes y en corrección)
+        solicitudes = SolicitudMatriculacion.objects.filter(
+            hogar=hogar_madre,
+            estado__in=['pendiente', 'correccion']
+        ).order_by('-fecha_creacion')
+        
+        # Serializar datos
+        datos = []
+        for s in solicitudes:
+            datos.append({
+                'id': s.id,
+                'nombre_nino': s.nombres_nino or 'Sin completar',
+                'email_acudiente': s.email_acudiente,
+                'fecha_envio': s.fecha_creacion.strftime('%d/%m/%Y %H:%M') if s.fecha_creacion else '',
+                'estado': s.estado,
+                'tiene_datos': bool(s.nombres_nino),  # True si ya llenó el formulario
+            })
+        
+        return JsonResponse({'success': True, 'solicitudes': datos})
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Error al cargar solicitudes: {str(e)}'}, status=500)
+
+
+@login_required
+def detalle_solicitud_matricula(request, solicitud_id):
+    """
+    2.3. Endpoint: Ver detalle completo (formulario enviado por el acudiente)
+    URL: GET /solicitudes/<id>/detalle/
+    """
+    try:
+        # Verificar que sea madre comunitaria
+        if request.user.rol.nombre_rol != 'madre_comunitaria':
+            return JsonResponse({'error': 'No tienes permisos.'}, status=403)
+        
+        # Obtener el hogar de la madre
+        hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+        if not hogar_madre:
+            return JsonResponse({'error': 'No tienes un hogar asignado.'}, status=400)
+        
+        # Obtener la solicitud
+        solicitud = get_object_or_404(SolicitudMatriculacion, id=solicitud_id, hogar=hogar_madre)
+        
+        # Construir URLs de documentos
+        def get_document_url(field):
+            if field and hasattr(field, 'url'):
+                return request.build_absolute_uri(field.url)
+            return None
+        
+        # Serializar datos completos
+        datos = {
+            'id': solicitud.id,
+            'email_acudiente': solicitud.email_acudiente,
+            'estado': solicitud.estado,
+            'fecha_creacion': solicitud.fecha_creacion.strftime('%d/%m/%Y %H:%M') if solicitud.fecha_creacion else '',
+            'fecha_expiracion': solicitud.fecha_expiracion.strftime('%d/%m/%Y %H:%M') if solicitud.fecha_expiracion else '',
+            
+            # Datos del niño
+            'nino': {
+                'nombres': solicitud.nombres_nino or '',
+                'apellidos': solicitud.apellidos_nino or '',
+                'documento': solicitud.documento_nino or '',
+                'fecha_nacimiento': solicitud.fecha_nacimiento_nino.strftime('%Y-%m-%d') if solicitud.fecha_nacimiento_nino else '',
+                'genero': solicitud.genero_nino or '',
+                'tipo_sangre': solicitud.tipo_sangre_nino or '',
+                'parentesco': solicitud.parentesco or '',
+                'observaciones': solicitud.observaciones_nino or '',
+            },
+            
+            # Datos del padre/acudiente
+            'padre': {
+                'tipo_documento': solicitud.tipo_documento_padre or '',
+                'documento': solicitud.documento_padre or '',
+                'nombres': solicitud.nombres_padre or '',
+                'apellidos': solicitud.apellidos_padre or '',
+                'telefono': solicitud.telefono_padre or '',
+                'correo': solicitud.correo_padre or '',
+                'direccion': solicitud.direccion_padre or '',
+                'barrio': solicitud.barrio_padre or '',
+                'ocupacion': solicitud.ocupacion_padre or '',
+                'nivel_educativo': solicitud.nivel_educativo_padre or '',
+            },
+            
+            # Documentos (URLs)
+            'documentos': {
+                'foto_nino': get_document_url(solicitud.foto_nino),
+                'carnet_vacunacion_nino': get_document_url(solicitud.carnet_vacunacion_nino),
+                'certificado_eps_nino': get_document_url(solicitud.certificado_eps_nino),
+                'registro_civil_nino': get_document_url(solicitud.registro_civil_nino),
+                'documento_identidad_padre': get_document_url(solicitud.documento_identidad_padre),
+                'clasificacion_sisben_padre': get_document_url(solicitud.clasificacion_sisben_padre),
+            },
+            
+            # Campos de corrección/rechazo
+            'campos_corregir': solicitud.campos_corregir or [],
+            'motivo_rechazo': solicitud.motivo_rechazo or '',
+        }
+        
+        return JsonResponse(datos)
+        
+    except SolicitudMatriculacion.DoesNotExist:
+        return JsonResponse({'error': 'Solicitud no encontrada.'}, status=404)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Error al cargar el detalle: {str(e)}'}, status=500)
+
+
+@login_required
+def aprobar_solicitud_matricula(request):
+    """
+    2.4. Endpoint: Aprobar solicitud
+    URL: POST /solicitudes/<id>/aprobar/
+    """
+    if request.method == 'POST':
+        try:
+            # Verificar que sea madre comunitaria
+            if request.user.rol.nombre_rol != 'madre_comunitaria':
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes permisos.'}, status=403)
+            
+            # Obtener el hogar de la madre
+            hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+            if not hogar_madre:
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes un hogar asignado.'}, status=400)
+            
+            # Obtener ID de la solicitud
+            solicitud_id = request.POST.get('solicitud_id')
+            if not solicitud_id:
+                return JsonResponse({'status': 'error', 'mensaje': 'ID de solicitud no proporcionado.'}, status=400)
+            
+            # Obtener la solicitud
+            solicitud = get_object_or_404(SolicitudMatriculacion, id=solicitud_id, hogar=hogar_madre)
+            
+            # Verificar que tenga datos completos
+            if not solicitud.nombres_nino:
+                return JsonResponse({'status': 'error', 'mensaje': 'La solicitud no tiene datos completos para aprobar.'}, status=400)
+            
+            # Usar transacción para crear padre y niño
+            with transaction.atomic():
+                # Obtener o crear el rol de padre
+                rol_padre, _ = Rol.objects.get_or_create(nombre_rol='padre')
+                
+                # Crear usuario para el padre
+                usuario_padre = Usuario.objects.create(
+                    username=solicitud.documento_padre,
+                    documento=solicitud.documento_padre,
+                    tipo_documento=solicitud.tipo_documento_padre or 'CC',
+                    nombres=solicitud.nombres_padre,
+                    apellidos=solicitud.apellidos_padre,
+                    telefono=solicitud.telefono_padre,
+                    email=solicitud.correo_padre,
+                    correo=solicitud.correo_padre,
+                    rol=rol_padre,
+                    is_active=True,
+                )
+                
+                # Establecer contraseña hasheada
+                if solicitud.password_padre:
+                    usuario_padre.password = solicitud.password_padre
+                    usuario_padre.save()
+                
+                # Crear perfil de padre
+                padre = Padre.objects.create(
+                    usuario=usuario_padre,
+                    direccion=solicitud.direccion_padre or '',
+                    barrio=solicitud.barrio_padre or '',
+                    nivel_educativo=solicitud.nivel_educativo_padre or '',
+                    ocupacion=solicitud.ocupacion_padre or '',
+                    documento_identidad=solicitud.documento_identidad_padre,
+                    clasificacion_sisben=solicitud.clasificacion_sisben_padre,
+                )
+                
+                # Crear niño
+                nino = Nino.objects.create(
+                    padre=padre,
+                    hogar=hogar_madre,
+                    nombres=solicitud.nombres_nino,
+                    apellidos=solicitud.apellidos_nino,
+                    documento=solicitud.documento_nino,
+                    fecha_nacimiento=solicitud.fecha_nacimiento_nino,
+                    genero=solicitud.genero_nino,
+                    tipo_sangre=solicitud.tipo_sangre_nino or '',
+                    parentesco=solicitud.parentesco or '',
+                    observaciones_medicas=solicitud.observaciones_nino or '',
+                    foto=solicitud.foto_nino,
+                    registro_civil_img=solicitud.registro_civil_nino,
+                    carnet_vacunacion=solicitud.carnet_vacunacion_nino,
+                    certificado_eps=solicitud.certificado_eps_nino,
+                    estado='activo',
+                )
+                
+                # Actualizar solicitud
+                solicitud.estado = 'aprobado'
+                solicitud.fecha_aprobacion = timezone.now()
+                solicitud.save()
+            
+            # Enviar email de notificación
+            try:
+                from django.template.loader import render_to_string
+                from django.core.mail import send_mail
+                from django.conf import settings
+                
+                asunto = f'Solicitud de Matriculación Aprobada - {hogar_madre.nombre_hogar}'
+                mensaje_html = render_to_string('emails/solicitud_aprobada.html', {
+                    'hogar': hogar_madre,
+                    'nombre_nino': solicitud.nombres_nino,
+                    'documento_padre': solicitud.documento_padre,
+                })
+                
+                send_mail(
+                    asunto,
+                    '',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [solicitud.email_acudiente],
+                    fail_silently=True,
+                    html_message=mensaje_html
+                )
+            except Exception as e:
+                print(f"Error al enviar email de aprobación: {e}")
+            
+            return JsonResponse({
+                'status': 'ok',
+                'mensaje': f'Solicitud aprobada exitosamente. Se creó el registro del niño {solicitud.nombres_nino}.'
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Error al aprobar la solicitud: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+
+@login_required
+def rechazar_solicitud_matricula(request):
+    """
+    2.5. Endpoint: Rechazar solicitud
+    URL: POST /solicitudes/<id>/rechazar/
+    """
+    if request.method == 'POST':
+        try:
+            # Verificar que sea madre comunitaria
+            if request.user.rol.nombre_rol != 'madre_comunitaria':
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes permisos.'}, status=403)
+            
+            # Obtener el hogar de la madre
+            hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+            if not hogar_madre:
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes un hogar asignado.'}, status=400)
+            
+            # Obtener datos
+            solicitud_id = request.POST.get('solicitud_id')
+            motivo_rechazo = request.POST.get('motivo_rechazo', '').strip()
+            
+            # Validaciones
+            if not solicitud_id:
+                return JsonResponse({'status': 'error', 'mensaje': 'ID de solicitud no proporcionado.'}, status=400)
+            
+            if not motivo_rechazo:
+                return JsonResponse({'status': 'error', 'mensaje': 'El motivo de rechazo es obligatorio.'}, status=400)
+            
+            # Obtener la solicitud
+            solicitud = get_object_or_404(SolicitudMatriculacion, id=solicitud_id, hogar=hogar_madre)
+            
+            # Actualizar solicitud
+            solicitud.estado = 'rechazado'
+            solicitud.motivo_rechazo = motivo_rechazo
+            solicitud.save()
+            
+            # Enviar email de notificación
+            try:
+                from django.template.loader import render_to_string
+                from django.core.mail import send_mail
+                from django.conf import settings
+                
+                asunto = f'Solicitud de Matriculación Rechazada - {hogar_madre.nombre_hogar}'
+                mensaje_html = render_to_string('emails/solicitud_rechazada.html', {
+                    'hogar': hogar_madre,
+                    'motivo': motivo_rechazo,
+                })
+                
+                send_mail(
+                    asunto,
+                    '',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [solicitud.email_acudiente],
+                    fail_silently=True,
+                    html_message=mensaje_html
+                )
+            except Exception as e:
+                print(f"Error al enviar email de rechazo: {e}")
+            
+            return JsonResponse({
+                'status': 'ok',
+                'mensaje': 'Solicitud rechazada. Se notificó al acudiente.'
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Error al rechazar la solicitud: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+
+@login_required
+def devolver_correccion_matricula(request):
+    """
+    2.6. Endpoint: Devolver para corrección
+    URL: POST /solicitudes/<id>/correccion/
+    """
+    if request.method == 'POST':
+        try:
+            # Verificar que sea madre comunitaria
+            if request.user.rol.nombre_rol != 'madre_comunitaria':
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes permisos.'}, status=403)
+            
+            # Obtener el hogar de la madre
+            hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+            if not hogar_madre:
+                return JsonResponse({'status': 'error', 'mensaje': 'No tienes un hogar asignado.'}, status=400)
+            
+            # Obtener datos
+            solicitud_id = request.POST.get('solicitud_id')
+            campos_json = request.POST.get('campos_corregir', '[]')
+            
+            # Validaciones
+            if not solicitud_id:
+                return JsonResponse({'status': 'error', 'mensaje': 'ID de solicitud no proporcionado.'}, status=400)
+            
+            # Parsear campos a corregir
+            try:
+                campos_corregir = json.loads(campos_json)
+            except json.JSONDecodeError:
+                return JsonResponse({'status': 'error', 'mensaje': 'Formato de campos inválido.'}, status=400)
+            
+            if not campos_corregir:
+                return JsonResponse({'status': 'error', 'mensaje': 'Debe seleccionar al menos un campo para corregir.'}, status=400)
+            
+            # Obtener la solicitud
+            solicitud = get_object_or_404(SolicitudMatriculacion, id=solicitud_id, hogar=hogar_madre)
+            
+            # Validar que no haya excedido los intentos
+            if solicitud.intentos_correccion >= 3:
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'Esta solicitud ya excedió el límite de 3 intentos de corrección. El acudiente debe enviar una nueva solicitud.'
+                }, status=400)
+            
+            # Incrementar contador de intentos
+            solicitud.intentos_correccion += 1
+            intentos_restantes = 3 - solicitud.intentos_correccion
+            
+            # Actualizar solicitud
+            solicitud.estado = 'correccion'
+            solicitud.campos_corregir = campos_corregir
+            solicitud.save()
+            
+            # Enviar email de notificación
+            try:
+                from django.template.loader import render_to_string
+                from django.core.mail import send_mail
+                from django.conf import settings
+                
+                asunto = f'Solicitud de Matriculación - Correcciones Requeridas - {hogar_madre.nombre_hogar}'
+                
+                # Generar link para volver al formulario
+                protocolo = 'https' if request.is_secure() else 'http'
+                dominio = request.get_host()
+                link_formulario = f"{protocolo}://{dominio}/matricula/publico/{solicitud.token}/"
+                
+                mensaje_html = render_to_string('emails/solicitud_correccion.html', {
+                    'hogar': hogar_madre,
+                    'campos': campos_corregir,
+                    'link': link_formulario,
+                    'intentos_usados': solicitud.intentos_correccion,
+                    'intentos_restantes': intentos_restantes,
+                })
+                
+                send_mail(
+                    asunto,
+                    '',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [solicitud.email_acudiente],
+                    fail_silently=True,
+                    html_message=mensaje_html
+                )
+            except Exception as e:
+                print(f"Error al enviar email de corrección: {e}")
+            
+            return JsonResponse({
+                'status': 'ok',
+                'mensaje': f'Se solicitó corrección de {len(campos_corregir)} campo(s). El acudiente fue notificado.'
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Error al solicitar correcciones: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+
+def formulario_matricula_publico(request, token):
+    """
+    2.7. Endpoint: Procesar formulario público del acudiente
+    URL: GET/POST /matricula/publico/<token>/
+    """
+    # Buscar la solicitud por token
+    try:
+        solicitud = SolicitudMatriculacion.objects.get(token=token)
+    except SolicitudMatriculacion.DoesNotExist:
+        return render(request, 'public/formulario_matricula_publico.html', {
+            'token_valido': False,
+            'mensaje_error': 'El enlace de invitación no es válido.',
+        })
+    
+    # Validar que el token esté activo
+    if not solicitud.is_valido():
+        return render(request, 'public/formulario_matricula_publico.html', {
+            'token_valido': False,
+            'mensaje_error': 'El enlace ha expirado o la solicitud ya fue procesada. Por favor, contacte al hogar comunitario.',
+        })
+    
+    # GET: Mostrar formulario
+    if request.method == 'GET':
+        # Obtener todas las discapacidades disponibles
+        discapacidades = Discapacidad.objects.all().order_by('nombre')
+        
+        return render(request, 'public/formulario_matricula_publico.html', {
+            'token_valido': True,
+            'solicitud': solicitud,
+            'en_correccion': solicitud.estado == 'correccion',
+            'campos_corregir': solicitud.campos_corregir or [],
+            'discapacidades': discapacidades,
+        })
+    
+    # POST: Procesar formulario
+    if request.method == 'POST':
+        try:
+            # Validar token nuevamente
+            if not solicitud.is_valido():
+                return JsonResponse({
+                    'success': False,
+                    'error': 'El enlace ha expirado.'
+                }, status=400)
+            
+            # Datos del niño
+            solicitud.nombres_nino = request.POST.get('nombres_nino', '').strip()
+            solicitud.apellidos_nino = request.POST.get('apellidos_nino', '').strip()
+            solicitud.documento_nino = request.POST.get('documento_nino', '').strip()
+            fecha_nac = request.POST.get('fecha_nacimiento_nino')
+            if fecha_nac:
+                solicitud.fecha_nacimiento_nino = datetime.strptime(fecha_nac, '%Y-%m-%d').date()
+            solicitud.genero_nino = request.POST.get('genero_nino', '')
+            solicitud.tipo_sangre_nino = request.POST.get('tipo_sangre_nino', '')
+            solicitud.parentesco = request.POST.get('parentesco', '')
+            solicitud.observaciones_nino = request.POST.get('observaciones_nino', '')
+            
+            # Discapacidad
+            tiene_discapacidad = request.POST.get('tiene_discapacidad', 'false')
+            solicitud.tiene_discapacidad = tiene_discapacidad == 'true'
+            
+            if solicitud.tiene_discapacidad:
+                # Obtener IDs de tipos de discapacidad seleccionados
+                tipos_ids = request.POST.getlist('tipos_discapacidad')
+                solicitud.tipos_discapacidad = [int(id) for id in tipos_ids if id.isdigit()]
+                solicitud.otra_discapacidad = request.POST.get('otra_discapacidad', '').strip()
+            else:
+                solicitud.tipos_discapacidad = None
+                solicitud.otra_discapacidad = None
+            
+            # Datos del padre
+            solicitud.tipo_documento_padre = request.POST.get('tipo_documento_padre', '')
+            solicitud.documento_padre = request.POST.get('documento_padre', '').strip()
+            solicitud.nombres_padre = request.POST.get('nombres_padre', '').strip()
+            solicitud.apellidos_padre = request.POST.get('apellidos_padre', '').strip()
+            solicitud.telefono_padre = request.POST.get('telefono_padre', '')
+            solicitud.correo_padre = request.POST.get('correo_padre', '').strip()
+            solicitud.direccion_padre = request.POST.get('direccion_padre', '')
+            solicitud.barrio_padre = request.POST.get('barrio_padre', '')
+            solicitud.ocupacion_padre = request.POST.get('ocupacion_padre', '')
+            solicitud.nivel_educativo_padre = request.POST.get('nivel_educativo_padre', '')
+            
+            # Contraseña (hashear)
+            password = request.POST.get('password_padre', '').strip()
+            password_confirm = request.POST.get('password_confirm', '').strip()
+            
+            # La contraseña es requerida siempre (no se almacena hasta aprobar)
+            if not password:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'La contraseña es obligatoria.'
+                }, status=400)
+            
+            if password != password_confirm:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Las contraseñas no coinciden.'
+                }, status=400)
+            
+            if len(password) < 8:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'La contraseña debe tener al menos 8 caracteres.'
+                }, status=400)
+            
+            solicitud.password_padre = make_password(password)
+            
+            # Documentos (archivos)
+            if 'foto_nino' in request.FILES:
+                solicitud.foto_nino = request.FILES['foto_nino']
+            
+            if 'carnet_vacunacion_nino' in request.FILES:
+                solicitud.carnet_vacunacion_nino = request.FILES['carnet_vacunacion_nino']
+            
+            if 'certificado_eps_nino' in request.FILES:
+                solicitud.certificado_eps_nino = request.FILES['certificado_eps_nino']
+            
+            if 'registro_civil_nino' in request.FILES:
+                solicitud.registro_civil_nino = request.FILES['registro_civil_nino']
+            
+            if 'documento_identidad_padre' in request.FILES:
+                solicitud.documento_identidad_padre = request.FILES['documento_identidad_padre']
+            
+            if 'clasificacion_sisben_padre' in request.FILES:
+                solicitud.clasificacion_sisben_padre = request.FILES['clasificacion_sisben_padre']
+            
+            # Validar que se cargaron archivos nuevos para campos marcados en corrección
+            if solicitud.estado == 'correccion' and solicitud.campos_corregir:
+                campos_archivos = [
+                    'foto_nino', 'carnet_vacunacion_nino', 'certificado_eps_nino',
+                    'registro_civil_nino', 'documento_identidad_padre', 'clasificacion_sisben_padre'
+                ]
+                
+                for campo in solicitud.campos_corregir:
+                    if campo in campos_archivos:
+                        # Verificar que se cargó un archivo nuevo
+                        if campo not in request.FILES:
+                            nombres_legibles = {
+                                'foto_nino': 'Foto del Niño',
+                                'carnet_vacunacion_nino': 'Carnet de Vacunación',
+                                'certificado_eps_nino': 'Certificado EPS',
+                                'registro_civil_nino': 'Registro Civil',
+                                'documento_identidad_padre': 'Documento de Identidad del Acudiente',
+                                'clasificacion_sisben_padre': 'Clasificación SISBEN'
+                            }
+                            return JsonResponse({
+                                'success': False,
+                                'error': f'Debe cargar un archivo nuevo para: {nombres_legibles.get(campo, campo)}'
+                            }, status=400)
+            
+            # Validar documentos obligatorios (solo si no es corrección o si es un documento a corregir)
+            documentos_obligatorios = [
+                ('foto_nino', 'Foto del niño'),
+                ('carnet_vacunacion_nino', 'Carnet de vacunación'),
+                ('certificado_eps_nino', 'Certificado EPS'),
+                ('registro_civil_nino', 'Registro civil'),
+                ('documento_identidad_padre', 'Documento de identidad del acudiente'),
+                ('clasificacion_sisben_padre', 'Clasificación SISBEN'),
+            ]
+            
+            for campo, nombre in documentos_obligatorios:
+                if not getattr(solicitud, campo):
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'El documento "{nombre}" es obligatorio.'
+                    }, status=400)
+            
+            # Cambiar estado a pendiente (si estaba en corrección)
+            es_actualizacion = solicitud.estado == 'correccion'
+            if es_actualizacion:
+                solicitud.estado = 'pendiente'
+                solicitud.campos_corregir = None
+            
+            # Guardar
+            solicitud.save()
+            
+            # Crear notificación para la madre comunitaria
+            try:
+                from notifications.models import Notification
+                from django.contrib.contenttypes.models import ContentType
+                
+                # Buscar el usuario de la madre comunitaria asociada al hogar
+                madre_usuario = None
+                if hasattr(solicitud.hogar, 'madre') and solicitud.hogar.madre:
+                    madre_usuario = solicitud.hogar.madre.usuario
+                
+                if madre_usuario:
+                    # Crear notificación
+                    if es_actualizacion:
+                        titulo = f"Solicitud Actualizada: {solicitud.nombres_nino} {solicitud.apellidos_nino}"
+                        mensaje = f"El acudiente ha actualizado la solicitud de matrícula según las correcciones solicitadas."
+                    else:
+                        titulo = f"Nueva Solicitud de Matrícula: {solicitud.nombres_nino} {solicitud.apellidos_nino}"
+                        mensaje = f"Se ha recibido una nueva solicitud de matrícula. Revisa los documentos y datos proporcionados."
+                    
+                    content_type = ContentType.objects.get_for_model(SolicitudMatriculacion)
+                    
+                    Notification.objects.create(
+                        recipient=madre_usuario,
+                        title=titulo,
+                        message=mensaje,
+                        level='info',
+                        content_type=content_type,
+                        object_id=solicitud.id
+                    )
+                    print(f"✓ Notificación creada para {madre_usuario.get_full_name()}")
+                else:
+                    print(f"⚠ No se encontró usuario de madre para hogar {solicitud.hogar.nombre_hogar}")
+            except Exception as e:
+                print(f"❌ Error al crear notificación: {e}")
+                import traceback
+                traceback.print_exc()
+            
+            # Enviar email de confirmación
+            try:
+                from django.template.loader import render_to_string
+                from django.core.mail import send_mail
+                from django.conf import settings
+                
+                asunto = f'Solicitud de Matriculación Recibida - {solicitud.hogar.nombre_hogar}'
+                mensaje_html = render_to_string('emails/solicitud_confirmacion.html', {
+                    'hogar': solicitud.hogar,
+                    'nombre_nino': solicitud.nombres_nino,
+                })
+                
+                send_mail(
+                    asunto,
+                    '',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [solicitud.email_acudiente],
+                    fail_silently=True,
+                    html_message=mensaje_html
+                )
+            except Exception as e:
+                print(f"Error al enviar email de confirmación: {e}")
+            
+            return JsonResponse({
+                'success': True,
+                'mensaje': 'Solicitud enviada exitosamente. Será revisada por el hogar comunitario.'
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al procesar el formulario: {str(e)}'
+            }, status=500)
     
     return JsonResponse({'success': False, 'error': 'Método no permitido.'}, status=405)

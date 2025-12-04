@@ -26,7 +26,65 @@
         <!-- Nombre de usuario visible en la barra de navegación -->
         <span class="navbar-user-name">{{ nombre_madre }}</span>
 
-        <div class="user-menu-dropdown">
+        <!-- Notificaciones -->
+        <div class="notifications-menu-dropdown">
+            <button class="notifications-menu-button nav-btn">
+                <i class="fas fa-bell"></i>
+                {% if notifications_count > 0 %}
+                <span class="notification-badge">{{ notifications_count }}</span>
+                {% endif %}
+            </button>
+
+            <div class="notifications-menu-content">
+                <div class="notifications-header">
+                    <h3>Notificaciones</h3>
+                    {% if notifications_count > 0 %}
+                    <span class="notifications-count">{{ notifications_count }} nueva{{ notifications_count|pluralize }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="notifications-list">
+                    {% if notifications %}
+                        {% for notification in notifications %}
+                        <div class="notification-item {% if not notification.read %}unread{% endif %}" data-level="{{ notification.level }}">
+                            <div class="notification-icon">
+                                {% if notification.level == 'grave' %}
+                                    <i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>
+                                {% elif notification.level == 'warning' %}
+                                    <i class="fas fa-exclamation-triangle" style="color: #f39c12;"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle" style="color: #3498db;"></i>
+                                {% endif %}
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">{{ notification.title }}</div>
+                                <div class="notification-message">{{ notification.message|truncatewords:15 }}</div>
+                                <div class="notification-time">{{ notification.created_at|timesince }} atrás</div>
+                            </div>
+                            {% if not notification.read %}
+                            <button class="mark-read-btn" onclick="markAsRead({{ notification.id }})">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-notifications">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>No tienes notificaciones nuevas</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if notifications %}
+                <div class="notifications-footer">
+                    <a href="{% url 'notifications:list' %}" class="view-all-btn">Ver todas las notificaciones</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="user-menu-dropdown"
             <button class="user-menu-button nav-btn">
                 <i class="fas fa-user-circle"></i>
             </button>
@@ -63,7 +121,207 @@
     </div>
 </header>
 
+<style>
+/* Estilos para notificaciones */
+.notifications-menu-dropdown {
+    position: relative;
+    margin-right: 15px;
+}
+
+.notifications-menu-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    position: relative;
+    transition: background-color 0.3s;
+}
+
+.notifications-menu-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    border: 2px solid #667eea;
+}
+
+.notifications-menu-content {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    width: 380px;
+    max-height: 500px;
+    display: none;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.notifications-menu-dropdown:hover .notifications-menu-content,
+.notifications-menu-content:hover {
+    display: block;
+}
+
+.notifications-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.notifications-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.notifications-count {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.notifications-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #f0f4ff;
+}
+
+.notification-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.notification-message {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.notification-time {
+    font-size: 11px;
+    color: #999;
+}
+
+.mark-read-btn {
+    background: none;
+    border: none;
+    color: #667eea;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.mark-read-btn:hover {
+    background-color: #667eea;
+    color: white;
+}
+
+.no-notifications {
+    padding: 40px 20px;
+    text-align: center;
+    color: #999;
+}
+
+.no-notifications i {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.3;
+}
+
+.no-notifications p {
+    font-size: 14px;
+}
+
+.notifications-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #eee;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+.view-all-btn {
+    color: #667eea;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.view-all-btn:hover {
+    text-decoration: underline;
+}
+</style>
+
 <script>
+function markAsRead(notificationId) {
+    fetch(`/notifications/${notificationId}/mark-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('input-foto-perfil');
     const form = document.getElementById('form-foto-perfil');
