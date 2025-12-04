@@ -1,0 +1,1317 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulario de Matriculación - {{ solicitud.hogar.nombre_hogar }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #333; min-height: 100vh; padding: 20px; }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 40px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #667eea;
+    }
+    
+    .header h1 {
+      color: #667eea;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    
+    .header .hogar-info {
+      color: #666;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    
+    .error-container {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    
+    .error-icon {
+      font-size: 80px;
+      color: #e74c3c;
+      margin-bottom: 20px;
+    }
+    
+    .error-message {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .error-detail {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .section {
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .section:last-of-type { border-bottom: none; }
+    
+    .section-title {
+      font-size: 20px;
+      color: #667eea;
+      font-weight: 700;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .section-title i { font-size: 24px; }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+    
+    label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #555;
+      font-size: 14px;
+    }
+    
+    .required { color: #dc3545; margin-left: 3px; font-weight: bold; }
+    
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    input[type="date"],
+    input[type="tel"],
+    input[type="password"],
+    select,
+    textarea {
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      outline: none;
+    }
+    
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      background-color: #f8f9fa;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    
+    /* Campos editables en modo corrección */
+    input.editable,
+    select.editable,
+    textarea.editable {
+      border-color: #ffc107;
+      background-color: #fff3cd;
+    }
+    
+    /* Error de validación de edad */
+    input.error-edad {
+      border-color: #dc3545 !important;
+      background-color: #f8d7da !important;
+    }
+    
+    .mensaje-error-edad {
+      color: #dc3545;
+      font-size: 13px;
+      margin-top: 5px;
+      font-weight: 500;
+      display: none;
+    }
+    
+    input.editable:focus,
+    select.editable:focus,
+    textarea.editable:focus {
+      border-color: #ff9800;
+      box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.2);
+    }
+    
+    .correction-badge {
+      display: inline-block;
+      background: #ff9800;
+      color: white;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+      font-weight: 600;
+    }
+    
+    textarea { resize: vertical; min-height: 100px; }
+    
+    .file-group {
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background-color: #fafafa;
+    }
+    
+    .file-group:hover {
+      background-color: #f0f4ff;
+      border-color: #667eea;
+    }
+    
+    .file-group.required-doc {
+      border-color: #dc3545;
+      background-color: #fff5f5;
+    }
+    
+    .file-group.field-correction {
+      border-color: #ff9800;
+      background-color: #fff8e1;
+      border-width: 3px;
+      animation: pulse-orange 2s infinite;
+    }
+    
+    @keyframes pulse-orange {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+    }
+    
+    .file-group input[type="file"] { display: none; }
+    
+    .file-label {
+      cursor: pointer;
+      color: #667eea;
+      font-weight: 600;
+      display: block;
+    }
+    
+    .file-label i {
+      font-size: 32px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    
+    .file-info {
+      font-size: 12px;
+      color: #999;
+      margin-top: 8px;
+    }
+    
+    .file-preview {
+      margin-top: 10px;
+      padding: 10px;
+      background: #e8f5e9;
+      border-radius: 6px;
+      color: #2e7d32;
+      font-size: 13px;
+      display: none;
+    }
+    
+    .file-preview i {
+      margin-right: 5px;
+    }
+    
+    .file-preview-image {
+      margin-top: 10px;
+      max-width: 100%;
+      border-radius: 8px;
+      border: 2px solid #667eea;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: none;
+    }
+    
+    .file-preview-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 10px;
+      background: #e8f5e9;
+      border-radius: 6px;
+      border-left: 4px solid #28a745;
+      display: none;
+    }
+    
+    .file-preview-info i {
+      font-size: 24px;
+      color: #28a745;
+    }
+    
+    .file-preview-details {
+      flex: 1;
+    }
+    
+    .file-preview-name {
+      font-weight: 600;
+      color: #2e7d32;
+      margin-bottom: 3px;
+    }
+    
+    .file-preview-size {
+      font-size: 11px;
+      color: #666;
+    }
+    
+    .file-preview-remove {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s;
+    }
+    
+    .file-preview-remove:hover {
+      background: #c82333;
+    }
+    
+    .alert {
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .alert-info {
+      background: #d1ecf1;
+      border-left: 4px solid #17a2b8;
+      color: #0c5460;
+    }
+    
+    .alert-warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      color: #856404;
+    }
+    
+    .alert-success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+      color: #155724;
+    }
+    
+    .credentials-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      margin: 20px 0;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .credentials-box h3 {
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+    
+    .credentials-box p {
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    
+    .credentials-box .highlight {
+      background: rgba(255,255,255,0.2);
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 40px;
+      padding-top: 30px;
+      border-top: 3px solid #f0f0f0;
+    }
+    
+    .btn {
+      padding: 15px 40px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Poppins', sans-serif;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .btn-submit {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .password-strength {
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    
+    .strength-weak { color: #dc3545; }
+    .strength-medium { color: #ffc107; }
+    .strength-strong { color: #28a745; }
+    
+    @media (max-width: 768px) {
+      .container { padding: 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .header h1 { font-size: 24px; }
+      .btn { padding: 12px 25px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% if not token_valido %}
+      <!-- Mostrar error si el token es inválido -->
+      <div class="error-container">
+        <div class="error-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <h2 class="error-message">Enlace No Válido</h2>
+        <p class="error-detail">{{ mensaje_error }}</p>
+      </div>
+    {% else %}
+      <!-- Mostrar formulario si el token es válido -->
+      <div class="header">
+        <h1><i class="fas fa-child"></i> Formulario de Matriculación</h1>
+        <div class="hogar-info">{{ solicitud.hogar.nombre_hogar }}</div>
+      </div>
+
+      {% if en_correccion %}
+        <div class="alert alert-warning">
+          <i class="fas fa-info-circle"></i>
+          <strong>Correcciones Requeridas:</strong> Los campos resaltados en amarillo requieren corrección. Los demás campos están bloqueados porque ya fueron aprobados.
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i>
+          Complete todos los campos marcados con <span class="required">*</span>. Los documentos son obligatorios para procesar su solicitud.
+        </div>
+      {% endif %}
+
+      <form id="formularioMatricula" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- SECCIÓN: DATOS DEL NIÑO -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-baby"></i>
+            Datos del Niño/Niña
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                Nombres <span class="required">*</span>
+                {% if 'nombres_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="text" name="nombres_nino" value="{{ solicitud.nombres_nino }}" 
+                     {% if en_correccion and 'nombres_nino' not in campos_corregir %}disabled{% endif %}
+                     {% if 'nombres_nino' in campos_corregir %}class="editable"{% endif %} required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Apellidos <span class="required">*</span>
+                {% if 'apellidos_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="text" name="apellidos_nino" value="{{ solicitud.apellidos_nino }}" 
+                     {% if en_correccion and 'apellidos_nino' not in campos_corregir %}disabled{% endif %}
+                     {% if 'apellidos_nino' in campos_corregir %}class="editable"{% endif %} required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Documento <span class="required">*</span>
+                {% if 'documento_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="text" name="documento_nino" value="{{ solicitud.documento_nino }}" 
+                     {% if en_correccion and 'documento_nino' not in campos_corregir %}disabled{% endif %}
+                     {% if 'documento_nino' in campos_corregir %}class="editable"{% endif %} required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Fecha de Nacimiento <span class="required">*</span>
+                {% if 'fecha_nacimiento_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="date" name="fecha_nacimiento_nino" id="fecha_nacimiento_nino"
+                     value="{% if solicitud.fecha_nacimiento_nino %}{{ solicitud.fecha_nacimiento_nino|date:'Y-m-d' }}{% endif %}" 
+                     {% if en_correccion and 'fecha_nacimiento_nino' not in campos_corregir %}disabled{% endif %}
+                     {% if 'fecha_nacimiento_nino' in campos_corregir %}class="editable"{% endif %} required>
+              <div class="mensaje-error-edad" id="error-edad"></div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Género <span class="required">*</span>
+                {% if 'genero_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <select name="genero_nino" 
+                      {% if en_correccion and 'genero_nino' not in campos_corregir %}disabled{% endif %}
+                      {% if 'genero_nino' in campos_corregir %}class="editable"{% endif %} required>
+                <option value="">Seleccione...</option>
+                <option value="M" {% if solicitud.genero_nino == 'M' %}selected{% endif %}>Masculino</option>
+                <option value="F" {% if solicitud.genero_nino == 'F' %}selected{% endif %}>Femenino</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Tipo de Sangre <span class="required">*</span>
+                {% if 'tipo_sangre_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <select name="tipo_sangre_nino" 
+                      {% if en_correccion and 'tipo_sangre_nino' not in campos_corregir %}disabled{% endif %}
+                      {% if 'tipo_sangre_nino' in campos_corregir %}class="editable"{% endif %} required>
+                <option value="">Seleccione...</option>
+                <option value="A+" {% if solicitud.tipo_sangre_nino == 'A+' %}selected{% endif %}>A+</option>
+                <option value="A-" {% if solicitud.tipo_sangre_nino == 'A-' %}selected{% endif %}>A-</option>
+                <option value="B+" {% if solicitud.tipo_sangre_nino == 'B+' %}selected{% endif %}>B+</option>
+                <option value="B-" {% if solicitud.tipo_sangre_nino == 'B-' %}selected{% endif %}>B-</option>
+                <option value="AB+" {% if solicitud.tipo_sangre_nino == 'AB+' %}selected{% endif %}>AB+</option>
+                <option value="AB-" {% if solicitud.tipo_sangre_nino == 'AB-' %}selected{% endif %}>AB-</option>
+                <option value="O+" {% if solicitud.tipo_sangre_nino == 'O+' %}selected{% endif %}>O+</option>
+                <option value="O-" {% if solicitud.tipo_sangre_nino == 'O-' %}selected{% endif %}>O-</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Parentesco <span class="required">*</span>
+                {% if 'parentesco' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <select name="parentesco" 
+                      {% if en_correccion and 'parentesco' not in campos_corregir %}disabled{% endif %}
+                      {% if 'parentesco' in campos_corregir %}class="editable"{% endif %} required>
+                <option value="">Seleccione...</option>
+                <option value="Padre" {% if solicitud.parentesco == 'Padre' %}selected{% endif %}>Padre</option>
+                <option value="Madre" {% if solicitud.parentesco == 'Madre' %}selected{% endif %}>Madre</option>
+                <option value="Abuelo/a" {% if solicitud.parentesco == 'Abuelo/a' %}selected{% endif %}>Abuelo/a</option>
+                <option value="Tío/a" {% if solicitud.parentesco == 'Tío/a' %}selected{% endif %}>Tío/a</option>
+                <option value="Tutor legal" {% if solicitud.parentesco == 'Tutor legal' %}selected{% endif %}>Tutor Legal</option>
+                <option value="Otro" {% if solicitud.parentesco == 'Otro' %}selected{% endif %}>Otro</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label>
+                Observaciones Médicas
+                {% if 'observaciones_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <textarea name="observaciones_nino" 
+                        {% if en_correccion and 'observaciones_nino' not in campos_corregir %}disabled{% endif %}
+                        {% if 'observaciones_nino' in campos_corregir %}class="editable"{% endif %} 
+                        placeholder="Alergias, condiciones médicas, medicamentos, etc.">{{ solicitud.observaciones_nino }}</textarea>
+            </div>
+
+            <!-- Discapacidad -->
+            <div class="form-group full-width">
+              <label>
+                ¿El niño/a tiene alguna discapacidad?
+                {% if 'tiene_discapacidad' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <div style="display: flex; gap: 20px; margin-top: 10px;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                  <input type="radio" name="tiene_discapacidad" value="true" 
+                         {% if solicitud.tiene_discapacidad %}checked{% endif %}
+                         {% if en_correccion and 'tiene_discapacidad' not in campos_corregir %}disabled{% endif %}
+                         onchange="toggleDiscapacidades(this.checked)"
+                         style="margin-right: 8px;">
+                  Sí
+                </label>
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                  <input type="radio" name="tiene_discapacidad" value="false" 
+                         {% if not solicitud.tiene_discapacidad %}checked{% endif %}
+                         {% if en_correccion and 'tiene_discapacidad' not in campos_corregir %}disabled{% endif %}
+                         onchange="toggleDiscapacidades(!this.checked)"
+                         style="margin-right: 8px;">
+                  No
+                </label>
+              </div>
+            </div>
+
+            <div id="tipos-discapacidad-container" class="form-group full-width" style="display: {% if solicitud.tiene_discapacidad %}block{% else %}none{% endif %};">
+              <label>
+                Tipo(s) de Discapacidad
+                {% if 'tipos_discapacidad' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+                {% for disc in discapacidades %}
+                <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; background: #f8f9fa; border-radius: 5px;">
+                  <input type="checkbox" name="tipos_discapacidad" value="{{ disc.id }}" 
+                         {% if solicitud.tipos_discapacidad and disc.id in solicitud.tipos_discapacidad %}checked{% endif %}
+                         {% if en_correccion and 'tipos_discapacidad' not in campos_corregir %}disabled{% endif %}
+                         style="margin-right: 8px;">
+                  {{ disc.nombre }}
+                </label>
+                {% endfor %}
+              </div>
+              
+              <div style="margin-top: 15px;">
+                <label>Otra discapacidad (especificar)</label>
+                <input type="text" name="otra_discapacidad" 
+                       value="{{ solicitud.otra_discapacidad|default:'' }}"
+                       {% if en_correccion and 'otra_discapacidad' not in campos_corregir %}disabled{% endif %}
+                       placeholder="Si el niño/a tiene otra discapacidad no listada, descríbala aquí">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN: DATOS DEL ACUDIENTE -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-user-tie"></i>
+            Datos del Padre, Madre o Acudiente
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                Tipo de Documento <span class="required">*</span>
+                {% if 'tipo_documento_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <select name="tipo_documento_padre" 
+                      {% if en_correccion and 'tipo_documento_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if 'tipo_documento_padre' in campos_corregir %}class="editable"{% endif %} required>
+                <option value="">Seleccione...</option>
+                <option value="CC" {% if solicitud.tipo_documento_padre == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
+                <option value="CE" {% if solicitud.tipo_documento_padre == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
+                <option value="TI" {% if solicitud.tipo_documento_padre == 'TI' %}selected{% endif %}>Tarjeta de Identidad</option>
+                <option value="PA" {% if solicitud.tipo_documento_padre == 'PA' %}selected{% endif %}>Pasaporte</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Número de Documento <span class="required">*</span>
+                {% if 'documento_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="text" name="documento_padre" value="{{ solicitud.documento_padre }}" 
+                     {% if en_correccion and 'documento_padre' not in campos_corregir %}disabled{% endif %}
+                     {% if 'documento_padre' in campos_corregir %}class="editable"{% endif %} required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Nombres <span class="required">*</span>
+                {% if 'nombres_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="text" name="nombres_padre" value="{{ solicitud.nombres_padre }}" 
+                     {% if en_correccion and 'nombres_padre' not in campos_corregir %}disabled{% endif %}
+                     {% if 'nombres_padre' in campos_corregir %}class="editable"{% endif %} required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Apellidos <span class="required">*</span>
+                {% if 'apellidos_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="text" name="apellidos_padre" value="{{ solicitud.apellidos_padre }}" 
+                     {% if en_correccion and 'apellidos_padre' not in campos_corregir %}disabled{% endif %}
+                     {% if 'apellidos_padre' in campos_corregir %}class="editable"{% endif %} required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Teléfono <span class="required">*</span>
+                {% if 'telefono_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="tel" name="telefono_padre" value="{{ solicitud.telefono_padre }}" 
+                     {% if en_correccion and 'telefono_padre' not in campos_corregir %}disabled{% endif %}
+                     {% if 'telefono_padre' in campos_corregir %}class="editable"{% endif %} 
+                     placeholder="Ej: 3001234567" required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Correo Electrónico <span class="required">*</span>
+                {% if 'correo_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="email" name="correo_padre" value="{{ solicitud.correo_padre }}" 
+                     {% if en_correccion and 'correo_padre' not in campos_corregir %}disabled{% endif %}
+                     {% if 'correo_padre' in campos_corregir %}class="editable"{% endif %} required>
+            </div>
+
+            <div class="form-group full-width">
+              <label>
+                Dirección <span class="required">*</span>
+                {% if 'direccion_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="text" name="direccion_padre" value="{{ solicitud.direccion_padre }}" 
+                     {% if en_correccion and 'direccion_padre' not in campos_corregir %}disabled{% endif %}
+                     {% if 'direccion_padre' in campos_corregir %}class="editable"{% endif %} 
+                     placeholder="Ej: Calle 123 #45-67" required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Barrio <span class="required">*</span>
+                {% if 'barrio_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="text" name="barrio_padre" value="{{ solicitud.barrio_padre }}" 
+                     {% if en_correccion and 'barrio_padre' not in campos_corregir %}disabled{% endif %}
+                     {% if 'barrio_padre' in campos_corregir %}class="editable"{% endif %} required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Ocupación <span class="required">*</span>
+                {% if 'ocupacion_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <input type="text" name="ocupacion_padre" value="{{ solicitud.ocupacion_padre }}" 
+                     {% if en_correccion and 'ocupacion_padre' not in campos_corregir %}disabled{% endif %}
+                     {% if 'ocupacion_padre' in campos_corregir %}class="editable"{% endif %} required>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Nivel Educativo <span class="required">*</span>
+                {% if 'nivel_educativo_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <select name="nivel_educativo_padre" 
+                      {% if en_correccion and 'nivel_educativo_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if 'nivel_educativo_padre' in campos_corregir %}class="editable"{% endif %} required>
+                <option value="">Seleccione...</option>
+                <option value="Primaria" {% if solicitud.nivel_educativo_padre == 'Primaria' %}selected{% endif %}>Primaria</option>
+                <option value="Bachillerato" {% if solicitud.nivel_educativo_padre == 'Bachillerato' %}selected{% endif %}>Bachillerato</option>
+                <option value="Técnico" {% if solicitud.nivel_educativo_padre == 'Técnico' %}selected{% endif %}>Técnico</option>
+                <option value="Tecnólogo" {% if solicitud.nivel_educativo_padre == 'Tecnólogo' %}selected{% endif %}>Tecnólogo</option>
+                <option value="Profesional" {% if solicitud.nivel_educativo_padre == 'Profesional' %}selected{% endif %}>Profesional</option>
+                <option value="Posgrado" {% if solicitud.nivel_educativo_padre == 'Posgrado' %}selected{% endif %}>Posgrado</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN: CREDENCIALES DE ACCESO -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-key"></i>
+            Credenciales de Acceso al Sistema
+          </div>
+          
+          <div class="credentials-box">
+            <h3><i class="fas fa-info-circle"></i> Información Importante</h3>
+            <p>Con estas credenciales podrás ingresar al sistema ICBF Conecta para ver el desarrollo de tu hijo(a), consultar el calendario de actividades y recibir notificaciones del hogar.</p>
+            <div class="highlight">
+              <strong>Usuario:</strong> Tu número de documento<br>
+              <strong>Contraseña:</strong> La que configures a continuación
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                Contraseña <span class="required">*</span>
+              </label>
+              <input type="password" name="password_padre" id="password" minlength="8" required>
+              <div id="password-strength" class="password-strength"></div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Confirmar Contraseña <span class="required">*</span>
+              </label>
+              <input type="password" name="password_confirm" id="password_confirm" minlength="8" required>
+              <div id="password-match" style="font-size: 12px; margin-top: 5px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN: DOCUMENTOS -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-file-upload"></i>
+            Documentos Requeridos
+          </div>
+
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>TODOS los documentos son obligatorios.</strong> Asegúrate de tener los archivos digitalizados en formato JPG, PNG o PDF antes de continuar.
+          </div>
+
+          <div class="form-grid">
+            <!-- Foto del Niño -->
+            <div class="form-group">
+              <label>
+                Foto del Niño/Niña <span class="required">*</span>
+              </label>
+              <div class="file-group {% if not solicitud.foto_nino %}required-doc{% endif %} {% if 'foto_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('foto_nino').click();">
+                <label class="file-label">
+                  <i class="fas fa-camera"></i>
+                  {% if solicitud.foto_nino %}
+                    Cambiar foto
+                  {% else %}
+                    Subir foto
+                  {% endif %}
+                  <span class="file-info">(JPG, PNG - Máx 5MB)</span>
+                </label>
+                <input type="file" id="foto_nino" name="foto_nino" accept="image/*" {% if not solicitud.foto_nino %}required{% endif %}>
+              </div>
+              {% if solicitud.foto_nino %}
+              <div class="file-preview-info" style="display: flex;">
+                <i class="fas fa-check-circle"></i>
+                <div class="file-preview-details">
+                  <div class="file-preview-name">Foto actual cargada</div>
+                  <div class="file-preview-size">Puedes cambiarla seleccionando una nueva</div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Carnet de Vacunación -->
+            <div class="form-group">
+              <label>
+                Carnet de Vacunación <span class="required">*</span>
+              </label>
+              <div class="file-group {% if not solicitud.carnet_vacunacion_nino %}required-doc{% endif %} {% if 'carnet_vacunacion_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('carnet_vacunacion').click();">
+                <label class="file-label">
+                  <i class="fas fa-syringe"></i>
+                  {% if solicitud.carnet_vacunacion_nino %}
+                    Cambiar carnet
+                  {% else %}
+                    Subir carnet
+                  {% endif %}
+                  <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
+                </label>
+                <input type="file" id="carnet_vacunacion" name="carnet_vacunacion_nino" accept="image/*,application/pdf" {% if not solicitud.carnet_vacunacion_nino %}required{% endif %}>
+              </div>
+              {% if solicitud.carnet_vacunacion_nino %}
+              <div class="file-preview-info" style="display: flex;">
+                <i class="fas fa-check-circle"></i>
+                <div class="file-preview-details">
+                  <div class="file-preview-name">Carnet actual cargado</div>
+                  <div class="file-preview-size">Puedes cambiarlo seleccionando uno nuevo</div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Certificado EPS -->
+            <div class="form-group">
+              <label>
+                Certificado EPS <span class="required">*</span>
+                {% if 'certificado_eps_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <div class="file-group {% if not solicitud.certificado_eps_nino %}required-doc{% endif %} {% if 'certificado_eps_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('certificado_eps').click();">
+                <label class="file-label">
+                  <i class="fas fa-hospital"></i>
+                  {% if solicitud.certificado_eps_nino %}
+                    Cambiar certificado
+                  {% else %}
+                    Subir certificado
+                  {% endif %}
+                  <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
+                </label>
+                <input type="file" id="certificado_eps" name="certificado_eps_nino" accept="image/*,application/pdf" {% if not solicitud.certificado_eps_nino %}required{% endif %}>
+              </div>
+              {% if solicitud.certificado_eps_nino %}
+              <div class="file-preview-info" style="display: flex;">
+                <i class="fas fa-check-circle"></i>
+                <div class="file-preview-details">
+                  <div class="file-preview-name">Certificado actual cargado</div>
+                  <div class="file-preview-size">Puedes cambiarlo seleccionando uno nuevo</div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Registro Civil -->
+            <div class="form-group">
+              <label>
+                Registro Civil <span class="required">*</span>
+                {% if 'registro_civil_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <div class="file-group {% if not solicitud.registro_civil_nino %}required-doc{% endif %} {% if 'registro_civil_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('registro_civil').click();">
+                <label class="file-label">
+                  <i class="fas fa-id-card"></i>
+                  {% if solicitud.registro_civil_nino %}
+                    Cambiar registro
+                  {% else %}
+                    Subir registro
+                  {% endif %}
+                  <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
+                </label>
+                <input type="file" id="registro_civil" name="registro_civil_nino" accept="image/*,application/pdf" {% if not solicitud.registro_civil_nino %}required{% endif %}>
+              </div>
+              {% if solicitud.registro_civil_nino %}
+              <div class="file-preview-info" style="display: flex;">
+                <i class="fas fa-check-circle"></i>
+                <div class="file-preview-details">
+                  <div class="file-preview-name">Registro actual cargado</div>
+                  <div class="file-preview-size">Puedes cambiarlo seleccionando uno nuevo</div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Documento Identidad Padre -->
+            <div class="form-group">
+              <label>
+                Documento Identidad Acudiente <span class="required">*</span>
+                {% if 'documento_identidad_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <div class="file-group {% if not solicitud.documento_identidad_padre %}required-doc{% endif %} {% if 'documento_identidad_padre' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('doc_padre').click();">
+                <label class="file-label">
+                  <i class="fas fa-address-card"></i>
+                  {% if solicitud.documento_identidad_padre %}
+                    Cambiar documento
+                  {% else %}
+                    Subir documento
+                  {% endif %}
+                  <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
+                </label>
+                <input type="file" id="doc_padre" name="documento_identidad_padre" accept="image/*,application/pdf" {% if not solicitud.documento_identidad_padre %}required{% endif %}>
+              </div>
+              {% if solicitud.documento_identidad_padre %}
+              <div class="file-preview-info" style="display: flex;">
+                <i class="fas fa-check-circle"></i>
+                <div class="file-preview-details">
+                  <div class="file-preview-name">Documento actual cargado</div>
+                  <div class="file-preview-size">Puedes cambiarlo seleccionando uno nuevo</div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Clasificación SISBEN -->
+            <div class="form-group">
+              <label>
+                Clasificación SISBEN <span class="required">*</span>
+                {% if 'clasificacion_sisben_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <div class="file-group {% if not solicitud.clasificacion_sisben_padre %}required-doc{% endif %} {% if 'clasificacion_sisben_padre' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('sisben').click();">
+                <label class="file-label">
+                  <i class="fas fa-file-alt"></i>
+                  {% if solicitud.clasificacion_sisben_padre %}
+                    Cambiar SISBEN
+                  {% else %}
+                    Subir SISBEN
+                  {% endif %}
+                  <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
+                </label>
+                <input type="file" id="sisben" name="clasificacion_sisben_padre" accept="image/*,application/pdf" {% if not solicitud.clasificacion_sisben_padre %}required{% endif %}>
+              </div>
+              {% if solicitud.clasificacion_sisben_padre %}
+              <div class="file-preview-info" style="display: flex;">
+                <i class="fas fa-check-circle"></i>
+                <div class="file-preview-details">
+                  <div class="file-preview-name">Clasificación actual cargada</div>
+                  <div class="file-preview-size">Puedes cambiarla seleccionando una nueva</div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTONES DE ACCIÓN -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-submit" id="btnSubmit">
+            <i class="fas fa-paper-plane"></i>
+            Enviar Solicitud
+          </button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+
+  <script>
+    // Toggle de discapacidades
+    function toggleDiscapacidades(mostrar) {
+      const container = document.getElementById('tipos-discapacidad-container');
+      if (container) {
+        container.style.display = mostrar ? 'block' : 'none';
+        
+        // Limpiar selecciones si se oculta
+        if (!mostrar) {
+          const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+          checkboxes.forEach(cb => cb.checked = false);
+          const otraInput = container.querySelector('input[type="text"]');
+          if (otraInput) otraInput.value = '';
+        }
+      }
+    }
+
+    // Validación de contraseña
+    const passwordInput = document.getElementById('password');
+    const passwordConfirm = document.getElementById('password_confirm');
+    const strengthDiv = document.getElementById('password-strength');
+    const matchDiv = document.getElementById('password-match');
+
+    if (passwordInput) {
+      passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        let strength = '';
+        let className = '';
+
+        if (password.length >= 8) {
+          const hasLower = /[a-z]/.test(password);
+          const hasUpper = /[A-Z]/.test(password);
+          const hasNumber = /[0-9]/.test(password);
+          const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+
+          const score = [hasLower, hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+
+          if (score <= 2) {
+            strength = 'Débil';
+            className = 'strength-weak';
+          } else if (score === 3) {
+            strength = 'Media';
+            className = 'strength-medium';
+          } else {
+            strength = 'Fuerte';
+            className = 'strength-strong';
+          }
+        } else {
+          strength = 'Mínimo 8 caracteres';
+          className = 'strength-weak';
+        }
+
+        strengthDiv.textContent = `Seguridad: ${strength}`;
+        strengthDiv.className = `password-strength ${className}`;
+      });
+
+      passwordConfirm.addEventListener('input', function() {
+        if (this.value === '') {
+          matchDiv.textContent = '';
+          return;
+        }
+
+        if (this.value === passwordInput.value) {
+          matchDiv.innerHTML = '<i class="fas fa-check-circle"></i> Las contraseñas coinciden';
+          matchDiv.style.color = '#28a745';
+        } else {
+          matchDiv.innerHTML = '<i class="fas fa-times-circle"></i> Las contraseñas no coinciden';
+          matchDiv.style.color = '#dc3545';
+        }
+      });
+    }
+
+    // Preview de archivos mejorado
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+      input.addEventListener('change', function(e) {
+        const file = this.files[0];
+        if (!file) return;
+        
+        const previewId = this.id.replace('_', '-');
+        const parentDiv = this.closest('.form-group');
+        
+        // Limpiar previews anteriores
+        const oldPreviews = parentDiv.querySelectorAll('.file-preview-image, .file-preview-info');
+        oldPreviews.forEach(el => el.remove());
+        
+        // Verificar tamaño (5MB máximo)
+        const maxSize = 5 * 1024 * 1024; // 5MB en bytes
+        if (file.size > maxSize) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Archivo muy grande',
+            text: 'El archivo no debe superar los 5MB',
+          });
+          this.value = '';
+          return;
+        }
+        
+        // Formatear tamaño del archivo
+        const formatSize = (bytes) => {
+          if (bytes < 1024) return bytes + ' B';
+          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+          return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        };
+        
+        // Si es imagen, mostrar preview
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'file-preview-image';
+            img.style.display = 'block';
+            parentDiv.appendChild(img);
+            
+            // Agregar info del archivo
+            const info = document.createElement('div');
+            info.className = 'file-preview-info';
+            info.style.display = 'flex';
+            info.innerHTML = `
+              <i class="fas fa-check-circle"></i>
+              <div class="file-preview-details">
+                <div class="file-preview-name">${file.name}</div>
+                <div class="file-preview-size">${formatSize(file.size)}</div>
+              </div>
+            `;
+            parentDiv.appendChild(info);
+          };
+          reader.readAsDataURL(file);
+        } 
+        // Si es PDF, mostrar info
+        else if (file.type === 'application/pdf') {
+          const info = document.createElement('div');
+          info.className = 'file-preview-info';
+          info.style.display = 'flex';
+          info.innerHTML = `
+            <i class="fas fa-file-pdf" style="color: #dc3545;"></i>
+            <div class="file-preview-details">
+              <div class="file-preview-name">${file.name}</div>
+              <div class="file-preview-size">${formatSize(file.size)} - Documento PDF</div>
+            </div>
+          `;
+          parentDiv.appendChild(info);
+        }
+      });
+    });
+
+    // Validación de fecha de nacimiento
+    const fechaNacimientoInput = document.getElementById('fecha_nacimiento_nino');
+    const errorEdadDiv = document.getElementById('error-edad');
+    
+    if (fechaNacimientoInput) {
+      fechaNacimientoInput.addEventListener('change', function() {
+        const fechaNacimiento = new Date(this.value);
+        const hoy = new Date();
+        
+        // Calcular edad en años
+        let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+        const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+          edad--;
+        }
+        
+        // Calcular edad en meses
+        let meses = (hoy.getFullYear() - fechaNacimiento.getFullYear()) * 12;
+        meses -= fechaNacimiento.getMonth();
+        meses += hoy.getMonth();
+        if (hoy.getDate() < fechaNacimiento.getDate()) {
+          meses--;
+        }
+        
+        // Validar rangos
+        if (meses < 12) {
+          this.classList.add('error-edad');
+          errorEdadDiv.style.display = 'block';
+          errorEdadDiv.textContent = '⚠️ El niño debe tener al menos 12 meses de edad para matricularse.';
+        } else if (edad > 5) {
+          this.classList.add('error-edad');
+          errorEdadDiv.style.display = 'block';
+          errorEdadDiv.textContent = '⚠️ El niño supera los 5 años de edad. Solo se pueden matricular niños de 1 a 5 años.';
+        } else {
+          this.classList.remove('error-edad');
+          errorEdadDiv.style.display = 'none';
+          errorEdadDiv.textContent = '';
+        }
+      });
+    }
+
+    // Envío del formulario
+    const form = document.getElementById('formularioMatricula');
+    if (form) {
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validar fecha de nacimiento antes de enviar
+        if (fechaNacimientoInput && fechaNacimientoInput.classList.contains('error-edad')) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Edad no válida',
+            text: errorEdadDiv.textContent.replace('⚠️ ', ''),
+            confirmButtonColor: '#dc3545'
+          });
+          return;
+        }
+
+        // Validar contraseñas
+        const password = document.getElementById('password');
+        const passwordConf = document.getElementById('password_confirm');
+        
+        if (password && password.value !== passwordConf.value) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Las contraseñas no coinciden',
+          });
+          return;
+        }
+
+        // VALIDACIÓN: Si es corrección, verificar que se cargaron archivos nuevos para campos marcados
+        {% if en_correccion and campos_corregir %}
+        const camposArchivos = ['foto_nino', 'carnet_vacunacion_nino', 'certificado_eps_nino', 'registro_civil_nino', 'documento_identidad_padre', 'clasificacion_sisben_padre'];
+        const camposCorregir = {{ campos_corregir|safe }};
+        const archivosCorregirPendientes = [];
+
+        camposCorregir.forEach(campo => {
+          if (camposArchivos.includes(campo)) {
+            // Verificar si se cargó un archivo nuevo
+            const inputId = campo.replace('_nino', '').replace('_padre', '').replace('documento_identidad', 'doc').replace('clasificacion_sisben', 'sisben').replace('carnet_vacunacion', 'carnet_vacunacion').replace('certificado_eps', 'certificado_eps').replace('registro_civil', 'registro_civil').replace('foto', 'foto_nino');
+            
+            const inputElement = document.getElementById(inputId);
+            if (!inputElement || !inputElement.files || inputElement.files.length === 0) {
+              // Obtener nombre legible del campo
+              const nombresLegibles = {
+                'foto_nino': 'Foto del Niño',
+                'carnet_vacunacion_nino': 'Carnet de Vacunación',
+                'certificado_eps_nino': 'Certificado EPS',
+                'registro_civil_nino': 'Registro Civil',
+                'documento_identidad_padre': 'Documento de Identidad del Acudiente',
+                'clasificacion_sisben_padre': 'Clasificación SISBEN'
+              };
+              archivosCorregirPendientes.push(nombresLegibles[campo] || campo);
+            }
+          }
+        });
+
+        if (archivosCorregirPendientes.length > 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Archivos por Corregir',
+            html: `
+              <p style="margin-bottom: 15px;">Debe cargar archivos nuevos para los siguientes campos marcados para corrección:</p>
+              <ul style="text-align: left; display: inline-block; color: #856404;">
+                ${archivosCorregirPendientes.map(c => `<li><strong>${c}</strong></li>`).join('')}
+              </ul>
+              <p style="margin-top: 15px; color: #666;">Por favor, seleccione y cargue los archivos correctos antes de enviar.</p>
+            `,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#f39c12'
+          });
+          return;
+        }
+        {% endif %}
+
+        // Deshabilitar botón
+        const btnSubmit = document.getElementById('btnSubmit');
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+        // Enviar formulario
+        const formData = new FormData(this);
+
+        try {
+          const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+          });
+
+          // Verificar si la respuesta es JSON válida
+          let data;
+          try {
+            data = await response.json();
+          } catch (jsonError) {
+            throw new Error('El servidor no respondió correctamente. Por favor, intenta nuevamente.');
+          }
+
+          // Verificar el estado de la respuesta
+          if (response.ok && data.success) {
+            Swal.fire({
+              icon: 'success',
+              title: '¡Solicitud Enviada Exitosamente!',
+              html: `
+                <p>${data.mensaje || 'Tu solicitud ha sido enviada correctamente.'}</p>
+                <p class="mt-2"><strong>El hogar comunitario la revisará pronto.</strong></p>
+                <p class="text-muted">Recibirás un correo electrónico con la respuesta.</p>
+              `,
+              confirmButtonText: 'Entendido',
+              confirmButtonColor: '#667eea',
+              allowOutsideClick: false,
+            }).then(() => {
+              // Mostrar mensaje de cierre
+              window.location.reload();
+            });
+          } else {
+            // Error del servidor o validación
+            Swal.fire({
+              icon: 'error',
+              title: 'No se pudo enviar la solicitud',
+              html: `
+                <p>${data.error || 'Hubo un problema al procesar tu solicitud.'}</p>
+                <p class="mt-2 text-muted">Por favor, verifica los datos e intenta nuevamente.</p>
+              `,
+              confirmButtonText: 'Reintentar',
+              confirmButtonColor: '#d33',
+            });
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
+          }
+        } catch (error) {
+          console.error('Error al enviar solicitud:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error de Conexión',
+            html: `
+              <p>No se pudo conectar con el servidor.</p>
+              <p class="mt-2"><strong>Posibles causas:</strong></p>
+              <ul class="text-left" style="display: inline-block;">
+                <li>Problema de conexión a internet</li>
+                <li>El servidor no está disponible</li>
+                <li>Tiempo de espera agotado</li>
+              </ul>
+              <p class="mt-2 text-danger"><strong>Por favor, intenta nuevamente.</strong></p>
+            `,
+            confirmButtonText: 'Reintentar',
+            confirmButtonColor: '#d33',
+          });
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

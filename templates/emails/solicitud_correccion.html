@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correcciones Requeridas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .info-icon {
+            text-align: center;
+            font-size: 60px;
+            margin: 20px 0;
+        }
+        .campos-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .campos-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .campos-box li {
+            margin: 8px 0;
+            color: #856404;
+        }
+        .btn-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✏️ Correcciones Requeridas</h1>
+        </div>
+        
+        <div class="content">
+            <div class="info-icon">📝</div>
+            
+            <h2 style="text-align: center; color: #f39c12;">Tu solicitud requiere correcciones</h2>
+            
+            <p>Tu solicitud de matriculación ha sido revisada y necesita algunas correcciones antes de ser aprobada.</p>
+            
+            <div class="campos-box">
+                <p><strong>📋 Campos que requieren corrección:</strong></p>
+                <ul>
+                    {% for campo in campos %}
+                    <li>{{ campo }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>ℹ️ ¿Qué debo hacer?</strong></p>
+                <ol>
+                    <li>Haz clic en el botón de abajo para acceder al formulario</li>
+                    <li>Los campos que necesitas corregir estarán resaltados y editables</li>
+                    <li>Los demás campos estarán bloqueados (ya fueron aprobados)</li>
+                    <li>Actualiza la información requerida y vuelve a enviar</li>
+                </ol>
+            </div>
+            
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+                <p><strong>⚠️ IMPORTANTE - Límite de Intentos:</strong></p>
+                <p>Por favor, procure subir información correcta y legible. <strong>Solo tiene 3 intentos para corregir la información de la matrícula.</strong></p>
+                <p style="margin-top: 10px;">
+                    <strong>Intentos usados: {{ intentos_usados }} de 3</strong><br>
+                    <strong>Intentos restantes: {{ intentos_restantes }}</strong>
+                </p>
+                <p style="color: #856404; margin-top: 10px;">
+                    Si excede los 3 intentos, deberá solicitar la matrícula nuevamente desde el inicio.
+                </p>
+            </div>
+            
+            <div class="btn-container">
+                <a href="{{ link }}" class="btn">Corregir Formulario</a>
+            </div>
+            
+            <p style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin-top: 20px;">
+                <strong>⚠️ Importante:</strong> Este enlace sigue siendo válido. Una vez realices las correcciones y envíes el formulario, será revisado nuevamente.
+            </p>
+            
+            <p>Si tienes dudas sobre qué información corregir, puedes comunicarte con el hogar comunitario.</p>
+            
+            <p style="margin-top: 30px;">Saludos cordiales,<br><strong>{{ hogar.nombre_hogar }}</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>Este es un correo automático generado por el sistema ICBF Conecta.</p>
+            <p>Por favor, no respondas a este mensaje.</p>
+        </div>
+    </div>
+</body>
+</html>

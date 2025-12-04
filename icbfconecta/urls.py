@@ -27,22 +27,42 @@ urlpatterns = [
     auth_views.LoginView.as_view(template_name='login.html',authentication_form=CustomAuthForm),name='login'),
 
     # --- URLs para Restablecimiento de Contraseña ---
-    path('reset_password/', 
-         auth_views.PasswordResetView.as_view(
-             template_name="password_reset/password_reset_form.html",
-             form_class=CustomPasswordResetForm
-         ), 
-         name="password_reset"),
-    path('reset_password_sent/', 
-         auth_views.PasswordResetDoneView.as_view(template_name="password_reset/password_reset_done.html"), 
-         name="password_reset_done"),
-    path('reset/<uidb64>/<token>/', 
-         auth_views.PasswordResetConfirmView.as_view(template_name="password_reset/password_reset_confirm.html"), 
-         name="password_reset_confirm"),
-    path('reset_password_complete/', 
-         auth_views.PasswordResetCompleteView.as_view(template_name="password_reset/password_reset_complete.html"), 
-         name="password_reset_complete"),
-    
+     path(
+    'reset_password/',
+    auth_views.PasswordResetView.as_view(
+        template_name="password_reset/password_reset_form.html",
+        form_class=CustomPasswordResetForm,
+        email_template_name="password_reset/password_reset_email.html",
+        subject_template_name="password_reset/password_reset_subject.txt",
+        html_email_template_name="password_reset/password_reset_email.html"  # 👈 ESTA ES LA QUE FALTABA
+    ),
+    name="password_reset"
+     ),
+
+     path(
+     'reset_password_sent/',
+     auth_views.PasswordResetDoneView.as_view(
+          template_name="password_reset/password_reset_done.html"
+     ), 
+     name="password_reset_done"
+     ),
+
+     path(
+     'reset/<uidb64>/<token>/',
+     auth_views.PasswordResetConfirmView.as_view(
+          template_name="password_reset/password_reset_confirm.html"
+     ), 
+     name="password_reset_confirm"
+     ),
+
+     path(
+     'reset_password_complete/',
+     auth_views.PasswordResetCompleteView.as_view(
+          template_name="password_reset/password_reset_complete.html"
+     ), 
+     name="password_reset_complete"
+     ),
+
     # URL de Redirección por Rol (Nuevo Punto de Entrada después del Login)
     path('dashboard/', views.role_redirect, name='role_redirect'),
     
@@ -102,6 +122,18 @@ urlpatterns = [
      path('ninos/<int:nino_id>/certificado/', views.certificado_matricula_pdf, name='certificado_matricula_pdf'),
      path('ninos/reporte-general-hogar/', views.reporte_general_hogar_pdf, name='reporte_general_hogar'),
      path('ninos/reporte/', views.generar_reporte_ninos, name='generar_reporte_ninos'),
+
+    # --- URLs Sistema de Invitaciones de Matriculación ---
+    path('solicitudes/enviar-invitacion/', views.enviar_invitacion_matricula, name='enviar_invitacion_matricula'),
+    path('solicitudes/panel-revision/', views.panel_revision_solicitudes, name='panel_revision_solicitudes'),
+    path('solicitudes/pendientes/', views.listar_solicitudes_matricula, name='listar_solicitudes_matricula'),
+    path('solicitudes/<int:solicitud_id>/detalle/', views.detalle_solicitud_matricula, name='detalle_solicitud_matricula'),
+    path('solicitudes/<int:solicitud_id>/historial/', views.historial_solicitud, name='historial_solicitud'),
+    path('solicitudes/aprobar/', views.aprobar_solicitud_matricula, name='aprobar_solicitud_matricula'),
+    path('solicitudes/rechazar/', views.rechazar_solicitud_matricula, name='rechazar_solicitud_matricula'),
+    path('solicitudes/correccion/', views.devolver_correccion_matricula, name='devolver_correccion_matricula'),
+    path('solicitudes/eliminar/', views.eliminar_solicitud_matricula, name='eliminar_solicitud_matricula'),
+    path('matricula/publico/<str:token>/', views.formulario_matricula_publico, name='formulario_matricula_publico'),
 
     # --- URLs de Desarrollo (Ahora en su propia app) ---
     path('desarrollo/', include('desarrollo.urls')),

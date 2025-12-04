@@ -57,6 +57,59 @@
     }
     .btn-cambiar:hover { background-color: #e76500; }
     
+    /* Estilos para botón de invitación */
+    .btn-invitar {
+      background-color: #17a2b8;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-invitar:hover { background-color: #138496; }
+    
+    /* Estilos para botón de panel de revisión */
+    .btn-revision {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+    }
+    .btn-revision:hover { background-color: #218838; }
+    
+    /* Badge para contador de solicitudes pendientes */
+    .badge-count {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background-color: #dc3545;
+      color: white;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    
     /* Estilos para el dropdown de matrícula */
     .dropdown-matricula {
       position: relative;
@@ -285,6 +338,360 @@
       .btn-agregar, .btn-reporte { font-size: 14px; padding: 8px 12px; }
       .btn-group { flex-direction: column; gap: 8px; }
     }
+    
+    /* === ESTILOS PARA MODAL DE INVITACIÓN === */
+    .modal-invitacion {
+      display: none;
+      position: fixed;
+      z-index: 10001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-invitacion-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal-invitacion-content h2 {
+      color: #17a2b8;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .form-input-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+    
+    .form-input-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: border-color 0.3s;
+    }
+    
+    .form-input-group input:focus {
+      outline: none;
+      border-color: #17a2b8;
+    }
+    
+    .form-input-group input.error {
+      border-color: #dc3545;
+    }
+    
+    .error-message {
+      color: #dc3545;
+      font-size: 13px;
+      margin-top: 5px;
+      display: none;
+    }
+    
+    .error-message.show {
+      display: block;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 25px;
+    }
+    
+    .btn-modal {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-modal-primary {
+      background-color: #17a2b8;
+      color: white;
+    }
+    
+    .btn-modal-primary:hover {
+      background-color: #138496;
+    }
+    
+    .btn-modal-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+    
+    .btn-modal-secondary:hover {
+      background-color: #5a6268;
+    }
+    
+    /* === ESTILOS PARA PANEL DE REVISIÓN === */
+    .panel-revision {
+      background-color: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-top: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      display: none;
+    }
+    
+    .panel-revision.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .panel-revision h2 {
+      color: #28a745;
+      margin-top: 0;
+      margin-bottom: 25px;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 3px solid #28a745;
+      padding-bottom: 10px;
+    }
+    
+    .solicitud-card {
+      background: #f8f9fa;
+      border-left: 4px solid #28a745;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: all 0.3s;
+    }
+    
+    .solicitud-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateX(5px);
+    }
+    
+    .solicitud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .solicitud-info h3 {
+      margin: 0;
+      color: #333;
+      font-size: 18px;
+    }
+    
+    .solicitud-info p {
+      margin: 5px 0 0 0;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .estado-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .estado-pendiente {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    
+    .estado-aprobado {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .estado-rechazado {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .estado-correccion {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+    
+    .solicitud-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-action {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .btn-aprobar {
+      background-color: #28a745;
+      color: white;
+    }
+    
+    .btn-aprobar:hover {
+      background-color: #218838;
+    }
+    
+    .btn-rechazar {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .btn-rechazar:hover {
+      background-color: #c82333;
+    }
+    
+    .btn-corregir {
+      background-color: #ffc107;
+      color: #212529;
+    }
+    
+    .btn-corregir:hover {
+      background-color: #e0a800;
+    }
+    
+    .btn-ver {
+      background-color: #007bff;
+      color: white;
+    }
+    
+    .btn-ver:hover {
+      background-color: #0056b3;
+    }
+    
+    /* Modal para motivo de rechazo */
+    .modal-motivo {
+      background-color: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 15px;
+      border: 2px solid #dc3545;
+      display: none;
+    }
+    
+    .modal-motivo.show {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+    
+    .modal-motivo textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      resize: vertical;
+    }
+    
+    .modal-motivo textarea:focus {
+      outline: none;
+      border-color: #dc3545;
+    }
+    
+    /* Modal para campos de corrección */
+    .modal-correccion {
+      background-color: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-top: 15px;
+      border: 2px solid #ffc107;
+      display: none;
+    }
+    
+    .modal-correccion.show {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+    
+    .campos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .campo-checkbox {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      transition: all 0.3s;
+    }
+    
+    .campo-checkbox:hover {
+      background: #e9ecef;
+    }
+    
+    .campo-checkbox input[type="checkbox"] {
+      margin-right: 8px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .campo-checkbox label {
+      cursor: pointer;
+      font-size: 14px;
+      color: #333;
+      margin: 0;
+    }
+    
+    .empty-solicitudes {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    
+    .empty-solicitudes i {
+      font-size: 64px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
   </style>
 </head>
 <body>
@@ -302,6 +709,13 @@
             <a href="{% url 'matricular_a_padre_existente' %}"><i class="fas fa-search"></i> Niño a Padre Existente</a>
           </div>
         </div>
+        <button class="btn-invitar" onclick="abrirModalInvitacion()">
+          <i class="fas fa-envelope-open-text"></i> Enviar Invitación de Matriculación
+        </button>
+        <a href="{% url 'panel_revision_solicitudes' %}" class="btn-revision">
+          <i class="fas fa-clipboard-check"></i> Panel de Revisión
+          <span class="badge-count" id="badge-solicitudes">0</span>
+        </a>
         <a href="{% url 'cambiar_padre_nino' %}" class="btn-cambiar"><i class="fas fa-exchange-alt"></i> Cambiar Asignación</a>
         <a href="{% url 'reporte_general_hogar' %}" class="btn-reporte"><i class="fas fa-file-pdf"></i> Descargar Reporte General del Hogar</a>
       </div>
@@ -385,6 +799,16 @@
     {% else %}
       <p class="empty-message">Aún no hay niños matriculados en tu hogar. ¡Usa el botón para matricular al primero!</p>
     {% endif %}
+    
+    <!-- Panel de Revisión de Solicitudes -->
+    <div class="panel-revision" id="panelRevision">
+      <h2><i class="fas fa-tasks"></i> Solicitudes Pendientes de Matriculación</h2>
+      
+      <div id="listaSolicitudes">
+        <!-- Las solicitudes se cargarán dinámicamente aquí -->
+      </div>
+    </div>
+    
     {% if messages %}
       <div id="mensaje-exito">
         {% for message in messages %}
@@ -589,6 +1013,46 @@
     </div>
   </div>
 
+  <!-- Modal de Invitación de Matriculación -->
+  <div id="modalInvitacion" class="modal-invitacion">
+    <div class="modal-invitacion-content">
+      <h2><i class="fas fa-envelope-open-text"></i> Enviar Invitación de Matriculación</h2>
+      
+      <div class="alert-info" style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
+        <i class="fas fa-info-circle" style="color: #17a2b8;"></i>
+        Se enviará un enlace único al correo del acudiente para que complete el formulario de matrícula.
+      </div>
+      
+      <form id="formInvitacion" onsubmit="enviarInvitacion(event)">
+        <div class="form-input-group">
+          <label for="emailAcudiente">
+            Correo Electrónico del Acudiente <span style="color: #dc3545;">*</span>
+          </label>
+          <input 
+            type="email" 
+            id="emailAcudiente" 
+            name="email" 
+            placeholder="ejemplo@gmail.com"
+            required
+          >
+          <div class="error-message" id="errorEmail"></div>
+          <small style="color: #666; font-size: 13px; display: block; margin-top: 5px;">
+            * Solo se aceptan correos de Gmail (@gmail.com)
+          </small>
+        </div>
+        
+        <div class="modal-buttons">
+          <button type="button" class="btn-modal btn-modal-secondary" onclick="cerrarModalInvitacion()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-modal btn-modal-primary">
+            <i class="fas fa-paper-plane"></i> Enviar Invitación
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const modal = document.getElementById('modalDetalles');
     const cerrarBoton = document.querySelector('.cerrar-modal');
@@ -721,6 +1185,521 @@
         modal.style.display = 'flex';
       });
     });
+    
+    // ========== FUNCIONES PARA MODAL DE INVITACIÓN ==========
+    function abrirModalInvitacion() {
+      document.getElementById('modalInvitacion').style.display = 'flex';
+      document.getElementById('emailAcudiente').value = '';
+      document.getElementById('errorEmail').classList.remove('show');
+      document.getElementById('emailAcudiente').classList.remove('error');
+    }
+    
+    function cerrarModalInvitacion() {
+      document.getElementById('modalInvitacion').style.display = 'none';
+    }
+    
+    function validarEmailGmail(email) {
+      // Validar formato de email y que sea de Gmail
+      const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const esEmailValido = regexEmail.test(email);
+      const esGmail = email.toLowerCase().endsWith('@gmail.com');
+      
+      return {
+        valido: esEmailValido && esGmail,
+        mensaje: !esEmailValido ? 'Por favor ingrese un correo electrónico válido' : 
+                 !esGmail ? 'Solo se aceptan correos de Gmail (@gmail.com)' : ''
+      };
+    }
+    
+    async function enviarInvitacion(event) {
+      event.preventDefault();
+      
+      const emailInput = document.getElementById('emailAcudiente');
+      const errorDiv = document.getElementById('errorEmail');
+      const email = emailInput.value.trim();
+      
+      // Validar email
+      const validacion = validarEmailGmail(email);
+      
+      if (!validacion.valido) {
+        emailInput.classList.add('error');
+        errorDiv.textContent = validacion.mensaje;
+        errorDiv.classList.add('show');
+        return;
+      }
+      
+      // Limpiar errores
+      emailInput.classList.remove('error');
+      errorDiv.classList.remove('show');
+      
+      try {
+        // Crear FormData en lugar de JSON
+        const formData = new FormData();
+        formData.append('email_acudiente', email);
+        
+        const response = await fetch('{% url "enviar_invitacion_matricula" %}', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'ok') {
+          Swal.fire({
+            title: '¡Invitación Enviada!',
+            html: data.mensaje,
+            icon: 'success',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#17a2b8'
+          });
+          cerrarModalInvitacion();
+          emailInput.value = ''; // Limpiar el campo
+        } else {
+          Swal.fire({
+            title: 'Error',
+            text: data.mensaje || 'No se pudo enviar la invitación',
+            icon: 'error',
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#dc3545'
+          });
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+          title: 'Error',
+          text: 'Ocurrió un error al enviar la invitación',
+          icon: 'error',
+          confirmButtonText: 'Cerrar',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    }
+    
+    // ========== FUNCIONES PARA PANEL DE REVISIÓN ==========
+    let solicitudesPendientes = [];
+    
+    function togglePanelRevision() {
+      const panel = document.getElementById('panelRevision');
+      panel.classList.toggle('show');
+      
+      if (panel.classList.contains('show')) {
+        cargarSolicitudesPendientes();
+      }
+    }
+    
+    async function cargarSolicitudesPendientes() {
+      try {
+        const response = await fetch('{% url "listar_solicitudes_matricula" %}');
+        const data = await response.json();
+        
+        console.log('Respuesta del servidor:', data); // Debug
+        
+        if (data.success) {
+          solicitudesPendientes = data.solicitudes;
+          actualizarBadgeSolicitudes();
+          renderizarSolicitudes();
+          console.log(`✅ Cargadas ${solicitudesPendientes.length} solicitudes`);
+        } else {
+          console.error('Error en respuesta:', data.error || 'Sin éxito');
+        }
+      } catch (error) {
+        console.error('Error al cargar solicitudes:', error);
+      }
+    }
+    
+    function actualizarBadgeSolicitudes() {
+      const badge = document.getElementById('badge-solicitudes');
+      if (!badge) {
+        console.error('Badge no encontrado');
+        return;
+      }
+      
+      const count = solicitudesPendientes.filter(s => s.estado === 'pendiente' || s.estado === 'correccion').length;
+      console.log(`📊 Solicitudes pendientes/corrección: ${count}`);
+      
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+    
+    function renderizarSolicitudes() {
+      const container = document.getElementById('listaSolicitudes');
+      
+      if (solicitudesPendientes.length === 0) {
+        container.innerHTML = `
+          <div class="empty-solicitudes">
+            <i class="fas fa-inbox"></i>
+            <h3>No hay solicitudes pendientes</h3>
+            <p>Las solicitudes de matriculación aparecerán aquí</p>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      solicitudesPendientes.forEach(solicitud => {
+        const estadoClass = `estado-${solicitud.estado}`;
+        const estadoTexto = solicitud.estado === 'pendiente' ? 'Pendiente' :
+                           solicitud.estado === 'aprobado' ? 'Aprobado' :
+                           solicitud.estado === 'rechazado' ? 'Rechazado' :
+                           'En Corrección';
+        
+        // Determinar si tiene datos completos
+        const tieneDatos = solicitud.tiene_datos;
+        const nombreMostrar = tieneDatos ? solicitud.nombre_nino : 
+                              '<span style="color: #999; font-style: italic;">Formulario pendiente de completar</span>';
+        
+        html += `
+          <div class="solicitud-card" id="solicitud-${solicitud.id}">
+            <div class="solicitud-header">
+              <div class="solicitud-info">
+                <h3>${nombreMostrar}</h3>
+                <p><i class="fas fa-calendar"></i> ${tieneDatos ? 'Enviado' : 'Invitación enviada'} el ${solicitud.fecha_envio}</p>
+                <p><i class="fas fa-envelope"></i> ${solicitud.email_acudiente}</p>
+                ${!tieneDatos ? '<p style="color: #f39c12;"><i class="fas fa-hourglass-half"></i> Esperando que el acudiente complete el formulario</p>' : ''}
+              </div>
+              <span class="estado-badge ${estadoClass}">${estadoTexto}</span>
+            </div>
+            
+            <div class="solicitud-actions">
+              ${tieneDatos ? `
+                <button class="btn-action btn-ver" onclick="verFormularioSolicitud(${solicitud.id})">
+                  <i class="fas fa-eye"></i> Ver Formulario
+                </button>
+              ` : `
+                <button class="btn-action" style="background-color: #6c757d; cursor: not-allowed;" disabled title="Esperando que complete el formulario">
+                  <i class="fas fa-hourglass-half"></i> Pendiente
+                </button>
+              `}
+              ${(solicitud.estado === 'pendiente' || solicitud.estado === 'correccion') && tieneDatos ? `
+                <button class="btn-action btn-aprobar" onclick="aprobarSolicitud(${solicitud.id})">
+                  <i class="fas fa-check"></i> Aprobar
+                </button>
+                <button class="btn-action btn-rechazar" onclick="mostrarMotivoRechazo(${solicitud.id})">
+                  <i class="fas fa-times"></i> Rechazar
+                </button>
+                <button class="btn-action btn-corregir" onclick="mostrarCamposCorreccion(${solicitud.id})">
+                  <i class="fas fa-edit"></i> Devolver para Corrección
+                </button>
+              ` : ''}
+            </div>
+            
+            <!-- Modal inline para motivo de rechazo -->
+            <div class="modal-motivo" id="motivo-${solicitud.id}">
+              <h4 style="color: #dc3545; margin-top: 0;">
+                <i class="fas fa-exclamation-triangle"></i> Motivo del Rechazo
+              </h4>
+              <textarea id="textarea-motivo-${solicitud.id}" placeholder="Explique el motivo del rechazo..." required></textarea>
+              <div class="modal-buttons" style="margin-top: 15px;">
+                <button class="btn-modal btn-modal-secondary" onclick="ocultarMotivoRechazo(${solicitud.id})">
+                  Cancelar
+                </button>
+                <button class="btn-modal btn-modal-primary" style="background-color: #dc3545;" onclick="confirmarRechazo(${solicitud.id})">
+                  <i class="fas fa-paper-plane"></i> Enviar Rechazo
+                </button>
+              </div>
+            </div>
+            
+            <!-- Modal inline para campos de corrección -->
+            <div class="modal-correccion" id="correccion-${solicitud.id}">
+              <h4 style="color: #ffc107; margin-top: 0;">
+                <i class="fas fa-edit"></i> Seleccionar Campos a Corregir
+              </h4>
+              <p style="color: #666; font-size: 14px;">Seleccione los campos que el acudiente debe corregir:</p>
+              
+              <div class="campos-grid">
+                ${generarCamposCorreccion(solicitud.id)}
+              </div>
+              
+              <div style="margin-top: 15px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 8px;">O especifique manualmente:</label>
+                <textarea id="textarea-campos-${solicitud.id}" placeholder="Ejemplo: Corregir fecha de nacimiento, actualizar foto del niño..." style="width: 100%; min-height: 60px; padding: 10px; border: 2px solid #ddd; border-radius: 6px;"></textarea>
+              </div>
+              
+              <div class="modal-buttons" style="margin-top: 15px;">
+                <button class="btn-modal btn-modal-secondary" onclick="ocultarCamposCorreccion(${solicitud.id})">
+                  Cancelar
+                </button>
+                <button class="btn-modal btn-modal-primary" style="background-color: #ffc107; color: #212529;" onclick="confirmarCorreccion(${solicitud.id})">
+                  <i class="fas fa-undo"></i> Enviar para Corrección
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+    
+    function generarCamposCorreccion(solicitudId) {
+      const campos = [
+        { label: 'Nombres del niño', value: 'nombres_nino' },
+        { label: 'Apellidos del niño', value: 'apellidos_nino' },
+        { label: 'Documento del niño', value: 'documento_nino' },
+        { label: 'Fecha de nacimiento', value: 'fecha_nacimiento' },
+        { label: 'Género', value: 'genero' },
+        { label: 'Tipo de sangre', value: 'tipo_sangre' },
+        { label: 'Foto del niño', value: 'foto' },
+        { label: 'Carnet de vacunación', value: 'carnet_vacunacion' },
+        { label: 'Certificado EPS', value: 'certificado_eps' },
+        { label: 'Registro civil', value: 'registro_civil' },
+        { label: 'Nombres del padre', value: 'nombres_padre' },
+        { label: 'Apellidos del padre', value: 'apellidos_padre' },
+        { label: 'Documento del padre', value: 'documento_padre' },
+        { label: 'Correo del padre', value: 'correo_padre' },
+        { label: 'Teléfono del padre', value: 'telefono_padre' },
+        { label: 'Dirección', value: 'direccion' },
+      ];
+      
+      return campos.map(campo => `
+        <div class="campo-checkbox">
+          <input type="checkbox" id="campo-${solicitudId}-${campo.value}" value="${campo.value}">
+          <label for="campo-${solicitudId}-${campo.value}">${campo.label}</label>
+        </div>
+      `).join('');
+    }
+    
+    function mostrarMotivoRechazo(solicitudId) {
+      document.getElementById(`motivo-${solicitudId}`).classList.add('show');
+    }
+    
+    function ocultarMotivoRechazo(solicitudId) {
+      document.getElementById(`motivo-${solicitudId}`).classList.remove('show');
+      document.getElementById(`textarea-motivo-${solicitudId}`).value = '';
+    }
+    
+    function mostrarCamposCorreccion(solicitudId) {
+      document.getElementById(`correccion-${solicitudId}`).classList.add('show');
+    }
+    
+    function ocultarCamposCorreccion(solicitudId) {
+      document.getElementById(`correccion-${solicitudId}`).classList.remove('show');
+    }
+    
+    async function aprobarSolicitud(solicitudId) {
+      const result = await Swal.fire({
+        title: '¿Aprobar esta solicitud?',
+        text: 'El niño será matriculado en el sistema',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, aprobar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d'
+      });
+      
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch('{% url "aprobar_solicitud_matricula" %}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ solicitud_id: solicitudId })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            Swal.fire({
+              title: '¡Aprobado!',
+              text: 'La solicitud ha sido aprobada y el niño ha sido matriculado',
+              icon: 'success',
+              confirmButtonColor: '#28a745'
+            });
+            cargarSolicitudesPendientes();
+            // Recargar la página para mostrar el nuevo niño en la lista
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            Swal.fire({
+              title: 'Error',
+              text: data.error || 'No se pudo aprobar la solicitud',
+              icon: 'error',
+              confirmButtonColor: '#dc3545'
+            });
+          }
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      }
+    }
+    
+    async function confirmarRechazo(solicitudId) {
+      const motivo = document.getElementById(`textarea-motivo-${solicitudId}`).value.trim();
+      
+      if (!motivo) {
+        Swal.fire({
+          title: 'Motivo Requerido',
+          text: 'Debe especificar el motivo del rechazo',
+          icon: 'warning',
+          confirmButtonColor: '#ffc107'
+        });
+        return;
+      }
+      
+      try {
+        const response = await fetch('{% url "rechazar_solicitud_matricula" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({ 
+            solicitud_id: solicitudId,
+            motivo: motivo
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          Swal.fire({
+            title: 'Solicitud Rechazada',
+            text: 'Se ha notificado al acudiente sobre el rechazo',
+            icon: 'info',
+            confirmButtonColor: '#17a2b8'
+          });
+          ocultarMotivoRechazo(solicitudId);
+          cargarSolicitudesPendientes();
+        } else {
+          Swal.fire({
+            title: 'Error',
+            text: data.error || 'No se pudo rechazar la solicitud',
+            icon: 'error',
+            confirmButtonColor: '#dc3545'
+          });
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+    
+    async function confirmarCorreccion(solicitudId) {
+      const checkboxes = document.querySelectorAll(`#correccion-${solicitudId} input[type="checkbox"]:checked`);
+      const camposSeleccionados = Array.from(checkboxes).map(cb => cb.value);
+      const camposManual = document.getElementById(`textarea-campos-${solicitudId}`).value.trim();
+      
+      if (camposSeleccionados.length === 0 && !camposManual) {
+        Swal.fire({
+          title: 'Campos Requeridos',
+          text: 'Debe seleccionar al menos un campo o especificar manualmente qué corregir',
+          icon: 'warning',
+          confirmButtonColor: '#ffc107'
+        });
+        return;
+      }
+      
+      try {
+        const response = await fetch('{% url "devolver_correccion_matricula" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({ 
+            solicitud_id: solicitudId,
+            campos: camposSeleccionados,
+            campos_manual: camposManual
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          Swal.fire({
+            title: 'Devuelto para Corrección',
+            text: 'Se ha notificado al acudiente sobre los campos a corregir',
+            icon: 'info',
+            confirmButtonColor: '#17a2b8'
+          });
+          ocultarCamposCorreccion(solicitudId);
+          cargarSolicitudesPendientes();
+        } else {
+          Swal.fire({
+            title: 'Error',
+            text: data.error || 'No se pudo devolver la solicitud',
+            icon: 'error',
+            confirmButtonColor: '#dc3545'
+          });
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+    
+    async function verFormularioSolicitud(solicitudId) {
+      try {
+        const response = await fetch(`/solicitudes-matricula/${solicitudId}/detalle/`);
+        const data = await response.json();
+        
+        if (data.success) {
+          // Mostrar el formulario completo en un modal de SweetAlert
+          Swal.fire({
+            title: 'Formulario de Matriculación',
+            html: generarHTMLFormulario(data.datos),
+            width: '90%',
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#007bff',
+            customClass: {
+              popup: 'swal-wide'
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+    
+    function generarHTMLFormulario(datos) {
+      return `
+        <div style="text-align: left; max-height: 600px; overflow-y: auto; padding: 20px;">
+          <h3 style="color: #7a3eb1; border-bottom: 2px solid #f3c1e5; padding-bottom: 10px;">Datos del Niño</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <p><strong>Nombres:</strong> ${datos.nombres_nino || 'N/A'}</p>
+            <p><strong>Apellidos:</strong> ${datos.apellidos_nino || 'N/A'}</p>
+            <p><strong>Documento:</strong> ${datos.documento_nino || 'N/A'}</p>
+            <p><strong>Fecha de Nacimiento:</strong> ${datos.fecha_nacimiento || 'N/A'}</p>
+            <p><strong>Género:</strong> ${datos.genero || 'N/A'}</p>
+            <p><strong>Tipo de Sangre:</strong> ${datos.tipo_sangre || 'N/A'}</p>
+          </div>
+          
+          <h3 style="color: #7a3eb1; border-bottom: 2px solid #f3c1e5; padding-bottom: 10px; margin-top: 30px;">Datos del Padre/Acudiente</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            <p><strong>Nombres:</strong> ${datos.nombres_padre || 'N/A'}</p>
+            <p><strong>Apellidos:</strong> ${datos.apellidos_padre || 'N/A'}</p>
+            <p><strong>Documento:</strong> ${datos.documento_padre || 'N/A'}</p>
+            <p><strong>Correo:</strong> ${datos.correo_padre || 'N/A'}</p>
+            <p><strong>Teléfono:</strong> ${datos.telefono_padre || 'N/A'}</p>
+            <p><strong>Dirección:</strong> ${datos.direccion || 'N/A'}</p>
+          </div>
+          
+          <h3 style="color: #7a3eb1; border-bottom: 2px solid #f3c1e5; padding-bottom: 10px; margin-top: 30px;">Documentos Adjuntos</h3>
+          <div style="margin-top: 15px;">
+            <p><i class="fas fa-file"></i> <strong>Foto:</strong> ${datos.tiene_foto ? '✅ Sí' : '❌ No'}</p>
+            <p><i class="fas fa-file"></i> <strong>Carnet de Vacunación:</strong> ${datos.tiene_carnet ? '✅ Sí' : '❌ No'}</p>
+            <p><i class="fas fa-file"></i> <strong>Certificado EPS:</strong> ${datos.tiene_eps ? '✅ Sí' : '❌ No'}</p>
+            <p><i class="fas fa-file"></i> <strong>Registro Civil:</strong> ${datos.tiene_registro ? '✅ Sí' : '❌ No'}</p>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Cargar solicitudes pendientes al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      cargarSolicitudesPendientes();
+    });
+    
+    // Cerrar modal de invitación al hacer clic fuera
+    window.onclick = function(event) {
+      const modalInvitacion = document.getElementById('modalInvitacion');
+      if (event.target === modalInvitacion) {
+        cerrarModalInvitacion();
+      }
+    }
   </script>
 
   <!-- Script para mostrar SweetAlert cuando hay matrícula exitosa -->

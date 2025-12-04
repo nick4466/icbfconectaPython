@@ -16,5 +16,20 @@ def user_context(request):
         # La foto está en el perfil de la madre (madre_profile), no directamente en el usuario.
         if hasattr(request.user, 'madre_profile') and request.user.madre_profile.foto_madre:
             context['foto_perfil_url'] = request.user.madre_profile.foto_madre.url
+        
+        # Agregar notificaciones no leídas
+        try:
+            from notifications.models import Notification
+            notifications = Notification.objects.filter(
+                recipient=request.user,
+                read=False
+            ).order_by('-created_at')[:10]  # Limitar a las 10 más recientes
+            
+            context['notifications'] = notifications
+            context['notifications_count'] = notifications.count()
+        except Exception as e:
+            print(f"Error al cargar notificaciones: {e}")
+            context['notifications'] = []
+            context['notifications_count'] = 0
 
     return context

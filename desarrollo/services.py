@@ -23,6 +23,9 @@ class GeneradorEvaluacionMensual:
         # Obtenemos los datos del mes una sola vez
         self.seguimientos_mes = self._get_seguimientos()
         self.novedades_mes = self._get_novedades()
+        
+        # --- NUEVO: Almacenar las novedades que se mencionan en el informe ---
+        self.novedades_mencionadas = []
 
     def run(self, only_tendencia=False, save_instance=True):
         """
@@ -304,13 +307,15 @@ class GeneradorEvaluacionMensual:
         # 5. Asistencia y novedades
         if self.evaluacion.porcentaje_asistencia and self.evaluacion.porcentaje_asistencia < 85:
             aspectos.append(f"El porcentaje de asistencia mensual ({self.evaluacion.porcentaje_asistencia}%) es bajo y puede afectar el proceso de desarrollo. Se sugiere buscar estrategias para mejorar la asistencia.")
-        novedades_asistencia = self.novedades_mes.filter(tipo='c').count()
-        if novedades_asistencia > 2:
-            aspectos.append(f"Se registraron {novedades_asistencia} novedades por inasistencia, lo cual puede estar incidiendo en el proceso de adaptación y aprendizaje.")
+        novedades_asistencia = self.novedades_mes.filter(tipo='c')
+        if novedades_asistencia.count() > 2:
+            aspectos.append(f"Se registraron {novedades_asistencia.count()} novedades por inasistencia, lo cual puede estar incidiendo en el proceso de adaptación y aprendizaje.")
+            self.novedades_mencionadas.extend(list(novedades_asistencia))
         # 6. Novedades críticas
-        novedades_criticas = [n for n in self.novedades_mes.filter(tipo__in=['a', 'b']) if n.get_prioridad() >= 4]
+        novedades_criticas = [n for n in self.novedades_mes if n.tipo in ['a', 'b'] and n.get_prioridad() >= 4]
         if novedades_criticas:
             aspectos.append("Se presentaron novedades de alta prioridad (salud o emocional), por lo que se recomienda un seguimiento cercano y articulación con la familia.")
+            self.novedades_mencionadas.extend(novedades_criticas)
         self.evaluacion.aspectos_a_mejorar = "- " + "\n- ".join(aspectos) if aspectos else "No se identificaron aspectos críticos a mejorar este mes."
 
     def _generar_alertas(self):
@@ -357,6 +362,7 @@ class GeneradorEvaluacionMensual:
                 plural = "novedad crítica" if cantidad == 1 else "novedades críticas"
                 mensaje = f"Novedades de {tipo}: Se ha registrado {cantidad} {plural} de alta prioridad este mes. Se requiere seguimiento cercano y articulación con la familia."
                 alertas.append(mensaje)
+            self.novedades_mencionadas.extend(novedades_criticas)
 
         # 4. Alerta por inasistencia crítica
         if self.evaluacion.porcentaje_asistencia is not None and self.evaluacion.porcentaje_asistencia < 70:
