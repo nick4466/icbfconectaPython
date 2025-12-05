@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ asunto }}</title>
+  <style>
+    /* Tipografía */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #FFF8F0;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #FFFFFF;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .header {
+      background-color: #FFDAB9;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 3px solid #FFC107;
+    }
+    .header img {
+      max-height: 60px;
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      font-size: 22px;
+      margin: 5px 0;
+      color: #FF7043;
+    }
+    .header p {
+      font-size: 14px;
+      color: #555;
+      margin: 0;
+    }
+    .content {
+      padding: 20px;
+      color: #333;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .content p {
+      margin: 10px 0;
+    }
+    .content .highlight {
+      background-color: #FFF3E0;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    .footer {
+      background-color: #FFDAB9;
+      text-align: center;
+      padding: 15px;
+      font-size: 12px;
+      color: #555;
+    }
+    .footer a {
+      color: #FF7043;
+      text-decoration: none;
+    }
+    @media screen and (max-width: 620px) {
+      .container {
+        width: 90%;
+        margin: 10px auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      {% if logo_url %}
+        <img src="{{ logo_url }}" alt="Logo del Jardín">
+      {% endif %}
+      <h1>{{ nombre_jardin }}</h1>
+      <p>Madre Comunitaria: {{ nombre_madre }}</p>
+    </div>
+
+    <div class="content">
+      <p>Hola <strong>{{ nombre_padre }}</strong>,</p>
+
+      <div class="highlight">
+        {{ cuerpo|safe }}
+      </div>
+
+      <p>Niño(s) asociado(s): <strong>{{ ninos }}</strong></p>
+
+      <p>¡Gracias por su atención!</p>
+    </div>
+
+    <div class="footer">
+      <p>Este correo es enviado desde <strong>{{ nombre_jardin }}</strong></p>
+      <p><a href="mailto:{{ settings.DEFAULT_FROM_EMAIL }}">Contactar al Jardín</a></p>
+    </div>
+  </div>
+</body>
+</html>

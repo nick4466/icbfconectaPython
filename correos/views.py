@@ -36,30 +36,22 @@ def obtener_choices_padres(madre):
 
     return choices
 
+from django.template.loader import render_to_string
+
 def enviar_correos(request):
 
-    # =============================
-    # 1. OBTENER LA MADRE LOGUEADA
-    # =============================
     try:
         madre = request.user.madre_profile
     except MadreComunitaria.DoesNotExist:
         messages.error(request, "Solo las Madres Comunitarias pueden enviar correos.")
         return redirect("home")
 
-    # Hogares asignados a esa madre
     hogares_ids = madre.hogares_asignados.values_list("id", flat=True)
 
-    # =============================
-    # 2. GET → crear formulario filtrado
-    # =============================
     if request.method == "GET":
         form = EmailMassForm(destinatarios_choices=obtener_choices_padres(madre))
         return render(request, "correos/enviar.html", {"form": form})
 
-    # =============================
-    # 3. POST → procesar formulario
-    # =============================
     form = EmailMassForm(request.POST, request.FILES, destinatarios_choices=obtener_choices_padres(madre))
 
     if not form.is_valid():
@@ -70,29 +62,21 @@ def enviar_correos(request):
     cuerpo = form.cleaned_data['cuerpo']
     archivos = request.FILES.getlist('archivos')
 
-    # =============================
-    # 4. FILTRO SEGURO DE PADRES
-    # =============================
     padres = Padre.objects.filter(
         id__in=selected_ids,
         ninos__hogar_id__in=hogares_ids
     ).distinct().select_related("usuario").prefetch_related("ninos")
 
-    # Si por manipulación un padre no pertenece a la madre → no se permite
     if not padres.exists():
         messages.error(request, "No tienes permiso para contactar a esos padres.")
         return redirect("correos:enviar")
 
-    # =============================
-    # 5. Guardar adjuntos
-    # =============================
     adjuntos_guardados = []
     for f in archivos:
         adj = ArchivoAdjunto(archivo=f, nombre_original=f.name)
         adj.save()
         adjuntos_guardados.append(adj)
 
-    # Construir lista de destinatarios con información legible (padre - niños <email>)
     destinatarios_lista = []
     for p in padres:
         correo = p.usuario.correo
@@ -108,15 +92,35 @@ def enviar_correos(request):
 
     fallos = []
 
+    # =============================
+    # Obtener nombre y logo del jardín
+    # =============================
+    primer_hogar = madre.hogares_asignados.first()
+    if primer_hogar:
+        nombre_jardin = primer_hogar.nombre_hogar
+        logo_url = getattr(primer_hogar, "logo", None)
+        if logo_url:
+            logo_url = logo_url.url
+    else:
+        nombre_jardin = "Jardín Infantil"
+        logo_url = None
+
+    # =============================
+    # ENVÍO DE CORREOS
+    # =============================
     for p in padres:
         correo_padre = p.usuario.correo
         nombres_ninos = ", ".join([f"{n.nombres} {n.apellidos}" for n in p.ninos.all()])
 
-        cuerpo_final = (
-            f"Hola {p.usuario.nombres},\n\n"
-            f"{cuerpo}\n\n"
-            f"Niño(s) asociado(s): {nombres_ninos}"
-        )
+        cuerpo_final = render_to_string("correos/plantilla_jardin.html", {
+            "asunto": asunto,
+            "cuerpo": cuerpo.replace("\n", "<br>"),
+            "nombre_padre": p.usuario.nombres,
+            "ninos": nombres_ninos,
+            "nombre_madre": f"{madre.usuario.nombres} {madre.usuario.apellidos}",
+            "nombre_jardin": nombre_jardin,
+            "logo_url": logo_url,
+        })
 
         email = EmailMessage(
             subject=asunto,
@@ -125,6 +129,7 @@ def enviar_correos(request):
             to=[correo_padre],
             connection=connection
         )
+        email.content_subtype = "html"
 
         for adj in adjuntos_guardados:
             email.attach(adj.nombre_original, adj.archivo.read())
@@ -134,10 +139,6 @@ def enviar_correos(request):
         except Exception as e:
             fallos.append(f"{correo_padre}: {str(e)}")
 
-    # =============================
-    # 6. Guardar Log
-    # =============================
-    # Guardamos los destinatarios como una cadena separada por '||' para preservar comas
     log = EmailLog.objects.create(
         asunto=asunto,
         cuerpo=cuerpo,
@@ -151,8 +152,6 @@ def enviar_correos(request):
 
     messages.success(request, "Correos enviados correctamente.")
     return redirect("correos:historial")
-
-
 
 def historial(request):
     logs = EmailLog.objects.all().order_by("-fecha_envio")
