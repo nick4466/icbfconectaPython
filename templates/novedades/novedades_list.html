@@ -1,0 +1,398 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Listado de Novedades</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    font-family: "Roboto", sans-serif;
+    background: #f4f7fb;
+    color: #333;
+}
+
+.contenedor-tabla {
+    max-width: 1150px;
+    margin: 40px auto;
+    background: #ffffff;
+    padding: 25px 35px;
+    border-radius: 18px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+}
+
+h1 {
+    text-align: center;
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: #0056d6;
+}
+
+.acciones-superiores {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.btn-nuevo {
+    background: #0056d6;
+    padding: 10px 18px;
+    color: white;
+    border-radius: 10px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: 0.3s ease;
+}
+
+.btn-nuevo:hover {
+    background: #003c9e;
+}
+
+.filtro-busqueda {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filtro-busqueda input[type="text"],
+.filtro-busqueda input[type="date"] {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    outline: none;
+}
+
+.filtro-busqueda input[type="text"]:focus,
+.filtro-busqueda input[type="date"]:focus {
+    border-color: #0056d6;
+}
+
+.filtro-busqueda button {
+    background: #0056d6;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.filtro-busqueda button:hover {
+    background: #003c9e;
+}
+
+.filtro-busqueda a {
+    background: #777;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.filtro-busqueda a:hover {
+    background: #555;
+}
+
+table {
+    width: 100%;
+    border-spacing: 0 8px;
+    font-size: 15px;
+}
+
+thead {
+    background: #0056d6;
+    color: white;
+}
+
+thead th {
+    padding: 12px;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+tbody tr {
+    background: #f5f9ff;
+    border-bottom: 1px solid #e3e8f0;
+}
+
+tbody td {
+    padding: 10px;
+    text-align: center;
+}
+
+tbody tr:hover {
+    background: #e8f1ff;
+    transition: 0.2s;
+}
+
+.acciones {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+.btn-accion {
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    transition: 0.2s;
+}
+
+.btn-accion:hover {
+    transform: scale(1.1);
+}
+
+.btn-verde { background: #28a745; }
+.btn-azul { background: #0056d6; }
+.btn-rojo { background: #dc3545; }
+
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.pagination a, .pagination span {
+    padding: 6px 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    color: #0056d6;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.pagination a:hover {
+    background: #f0efff;
+}
+
+.pagination .current {
+    background: #0056d6;
+    color: white;
+    border-color: #0056d6;
+}
+
+.contenedor-volver {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.btn-volver {
+    background: #0056d6;
+    color: white;
+    padding: 10px 22px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.btn-volver:hover {
+    background: #003c9e;
+}
+
+@media (max-width: 768px) {
+    .acciones-superiores, .filtro-busqueda {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    thead tr {
+        display: none;
+    }
+    tbody tr {
+        margin-bottom: 15px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    tbody td {
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+    }
+    tbody td::before {
+        position: absolute;
+        left: 15px;
+        width: 45%;
+        white-space: nowrap;
+        font-weight: 600;
+    }
+    tbody td:nth-of-type(1)::before { content: "#"; }
+    tbody td:nth-of-type(2)::before { content: "Fecha"; }
+    tbody td:nth-of-type(3)::before { content: "Niño"; }
+    tbody td:nth-of-type(4)::before { content: "Tipo"; }
+    tbody td:nth-of-type(5)::before { content: "Prioridad"; }
+    tbody td:nth-of-type(6)::before { content: "Descripción"; }
+    tbody td:nth-of-type(7)::before { content: "Acciones"; }
+}
+</style>
+</head>
+
+<body>
+{% include 'madre/navbar_madre.html' %}
+
+<div class="contenedor-tabla">
+
+    <h1>Listado de Novedades</h1>
+
+   <form method="get" class="acciones-superiores">
+    <a href="{% url 'novedades:novedades_create' %}" class="btn-nuevo">
+        <i class="fas fa-plus"></i> Nueva Novedad
+    </a>
+
+   <div class="filtro-busqueda" style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+
+    <!-- Bloque Buscar -->
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 5px;">
+        <label for="q" style="font-weight:600;">Buscar:</label>
+        <input type="text" name="q" id="q" placeholder="Buscar novedad..." value="{{ query }}">
+    </div>
+
+    <!-- Bloque Fecha -->
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 5px;">
+        <label style="font-weight:600;">Fecha:</label>
+        <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}">
+        <span>a</span>
+        <input type="date" name="fecha_fin" value="{{ fecha_fin }}">
+    </div>
+
+    <!-- Botones -->
+    <div style="display: flex; gap: 5px;">
+        <button type="submit">Filtrar</button>
+        <a href="{% url 'novedades:novedades_list' %}">Limpiar</a>
+    </div>
+
+</div>
+
+    
+</form>
+
+
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Niño</th>
+                <th>Tipo</th>
+                <th>Prioridad</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if novedades %}
+                {% for n in novedades %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ n.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ n.nino }}</td>
+                    <td>{{ n.get_tipo_display }}</td>
+                    <td>{{ n.get_prioridad }}</td>
+                    <td>{{ n.descripcion|truncatechars:45 }}</td>
+                    <td class="acciones">
+                        <a href="{% url 'novedades:detalle' n.id %}" class="btn-accion btn-verde"><i class="fas fa-eye"></i></a>
+                        <a href="{% url 'novedades:novedades_edit' n.id %}" class="btn-accion btn-azul"><i class="fas fa-pen"></i></a>
+                      <a href="#" class="btn-accion btn-rojo btn-eliminar" data-id="{{ n.id }}"> <i class="fas fa-trash"></i></a>
+
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7">No hay novedades registradas.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        {% if novedades.has_previous %}
+            <a href="?page=1">&laquo; Primera</a>
+            <a href="?page={{ novedades.previous_page_number }}">Anterior</a>
+        {% endif %}
+        <span class="current">Página {{ novedades.number }} de {{ novedades.paginator.num_pages }}</span>
+        {% if novedades.has_next %}
+            <a href="?page={{ novedades.next_page_number }}">Siguiente</a>
+            <a href="?page={{ novedades.paginator.num_pages }}">Última &raquo;</a>
+        {% endif %}
+    </div>
+
+   
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.querySelectorAll('.btn-eliminar').forEach(btn => {
+    btn.addEventListener('click', function(e){
+        e.preventDefault();
+        const novedadId = this.getAttribute('data-id');
+        const csrftoken = '{{ csrf_token }}';  // Asegúrate de tener {% csrf_token %} en el template
+
+        Swal.fire({
+            title: '¿Eliminar esta novedad?',
+            text: "Esta acción no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch("{% url 'novedades:novedades_delete_ajax' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ id: novedadId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success){
+                        Swal.fire('Eliminada','La novedad ha sido eliminada.','success')
+                        .then(() => {
+                            this.closest('tr').remove();
+                        });
+                    } else {
+                        Swal.fire('Error', data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    Swal.fire('Error','Ocurrió un error al eliminar.','error');
+                });
+            }
+        });
+    });
+});
+</script>
+
+
+</body>
+</html>

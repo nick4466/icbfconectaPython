@@ -11,185 +11,185 @@
 
 <style>
 
-/* ===========================
-   ESTILO GENERAL
-=========================== */
 body {
-    margin: 0;
-    padding: 0;
-    background: #eef3ff;
     font-family: 'Roboto', sans-serif;
+    margin: 0;
+    background-color: #f4f7fb;
+    color: #333;
 }
 
-/* ===========================
-   HEADER LIMPIO
-=========================== */
-header {
-    display: flex;
-    justify-content: center;
-    padding: 18px 0;
+/* ======== CONTENEDOR GENERAL ========= */
+.form-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    width: 95%;
+    margin: 30px auto;
+}
+
+@media (max-width: 900px) {
+    .form-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ======== TARJETAS ========= */
+.form-card {
     background: #ffffff;
-    box-shadow: 0px 2px 12px rgba(0,0,0,0.1);
-    border-radius: 0 0 20px 20px;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 
-header img {
-    height: 60px;
+.form-card h3 {
+    margin-top: 0;
+    margin-bottom: 18px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0056d6;
+    text-align: center;
 }
 
-/* ===========================
-   BOTÓN VOLVER FLOTANTE
-=========================== */
-.btn-volver {
-    position: absolute;
-    top: 25px;
-    left: 25px;
-    background: #0d47ff;
-    padding: 10px 18px;
-    border-radius: 50px;
-    color: white;
+/* ======== CAMPOS ========= */
+.form-card p {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
     font-weight: 600;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0px 5px 15px rgba(0,0,0,0.12);
-    transition: 0.25s;
+    margin-bottom: 5px;
 }
 
-.btn-volver:hover {
-    background: #0039cc;
-    transform: translateX(-3px);
+input, select, textarea {
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #cdd4e3;
+    background: #f5f9ff;
+    font-size: 15px;
 }
 
-/* ===========================
-   TÍTULO PRINCIPAL
-=========================== */
+textarea {
+    min-height: 90px;
+}
+
+/* ======== TÍTULO PRINCIPAL ========= */
 .main-title {
     text-align: center;
     font-size: 32px;
-    margin-top: 30px;
-    color: #0f3ea3;
-    font-weight: 700;
-    letter-spacing: 1px;
+    color: #0056d6;
+    margin-top: 35px;
 }
 
-/* ===========================
-   FORMULARIO EN TARJETA
-=========================== */
-.form-card {
-    width: 92%;
-    max-width: 650px;
-    margin: 35px auto;
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(12px);
-    padding: 35px 28px;
-    border-radius: 22px;
-    box-shadow: 0px 8px 25px rgba(0,0,0,0.12);
-}
 
-/* Inputs */
-form p {
-    margin-bottom: 20px;
-}
-
-form label {
-    font-weight: 600;
-    color: #1e3fa6;
-    margin-bottom: 6px;
-    display: block;
-}
-
-form input, form select, form textarea {
+/* ======== BOTONES CENTRALES ========= */
+.botones  {
     width: 100%;
-    padding: 12px 14px;
-    font-size: 15px;
-    border-radius: 12px;
-    border: 1px solid #c6d4ff;
-    background: #f6f8ff;
-    outline: none;
-    transition: border 0.2s, box-shadow 0.2s;
-}
-
-form input:focus,
-form select:focus,
-form textarea:focus {
-    border-color: #4c80ff;
-    box-shadow: 0 0 0 3px rgba(76,128,255,0.25);
-}
-
-/* ===========================
-   BOTONES ACCIÓN
-=========================== */
-.btn-group {
-    margin-top: 25px;
-    display: flex;
-    gap: 18px;
-}
-
-.btn-success {
-    flex: 1;
-    background: linear-gradient(90deg, #0053d9, #2979ff);
-    color: white;
-    padding: 13px 20px;
-    border: none;
-    border-radius: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0px 5px 15px rgba(0,91,255,0.25);
-    transition: 0.25s;
-}
-
-.btn-success:hover {
-    transform: scale(1.03);
-    background: #0044b0;
-}
-
-.btn-secondary {
-    flex: 1;
-    background: #7b7b7b;
-    color: white;
-    padding: 13px 20px;
-    border-radius: 14px;
     text-align: center;
-    text-decoration: none;
-    font-weight: 600;
-    box-shadow: 0px 5px 15px rgba(0,0,0,0.15);
-    transition: 0.25s;
+    margin-bottom: 40px;
 }
 
-.btn-secondary:hover {
-    background: #5a5a5a;
-    transform: scale(1.03);
+.btn-guardar {
+    background: #0056d6;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
 }
+
+.btn-guardar:hover {
+    background: #003c9e;
+}
+.btn-secondary {
+    background: #777;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 15px;
+    transition: 0.3s;
+}
+.btn-secondary:hover {
+    background: #555;
+}       
+
 
 </style>
 </head>
+
 <body>
 
-<a href="{% url 'novedades:novedades_list' %}" class="btn-volver">
-    <i class="fas fa-arrow-left"></i> Volver
-</a>
-
-<header>
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo del Software">
-</header>
+{% include 'madre/navbar_madre.html' %}
 
 <h2 class="main-title">
     {% if form.instance.pk %}Editar{% else %}Registrar{% endif %} Novedad
 </h2>
 
-<div class="form-card">
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
 
+    <div class="form-container">
+
+        <!-- TARJETA IZQUIERDA -->
+        <div class="form-card">
+            <h3>Información General</h3>
+
+            <p>{{ form.nino.label_tag }} {{ form.nino }}</p>
+
+            <p>{{ form.fecha.label_tag }} {{ form.fecha }}</p>
+
+            <p>{{ form.tipo.label_tag }} {{ form.tipo }}</p>
+
+            <p>{{ form.descripcion.label_tag }} {{ form.descripcion }}</p>
+        </div>
+
+        <!-- TARJETA DERECHA -->
+        <div class="form-card">
+            <h3>Detalles y Seguimiento</h3>
+
+            <p>{{ form.causa.label_tag }} {{ form.causa }}</p>
+
+            <p>{{ form.disposicion.label_tag }} {{ form.disposicion }}</p>
+
+            <p>{{ form.acuerdos.label_tag }} {{ form.acuerdos }}</p>
+
+            <p>{{ form.observaciones.label_tag }} {{ form.observaciones }}</p>
+
+            <p>{{ form.archivo_pdf.label_tag }} {{ form.archivo_pdf }}</p>
+        </div>
+    </div>
+
+    <!-- BOTONES CENTRALES -->
+    <div class="botones">
         <div class="btn-group">
-            <button type="submit" class="btn-success">Guardar</button>
+            <button type="submit" class="btn-guardar">Guardar</button>
             <a href="{% url 'novedades:novedades_list' %}" class="btn-secondary">Cancelar</a>
         </div>
-    </form>
-</div>
+    </div>
+
+</form>
+<script>
+    const selectPlaneacion = document.getElementById('planeacion-select');
+    const fechaInput = document.getElementById('id_fecha'); // Django asigna id automáticamente
+
+    selectPlaneacion.addEventListener('change', function() {
+        const fecha = this.selectedOptions[0].dataset.fecha;
+        if (fecha) {
+            fechaInput.value = fecha;
+        } else {
+            fechaInput.value = '';
+        }
+    });
+</script>
 
 </body>
 </html>

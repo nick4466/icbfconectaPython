@@ -108,11 +108,15 @@
       <span class="label">Fecha:</span>
       <span class="text">{{ novedad.fecha|date:"d/m/Y" }}</span>
     </div>
-
     <div class="row">
-      <span class="label">Clase:</span>
-      <span class="text">{{ novedad.clase }}</span>
-    </div>
+      <span class="label">Clase / Planeación:</span>
+      <span class="text">
+        {% if novedad.planeacion %}
+          {{ novedad.planeacion.nombre_experiencia }} ({{ novedad.planeacion.fecha|date:"d/m/Y" }})
+        {% else %}
+          No asignada
+        {% endif %}
+      </span>
 
     <div class="row">
       <span class="label">Tipo:</span>

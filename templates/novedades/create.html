@@ -6,146 +6,214 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registrar Novedad - ICBF Conecta</title>
 
+  <!-- Navbar -->
+  <link rel="stylesheet" href="{% static 'css/navbar_madre.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
 <style>
-
-/* ===========================
-   ESTILOS GENERALES
-=========================== */
+/* ======== ESTILOS GENERALES (Iguales al listado) ========= */
 body {
     font-family: 'Roboto', sans-serif;
     margin: 0;
-    background: #f4f7fc;
-    padding-bottom: 40px;
+    background-color: #f4f7fb;
+    color: #333;
 }
 
-/* ===========================
-   TITULO PRINCIPAL
-=========================== */
-.main-title {
-    text-align: center;
-    font-size: 30px;
-    color: #0051d4;
-    margin-top: 40px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
+/* ======== CONTENEDOR GENERAL ========= */
+.contenedor-2-columnas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    width: 95%;
+    margin: 30px auto;
 }
 
-/* ===========================
-   TARJETA DEL FORMULARIO
-=========================== */
-.form-card {
+@media (max-width: 900px) {
+    .contenedor-2-columnas {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ======== TARJETAS FORMULARIO ========= */
+.tarjeta {
     background: #ffffff;
-    width: 90%;
-    max-width: 600px;
-    margin: 35px auto;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.12);
-    animation: fadeIn 0.5s ease-in-out;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 
-/* Animación suave */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* ===========================
-   CAMPOS DEL FORMULARIO
-=========================== */
-form p {
-    margin-bottom: 20px;
-}
-
-form label {
-    font-weight: 600;
-    color: #003a99;
-}
-
-form input, form select, form textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #c7d7ff;
-    border-radius: 10px;
-    background: #f4f7ff;
-    margin-top: 5px;
-    font-size: 15px;
-    box-sizing: border-box;
-}
-
-form textarea {
-    min-height: 110px;
-}
-
-/* ===========================
-   BOTÓN GUARDAR
-=========================== */
-.btn-guardar {
-    width: 100%;
-    background: linear-gradient(90deg,#0043c0,#006bff);
-    color: white;
-    padding: 14px 18px;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
+.tarjeta h3 {
+    margin-top: 0;
+    margin-bottom: 18px;
+    font-size: 20px;
     font-weight: 700;
+    color: #0056d6;
+}
+
+/* ======== CAMPOS ========= */
+.campo {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+input, select, textarea {
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #cdd4e3;
+    background: #f5f9ff;
+    font-size: 15px;
+}
+
+textarea {
+    min-height: 90px;
+}
+
+/* ======== BOTÓN GUARDAR ========= */
+.botones {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.btn-guardar {
+    background: #0056d6;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 12px;
+    color: white;
     font-size: 16px;
-    margin-top: 10px;
-    transition: 0.2s ease-in-out;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
 }
 
 .btn-guardar:hover {
-    background: #0049d1;
-    transform: scale(1.02);
+    background: #003c9e;
 }
 
-/* ===========================
-   BOTÓN REGRESAR
-=========================== */
-.btn-regresar {
-    display: block;
+/* Título igual al listado */
+.main-title {
     text-align: center;
-    background: #8a8a8a;
-    color: white;
-    padding: 12px 18px;
-    border-radius: 10px;
+    font-size: 32px;
+    color: #0056d6;
+    margin-top: 35px;
+}
+
+/* ======== BOTÓN VOLVER ========= */
+.btn-volver {
+    display: inline-block;
+    background:#0056d6;
+    color: #f9faff;
+    padding: 10px 20px;
+    border-radius: 8px;
     text-decoration: none;
-    font-weight: 600;
-    width: 100%;
-    margin-top: 15px;
-    transition: 0.2s;
+    font-weight: bold;
+    margin-left: 15px;
+    transition: 0.3s ease;
 }
-
-.btn-regresar:hover {
-    background: #6a6a6a;
-    transform: scale(1.02);
+.btn-volver:hover {
+    background: #013a8e;
+    color: #f8f5f5;
 }
-
 </style>
+
 </head>
-
 <body>
+
 {% include 'madre/navbar_madre.html' %}
-<h2 class="main-title">Registrar Nueva Novedad</h2>
 
-<div class="form-card">
+<h2 class="main-title">Registrar Novedad</h2>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
 
+    <div class="contenedor-2-columnas">
+
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="tarjeta">
+            <h3>Información General</h3>
+
+            <div class="campo">
+                <label>Niño</label>
+                {{ form.nino }}
+            </div>
+
+            <div class="campo">
+                <label>Fecha</label>
+                {{ form.fecha }}
+            </div>
+
+            <div class="campo">
+                <label>Tipo de novedad</label>
+                {{ form.tipo }}
+            </div>
+
+            <div class="campo">
+                <label>Descripción</label>
+                {{ form.descripcion }}
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA -->
+        <div class="tarjeta">
+            <h3>Detalles y Seguimiento</h3>
+
+            <div class="campo">
+                <label>Causa</label>
+                {{ form.causa }}
+            </div>
+
+            <div class="campo">
+                <label>Disposición</label>
+                {{ form.disposicion }}
+            </div>
+
+            <div class="campo">
+                <label>Acuerdos</label>
+                {{ form.acuerdos }}
+            </div>
+
+            <div class="campo">
+                <label>Observaciones</label>
+                {{ form.observaciones }}
+            </div>
+
+            <div class="campo">
+                <label>Archivo PDF (opcional)</label>
+                {{ form.archivo_pdf }}
+            </div>
+        </div>
+
+    </div>
+
+    <div class="botones">
         <button type="submit" class="btn-guardar">Guardar Novedad</button>
-
-        <a href="{% url 'novedades:novedades_list' %}" class="btn-regresar">
-            Regresar a novedades
+        <a href="{% url 'novedades:novedades_list' %}" class="btn-volver">
+            <i class="fas fa-arrow-left"></i> Volver al listado
         </a>
-    </form>
+    </div>
 
-</div>
+</form>
+<script>
+    const selectPlaneacion = document.getElementById('planeacion-select');
+    const fechaInput = document.getElementById('id_fecha'); // Django asigna id automáticamente
+
+    selectPlaneacion.addEventListener('change', function() {
+        const fecha = this.selectedOptions[0].dataset.fecha;
+        if (fecha) {
+            fechaInput.value = fecha;
+        } else {
+            fechaInput.value = '';
+        }
+    });
+</script>
 
 </body>
 </html>

@@ -12,6 +12,7 @@ urlpatterns = [
     path('nueva/', novedades_create, name='novedades_create'),
     path('editar/<int:pk>/', novedades_edit, name='novedades_edit'),
     path('eliminar/<int:pk>/', novedades_delete, name='novedades_delete'),
+    path('eliminar-ajax/', views.novedades_delete_ajax, name='novedades_delete_ajax'),
 
     # Vista completa
     path('detalle/<int:pk>/', novedades_detail, name='novedades_detail'),
