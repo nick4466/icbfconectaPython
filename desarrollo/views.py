@@ -1112,20 +1112,20 @@ def registrar_desarrollo(request):
                 fecha__month=fecha_fin_mes.month
             ).count()
             
-            # --- CORRECCIÓN: cargar novedades reales del mes para la vista previa ---
-            alertas_novedades = Novedad.objects.filter(
+            # --- CORRECCIÓN: Cargar novedades reales del mes para la vista previa ---
+            novedades_del_mes = Novedad.objects.filter(
                 nino=desarrollo_existente.nino,
                 fecha__year=fecha_fin_mes.year,
                 fecha__month=fecha_fin_mes.month
             ).order_by('fecha')
 
             return render(request, 'madre/desarrollo_form.html', {
-                'desarrollo': desarrollo_existente, 
+                'desarrollo': desarrollo_existente,
                 'titulo_form': f'Editar Desarrollo para {desarrollo_existente.nino.nombres}',
                 'seguimientos_mes_count': seguimientos_mes_count,
                 'novedades_mes_count': novedades_mes_count,
                 'form_action': reverse('desarrollo:registrar_desarrollo'),
-                'alertas_novedades': alertas_novedades,  # <-- SIEMPRE PASA LAS NOVEDADES REALES DEL MES
+                'novedades_mes': novedades_del_mes,  # <-- Se pasa la variable correcta
             })
         except (DesarrolloNino.DoesNotExist, ValueError):
             messages.info(request, "No se encontró un registro para ese niño y mes. Puede generar uno nuevo.")

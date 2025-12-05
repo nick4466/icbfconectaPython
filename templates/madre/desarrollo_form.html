@@ -353,11 +353,11 @@
           <div style="margin:18px 0 18px 0; padding: 14px 14px 10px 14px; background: #f8f6ff; border-radius: 8px; border: 1px solid #e5d5f5;">
             <strong style="font-size:1.08em;">Vista previa de novedades del mes:</strong>
             <div style="max-height:120px; overflow-y:auto; margin-top:6px;">
-              {% if desarrollo.novedades_del_mes %}
-                {% for nov in desarrollo.novedades_del_mes %}
+              {% if novedades_mes or desarrollo.novedades_del_mes %}
+                {% for nov in novedades_mes|default:desarrollo.novedades_del_mes %}
                   <div style="margin-bottom:7px;">
                     <span style="color:#3f833f; font-weight:bold;">{{ nov.get_tipo_display }}</span>
-                    <a href="{% url 'novedades:detalle' nov.id %}" target="_blank" style="color:#5dade2;">Ver novedad</a>
+                    <a href="{% url 'novedades:detalle' nov.id %}" target="_blank" style="color:#5dade2;">Ver detalles</a>
                     {% if nov.descripcion %}
                       <span style="color:#555;">- {{ nov.descripcion|truncatechars:60 }}</span>
                     {% endif %}
