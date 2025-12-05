@@ -314,8 +314,13 @@ class GeneradorEvaluacionMensual:
         # 6. Novedades críticas
         novedades_criticas = [n for n in self.novedades_mes if n.tipo in ['a', 'b'] and n.get_prioridad() >= 4]
         if novedades_criticas:
-            aspectos.append("Se presentaron novedades de alta prioridad (salud o emocional), por lo que se recomienda un seguimiento cercano y articulación con la familia.")
+            from django.urls import reverse
+            # Generamos los enlaces para que el modelo los pueda detectar
+            enlaces_ocultos = ''.join([f'<a href="{reverse("novedades:detalle", args=[n.id])}"></a>' for n in novedades_criticas])
+            mensaje = f"Se presentaron novedades de alta prioridad (salud o emocional), por lo que se recomienda un seguimiento cercano y articulación con la familia. {enlaces_ocultos}"
+            aspectos.append(mensaje)
             self.novedades_mencionadas.extend(novedades_criticas)
+
         self.evaluacion.aspectos_a_mejorar = "- " + "\n- ".join(aspectos) if aspectos else "No se identificaron aspectos críticos a mejorar este mes."
 
     def _generar_alertas(self):
@@ -353,11 +358,14 @@ class GeneradorEvaluacionMensual:
         # 3. Alerta por novedades críticas (salud, emocionales)
         novedades_criticas = [n for n in self.novedades_mes if n.tipo in ['a', 'b'] and n.get_prioridad() >= 4]
         if novedades_criticas:
+            from django.urls import reverse
             tipos = {}
             for nov in novedades_criticas:
                 tipo = 'salud' if nov.tipo == 'a' else 'emocional'
                 tipos[tipo] = tipos.get(tipo, 0) + 1
             
+            # Generamos los enlaces para que el modelo los pueda detectar
+            enlaces_ocultos = ''.join([f'<a href="{reverse("novedades:detalle", args=[n.id])}"></a>' for n in novedades_criticas])
             for tipo, cantidad in tipos.items():
                 plural = "novedad crítica" if cantidad == 1 else "novedades críticas"
                 mensaje = f"Novedades de {tipo}: Se ha registrado {cantidad} {plural} de alta prioridad este mes. Se requiere seguimiento cercano y articulación con la familia."
@@ -365,6 +373,9 @@ class GeneradorEvaluacionMensual:
             self.novedades_mencionadas.extend(novedades_criticas)
 
         # 4. Alerta por inasistencia crítica
+        # Añadimos los enlaces ocultos al final de la última alerta generada
+        if alertas and novedades_criticas:
+            alertas[-1] += f" {enlaces_ocultos}"
         if self.evaluacion.porcentaje_asistencia is not None and self.evaluacion.porcentaje_asistencia < 70:
             alertas.append(f"Inasistencia crítica: El porcentaje de asistencia ({self.evaluacion.porcentaje_asistencia}%) es muy bajo y requiere una intervención inmediata para garantizar la continuidad del proceso pedagógico.")
 
