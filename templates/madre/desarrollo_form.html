@@ -1,5 +1,5 @@
 {% load static %}
-{% load alertas_filters %}
+{% load desarrollo_filters alertas_filters %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -340,25 +340,27 @@
           <h4><i class="fas fa-edit"></i> Conclusiones y Recomendaciones (Editable)</h4>
           <div class="form-group" style="margin-bottom:18px;">
             <label>Fortalezas del mes:</label>
-            <textarea name="fortalezas_mes" style="min-height:70px;max-height:200px;">{{ desarrollo.fortalezas_mes|default_if_none:'' }}</textarea>
+            <textarea name="fortalezas_mes" style="min-height:70px;max-height:200px;">{{ desarrollo.fortalezas_mes|default_if_none:''|strip_hidden_tags }}</textarea>
           </div>
           <div class="form-group" style="margin-bottom:18px;">
             <label>Aspectos por mejorar:</label>
-            <textarea name="aspectos_a_mejorar" style="min-height:70px;max-height:200px;">{{ desarrollo.aspectos_a_mejorar|default_if_none:'' }}</textarea>
+            <textarea name="aspectos_a_mejorar" style="min-height:70px;max-height:200px;">{{ desarrollo.aspectos_a_mejorar|default_if_none:''|strip_hidden_tags }}</textarea>
           </div>
           <div class="form-group" style="margin-bottom:18px;">
             <label>Alertas del mes:</label>
-            <textarea name="alertas_mes" style="min-height:70px;max-height:200px;">{{ desarrollo.alertas_mes|default_if_none:'' }}</textarea>
+            <textarea name="alertas_mes" style="min-height:70px;max-height:200px;">{{ desarrollo.alertas_mes|default_if_none:''|strip_hidden_tags }}</textarea>
           </div>
           <div style="margin:18px 0 18px 0; padding: 14px 14px 10px 14px; background: #f8f6ff; border-radius: 8px; border: 1px solid #e5d5f5;">
             <strong style="font-size:1.08em;">Vista previa de novedades del mes:</strong>
             <div style="max-height:120px; overflow-y:auto; margin-top:6px;">
-              {% if desarrollo.novedades_mes %}
-                {% for nov in desarrollo.novedades_mes %}
+              {% if desarrollo.novedades_del_mes %}
+                {% for nov in desarrollo.novedades_del_mes %}
                   <div style="margin-bottom:7px;">
-                    <span style="color:#3f833f; font-weight:bold;">{{ nov.get_tipo_display }}</span> :
-                    <a href="{% url 'novedades:detalle' nov.id %}" target="_blank">Ver novedad</a>
-                    {% if nov.descripcion %}<span style="color:#555;">- {{ nov.descripcion|truncatechars:60 }}</span>{% endif %}
+                    <span style="color:#3f833f; font-weight:bold;">{{ nov.get_tipo_display }}</span>
+                    <a href="{% url 'novedades:detalle' nov.id %}" target="_blank" style="color:#5dade2;">Ver novedad</a>
+                    {% if nov.descripcion %}
+                      <span style="color:#555;">- {{ nov.descripcion|truncatechars:60 }}</span>
+                    {% endif %}
                   </div>
                 {% endfor %}
               {% else %}

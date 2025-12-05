@@ -1101,8 +1101,6 @@ def registrar_desarrollo(request):
             
             desarrollo_existente = DesarrolloNino.objects.get(nino_id=nino_id_get, fecha_fin_mes=fecha_fin_mes)
             
-            # Si se encuentra un registro, se renderiza el formulario en modo edición.
-            # Contadores para la vista de edición.
             seguimientos_mes_count = SeguimientoDiario.objects.filter( 
                 nino=desarrollo_existente.nino, 
                 fecha__year=fecha_fin_mes.year, 
@@ -1114,25 +1112,22 @@ def registrar_desarrollo(request):
                 fecha__month=fecha_fin_mes.month
             ).count()
             
-            # --- CORRECCIÓN: Cargar las novedades para la vista previa en modo edición ---
+            # --- CORRECCIÓN: cargar novedades reales del mes para la vista previa ---
             alertas_novedades = Novedad.objects.filter(
                 nino=desarrollo_existente.nino,
                 fecha__year=fecha_fin_mes.year,
                 fecha__month=fecha_fin_mes.month
             ).order_by('fecha')
 
-            # Renderizar el formulario con el registro existente para edición
             return render(request, 'madre/desarrollo_form.html', {
                 'desarrollo': desarrollo_existente, 
                 'titulo_form': f'Editar Desarrollo para {desarrollo_existente.nino.nombres}',
                 'seguimientos_mes_count': seguimientos_mes_count,
                 'novedades_mes_count': novedades_mes_count,
                 'form_action': reverse('desarrollo:registrar_desarrollo'),
-                # Pasamos las novedades consultadas a la plantilla
-                'alertas_novedades': alertas_novedades,
+                'alertas_novedades': alertas_novedades,  # <-- SIEMPRE PASA LAS NOVEDADES REALES DEL MES
             })
         except (DesarrolloNino.DoesNotExist, ValueError):
-            # Si no existe, redirigimos para evitar errores, mostrando un mensaje.
             messages.info(request, "No se encontró un registro para ese niño y mes. Puede generar uno nuevo.")
             return redirect(reverse('desarrollo:registrar_desarrollo') + f'?nino={nino_id_get}')
 

@@ -98,6 +98,32 @@ class DesarrolloNino(models.Model):
         if run_generator:
             from .services import GeneradorEvaluacionMensual
             GeneradorEvaluacionMensual(self).run()
+
+    @property
+    def novedades_del_mes(self):
+        """
+        Devuelve un queryset con las novedades registradas en el mes de la evaluación.
+        """
+        from novedades.models import Novedad
+        import re
+
+        # Combina los campos de texto donde pueden estar las URLs de las novedades
+        texto_completo = ' '.join(filter(None, [
+            self.aspectos_a_mejorar,
+            self.alertas_mes,
+        ]))
+
+        # Busca todos los IDs de las novedades en las URLs usando una expresión regular
+        # La expresión busca patrones como /novedades/detalle/123/ o /novedades/detalle-modal/123/
+        # El `(-modal)?` hace que la parte "-modal" sea opcional.
+        novedad_ids = re.findall(r'/novedades/detalle(-modal)?/(\d+)/', texto_completo)
+
+        if not novedad_ids:
+            return Novedad.objects.none() # Devuelve un queryset vacío si no se encuentran IDs
+
+        # re.findall con grupos devuelve tuplas ('-modal', '123') o ('', '123'). Extraemos solo los IDs.
+        ids_numericos = [tupla[1] for tupla in novedad_ids]
+        return Novedad.objects.filter(id__in=ids_numericos).order_by('fecha')
     
     def get_participacion_frecuente_display(self):
         # Mapea los valores calculados a textos legibles
