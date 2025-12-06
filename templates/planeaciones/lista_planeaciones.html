@@ -29,6 +29,31 @@ body {
     background: var(--light-bg);
 }
 
+/* ALERTA JS GENERAL */
+.alerta-js {
+    display: none;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    max-width: 280px;
+    margin: 0 auto 15px auto;
+    animation: fade 0.3s ease-in-out;
+    text-align: center;
+}
+
+/* ÉXITO */
+.alerta-exito {
+    background-color: #e1ffe8;
+    border-left: 5px solid #28a745;
+    color: #1e7e34;
+}
+
+/* ANIMACIÓN */
+@keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 
 /* CONTENEDOR PRINCIPAL */
 .contenedor-tabla {
@@ -154,8 +179,7 @@ tbody tr {
 tbody td {
     padding: 14px;
     color: #444;
-    text-align: center; /* Centra el contenido horizontal */
-    vertical-align: middle; /* Centra el contenido vertical */
+    text-align: center;
 }
 
 tbody tr:hover {
@@ -217,32 +241,11 @@ tbody tr:hover {
     border-color: var(--secondary);
 }
 
-/* BOTÓN VOLVER */
-.contenedor-volver {
-    text-align: center;
-    margin-top: 25px;
-}
-
-.btn-volver {
-    background: var(--primary);
-    color: white;
-    padding: 10px 24px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: 0.3s ease;
-}
-
-.btn-volver:hover {
-    opacity: 0.85;
-    transform: translateY(-2px);
-}
-
-
+/* BOTÓN ELIMINACIÓN MASIVA */
 .btn-eliminar-seleccionados {
-    background: #fb5959; /* Rojo elegante */
+    background: #fb5959;
     color: white;
-    padding: 6px 14px; /* Más pequeño */
+    padding: 6px 14px;
     border-radius: 6px;
     font-size: 0.85rem;
     font-weight: 600;
@@ -254,18 +257,12 @@ tbody tr:hover {
 }
 
 .btn-eliminar-seleccionados:hover {
-    background: #b71c1c; /* Rojo más oscuro */
+    background: #b71c1c;
     transform: translateY(-2px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.25);
 }
 
-.btn-eliminar-seleccionados:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-}
-
 </style>
-
 </head>
 
 <body>
@@ -276,111 +273,106 @@ tbody tr:hover {
 
     <h1>Planeaciones Pedagógicas</h1>
 
+    <!-- MENSAJE DE ÉXITO -->
+   <div id="alerta-exito" class="alerta-js" style="display:none;"></div>
+
+
     <form method="get" class="acciones-superiores" style="width:100%; flex-wrap:wrap; gap:20px;">
 
-    <a href="{% url 'planeaciones:registrar_planeacion' %}" class="btn-nuevo">
-        <i class="fas fa-plus"></i> Nueva Planeación
-    </a>
+        <a href="{% url 'planeaciones:registrar_planeacion' %}" class="btn-nuevo">
+            <i class="fas fa-plus"></i> Nueva Planeación
+        </a>
 
-    <a href="{% url 'planeaciones:reporte_menu' %}" class="btn-pdf">
-        <i class="fas fa-file-pdf"></i> Generar PDF
-    </a>
+        <a href="{% url 'planeaciones:reporte_menu' %}" class="btn-pdf">
+            <i class="fas fa-file-pdf"></i> Generar PDF
+        </a>
 
+        <div class="filtro-mes">
+            <label>Mes:</label>
+            <select name="mes" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                {% for codigo, nombre in meses %}
+                <option value="{{ codigo }}" {% if mes_seleccionado == codigo %}selected{% endif %}>
+                    {{ nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
 
-    <!-- FILTRO MES EXISTENTE -->
-    <div class="filtro-mes">
-        <label>Mes:</label>
-        <select name="mes" onchange="this.form.submit()">
-            <option value="">Todos</option>
-            {% for codigo, nombre in meses %}
-            <option value="{{ codigo }}" {% if mes_seleccionado == codigo %}selected{% endif %}>
-                {{ nombre }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-
-
-</form>
 <button type="button" id="btn-eliminar-seleccionados" class="btn-eliminar-seleccionados">
     <i class="fas fa-trash"></i> Eliminar 
 </button>
 
-<!-- FORM ELIMINACIÓN MASIVA -->
 <form id="form-eliminar-seleccionados" method="post" action="{% url 'planeaciones:eliminar_masivo' %}">
-
     {% csrf_token %}
 
-
-   <table>
-    <thead>
-        <tr>
-            <th><input type="checkbox" id="select-all"></th>
-            <th>#</th>
-            <th>Fecha</th>
-            <th>Actividad</th>
-            <th>Intencionalidad</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        {% if planeaciones %}
-            {% for p in planeaciones %}
+    <table>
+        <thead>
             <tr>
-                <td>
-                    <input type="checkbox" name="planeaciones_ids" value="{{ p.id }}" class="fila-check">
-                </td>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ p.fecha }}</td>
-                <td>{{ p.nombre_experiencia }}</td>
-                <td>{{ p.intencionalidad_pedagogica }}</td>
-
-                <td class="acciones">
-                    <a href="{% url 'planeaciones:detalle_planeacion' p.id %}" class="btn-accion btn-verde">
-                        <i class="fas fa-eye"></i>
-                    </a>
-                    <a href="{% url 'planeaciones:editar_planeacion' p.id %}" class="btn-accion btn-azul">
-                        <i class="fas fa-pen"></i>
-                    </a>
-                </td>
+                <th><input type="checkbox" id="select-all"></th>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Actividad</th>
+                <th>Intencionalidad</th>
+                <th>Acciones</th>
             </tr>
-            {% endfor %}
-        {% else %}
-            <tr>
-                <td colspan="6">No tienes planeaciones registradas.</td>
-            </tr>
-        {% endif %}
-    </tbody>
-</table>
+        </thead>
 
-</form> <!-- fin form masivo -->
+        <tbody>
+            {% if planeaciones %}
+                {% for p in planeaciones %}
+                <tr>
+                    <td><input type="checkbox" name="planeaciones_ids" value="{{ p.id }}" class="fila-check"></td>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ p.fecha }}</td>
+                    <td>{{ p.nombre_experiencia }}</td>
+                    <td>{{ p.intencionalidad_pedagogica }}</td>
+                    <td class="acciones">
+                        <a href="{% url 'planeaciones:detalle_planeacion' p.id %}" class="btn-accion btn-verde">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'planeaciones:editar_planeacion' p.id %}" class="btn-accion btn-azul">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6">No tienes planeaciones registradas.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</form>
 
+<!-- PAGINACIÓN -->
+<div class="pagination">
+    {% if planeaciones.has_previous %}
+        <a href="?page=1{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">&laquo; Primera</a>
+        <a href="?page={{ planeaciones.previous_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Anterior</a>
+    {% else %}
+        <span class="disabled">&laquo; Primera</span>
+        <span class="disabled">Anterior</span>
+    {% endif %}
 
-    <!-- PAGINACIÓN -->
-    <div class="pagination">
-        {% if planeaciones.has_previous %}
-            <a href="?page=1{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">&laquo; Primera</a>
-            <a href="?page={{ planeaciones.previous_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Anterior</a>
-        {% else %}
-            <span class="disabled">&laquo; Primera</span>
-            <span class="disabled">Anterior</span>
-        {% endif %}
+    <span class="current">Página {{ planeaciones.number }} de {{ planeaciones.paginator.num_pages }}</span>
 
-        <span class="current">Página {{ planeaciones.number }} de {{ planeaciones.paginator.num_pages }}</span>
-
-        {% if planeaciones.has_next %}
-            <a href="?page={{ planeaciones.next_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Siguiente</a>
-            <a href="?page={{ planeaciones.paginator.num_pages }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Última &raquo;</a>
-        {% else %}
-            <span class="disabled">Siguiente</span>
-            <span class="disabled">Última &raquo;</span>
-        {% endif %}
-    </div>
-
-  
+    {% if planeaciones.has_next %}
+        <a href="?page={{ planeaciones.next_page_number }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Siguiente</a>
+        <a href="?page={{ planeaciones.paginator.num_pages }}{% if mes_seleccionado %}&mes={{ mes_seleccionado }}{% endif %}">Última &raquo;</a>
+    {% else %}
+        <span class="disabled">Siguiente</span>
+        <span class="disabled">Última &raquo;</span>
+    {% endif %}
+</div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- SELECCIONAR TODOS -->
 <script>
 document.getElementById("select-all").addEventListener("change", function() {
     const checked = this.checked;
@@ -388,27 +380,38 @@ document.getElementById("select-all").addEventListener("change", function() {
 });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- ALERTA DE ÉXITO (CORRECTA Y FUNCIONAL) -->
+{% if messages %}
+    {% for m in messages %}
+        {% if 'success' in m.tags %}
+            <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const alerta = document.getElementById("alerta-exito");
+                alerta.innerText = "{{ m|escapejs }}";
+                alerta.classList.add("alerta-exito");
+                alerta.style.display = "block";
 
+                setTimeout(() => {
+                    alerta.style.opacity = "0";
+                    setTimeout(() => alerta.style.display = "none", 500);
+                }, 4000);
+            });
+            </script>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+
+<!-- ELIMINACIÓN MASIVA -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
     const btnEliminar = document.getElementById("btn-eliminar-seleccionados");
     const formEliminar = document.getElementById("form-eliminar-seleccionados");
 
-    if (!btnEliminar) {
-        console.error("No se encontró el botón #btn-eliminar-seleccionados");
-        return;
-    }
-    if (!formEliminar) {
-        console.error("No se encontró el form #form-eliminar-seleccionados");
-        return;
-    }
-
     btnEliminar.addEventListener("click", function (e) {
         e.preventDefault();
 
-        // recoge checkboxes dentro del formulario (importante si hay otras tablas)
         const seleccionados = formEliminar.querySelectorAll(".fila-check:checked");
 
         if (seleccionados.length === 0) {
@@ -416,7 +419,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 title: "No hay planeaciones seleccionadas",
                 text: "Selecciona al menos una planeación para eliminar.",
                 icon: "info",
-                confirmButtonText: "Aceptar",
                 confirmButtonColor: "#667eea"
             });
             return;
@@ -433,26 +435,13 @@ document.addEventListener("DOMContentLoaded", function () {
             cancelButtonText: "Cancelar"
         }).then((result) => {
             if (result.isConfirmed) {
-                try {
-                    // submit seguro del form
-                    formEliminar.submit();
-                } catch (err) {
-                    console.error("Error al enviar el formulario:", err);
-                    Swal.fire({
-                        title: "Error",
-                        text: "Ocurrió un error al intentar eliminar. Revisa la consola del navegador.",
-                        icon: "error",
-                        confirmButtonText: "Aceptar"
-                    });
-                }
+                formEliminar.submit();
             }
         });
     });
 
 });
 </script>
-
-
 
 </body>
 </html>

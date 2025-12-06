@@ -9,7 +9,7 @@ from .models import ArchivoAdjunto, EmailLog
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 from datetime import datetime
-
+from django.contrib.auth.decorators import login_required
 
 def obtener_choices_padres(madre):
     """

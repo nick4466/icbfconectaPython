@@ -269,7 +269,41 @@
             background: rgba(255,255,255,0.85);
             transition: 0.3s;
         }
-</style>
+
+            /* Mensaje alerta centrado */
+        .alerta-js {
+            padding: 8px 14px;        /* menos espacio interno */
+            border-radius: 6px;       /* esquinas un poco más pequeñas */
+            font-weight: bold;
+            font-size: 14px;          /* texto más pequeño */
+            max-width: 220px;         /* ancho máximo reducido */
+            text-align: center;
+            animation: fade 0.3s ease-in-out;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15); /* sombra más ligera */
+        }
+
+       
+
+       .alerta-exito {
+    background-color: #e6ffed;          /* verde más suave */
+    border-left: 4px solid #28a745;     /* verde más vivo y moderno */
+    color: #155724;                     /* tono verde oscuro para contraste */
+    padding: 10px 16px;                 /* espacio interno equilibrado */
+    border-radius: 6px;                 /* esquinas más suaves */
+    font-size: 14px;                    /* texto más compacto */
+    font-weight: 600;                   /* seminegrita para legibilidad */
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15); /* sombra ligera */
+    animation: fade 0.4s ease-in-out;   /* animación más fluida */
+    margin: 0 auto;        /* centra horizontalmente */
+    display: block;        /* para que el margin funcione */
+    max-width: 300px;      /* ancho compacto */
+    text-align: center; 
+}
+
+@keyframes fade {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 
 </style>
 </head>
@@ -277,6 +311,20 @@
 <body>
 
 {% include 'madre/navbar_madre.html' %}
+
+<!-- Mensaje JS -->
+<!-- ALERTA DE ÉXITO  -->
+{% if messages %}
+    {% for message in messages %}
+        <div id="alerta-js"
+             class="{% if message.tags == 'success' %}alerta-exito{% else %}alerta-error{% endif %}"
+             style="display:none;">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+
 
 <div class="main-title1">Detalle de Planeación</div>
 
@@ -353,6 +401,23 @@
 <div style="text-align:center;">
     <a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-volver">Volver</a>
 </div>
+
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const alerta = document.getElementById("alerta-js");
+    if (alerta) {
+        alerta.style.display = "block";
+
+        setTimeout(() => {
+            alerta.style.opacity = "0";
+            setTimeout(() => alerta.style.display = "none", 500);
+        }, 3000);
+    }
+});
+</script>
 
 </body>
 </html>
