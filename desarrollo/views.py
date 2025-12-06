@@ -916,7 +916,19 @@ def eliminar_seguimientos_lote(request):
     nino_id = request.POST.get('nino_id')
     redirect_url = reverse('desarrollo:listar_seguimientos')
     return redirect(f'{redirect_url}?nino={nino_id}' if nino_id else redirect_url)
+@login_required
+def generar_pdf_seguimiento(request, seguimiento_id):
+    seguimiento = get_object_or_404(SeguimientoDiario, id=seguimiento_id)
+    # Seguridad: solo la madre del hogar puede generar el PDF
+    if seguimiento.nino.hogar.madre.usuario != request.user:
+        messages.error(request, "No tienes permiso para generar este PDF.")
+        return redirect('desarrollo:listar_seguimientos')
 
+    # Redirige al PDF de reporte con los filtros para ese seguimiento
+    url = reverse('desarrollo:generar_reporte_pdf', args=[seguimiento.nino.id])
+    # Solo ese día, solo tipo seguimiento
+    url += f'?tipo_reporte=seguimiento&fecha_inicio={seguimiento.fecha.strftime("%Y-%m-%d")}&fecha_fin={seguimiento.fecha.strftime("%Y-%m-%d")}'
+    return redirect(url)
 
 @login_required
 def registrar_desarrollo(request):

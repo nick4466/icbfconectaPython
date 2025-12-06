@@ -29,4 +29,5 @@ urlpatterns = [
     path('seguimiento/editar/<int:id>/', views.editar_seguimiento_diario, name='editar_seguimiento'),
     path('seguimiento/eliminar/<int:id>/', views.eliminar_seguimiento, name='eliminar_seguimiento'),
     path('seguimiento/eliminar-lote/', views.eliminar_seguimientos_lote, name='eliminar_seguimientos_lote'),
+    path('seguimiento/<int:seguimiento_id>/pdf/', views.generar_pdf_seguimiento, name='pdf_seguimiento'),
 ]
