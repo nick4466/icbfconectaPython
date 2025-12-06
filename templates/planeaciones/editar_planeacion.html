@@ -72,13 +72,34 @@
     .btn-volver { background-color:#f3c1e5; color:#5e3370; padding:12px 25px; border-radius:8px; text-decoration:none; font-weight:bold; }
     .btn-volver:hover { background-color:#e8a9d6; }
     .alert { width:80%; margin:10px auto; padding:10px; border-radius:8px; text-align:center; font-weight:bold; background:#ffdddd; color:#cc0000; }
+     /* Mensaje alerta centrado */
+    .alerta-js {
+        padding: 12px 20px;
+        margin: 20px auto;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: bold;
+        max-width: 350px;
+        font-size: 15px;
+        display: none;
+        animation: fade 0.3s ease-in-out;
+    }
+
+    .alerta-error { background-color: #ffdddd; border-left: 4px solid #e60000; color: #a30000; }
+    .alerta-exito { background-color: #ddffdd; border-left: 4px solid #00a300; color: #006600; }
+
+    @keyframes fade {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
 </style>
 </head>
 <body>
 {% include 'madre/navbar_madre.html' %}
 
 <div class="main-title">Editar Planeación</div>
-
+<div id="alerta-js" class="alerta-js"></div>
 <form method="POST" enctype="multipart/form-data">
 {% csrf_token %}
 <div class="contenedor">
@@ -148,6 +169,34 @@
 </div>
 
 </form>
+
+<script>
+document.getElementById('seleccionar-todas').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('input[name="dimensiones"]');
+    checkboxes.forEach(cb => cb.checked = true);
+});
+
+// Mensaje de éxito / error centrado
+document.addEventListener("DOMContentLoaded", function() {
+    const mensajeError = "{{ mensaje_error|default:''|escapejs }}";
+    const mensajeExito = "{{ mensaje_exito|default:''|escapejs }}";
+    const alerta = document.getElementById("alerta-js");
+
+    if (mensajeError) {
+        alerta.innerText = mensajeError;
+        alerta.classList.add("alerta-error");
+        alerta.style.display = "block";
+    } else if (mensajeExito) {
+        alerta.innerText = mensajeExito;
+        alerta.classList.add("alerta-exito");
+        alerta.style.display = "block";
+    }
+
+    if (mensajeError || mensajeExito) {
+        setTimeout(() => alerta.style.display = "none", 3000);
+    }
+});
+</script>
 </body>
 <script>
     document.getElementById('seleccionar-todas').addEventListener('click', function() {

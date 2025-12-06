@@ -9,7 +9,8 @@ from django.contrib import messages
 from reportlab.pdfgen import canvas
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-
+from django.contrib.auth.decorators import login_required
+from datetime import datetime
 
 
 #Holaaaaa amiguitos de youtu :D
@@ -47,46 +48,66 @@ def lista_planeaciones(request):
 
  
 
-@login_required
 def registrar_planeacion(request):
+    mensaje_error = None
+
     if request.method == 'POST':
         form = PlaneacionForm(request.POST, request.FILES)
+
         if form.is_valid():
             planeacion = form.save(commit=False)
             planeacion.madre = request.user
+            fecha = planeacion.fecha
 
-           # Validación: impedir 2 planeaciones el mismo día
-            if Planeacion.objects.filter(madre=request.user, fecha=planeacion.fecha).exists():
-                messages.error(request, "❌ Ya existe una planeación registrada para esta fecha.")
-                return redirect('planeaciones:registrar_planeacion')
+            # Validación: fines de semana
+            if fecha.weekday() in (5, 6):
+                mensaje_error = "❌ No puedes registrar planeaciones los fines de semana."
+                return render(request, "planeaciones/registrar_planeacion.html", {
+                    "form": form,
+                    "mensaje_error": mensaje_error
+                })
 
+            # Validación: fecha duplicada
+            if Planeacion.objects.filter(madre=request.user, fecha=fecha).exists():
+                mensaje_error = "❌ Ya existe una planeación registrada para esta fecha."
+                return render(request, "planeaciones/registrar_planeacion.html", {
+                    "form": form,
+                    "mensaje_error": mensaje_error
+                })
+
+            # Guardar planeación y documentación
             planeacion.save()
             form.save_m2m()
-
-            # Guardar múltiples imágenes
             for f in request.FILES.getlist('imagenes'):
                 Documentacion.objects.create(planeacion=planeacion, imagen=f)
 
-            messages.success(request, '✅ Planeación registrada exitosamente.')
-            return redirect('planeaciones:lista_planeaciones')
+            # ✅ Mensaje de éxito
+            messages.success(request, "Planeación registrada exitosamente")
+
+            # Redirige a lista → JS mostrará el mensaje
+            return redirect("planeaciones:lista_planeaciones")
+
         else:
-            messages.error(request, '❌ Error al registrar la planeación.')
+            mensaje_error = "❌ Error general en el formulario."
+
     else:
         form = PlaneacionForm()
 
-    return render(request, 'planeaciones/registrar_planeacion.html', {'form': form})
-
+    return render(request, "planeaciones/registrar_planeacion.html", {
+        "form": form,
+        "mensaje_error": mensaje_error
+    })
 
 @login_required
 def editar_planeacion(request, id):
     planeacion = get_object_or_404(Planeacion, pk=id)
     documentos = Documentacion.objects.filter(planeacion=planeacion)
+    mensaje_error = None
 
-    form = PlaneacionForm(request.POST or None, request.FILES or None, instance=planeacion)
     if request.method == 'POST':
         form = PlaneacionForm(request.POST, request.FILES, instance=planeacion)
 
-        # Si el usuario marcó imágenes para eliminar
+        # Eliminar imágenes marcadas
         eliminar_ids = request.POST.getlist('eliminar_documentos')
         for doc_id in eliminar_ids:
             doc = Documentacion.objects.filter(id=doc_id, planeacion=planeacion).first()
@@ -95,25 +116,44 @@ def editar_planeacion(request, id):
                 doc.delete()
 
         if form.is_valid():
-            planeacion = form.save(commit=False)  # importante para save_m2m
-            planeacion.save()
-            form.save_m2m()
+            planeacion_temp = form.save(commit=False)
 
-            # Si subió nuevas imágenes
-            for f in request.FILES.getlist('imagenes'):
-                Documentacion.objects.create(planeacion=planeacion, imagen=f)
+            # Bloquear fines de semana
+            fecha = planeacion_temp.fecha
+            if fecha.weekday() in (5, 6):
+                mensaje_error = "❌ No puedes registrar planeaciones los fines de semana."
+            else:
+                # Bloquear duplicados
+                existe_otra = Planeacion.objects.filter(
+                    madre=request.user,
+                    fecha=fecha
+                ).exclude(id=planeacion.id).exists()
+                if existe_otra:
+                    mensaje_error = "❌ Ya existe una planeación registrada para esta fecha."
+                else:
+                    # Guardar cambios
+                    planeacion_temp.madre = request.user
+                    planeacion_temp.save()
+                    form.save_m2m()
 
-            messages.success(request, 'Planeación actualizada correctamente.')
-            return redirect('planeaciones:detalle_planeacion', id=planeacion.id)
+                    # Subir nuevas imágenes
+                    for f in request.FILES.getlist('imagenes'):
+                        Documentacion.objects.create(planeacion=planeacion_temp, imagen=f)
+
+                    # Mensaje de éxito y redirección
+                    messages.success(request, "✅ Planeación actualizada correctamente.")
+                    return redirect('planeaciones:detalle_planeacion', id=planeacion_temp.id)
         else:
-            messages.error(request, 'Ocurrió un error al actualizar la planeación.')
+            mensaje_error = "❌ Ocurrió un error al actualizar la planeación."
+
     else:
         form = PlaneacionForm(instance=planeacion)
 
     return render(request, 'planeaciones/editar_planeacion.html', {
         'form': form,
         'planeacion': planeacion,
-        'documentos': documentos
+        'documentos': documentos,
+        'mensaje_error': mensaje_error
     })
 
 @login_required
