@@ -22,6 +22,7 @@ from django.views.decorators.http import require_POST
 import re
 from django.utils.html import strip_tags
 from pathlib import Path
+import json
 
 
 # -----------------------------------------------------------------
@@ -150,19 +151,15 @@ def listar_desarrollos(request):
             fecha__year=desarrollo.fecha_fin_mes.year,
             fecha__month=desarrollo.fecha_fin_mes.month
         ).order_by('fecha')
-        if novedades_qs.exists():
-            novedades_html = []
-            for novedad in novedades_qs:
-                tipo = novedad.get_tipo_display() if hasattr(novedad, 'get_tipo_display') else novedad.tipo
-                # fecha = novedad.fecha.strftime('%d/%m/%Y')  # Eliminamos la fecha
-                descripcion = novedad.descripcion or ''
-                url = reverse('novedades:novedades_detail', args=[novedad.id])
-                novedades_html.append(
-                    f'<div style="margin-bottom:8px;"><b>{tipo}</b>: {descripcion} <a href="{url}" target="_blank" style="color:#5dade2;">Ver detalle</a></div>'
-                )
-            desarrollo.novedades_mes = "".join(novedades_html)
-        else:
-            desarrollo.novedades_mes = ""
+        # --- NUEVO: Generar lista JSON para el modal y la vista previa ---
+        novedades_json = []
+        for novedad in novedades_qs:
+            novedades_json.append({
+                'id': novedad.id,
+                'tipo': novedad.get_tipo_display() if hasattr(novedad, 'get_tipo_display') else novedad.tipo,
+                'descripcion': novedad.descripcion or ''
+            })
+        desarrollo.novedades_mes = json.dumps(novedades_json, ensure_ascii=False)
         desarrollos_list.append(desarrollo)
 
     # --- Paginación ---
