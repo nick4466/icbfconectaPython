@@ -904,7 +904,7 @@ def _setup_excel_report_header(ws, title, record_count, num_columns):
     fecha_label.font = info_label_font
 
     ws.merge_cells(start_row=3, start_column=mid_point_col + 1, end_row=3, end_column=num_columns)
-    fecha_value = ws.cell(row=3, column=mid_point_col + 1, value=timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
+    fecha_value = ws.cell(row=3, column=mid_point_col + 1, value=timezone.now().strftime('%Y-%m-%d'))
     fecha_value.alignment = left_alignment
 
     # Aplicar borde a toda la fila 3
@@ -997,7 +997,7 @@ def reporte_administradores_excel(request):
 
     # Preparar la respuesta HTTP
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="reporte_administradores.xlsx"'
+    response['Content-Disposition'] = 'inline; filename="reporte_administradores.xlsx"'
     wb.save(response)
     return response
 
@@ -1069,7 +1069,7 @@ def reporte_madres_excel(request):
         ws.column_dimensions[column_letter].width = adjusted_width
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="reporte_madres_comunitarias.xlsx"'
+    response['Content-Disposition'] = 'inline; filename="reporte_madres_comunitarias.xlsx"'
     wb.save(response)
     return response
 
@@ -1149,10 +1149,118 @@ def reporte_hogares_excel(request):
         ws.column_dimensions[column_letter].width = adjusted_width
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="reporte_hogares_comunitarios.xlsx"'
+    response['Content-Disposition'] = 'inline; filename="reporte_hogares_comunitarios.xlsx"'
     wb.save(response)
     return response
+    
+@login_required
+@rol_requerido('administrador')
+def reporte_ninos_excel(request):
+    # Obtener filtros de la URL
+    hogar_nombre = request.GET.get('hogar', '')
+    regional_id = request.GET.get('regional', '')
+    madre_nombre = request.GET.get('madre', '')
+    estado_nino = request.GET.get('estado', '')
+    padre_nombre = request.GET.get('padre', '')
 
+    # Consulta base
+    ninos = Nino.objects.select_related(
+        'hogar', 'hogar__madre__usuario', 'hogar__regional', 'padre__usuario'
+    ).order_by('hogar__regional__nombre', 'hogar__nombre_hogar', 'apellidos')
+
+    # Aplicar filtros
+    if hogar_nombre:
+        ninos = ninos.filter(hogar__nombre_hogar__icontains=hogar_nombre)
+    if regional_id:
+        ninos = ninos.filter(hogar__regional_id=regional_id)
+    if madre_nombre:
+        ninos = ninos.filter(
+            Q(hogar__madre__usuario__nombres__icontains=madre_nombre) |
+            Q(hogar__madre__usuario__apellidos__icontains=madre_nombre)
+        )
+    if padre_nombre:
+        ninos = ninos.filter(
+            Q(padre__usuario__nombres__icontains=padre_nombre) |
+            Q(padre__usuario__apellidos__icontains=padre_nombre)
+        )
+    if estado_nino:
+        ninos = ninos.filter(estado=estado_nino)
+
+    # --- Encabezados y configuración inicial ---
+    headers = [
+        'Nombres', 'Apellidos', 'Fecha de Nacimiento', 'Edad (años)', 'Género',
+        'Hogar Comunitario', 'Madre Comunitaria', 'Regional', 'Acudiente', 'Correo del Acudiente'
+    ]
+    num_columns = len(headers)
+
+    # --- Crear libro de Excel ---
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Niños Registrados'
+
+    # --- Generar encabezado del reporte ---
+    start_row = _setup_excel_report_header(ws, "Reporte de Niños", ninos.count(), num_columns)
+
+    # --- ESTILOS PARA LA TABLA DE DATOS ---
+    header_font = Font(name='Poppins', bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='004080', end_color='004080', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center')
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+    # --- Escribir encabezados de la tabla de datos ---
+    for col_num, header_title in enumerate(headers, 1):
+        cell = ws.cell(row=start_row, column=col_num, value=header_title)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    ws.row_dimensions[start_row].height = 25
+
+    # --- Llenar datos ---
+    from datetime import date
+    hoy = date.today()
+    for nino in ninos:
+        start_row += 1
+        # --- CÁLCULO DE EDAD ---
+        edad = (hoy.year - nino.fecha_nacimiento.year - ((hoy.month, hoy.day) < (nino.fecha_nacimiento.month, nino.fecha_nacimiento.day))) if nino.fecha_nacimiento else 'N/A'        
+
+        # --- OBTENCIÓN DE NOMBRES RELACIONADOS (CORRECCIÓN FINAL) ---
+        # Se concatena nombres y apellidos directamente, como se hace en otros reportes funcionales.
+        madre_comunitaria_nombre = 'N/A'
+        if nino.hogar and nino.hogar.madre and nino.hogar.madre.usuario:
+            madre_comunitaria_nombre = f"{nino.hogar.madre.usuario.nombres} {nino.hogar.madre.usuario.apellidos}"
+
+        acudiente_nombre = 'N/A'
+        acudiente_correo = 'N/A'
+        if nino.padre and nino.padre.usuario:
+            acudiente_nombre = f"{nino.padre.usuario.nombres} {nino.padre.usuario.apellidos}"
+            acudiente_correo = nino.padre.usuario.correo
+
+        row_data = [
+            nino.nombres, nino.apellidos, nino.fecha_nacimiento, edad, nino.get_genero_display(),
+            nino.hogar.nombre_hogar if nino.hogar else 'N/A', madre_comunitaria_nombre, nino.hogar.regional.nombre if nino.hogar and nino.hogar.regional else 'N/A',
+            acudiente_nombre, acudiente_correo
+        ]
+        for col_num, cell_value in enumerate(row_data, 1):
+            ws.cell(row=start_row, column=col_num, value=cell_value)
+
+    # --- AJUSTAR ANCHO DE COLUMNAS Y BORDES ---
+    for col_num, header_title in enumerate(headers, 1):
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(col_num)
+        for cell in ws[column_letter]:
+            cell.border = thin_border
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 4)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'inline; filename="reporte_ninos.xlsx"'
+    wb.save(response)
+    return response
 @login_required
 def eliminar_administrador(request, id):
     Usuario.objects.filter(id=id).delete()

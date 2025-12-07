@@ -72,6 +72,31 @@
 
     nav ul li a:hover, nav ul li button:hover { background-color: #f3c1e5; }
 
+    /* ======================== */
+    /*     ESTILOS RESPONSIVE   */
+    /* ======================== */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+      }
+
+      nav ul {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .dashboard-container {
+        padding: 20px;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+    }
     /* CONTENEDOR CALENDARIO */
     .calendar-container {
       max-width: 950px;

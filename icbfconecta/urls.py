@@ -98,7 +98,8 @@ urlpatterns = [
     path('reportes/administradores/excel/', views.reporte_administradores_excel, name='reporte_administradores_excel'),
     path('reportes/madres/excel/', views.reporte_madres_excel, name='reporte_madres_excel'),
     path('reportes/hogares/excel/', views.reporte_hogares_excel, name='reporte_hogares_excel'),
-
+     path('reportes/ninos/excel/', views.reporte_ninos_excel, name='reporte_ninos_excel'),
+     
     # --- CRUD Administradores ---
     path('administradores/', views.listar_administradores, name='listar_administradores'),
     path('administradores/crear/', views.crear_administrador, name='crear_administrador'),

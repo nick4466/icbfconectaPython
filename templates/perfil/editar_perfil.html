@@ -79,14 +79,9 @@
     .padre-body .main-header nav a:hover, .padre-body .main-header nav button:hover { background: #E3F2FD; }
     .padre-body .dropdown-content a { color: #E57373; }
     .padre-body .dropdown-content a:hover { background: #FFEBEE; }
-
-    .borde2 {
-      text-align: center;
-      background-color: rgba(155, 89, 182, 0.9);
-      padding: 12px 0;
-      font-size: 26px;
-      letter-spacing: 1px;
-    }
+    
+    /* FIX: Se eliminan los estilos de borde2 genéricos para usar los del padre */
+    /* .borde2 { ... } */
     .padre-body .borde2 { background-color: #4DB6FF; padding: 10px 0; font-size: 22px; border-bottom: 3px solid #FFEE58; box-shadow: 0 4px 10px rgba(0,0,0,0.12); }
 
     /* --- ESTILOS CONTENIDO PRINCIPAL --- */
@@ -96,11 +91,10 @@
     .main header h1.madre-padre-title { color: #7a3eb1; text-align: center; }
     .padre-body .main header h1 { color: #4DB6FF; }
 
-    .content-container { 
-      background-color: white; border-radius: 16px; padding: 40px; 
-      box-shadow: 0 6px 16px rgba(0,0,0,0.08); max-width: 800px; margin: auto; 
-    }
+    /* FIX: Se elimina el estilo genérico de content-container */
+    /* .content-container { ... } */
     .madre-padre-body .content-container { background-color: rgba(255, 255, 255, 0.95); }
+    /* FIX: Se asegura que el contenedor principal use los mismos estilos que el dashboard */
     .padre-body .content-container {
       background: rgba(255,255,255,0.97); border-radius: 24px;
       border: 3px solid #81C784; box-shadow: 0 8px 25px rgba(0,0,0,0.15);
@@ -148,6 +142,23 @@
     .messages li.error { background-color: #dc3545; }
 
     /* --- ESTILOS RESPONSIVOS --- */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+      }
+
+      nav ul {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .content-container {
+        padding: 20px;
+      }
+    }
+
     @media (max-width: 992px) {
       .admin-body {
         flex-direction: column;
@@ -191,7 +202,7 @@
     {% include 'padre/navbar_padre.html' %}
   {% elif user.rol.nombre_rol == 'administrador' %}
     <!-- === SIDEBAR PARA ADMINISTRADOR === -->
-    <div class="sidebar">
+    <aside class="sidebar">
       <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
       <h2>ICBF Conecta</h2>
         <a href="{% url 'admin_dashboard' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
@@ -208,7 +219,7 @@
           </button>
         </form>
       </div>
-    </div>
+    </aside>
   {% elif user.rol.nombre_rol == 'madre_comunitaria' %}
     {% include 'madre/navbar_madre.html' %}
   {% else %}

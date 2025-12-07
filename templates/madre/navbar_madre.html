@@ -1,7 +1,8 @@
 {% load static %}
 <!-- Navbar Unificada para Madre Comunitaria -->
+<!-- FIX: Añadida la referencia a Font Awesome para que los íconos sean visibles -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="{% static 'css/navbar_madre.css' %}">
-
 <header class="navbar-madre">
     <div class="header-left">
         <a href="{% url 'madre_dashboard' %}" class="logo-link">
@@ -9,6 +10,11 @@
             <h1>ICBF Conecta</h1>
         </a>
     </div>
+
+    <!-- Botón de hamburguesa para móvil, se muestra con CSS -->
+    <button class="navbar-toggle" aria-label="Abrir menú">
+        <i class="fas fa-bars"></i>
+    </button>
 
     <nav class="navbar-menu">
         <ul>
@@ -19,7 +25,6 @@
             <li><a href="{% url 'novedades:novedades_list' %}" class="btn-novedades"><i class="fas fa-exclamation-circle"></i> Novedades</a></li>
             <li><a href="{% url 'correos:enviar' %}" class="btn-correos"><i class="fas fa-envelope"></i> Enviar Correos</a></li>
             <li><a href="{% url 'gestion_ninos' %}" class="btn-gestion"><i class="fas fa-users"></i> Gestión de Niños</a></li>
-
         </ul>
     </nav>
 
@@ -128,6 +133,126 @@
 </header>
 
 <style>
+    /* FIX: Asegurar que el header principal sea flexible para alinear el botón de hamburguesa */
+    .navbar-madre {
+        display: flex;
+        justify-content: space-between; /* Alinea los grupos de elementos a los extremos */
+        align-items: center;
+        position: relative; /* Necesario para el menú desplegable */
+    }
+
+    /* Estilos para hacer la barra de navegación responsive */
+    @media (max-width: 1024px) {
+        .navbar-menu {
+            display: none; /* Ocultar el menú por defecto en pantallas pequeñas */
+            position: absolute;
+            top: 100%; /* Posicionarlo debajo del header */
+            left: 0;
+            width: 100%;
+            background-color: white; /* Fondo del menú desplegado */
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            flex-direction: column;
+            align-items: stretch;
+            padding: 10px 0;
+        }
+
+        .navbar-menu.active {
+            display: flex; /* Mostrar el menú cuando tiene la clase 'active' */
+        }
+
+        .navbar-menu ul {
+            flex-direction: column;
+            width: 100%;
+            gap: 0;
+        }
+
+        .navbar-menu ul li {
+            width: 100%;
+            text-align: center;
+        }
+
+        .navbar-menu ul li a {
+            padding: 15px 20px;
+            border-radius: 0;
+            width: 100%;
+            display: block;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: white; /* Color del texto en el menú desplegado */
+        }
+
+        .navbar-menu ul li a:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* BOTÓN HAMBURGUESA — estilo elegante neutral */
+.navbar-toggle {
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease-in-out !important;
+}
+        .navbar-toggle {
+            display: block; /* Mostrar el botón de hamburguesa */
+            background: none;
+            border: none;
+            color: white;
+            font-size: 22px; /* Ligeramente más pequeño para un mejor ajuste */
+            cursor: pointer;
+            padding: 8px 12px; /* Padding consistente con otros botones */
+            margin-right: 15px;
+            border-radius: 8px; /* Bordes redondeados */
+            transition: background-color 0.3s; /* Transición suave */
+        }
+
+/* Icono */
+.navbar-toggle i {
+    font-size: 20px;
+    color: #333; /* gris oscuro, combina con cualquier navbar */
+    transition: color 0.2s ease;
+}
+        .navbar-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.15); /* Efecto hover */
+        }
+
+/* Hover */
+.navbar-toggle:hover {
+    background: rgba(255, 255, 255, 1) !important;
+    transform: scale(1.05);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25) !important;
+}
+
+.navbar-toggle:hover i {
+    color: #222;
+}
+
+/* En pantallas grandes se oculta */
+@media (min-width: 1025px) {
+    .navbar-toggle {
+        display: none;
+    }
+}
+
+
+
+
+        .navbar-user-name {
+            display: none; /* Ocultar el nombre en pantallas pequeñas para más espacio */
+        }
+    }
+
+    @media (min-width: 1025px) {
+        .navbar-toggle {
+            display: none; /* Ocultar el botón de hamburguesa en pantallas grandes */
+        }
+    }
+
+
     
 /* Estilos para notificaciones */
 .notifications-menu-dropdown {
@@ -351,7 +476,17 @@ function irASolicitud(solicitudId, notificationId) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('input-foto-perfil');
+    const toggleButton = document.querySelector('.navbar-toggle');
+    const navbarMenu = document.querySelector('.navbar-menu');
+
+    // La lógica del toggle ya está en el script, solo la muevo aquí para agruparla
+    if (toggleButton && navbarMenu) { // Asegurarse de que los elementos existen
+      toggleButton.addEventListener('click', function() {
+        navbarMenu.classList.toggle('active');
+      });
+    }
+
+    const fileInput = document.getElementById('input-foto-perfil'); // Mover la declaración aquí
     const form = document.getElementById('form-foto-perfil');
     const profileImage = document.getElementById('img-foto-perfil');
 

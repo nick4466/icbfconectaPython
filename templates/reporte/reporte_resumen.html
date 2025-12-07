@@ -97,7 +97,6 @@
       width: 100%;
       border-collapse: collapse;
       background: #fff;
-      border-radius: 10px;
       overflow: hidden;
       margin-bottom: 30px;
     }
@@ -182,6 +181,17 @@
     @media (max-width: 900px) {
       .filter-card { flex-direction: column; gap: 10px; }
     }
+
+    .table-responsive-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(155,89,182,0.07);
+    }
+    .table-responsive-wrapper .summary-table {
+      margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
@@ -250,44 +260,46 @@
     <!-- SEGUIMIENTO DIARIO -->
     {% if not request.GET.tipo_reporte or request.GET.tipo_reporte == 'ambos' or request.GET.tipo_reporte == 'seguimiento' %}
     <div class="section-title" id="seguimiento-diario"><i class="fas fa-star"></i> Seguimiento Diario</div>
-    <table class="summary-table">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Planeación</th>
-          <th>Comportamiento</th>
-          <th>Estado Emocional</th>
-          <th>Valoración</th>
-          <th>Observaciones</th>
-          <th>Evaluación Dimensiones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for seguimiento in seguimientos %}
-        <tr>
-          <td>{{ seguimiento.fecha|date:"Y-m-d" }}</td>
-          <td>{{ seguimiento.planeacion.nombre_experiencia|default:"N/A" }}</td>
-          <td>{{ seguimiento.get_comportamiento_general_display }}</td>
-          <td>{{ seguimiento.get_estado_emocional_display }}</td>
-          <td>
-            {% for i in "12345" %}{% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span style="color:#ddd;">★</span>{% endif %}{% endfor %}
-          </td>
-          <td>{{ seguimiento.observaciones|default:"-" }}</td>
-          <td>
-            {% for eval in seguimiento.evaluaciones_dimension.all %}
-              <p style="margin: 2px 0; font-size: 13px;"><b>{{ eval.dimension.nombre }}:</b> {{ eval.get_desempeno_display }}</p>
-            {% empty %}
-              Sin evaluación.
-            {% endfor %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr class="empty-row">
-          <td colspan="5">No hay seguimientos diarios registrados.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive-wrapper">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Planeación</th>
+            <th>Comportamiento</th>
+            <th>Estado Emocional</th>
+            <th>Valoración</th>
+            <th>Observaciones</th>
+            <th>Evaluación Dimensiones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for seguimiento in seguimientos %}
+          <tr>
+            <td>{{ seguimiento.fecha|date:"Y-m-d" }}</td>
+            <td>{{ seguimiento.planeacion.nombre_experiencia|default:"N/A" }}</td>
+            <td>{{ seguimiento.get_comportamiento_general_display }}</td>
+            <td>{{ seguimiento.get_estado_emocional_display }}</td>
+            <td>
+              {% for i in "12345" %}{% if forloop.counter <= seguimiento.valoracion %}★{% else %}<span style="color:#ddd;">★</span>{% endif %}{% endfor %}
+            </td>
+            <td>{{ seguimiento.observaciones|default:"-" }}</td>
+            <td>
+              {% for eval in seguimiento.evaluaciones_dimension.all %}
+                <p style="margin: 2px 0; font-size: 13px;"><b>{{ eval.dimension.nombre }}:</b> {{ eval.get_desempeno_display }}</p>
+              {% empty %}
+                Sin evaluación.
+              {% endfor %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row">
+            <td colspan="7">No hay seguimientos diarios registrados.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% endif %}
 
     <!-- NOVEDADES -->
@@ -351,4 +363,5 @@
     {% endif %}
   </div>
 </body>
+</html>
 </html>
