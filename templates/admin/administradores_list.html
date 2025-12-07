@@ -129,6 +129,44 @@
     .pagination .disabled { color: #ccc; border-color: #ddd; }
     /* --- FIN ESTILOS DE PAGINACIÓN --- */
 
+    /* --- ESTILOS RESPONSIVOS --- */
+    @media (max-width: 992px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .sidebar h2, .sidebar img {
+        display: none; /* Ocultar elementos no esenciales */
+      }
+      .sidebar a {
+        border-left: none;
+        border-bottom: 4px solid transparent;
+      }
+      .sidebar a:hover, .sidebar a.active {
+        border-left: none;
+        border-bottom: 4px solid #ffffff;
+      }
+      .main {
+        padding: 20px;
+      }
+      .top-bar, .filtros-form, .filtros-form .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .tabla-wrapper {
+        overflow-x: auto; /* Permite el desplazamiento horizontal de la tabla */
+      }
+      .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -196,7 +234,7 @@
         </div>
       </div>
 
-      <table>
+      <div class="tabla-wrapper"><table>
         <thead>
           <tr>
             <th>Foto</th>
@@ -232,7 +270,7 @@
           </tr>
           {% endfor %}
         </tbody>
-      </table>
+      </table></div>
 
       <!-- Controles de Paginación -->
       <div class="pagination">

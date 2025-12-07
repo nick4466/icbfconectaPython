@@ -65,6 +65,37 @@
     .messages li.success { background-color: #28a745; }
     .messages li.error { background-color: #dc3545; }
     .close-message { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+
+    /* --- ESTILOS RESPONSIVOS --- */
+    @media (max-width: 992px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .sidebar h2, .sidebar img {
+        display: none; /* Ocultar elementos no esenciales */
+      }
+      .sidebar a {
+        border-left: none;
+        border-bottom: 4px solid transparent;
+      }
+      .sidebar a:hover, .sidebar a.active {
+        border-left: none;
+        border-bottom: 4px solid #ffffff;
+      }
+      .main {
+        padding: 20px;
+      }
+      .form-actions {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>

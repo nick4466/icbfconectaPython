@@ -174,8 +174,19 @@
 
     /* Responsive */
     @media (max-width: 800px) {
+      body {
+        flex-direction: column;
+      }
       .sidebar {
-        display: none;
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 10px 0;
+      }
+      .sidebar h2, .sidebar img {
+        display: none; /* Ocultamos elementos no esenciales */
       }
       .main {
         padding: 20px;

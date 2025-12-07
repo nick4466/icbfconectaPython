@@ -124,6 +124,50 @@
     .pagination .current { background-color: #007bff; color: white; border-color: #007bff; }
     .pagination .disabled { color: #ccc; border-color: #ddd; }
     /* --- FIN ESTILOS DE PAGINACIÓN --- */
+
+    /* --- ESTILOS RESPONSIVOS --- */
+    @media (max-width: 992px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .sidebar h2, .sidebar img {
+        display: none; /* Ocultar elementos no esenciales en la barra de navegación móvil */
+      }
+      .sidebar a {
+        border-left: none;
+        border-bottom: 4px solid transparent;
+      }
+      .sidebar a:hover, .sidebar a.active {
+        border-left: none;
+        border-bottom: 4px solid #ffffff;
+      }
+      .main {
+        padding: 20px;
+      }
+      .top-bar, .filtros-form, .filtros-form .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .filtros-form .btn-filtro {
+        width: 100%;
+        text-align: center;
+      }
+      .tabla-wrapper {
+        overflow-x: auto; /* Permite el desplazamiento horizontal de la tabla */
+      }
+      .pagination {
+        flex-wrap: wrap; /* Permite que los elementos de la paginación se envuelvan */
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -192,7 +236,7 @@
         <!-- No hay botón de crear, pero la estructura se mantiene -->
       </div>
 
-      <table>
+      <div class="tabla-wrapper"><table>
         <thead>
           <tr>
             <th>Nombre del Hogar</th>
@@ -226,7 +270,7 @@
           </tr>
           {% endfor %}
         </tbody>
-      </table>
+      </table></div>
 
       <!-- Controles de Paginación -->
       <div class="pagination">

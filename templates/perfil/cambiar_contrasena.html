@@ -132,6 +132,38 @@
     .madre-padre-body .password-wrapper i:hover { color: #9B59B6; }
 
     .padre-body .password-wrapper i:hover { color: #4DB6FF; }
+
+    /* --- ESTILOS RESPONSIVOS --- */
+    @media (max-width: 992px) {
+      .admin-body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .sidebar h2, .sidebar img {
+        display: none; /* Ocultar elementos no esenciales */
+      }
+      .sidebar a {
+        border-left: none;
+        border-bottom: 4px solid transparent;
+      }
+      .sidebar a:hover, .sidebar a.active {
+        border-left: none;
+        border-bottom: 4px solid #ffffff;
+      }
+      .main {
+        padding: 20px;
+      }
+      .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
   </style>
 </head>
 <body class="{% if user.rol.nombre_rol == 'administrador' %}admin-body

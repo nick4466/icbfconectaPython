@@ -14,11 +14,12 @@
         <ul>
             <li><a href="{% url 'madre_dashboard' %}" class="btn-inicio" title="Inicio"><i class="fas fa-home"></i></a></li>
             <li><a href="{% url 'listar_ninos' %}" class="btn-matriculas"><i class="fas fa-user-graduate"></i> Matrículas</a></li>
-            <li><a href="{% url 'gestion_ninos' %}" class="btn-gestion"><i class="fas fa-users"></i> Gestión de Niños</a></li>
-            <li><a href="{% url 'asistencia_form' %}" class="btn-asistencia"><i class="fas fa-clipboard-list"></i> Llamar a Lista</a></li>
             <li><a href="{% url 'planeaciones:lista_planeaciones' %}" class="btn-planeaciones"><i class="fas fa-calendar-alt"></i> Planeaciones</a></li>
+            <li><a href="{% url 'asistencia_form' %}" class="btn-asistencia"><i class="fas fa-clipboard-list"></i> Llamar a Lista</a></li>
             <li><a href="{% url 'novedades:novedades_list' %}" class="btn-novedades"><i class="fas fa-exclamation-circle"></i> Novedades</a></li>
             <li><a href="{% url 'correos:enviar' %}" class="btn-correos"><i class="fas fa-envelope"></i> Enviar Correos</a></li>
+            <li><a href="{% url 'gestion_ninos' %}" class="btn-gestion"><i class="fas fa-users"></i> Gestión de Niños</a></li>
+
         </ul>
     </nav>
 
@@ -127,6 +128,7 @@
 </header>
 
 <style>
+    
 /* Estilos para notificaciones */
 .notifications-menu-dropdown {
     position: relative;

@@ -13,16 +13,11 @@
       margin: 0;
       font-family: 'Roboto', sans-serif;
       background-color: #f5f7fa;
-
     }
 
-
-
-
     /* -----------------------------------------
-        NUEVO DISEÑO DE TARJETAS (MEJORADO)
+        CONTENEDOR PRINCIPAL
     ------------------------------------------ */
-
     .tabla-container {
       max-width: 1100px;
       margin: 40px auto;
@@ -38,6 +33,10 @@
       font-size: 32px;
       color: #7a3eb1;
     }
+
+    /* -----------------------------------------
+        TARJETAS DE NIÑOS
+    ------------------------------------------ */
 
     .lista-ninos {
       display: flex;
@@ -55,6 +54,7 @@
       justify-content: space-between;
       align-items: center;
       border: 1px solid #f2e6fb;
+      flex-wrap: wrap; /* mejora en pantallas pequeñas */
     }
 
     .item-nino:hover {
@@ -66,6 +66,8 @@
       display: flex;
       align-items: center;
       gap: 22px;
+      flex: 1;
+      min-width: 240px;
     }
 
     .avatar-lista {
@@ -79,6 +81,7 @@
       color: #9b59b6;
       font-size: 32px;
       box-shadow: inset 0 3px 6px rgba(0,0,0,0.08);
+      flex-shrink: 0;
     }
 
     .detalles-nino h3 {
@@ -98,6 +101,8 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 10px;
     }
 
     .btn-accion {
@@ -112,6 +117,7 @@
       justify-content: center;
       gap: 6px;
       transition: 0.25s ease;
+      white-space: nowrap;
     }
 
     .btn-accion:hover {
@@ -132,7 +138,7 @@
     }
 
     /* -----------------------------------------
-        PAGINACIÓN ORIGINAL (SIN CAMBIOS)
+        PAGINACIÓN
     ------------------------------------------ */
 
     .paginacion {
@@ -141,6 +147,7 @@
       justify-content: center;
       align-items: center;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
     .page-btn {
@@ -169,7 +176,81 @@
       font-weight: bold;
     }
 
-  </style>
+    /* -----------------------------------------
+        RESPONSIVIDAD
+    ------------------------------------------ */
+
+    /* Tablets */
+    @media (max-width: 900px) {
+      .tabla-container {
+        padding: 25px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .item-nino {
+        padding: 20px 22px;
+      }
+
+      .avatar-lista {
+        width: 60px;
+        height: 60px;
+        font-size: 26px;
+      }
+    }
+
+    /* Móviles grandes */
+    @media (max-width: 600px) {
+      .item-nino {
+        flex-direction: column;
+        text-align: center;
+        gap: 18px;
+      }
+
+      .info-nino {
+        flex-direction: column;
+      }
+
+      .avatar-lista {
+        width: 60px;
+        height: 60px;
+      }
+
+      .detalles-nino h3 {
+        font-size: 18px;
+      }
+
+      .documento {
+        font-size: 14px;
+      }
+
+      .btn-accion {
+        width: 100%;
+        padding: 12px;
+      }
+    }
+
+    /* Móviles muy pequeños */
+    @media (max-width: 400px) {
+      .avatar-lista {
+        width: 55px;
+        height: 55px;
+        font-size: 24px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .tabla-container {
+        padding: 18px;
+      }
+    }
+
+</style>
+
 </head>
 
 <body>
@@ -198,7 +279,7 @@
         <div class="acciones-lista">
           <a href="{% url 'desarrollo:listar_seguimientos' %}?nino={{ nino.id }}&from_page={{ ninos.number }}" class="btn-accion purple"><i class="fas fa-clipboard-check"></i> Seguimiento</a>
           <a href="{% url 'desarrollo:listar_desarrollos' %}?nino={{ nino.id }}&from_page={{ ninos.number }}" class="btn-accion blue"><i class="fas fa-chart-line"></i> Desarrollo</a>
-          <a href="{% url 'desarrollo:reporte_resumen' nino.id %}?from_page={{ ninos.number }}" class="btn-accion green"><i class="fas fa-file-alt"></i> Reporte</a>
+          <a href="{% url 'desarrollo:reporte_resumen' nino.id %}?from_page={{ ninos.number }}" class="btn-accion green"><i class="fas fa-file-alt"></i> Resumen&Reporte</a>
           
         </div>
 
