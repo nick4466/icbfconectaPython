@@ -1,0 +1,415 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICBF Conecta - Estadísticas de Asistencia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f3f6fa;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0050c8;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border-left: 4px solid #0654a6;
+    }
+
+    .stat-card.presente {
+      border-left-color: #28a745;
+      background: linear-gradient(135deg, #f8fff9, #ffffff);
+    }
+
+    .stat-card.ausente {
+      border-left-color: #dc3545;
+      background: linear-gradient(135deg, #fff8f8, #ffffff);
+    }
+
+    .stat-card.justificado {
+      border-left-color: #6f42c1;
+      background: linear-gradient(135deg, #faf8ff, #ffffff);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #0654a6;
+      margin-bottom: 8px;
+    }
+
+    .stat-card.presente .stat-value { color: #28a745; }
+    .stat-card.ausente .stat-value { color: #dc3545; }
+    .stat-card.justificado .stat-value { color: #6f42c1; }
+
+    .stat-percent {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .charts-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .chart-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .chart-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0654a6;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .table-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      overflow-x: auto;
+    }
+
+    .table-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0654a6;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table thead {
+      background: linear-gradient(90deg, #0056b3, #007bff);
+      color: white;
+    }
+
+    table th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    table td {
+      padding: 12px;
+      border-bottom: 1px solid #e6efff;
+      color: #333;
+      font-size: 14px;
+    }
+
+    table tbody tr:hover {
+      background: #f8f9ff;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: linear-gradient(90deg, #0654a6, #0877cc);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(6, 84, 166, 0.25);
+    }
+
+    .back-btn {
+      background: transparent;
+      color: #0654a6;
+      border: 1px solid #0654a6;
+      margin-bottom: 20px;
+    }
+
+    .back-btn:hover {
+      background: #eef6ff;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e6efff;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0654a6, #0877cc);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .charts-section { grid-template-columns: 1fr; }
+      .page-title { font-size: 22px; }
+      table { font-size: 12px; }
+      table th, table td { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  {% include 'madre/navbar_madre.html' %}
+
+  <div class="container">
+    <button onclick="history.back()" class="btn back-btn">
+      <i class="fas fa-arrow-left"></i> Volver
+    </button>
+
+    <div class="page-title">
+      <i class="fas fa-chart-bar"></i>
+      Estadísticas de Asistencia — {{ hogar.nombre_hogar }}
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:14px;margin-bottom:6px;">
+      <a href="{% url 'asistencia_estadisticas_pdf' %}" class="btn" style="background:linear-gradient(135deg,#0d6efd,#6610f2);">
+        <i class="fas fa-file-pdf"></i> Exportar PDF
+      </a>
+      <a href="{% url 'asistencia_form' %}" class="btn back-btn" style="background:transparent;color:#0654a6;border:1px solid #0654a6;">
+        <i class="fas fa-arrow-left"></i> Volver al Formulario
+      </a>
+    </div>
+
+    <!-- ÚLTIMOS 30 DÍAS -->
+    <h2 style="font-size:18px;color:#0654a6;margin:30px 0 20px;font-weight:700;">Últimos 30 Días</h2>
+    
+    <div class="stats-grid">
+      <div class="stat-card presente">
+        <div class="stat-label"><i class="fas fa-check-circle" style="color:#28a745;"></i> Presentes</div>
+        <div class="stat-value">{{ presentes_30 }}</div>
+        <div class="stat-percent">{{ porcentaje_presentes_30 }}% del total</div>
+      </div>
+
+      <div class="stat-card ausente">
+        <div class="stat-label"><i class="fas fa-times-circle" style="color:#dc3545;"></i> Ausentes</div>
+        <div class="stat-value">{{ ausentes_30 }}</div>
+        <div class="stat-percent">{{ porcentaje_ausentes_30 }}% del total</div>
+      </div>
+
+      <div class="stat-card justificado">
+        <div class="stat-label"><i class="fas fa-check-double" style="color:#6f42c1;"></i> Justificados</div>
+        <div class="stat-value">{{ justificados_30 }}</div>
+        <div class="stat-percent">{{ porcentaje_justificados_30 }}% del total</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-calendar-alt" style="color:#0654a6;"></i> Total Registros</div>
+        <div class="stat-value">{{ total_registros_30 }}</div>
+        <div class="stat-percent">registros totales</div>
+      </div>
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div class="charts-section">
+      <div class="chart-card">
+        <div class="chart-title">
+          <i class="fas fa-pie-chart"></i> Distribución de Asistencia (30 días)
+        </div>
+        <canvas id="pieChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">
+          <i class="fas fa-bar-chart"></i> Asistencia (Últimos 7 vs 30 días)
+        </div>
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+
+    <!-- TABLA DE NIÑOS -->
+    <div class="table-card">
+      <div class="table-title">
+        <i class="fas fa-users"></i> Asistencia por Niño (Últimos 30 Días)
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Niño</th>
+            <th>Presentes</th>
+            <th>Ausentes</th>
+            <th>Justificados</th>
+            <th>Total</th>
+            <th>Porcentaje</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for stats in estadisticas_nino %}
+            <tr>
+              <td><strong>{{ stats.nino.nombres }} {{ stats.nino.apellidos }}</strong></td>
+              <td><span style="color:#28a745;font-weight:600;">{{ stats.presentes }}</span></td>
+              <td><span style="color:#dc3545;font-weight:600;">{{ stats.ausentes }}</span></td>
+              <td><span style="color:#6f42c1;font-weight:600;">{{ stats.justificados }}</span></td>
+              <td>{{ stats.total }}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-weight:700;">{{ stats.porcentaje }}%</span>
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width:{{ stats.porcentaje }}%;"></div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <a href="{% url 'historial_asistencia' stats.nino.id %}" class="btn">
+                  <i class="fas fa-history"></i> Ver Historial
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" style="text-align:center;color:#999;">No hay datos de asistencia disponibles.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Gráfico de pastel
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    new Chart(pieCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Presentes', 'Ausentes', 'Justificados'],
+        datasets: [{
+          data: [{{ presentes_30 }}, {{ ausentes_30 }}, {{ justificados_30 }}],
+          backgroundColor: ['#28a745', '#dc3545', '#6f42c1'],
+          borderColor: ['#fff', '#fff', '#fff'],
+          borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 14, weight: '600' },
+              padding: 15,
+              usePointStyle: true,
+            },
+          },
+        },
+      },
+    });
+
+    // Gráfico de barras comparativo
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Presentes', 'Ausentes', 'Justificados'],
+        datasets: [
+          {
+            label: 'Últimos 7 días',
+            data: [{{ presentes_7 }}, {{ ausentes_7 }}, {{ justificados_7 }}],
+            backgroundColor: 'rgba(6, 84, 166, 0.6)',
+            borderColor: '#0654a6',
+            borderWidth: 1,
+            borderRadius: 6,
+          },
+          {
+            label: 'Últimos 30 días',
+            data: [{{ presentes_30 }}, {{ ausentes_30 }}, {{ justificados_30 }}],
+            backgroundColor: 'rgba(130, 204, 221, 0.6)',
+            borderColor: '#82ccdd',
+            borderWidth: 1,
+            borderRadius: 6,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { font: { size: 12, weight: '600' } },
+          },
+          x: {
+            ticks: { font: { size: 12, weight: '600' } },
+          },
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: { size: 13, weight: '600' },
+              padding: 15,
+              usePointStyle: true,
+            },
+          },
+        },
+      },
+    });
+  </script>
+</body>
+</html>

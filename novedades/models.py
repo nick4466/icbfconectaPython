@@ -52,5 +52,5 @@ class Novedad(models.Model):
         return reverse('novedades:detalle', args=[str(self.id)])
 
     def __str__(self):
-        return f"Novedad de {self.nino.nombre} - {self.fecha}"
+        return f"Novedad de {self.nino.nombres} {self.nino.apellidos} - {self.fecha}"
     

@@ -397,77 +397,166 @@ input[type="radio"]:checked + label {
 
 /* Fin del CSS */
 </style>
+  <style>
+  /* Estilos para selector de rango de fechas más elegante */
+  .date-range-container {
+    width:85%;
+    margin: 0 auto 18px;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    background: linear-gradient(180deg, #ffffff, #fbfdff);
+    padding:12px;
+    border-radius:12px;
+    box-shadow: 0 6px 18px rgba(12,36,80,0.06);
+    border: 1px solid rgba(0,70,160,0.06);
+  }
+
+  .date-box {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:180px;
+  }
+
+  .date-box label { font-weight:700; color:#06366a; font-size:13px; }
+
+  .date-box .date-input {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:#eef6ff;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid rgba(3,78,162,0.08);
+  }
+
+  .date-box input[type="date"] {
+    border: none;
+    background: transparent;
+    padding:6px 4px;
+    font-weight:600;
+    color:#003366;
+  }
+
+  .date-sep {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#6b7c93;
+    font-weight:700;
+    padding:6px 8px;
+    border-radius:8px;
+    background:transparent;
+    font-size:14px;
+  }
+
+  .date-note { color:#425065; font-size:13px; margin-left:auto; }
+
+  @media (max-width:880px) {
+    .date-range-container { width:100%; flex-direction:column; align-items:stretch; }
+    .date-note { margin-left:0; }
+  }
+  </style>
+  <style>
+  /* Compacto cuando no se usa rango */
+  .date-compact {
+    width:85%;
+    margin: 0 auto 18px;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:flex-start;
+  }
+
+  .range-toggle {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid rgba(6,84,166,0.12);
+    color: #0654a6;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:700;
+  }
+
+  .range-toggle:focus { outline: none; box-shadow: 0 6px 18px rgba(6,84,166,0.08); }
+  </style>
+  <style>
+  /* Modal mejorado */
+  .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(10,22,45,0.45); z-index: 9998; }
+  .modal.active { display:flex; }
+  .modal-content { width:92%; max-width:680px; border-radius:14px; overflow:hidden; box-shadow: 0 20px 50px rgba(2,6,23,0.5); background: linear-gradient(180deg,#ffffff,#fbfdff); }
+  .modal-header { display:flex; align-items:center; justify-content:space-between; padding:18px 20px; background: linear-gradient(90deg,#0654a6,#0877cc); color:white; }
+  .modal-header h2 { margin:0; font-size:18px; font-weight:800; letter-spacing:0.2px; }
+  .modal-close { background:rgba(255,255,255,0.12); border:none; color:white; font-size:20px; width:40px; height:40px; border-radius:10px; cursor:pointer; }
+  .modal-body { padding:20px; display:grid; gap:12px; grid-template-columns:1fr; }
+  .modal-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+  .form-group label { font-weight:700; color:#06366a; margin-bottom:6px; display:block; }
+  .form-group select, .form-group textarea, .form-group input[type="file"], .form-group input[type="text"] { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #d7e7fb; background:#f7fbff; }
+  .modal-footer { display:flex; gap:10px; justify-content:flex-end; padding:16px 20px; background:#fbfdff; }
+  .btn-just { background: linear-gradient(90deg,#17a2b8,#20c997); color:white; padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700; }
+  .btn-sin-justificar { background: transparent; color:#6b7c93; border:1px solid #e6efff; padding:10px 14px; border-radius:10px; cursor:pointer; }
+  .file-input-custom { display:flex; gap:10px; align-items:center; padding:10px; border-radius:8px; background:#eef6ff; border:1px dashed #cfe6ff; }
+  .file-input-custom input[type=file] { border:none; background:transparent; }
+  @media (max-width:520px) { .modal-content { max-width: 94%; } .modal-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
+  {% include 'madre/navbar_madre.html' %}
 
-  <!-- ========== HEADER ========== -->
-  <header class="mc-header">
-    <div class="mc-header-left">
-      <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF Conecta" class="mc-logo">
-      <h1 class="mc-title">ICBF Conecta</h1>
-    </div>
-
-    <nav class="mc-header-nav">
-      <ul>
-        <li><a href="{% url 'madre_dashboard' %}"><i class="fas fa-arrow-left"></i> Volver</a></li>
-        <li><a href="{% url 'novedades:novedades_list' %}"><i class="fas fa-exclamation-circle"></i> Reportar Novedad</a></li>
-      </ul>
-    </nav>
-
-    <div class="mc-header-right">
-      <!-- Notificaciones -->
-      <div class="notif-container">
-        <button id="notifToggle" class="notif-btn" aria-controls="notifPanel" aria-expanded="false" title="Notificaciones">
-          <i class="fas fa-bell"></i>
-          <span id="notifCount" class="notif-count">{{ notif_count }}</span>
-        </button>
-
-        <div id="notifPanel" class="notif-panel" role="region" aria-hidden="true">
-          <div class="notif-header">
-            <h4 style="margin:0;">Notificaciones</h4>
-            <button id="markAllRead" class="notif-mark-all" type="button">Marcar todo</button>
-          </div>
-
-          <div class="notif-list">
-            {% if notifications %}
-              {% for n in notifications %}
-                <div class="notif-item {% if not n.read %}unread{% endif %}">
-                  <p style="margin:0; font-weight:700;">{{ n.title }}</p>
-                  {% if n.message %}<p style="margin:6px 0 0 0; color:#444;">{{ n.message|truncatechars:80 }}</p>{% endif %}
-                  <div class="notif-footer">
-                    <small class="notif-date">{{ n.created_at|timesince }} atrás</small>
-                    {% if not n.read %}<span class="notif-dot" aria-hidden="true"></span>{% endif %}
-                  </div>
-                </div>
-              {% endfor %}
-            {% else %}
-              <p style="text-align:center; padding:12px; color:#666;">Sin notificaciones</p>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Logout -->
-      <form method="post" action="{% url 'logout' %}" id  ="logout-form" style="margin:0;">
-        {% csrf_token %}
-        <button type="submit" class="logout-btn" onclick="return confirmarLogout();"><i class="fas fa-sign-out-alt"></i></button>
-      </form>
-    </div>
-  </header>
+  
 
   <!-- ========== PAGE TITLE + CARD ========== -->
   <div class="main-title">ICBF - CONECTA | Llamado de Asistencia</div>
 
   <div class="card">
     {% if mensaje %}
-      <div style="background:#e6ffed;padding:12px;border-radius:8px;margin-bottom:12px;color:#155724;">{{ mensaje }}</div>
+      <div style="background:linear-gradient(135deg,#d4edda,#c3e6cb);border:1px solid #b1dfbb;padding:14px 16px;border-radius:10px;margin-bottom:16px;color:#155724;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(25,135,84,0.1);">
+        <i class="fas fa-check-circle" style="font-size:18px;color:#28a745;"></i>
+        <span>{{ mensaje }}</span>
+      </div>
     {% endif %}
 
     <form method="post" enctype="multipart/form-data" id="asistencia-form">
       {% csrf_token %}
-      <div style="margin-bottom:12px;">
-        <label for="fecha" style="font-weight:700;color:#7a3eb1;">Fecha:</label>
-        <input type="date" id="fecha" name="fecha" value="{{ fecha_hoy }}" required>
+      <!-- VISTA COMPACTA (por defecto) -->
+      <div class="date-compact" id="date-compact">
+        <div class="date-box">
+          <label for="fecha">Fecha</label>
+          <div class="date-input">
+            <i class="fas fa-calendar-alt" style="color:#0654a6"></i>
+            <input type="date" id="fecha" name="fecha" value="{{ fecha_hoy }}" required aria-label="Fecha inicio">
+          </div>
+        </div>
+        <button type="button" class="range-toggle" id="show-range">Usar rango</button>
+      </div>
+
+      <!-- VISTA RANGO (oculta por defecto) -->
+      <div class="date-range-container" id="date-range" style="display:none;">
+        <div class="date-box">
+          <label for="fecha">Fecha inicio</label>
+          <div class="date-input">
+            <i class="fas fa-calendar-alt" style="color:#0654a6"></i>
+            <input type="date" id="fecha-range-start" name="fecha" value="{{ fecha_hoy }}" required aria-label="Fecha inicio rango">
+          </div>
+        </div>
+
+        <div class="date-box">
+          <label for="end_date">Fecha fin <span style="font-weight:600;color:#6b7c93;font-size:12px;">(opcional)</span></label>
+          <div class="date-input">
+            <i class="fas fa-calendar-day" style="color:#0654a6"></i>
+            <input type="date" id="end_date" name="end_date" value="{{ end_date|default:'' }}" aria-label="Fecha fin">
+          </div>
+        </div>
+
+        <div class="date-sep">—</div>
+
+        <div class="date-note">
+          <strong>Nota:</strong> Si seleccionas una <em>Fecha fin</em>, la misma asistencia se aplicará a todo el rango.
+        </div>
+
+        <button type="button" class="range-toggle" id="hide-range">Cerrar rango</button>
       </div>
 <div style="margin-bottom:10px; text-align:center;">
   <button type="button" id="select-all" class="btn-presente">
@@ -509,9 +598,11 @@ input[type="radio"]:checked + label {
 
       <div style="margin-top:20px;">
         <button type="submit" class="btn-guardar">
-  <i class="fas fa-save"></i> Guardar Registro
-</button>
-
+          <i class="fas fa-save"></i> Guardar Registro
+        </button>
+        <a href="{% url 'asistencia_estadisticas' %}" style="margin-left:10px;" class="btn" style="padding:12px 22px;background:linear-gradient(135deg,#17a2b8,#20c997);color:white;text-decoration:none;border-radius:10px;font-weight:bold;display:inline-flex;align-items:center;gap:10px;transition:0.25s;">
+          <i class="fas fa-chart-bar"></i> Ver Estadísticas
+        </a>
       </div>
     </form>
   </div>
@@ -519,47 +610,54 @@ input[type="radio"]:checked + label {
   <!-- ===== MODAL JUSTIFICAR ===== -->
   <div id="modal-justificar" class="modal" aria-hidden="true">
     <div class="modal-content">
-      <button class="modal-close" id="modal-close">&times;</button>
-      <h2 style="color:#7a3eb1;text-align:center;margin-top:0;">Justificar Ausencia</h2>
+      <div class="modal-header">
+        <h2><i class="fas fa-file-medical-alt" style="margin-right:8px;color:rgba(255,255,255,0.9)"></i> Justificar Ausencia</h2>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
 
-      <form id="form-justificacion" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="hidden" name="nino_id" id="modal-nino-id">
-        <input type="hidden" name="fecha" id="modal-fecha">
+      <div class="modal-body">
+        <form id="form-justificacion" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="nino_id" id="modal-nino-id">
+          <input type="hidden" name="fecha" id="modal-fecha">
 
-        <div class="modal-grid">
-          <div class="form-group">
-            <label for="tipo">Tipo de falta:</label>
-            <select id="tipo" name="tipo" required>
-              <option value="">Selecciona</option>
-              <option value="Médica">Médica</option>
-              <option value="Familiar">Familiar</option>
-              <option value="Transporte">Transporte</option>
-              <option value="Otra">Otra</option>
-            </select>
+          <div class="modal-grid">
+            <div class="form-group">
+              <label for="tipo">Tipo de falta</label>
+              <select id="tipo" name="tipo" required>
+                <option value="">Selecciona</option>
+                <option value="Médica">Médica</option>
+                <option value="Familiar">Familiar</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Otra">Otra</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="descripcion">Descripción</label>
+              <textarea id="descripcion" name="descripcion" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="observaciones">Observaciones (opcional)</label>
+              <textarea id="observaciones" name="observaciones" rows="2"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="archivo_pdf">Adjuntar soporte (PDF)</label>
+              <div class="file-input-custom">
+                <i class="fas fa-file-pdf" style="color:#dc3545;font-size:18px"></i>
+                <input id="archivo_pdf" type="file" name="archivo_pdf" accept="application/pdf">
+              </div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="descripcion">Descripción:</label>
-            <textarea id="descripcion" name="descripcion" rows="3" required></textarea>
+          <div class="modal-footer">
+            <button type="button" id="sinJustificarBtn" class="btn-sin-justificar">Sin justificar</button>
+            <button type="button" id="guardarJustificacionBtn" class="btn-just">Guardar Justificación</button>
           </div>
-
-          <div class="form-group">
-            <label for="observaciones">Observaciones:</label>
-            <textarea id="observaciones" name="observaciones" rows="2"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="archivo_pdf">Adjuntar soporte (PDF):</label>
-            <input id="archivo_pdf" type="file" name="archivo_pdf" accept="application/pdf">
-          </div>
-        </div>
-
-        <div class="modal-buttons">
-          <button type="button" id="guardarJustificacionBtn" class="btn-guardar-just">Guardar Justificación</button>
-          <button type="button" id="sinJustificarBtn" class="btn-sin-justificar">Sin justificar</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -647,6 +745,62 @@ input[type="radio"]:checked + label {
           document.querySelectorAll("input[type='radio'][value='Ausente']:not(:disabled)").forEach(r => r.checked = true);
         });
       }
+
+      // Validación cliente: si hay fecha fin, verificar que no sea anterior a la fecha inicio
+      const asistenciaForm = document.getElementById('asistencia-form');
+      if (asistenciaForm) {
+        asistenciaForm.addEventListener('submit', (ev) => {
+          // seleccionar inicio dependiendo de si el rango está visible
+          const inicioElem = document.getElementById('date-range') && document.getElementById('date-range').style.display !== 'none'
+            ? document.getElementById('fecha-range-start')
+            : document.getElementById('fecha');
+          const inicio = inicioElem ? inicioElem.value : '';
+          const fin = document.getElementById('end_date') ? document.getElementById('end_date').value : '';
+          if (inicio && fin && fin < inicio) {
+            ev.preventDefault();
+            alert('La fecha fin debe ser mayor o igual a la fecha inicio.');
+            return false;
+          }
+          return true;
+        });
+      }
+
+      // Toggle mostrar/ocultar rango
+      const showBtn = document.getElementById('show-range');
+      const hideBtn = document.getElementById('hide-range');
+      const compact = document.getElementById('date-compact');
+      const range = document.getElementById('date-range');
+      const fecha = document.getElementById('fecha');
+      const fechaRangeStart = document.getElementById('fecha-range-start');
+      const endDate = document.getElementById('end_date');
+
+      function openRange() {
+        compact.style.display = 'none';
+        range.style.display = 'flex';
+        // keep start-date synced
+        if (fecha && fechaRangeStart) fechaRangeStart.value = fecha.value || '{{ fecha_hoy }}';
+      }
+
+      function closeRange() {
+        range.style.display = 'none';
+        compact.style.display = 'flex';
+        // copy back start date
+        if (fecha && fechaRangeStart) fecha.value = fechaRangeStart.value || fecha.value;
+        // limpiar end_date
+        if (endDate) endDate.value = '';
+      }
+
+      showBtn && showBtn.addEventListener('click', openRange);
+      hideBtn && hideBtn.addEventListener('click', closeRange);
+
+      // Inicializar estado según si existe end_date en contexto
+      document.addEventListener('DOMContentLoaded', function initRange() {
+        if (endDate && endDate.value) {
+          openRange();
+        } else {
+          closeRange();
+        }
+      });
 
       /* Cuando se marca "Ausente" abrimos modal y cargamos nino+fecha */
       document.querySelectorAll("input[type='radio'][value='Ausente']").forEach(radio => {
