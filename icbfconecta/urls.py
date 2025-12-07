@@ -134,6 +134,7 @@ urlpatterns = [
     path('solicitudes/correccion/', views.devolver_correccion_matricula, name='devolver_correccion_matricula'),
     path('solicitudes/eliminar/', views.eliminar_solicitud_matricula, name='eliminar_solicitud_matricula'),
     path('matricula/publico/<str:token>/', views.formulario_matricula_publico, name='formulario_matricula_publico'),
+    path('matricula/publico/<str:token>/cancelar/', views.cancelar_solicitud_usuario, name='cancelar_solicitud_usuario'),
 
     # --- URLs de Desarrollo (Ahora en su propia app) ---
     path('desarrollo/', include('desarrollo.urls')),

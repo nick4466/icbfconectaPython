@@ -420,11 +420,72 @@
 <body>
   <div class="container">
     {% if not token_valido %}
-      <!-- Mostrar error si el token es inválido -->
+      <!-- Mostrar diferentes mensajes según el estado -->
       <div class="error-container">
-        <div class="error-icon"><i class="fas fa-exclamation-triangle"></i></div>
-        <h2 class="error-message">Enlace No Válido</h2>
-        <p class="error-detail">{{ mensaje_error }}</p>
+        {% if estado_solicitud == 'aprobado' %}
+          <div class="error-icon" style="color: #28a745;"><i class="fas fa-check-circle"></i></div>
+          <h2 class="error-message" style="color: #28a745;">¡Solicitud Aprobada!</h2>
+          <p class="error-detail">{{ mensaje_error }}</p>
+          <p style="margin-top: 20px; color: #666;">El niño <strong>{{ solicitud.nombres_nino }} {{ solicitud.apellidos_nino }}</strong> ya está matriculado en {{ solicitud.hogar.nombre_hogar }}.</p>
+        
+        {% elif estado_solicitud == 'rechazado' %}
+          <div class="error-icon" style="color: #dc3545;"><i class="fas fa-times-circle"></i></div>
+          <h2 class="error-message" style="color: #dc3545;">Solicitud Rechazada</h2>
+          <p class="error-detail">{{ mensaje_error }}</p>
+          {% if motivo_rechazo %}
+          <div style="margin-top: 20px; padding: 20px; background: #f8d7da; border-radius: 8px; border-left: 4px solid #dc3545;">
+            <strong>Motivo:</strong>
+            <p style="margin-top: 10px; color: #721c24;">{{ motivo_rechazo }}</p>
+          </div>
+          {% endif %}
+          <p style="margin-top: 20px; color: #666;">Si desea volver a aplicar, contacte al hogar comunitario.</p>
+        
+        {% elif estado_solicitud == 'expirado' %}
+          <div class="error-icon" style="color: #ffc107;"><i class="fas fa-clock"></i></div>
+          <h2 class="error-message" style="color: #ffc107;">Enlace Expirado</h2>
+          <p class="error-detail">{{ mensaje_error }}</p>
+          <p style="margin-top: 20px; color: #666;">Este enlace expiró el {{ solicitud.fecha_expiracion|date:"d/m/Y H:i" }}.</p>
+          {% if puede_renovar %}
+          <div style="margin-top: 30px;">
+            <p style="margin-bottom: 15px; color: #666;">Por favor, contacte al hogar comunitario para solicitar un nuevo enlace de matriculación.</p>
+            <a href="mailto:{{ solicitud.hogar.madre.usuario.correo }}" style="display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              <i class="fas fa-envelope"></i> Contactar Hogar
+            </a>
+          </div>
+          {% endif %}
+        
+        {% elif estado_solicitud == 'limite_excedido' %}
+          <div class="error-icon" style="color: #dc3545;"><i class="fas fa-ban"></i></div>
+          <h2 class="error-message" style="color: #dc3545;">Límite de Intentos Excedido</h2>
+          <p class="error-detail">{{ mensaje_error }}</p>
+          <p style="margin-top: 20px; color: #666;">Ha alcanzado el máximo de 3 intentos de corrección. Por favor, contacte directamente al hogar comunitario.</p>
+        
+        {% elif estado_solicitud == 'cancelado_expiracion' %}
+          <div class="error-icon" style="color: #ff9800;"><i class="fas fa-calendar-times"></i></div>
+          <h2 class="error-message" style="color: #ff9800;">Solicitud Cancelada por Expiración</h2>
+          <p class="error-detail">{{ mensaje_error }}</p>
+          {% if motivo_cancelacion %}
+          <p style="margin-top: 20px; color: #666;">{{ motivo_cancelacion }}</p>
+          {% endif %}
+          <p style="margin-top: 20px; color: #666;">Si desea aplicar nuevamente, contacte al hogar comunitario.</p>
+        
+        {% elif estado_solicitud == 'cancelado_usuario' %}
+          <div class="error-icon" style="color: #6c757d;"><i class="fas fa-user-times"></i></div>
+          <h2 class="error-message" style="color: #6c757d;">Solicitud Cancelada</h2>
+          <p class="error-detail">{{ mensaje_error }}</p>
+          {% if motivo_cancelacion %}
+          <div style="margin-top: 20px; padding: 20px; background: #e9ecef; border-radius: 8px; border-left: 4px solid #6c757d;">
+            <strong>Motivo:</strong>
+            <p style="margin-top: 10px; color: #495057;">{{ motivo_cancelacion }}</p>
+          </div>
+          {% endif %}
+          <p style="margin-top: 20px; color: #666;">Esta solicitud fue cancelada. Si fue un error, contacte al hogar comunitario.</p>
+        
+        {% else %}
+          <div class="error-icon"><i class="fas fa-exclamation-triangle"></i></div>
+          <h2 class="error-message">Enlace No Válido</h2>
+          <p class="error-detail">{{ mensaje_error }}</p>
+        {% endif %}
       </div>
     {% else %}
       <!-- Mostrar formulario si el token es válido -->
@@ -435,8 +496,10 @@
 
       {% if en_correccion %}
         <div class="alert alert-warning">
-          <i class="fas fa-info-circle"></i>
+          <i class="fas fa-exclamation-triangle"></i>
           <strong>Correcciones Requeridas:</strong> Los campos resaltados en amarillo requieren corrección. Los demás campos están bloqueados porque ya fueron aprobados.
+          <br>
+          <strong style="color: #856404;">Intentos restantes: {{ intentos_restantes }}/3</strong>
         </div>
       {% else %}
         <div class="alert alert-info">
@@ -967,6 +1030,11 @@
             <i class="fas fa-paper-plane"></i>
             Enviar Solicitud
           </button>
+          
+          <button type="button" class="btn btn-cancel" id="btnCancelar" onclick="cancelarSolicitud()" style="background: #6c757d; margin-left: 10px;">
+            <i class="fas fa-times"></i>
+            Cancelar Solicitud
+          </button>
         </div>
       </form>
     {% endif %}
@@ -1311,6 +1379,68 @@
           btnSubmit.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
         }
       });
+    }
+
+    // Función para cancelar la solicitud
+    async function cancelarSolicitud() {
+      const result = await Swal.fire({
+        title: '¿Cancelar Solicitud?',
+        html: `
+          <p>¿Está seguro que desea cancelar esta solicitud de matriculación?</p>
+          <p class="text-danger"><strong>Esta acción no se puede deshacer.</strong></p>
+          <textarea id="motivoCancelacion" class="swal2-textarea" placeholder="Motivo de cancelación (opcional)" style="width: 100%; margin-top: 15px;"></textarea>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, Cancelar',
+        cancelButtonText: 'No, Volver',
+        preConfirm: () => {
+          return document.getElementById('motivoCancelacion').value;
+        }
+      });
+
+      if (result.isConfirmed) {
+        try {
+          const formData = new FormData();
+          formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+          formData.append('motivo', result.value || '');
+
+          const response = await fetch('{% url "cancelar_solicitud_usuario" token=solicitud.token %}', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Solicitud Cancelada',
+              text: data.mensaje || 'Su solicitud ha sido cancelada exitosamente.',
+              confirmButtonColor: '#667eea',
+              allowOutsideClick: false,
+            }).then(() => {
+              window.location.reload();
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: data.error || 'No se pudo cancelar la solicitud.',
+              confirmButtonColor: '#d33',
+            });
+          }
+        } catch (error) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error de Conexión',
+            text: 'No se pudo conectar con el servidor. Intente nuevamente.',
+            confirmButtonColor: '#d33',
+          });
+        }
+      }
     }
   </script>
 </body>

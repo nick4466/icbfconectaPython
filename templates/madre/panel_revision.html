@@ -252,6 +252,21 @@
       color: #721c24;
     }
 
+    .estado-cancelado_expiracion {
+      background: #ffe0b2;
+      color: #e65100;
+    }
+
+    .estado-cancelado_usuario {
+      background: #e9ecef;
+      color: #495057;
+    }
+
+    .estado-token_usado {
+      background: #cce5ff;
+      color: #004085;
+    }
+
     .solicitud-actions {
       display: flex;
       gap: 10px;
@@ -694,7 +709,11 @@
         const estadoTexto = solicitud.estado === 'pendiente' ? 'Pendiente' :
                            solicitud.estado === 'aprobado' ? 'Aprobado' :
                            solicitud.estado === 'rechazado' ? 'Rechazado' :
-                           'En Corrección';
+                           solicitud.estado === 'correccion' ? 'En Corrección' :
+                           solicitud.estado === 'cancelado_expiracion' ? 'Cancelado (Expirado)' :
+                           solicitud.estado === 'cancelado_usuario' ? 'Cancelado por Usuario' :
+                           solicitud.estado === 'token_usado' ? 'Token Usado' :
+                           'Desconocido';
         
         const cardClass = !tieneDatos ? 'sin-completar' : 
                          solicitud.estado === 'correccion' ? 'correccion' : '';

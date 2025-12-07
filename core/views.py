@@ -2408,6 +2408,19 @@ def enviar_invitacion_matricula(request):
             if not re.match(email_regex, email_acudiente):
                 return JsonResponse({'status': 'error', 'mensaje': 'El formato del correo electrónico no es válido.'}, status=400)
             
+            # VALIDACIÓN 3: Verificar que no exista una solicitud pendiente o en corrección para este correo
+            solicitud_existente = SolicitudMatriculacion.objects.filter(
+                email_acudiente=email_acudiente,
+                hogar=hogar_madre,
+                estado__in=['pendiente', 'correccion']
+            ).first()
+            
+            if solicitud_existente:
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': f'Ya existe una solicitud activa para el correo {email_acudiente}. Por favor, espera a que se complete o expire.'
+                }, status=400)
+            
             # Generar token único (UUID4)
             token = str(uuid.uuid4())
             
@@ -2623,13 +2636,33 @@ def aprobar_solicitud_matricula(request):
             if not solicitud.nombres_nino:
                 return JsonResponse({'status': 'error', 'mensaje': 'La solicitud no tiene datos completos para aprobar.'}, status=400)
             
+            # VALIDACIÓN 1: Verificar que no exista un niño con el mismo documento en este hogar
+            if solicitud.documento_nino:
+                nino_existente = Nino.objects.filter(
+                    documento=solicitud.documento_nino,
+                    hogar=hogar_madre
+                ).first()
+                if nino_existente:
+                    return JsonResponse({
+                        'status': 'error',
+                        'mensaje': f'Ya existe un niño con documento {solicitud.documento_nino} matriculado en este hogar.'
+                    }, status=400)
+            
             # Usar transacción para crear padre y niño
             with transaction.atomic():
                 # Obtener o crear el rol de padre
                 rol_padre, _ = Rol.objects.get_or_create(nombre_rol='padre')
                 
-                # Verificar si ya existe un usuario con ese documento o correo
+                # VALIDACIÓN 2: Verificar si ya existe un usuario con ese documento o correo
                 usuario_padre = Usuario.objects.filter(documento=solicitud.documento_padre).first()
+                usuario_correo = Usuario.objects.filter(correo=solicitud.correo_padre).first()
+                
+                # Si existe usuario con ese correo pero diferente documento, es un error
+                if usuario_correo and usuario_correo.documento != solicitud.documento_padre:
+                    return JsonResponse({
+                        'status': 'error',
+                        'mensaje': f'El correo {solicitud.correo_padre} ya está registrado con otro documento.'
+                    }, status=400)
                 
                 if usuario_padre:
                     # Si el usuario ya existe, verificar si tiene perfil de padre
@@ -2694,6 +2727,9 @@ def aprobar_solicitud_matricula(request):
                 solicitud.estado = 'aprobado'
                 solicitud.fecha_aprobacion = timezone.now()
                 solicitud.save()
+                
+                # Marcar token como usado para prevenir reutilización
+                solicitud.marcar_token_usado()
             
             # Enviar email de notificación
             try:
@@ -2769,6 +2805,7 @@ def rechazar_solicitud_matricula(request):
             # Actualizar solicitud
             solicitud.estado = 'rechazado'
             solicitud.motivo_rechazo = motivo_rechazo
+            solicitud.fecha_rechazo = timezone.now()
             solicitud.save()
             
             # Enviar email de notificación
@@ -2909,6 +2946,69 @@ def devolver_correccion_matricula(request):
             }, status=500)
     
     return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+
+def cancelar_solicitud_usuario(request, token):
+    """
+    Endpoint: Permite al acudiente cancelar su propia solicitud
+    URL: POST /matricula/publico/<token>/cancelar/
+    """
+    if request.method == 'POST':
+        try:
+            # Buscar la solicitud por token
+            try:
+                solicitud = SolicitudMatriculacion.objects.get(token=token)
+            except SolicitudMatriculacion.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Solicitud no encontrada.'
+                }, status=404)
+            
+            # Verificar que la solicitud puede ser cancelada
+            if solicitud.estado not in ['pendiente', 'correccion']:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'No se puede cancelar una solicitud en estado "{solicitud.get_estado_display()}".'
+                }, status=400)
+            
+            # Obtener motivo opcional
+            motivo = request.POST.get('motivo', '').strip()
+            
+            # Cancelar la solicitud
+            if solicitud.cancelar_por_usuario(motivo):
+                # Notificar a la madre comunitaria
+                try:
+                    from notifications.models import Notification
+                    
+                    Notification.objects.create(
+                        usuario=solicitud.hogar.madre_comunitaria,
+                        solicitud=solicitud,
+                        tipo_notificacion='solicitud_cancelada',
+                        mensaje=f'El acudiente {solicitud.email_acudiente} canceló su solicitud de matrícula.',
+                        nivel='info'
+                    )
+                except Exception as e:
+                    print(f"Error al crear notificación: {e}")
+                
+                return JsonResponse({
+                    'success': True,
+                    'mensaje': 'Su solicitud ha sido cancelada exitosamente.'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No se pudo cancelar la solicitud.'
+                }, status=400)
+                
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'success': False,
+                'error': f'Error al cancelar la solicitud: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido.'}, status=405)
 
 
 def eliminar_solicitud_matricula(request):
@@ -3062,14 +3162,71 @@ def formulario_matricula_publico(request, token):
     except SolicitudMatriculacion.DoesNotExist:
         return render(request, 'public/formulario_matricula_publico.html', {
             'token_valido': False,
+            'estado_solicitud': 'invalido',
             'mensaje_error': 'El enlace de invitación no es válido.',
         })
     
-    # Validar que el token esté activo
-    if not solicitud.is_valido():
+    # VALIDACIÓN MEJORADA DEL ESTADO DE LA SOLICITUD
+    
+    # 1. Si ya fue aprobada o token usado → Bloquear completamente
+    if solicitud.estado in ['aprobado', 'token_usado']:
         return render(request, 'public/formulario_matricula_publico.html', {
             'token_valido': False,
-            'mensaje_error': 'El enlace ha expirado o la solicitud ya fue procesada. Por favor, contacte al hogar comunitario.',
+            'estado_solicitud': 'aprobado',
+            'mensaje_error': '¡Felicidades! Esta solicitud ya fue aprobada y el niño está matriculado.',
+            'solicitud': solicitud,
+        })
+    
+    # 2. Si fue rechazada → Bloquear completamente
+    if solicitud.estado == 'rechazado':
+        return render(request, 'public/formulario_matricula_publico.html', {
+            'token_valido': False,
+            'estado_solicitud': 'rechazado',
+            'mensaje_error': 'Esta solicitud fue rechazada por el hogar comunitario.',
+            'motivo_rechazo': solicitud.motivo_rechazo,
+            'solicitud': solicitud,
+        })
+    
+    # 3. Si fue cancelada por expiración → Bloquear
+    if solicitud.estado == 'cancelado_expiracion':
+        return render(request, 'public/formulario_matricula_publico.html', {
+            'token_valido': False,
+            'estado_solicitud': 'cancelado_expiracion',
+            'mensaje_error': 'Esta solicitud fue cancelada por expiración del plazo.',
+            'motivo_cancelacion': solicitud.motivo_cancelacion,
+            'solicitud': solicitud,
+        })
+    
+    # 4. Si fue cancelada por usuario → Bloquear
+    if solicitud.estado == 'cancelado_usuario':
+        return render(request, 'public/formulario_matricula_publico.html', {
+            'token_valido': False,
+            'estado_solicitud': 'cancelado_usuario',
+            'mensaje_error': 'Esta solicitud fue cancelada.',
+            'motivo_cancelacion': solicitud.motivo_cancelacion,
+            'solicitud': solicitud,
+        })
+    
+    # 5. Si expiró el token y no está en corrección → Cancelar automáticamente
+    if solicitud.fecha_expiracion < timezone.now() and solicitud.estado != 'correccion':
+        # Cancelar automáticamente por expiración
+        solicitud.cancelar_por_expiracion()
+        
+        return render(request, 'public/formulario_matricula_publico.html', {
+            'token_valido': False,
+            'estado_solicitud': 'expirado',
+            'mensaje_error': 'El enlace ha expirado.',
+            'solicitud': solicitud,
+            'puede_renovar': True,
+        })
+    
+    # 6. Verificar límite de intentos en corrección
+    if solicitud.estado == 'correccion' and solicitud.intentos_correccion >= 3:
+        return render(request, 'public/formulario_matricula_publico.html', {
+            'token_valido': False,
+            'estado_solicitud': 'limite_excedido',
+            'mensaje_error': 'Ha excedido el límite de 3 intentos de corrección. Por favor, contacte al hogar comunitario.',
+            'solicitud': solicitud,
         })
     
     # GET: Mostrar formulario
@@ -3082,6 +3239,7 @@ def formulario_matricula_publico(request, token):
             'solicitud': solicitud,
             'en_correccion': solicitud.estado == 'correccion',
             'campos_corregir': solicitud.campos_corregir or [],
+            'intentos_restantes': 3 - solicitud.intentos_correccion if solicitud.estado == 'correccion' else 3,
             'discapacidades': discapacidades,
         })
     
@@ -3099,6 +3257,20 @@ def formulario_matricula_publico(request, token):
             solicitud.nombres_nino = request.POST.get('nombres_nino', '').strip()
             solicitud.apellidos_nino = request.POST.get('apellidos_nino', '').strip()
             solicitud.documento_nino = request.POST.get('documento_nino', '').strip()
+            
+            # VALIDACIÓN 4: Verificar que no exista un niño ya matriculado con ese documento en el hogar
+            if solicitud.documento_nino:
+                nino_ya_existe = Nino.objects.filter(
+                    documento=solicitud.documento_nino,
+                    hogar=solicitud.hogar
+                ).exists()
+                
+                if nino_ya_existe:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Ya existe un niño matriculado con el documento {solicitud.documento_nino} en este hogar.'
+                    }, status=400)
+            
             fecha_nac = request.POST.get('fecha_nacimiento_nino')
             if fecha_nac:
                 solicitud.fecha_nacimiento_nino = datetime.strptime(fecha_nac, '%Y-%m-%d').date()
@@ -3127,6 +3299,16 @@ def formulario_matricula_publico(request, token):
             solicitud.apellidos_padre = request.POST.get('apellidos_padre', '').strip()
             solicitud.telefono_padre = request.POST.get('telefono_padre', '')
             solicitud.correo_padre = request.POST.get('correo_padre', '').strip()
+            
+            # VALIDACIÓN 5: Verificar que el correo del padre no esté ya registrado con otro documento
+            if solicitud.correo_padre:
+                usuario_con_correo = Usuario.objects.filter(correo=solicitud.correo_padre).first()
+                if usuario_con_correo and usuario_con_correo.documento != solicitud.documento_padre:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'El correo {solicitud.correo_padre} ya está registrado con otro documento. Si ya tienes cuenta, usa el mismo documento.'
+                    }, status=400)
+            
             solicitud.direccion_padre = request.POST.get('direccion_padre', '')
             solicitud.barrio_padre = request.POST.get('barrio_padre', '')
             solicitud.ocupacion_padre = request.POST.get('ocupacion_padre', '')

@@ -463,6 +463,9 @@ class SolicitudMatriculacion(models.Model):
         ('aprobado', 'Aprobado'),
         ('rechazado', 'Rechazado'),
         ('correccion', 'En Corrección'),
+        ('cancelado_expiracion', 'Cancelado por Expiración'),
+        ('cancelado_usuario', 'Cancelado por Usuario'),
+        ('token_usado', 'Token Usado'),
     ]
     
     hogar = models.ForeignKey(HogarComunitario, on_delete=models.CASCADE, related_name='solicitudes_matricula')
@@ -470,7 +473,7 @@ class SolicitudMatriculacion(models.Model):
     token = models.CharField(max_length=100, unique=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_expiracion = models.DateTimeField()
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    estado = models.CharField(max_length=30, choices=ESTADO_CHOICES, default='pendiente')
     
     # Datos del niño
     nombres_nino = models.CharField(max_length=100, null=True, blank=True)
@@ -519,6 +522,9 @@ class SolicitudMatriculacion(models.Model):
     
     # Fechas de seguimiento
     fecha_aprobacion = models.DateTimeField(null=True, blank=True)
+    fecha_rechazo = models.DateTimeField(null=True, blank=True)
+    fecha_cancelacion = models.DateTimeField(null=True, blank=True)
+    motivo_cancelacion = models.TextField(null=True, blank=True)  # Razón de cancelación
     
     class Meta:
         db_table = 'solicitudes_matriculacion'
@@ -530,7 +536,69 @@ class SolicitudMatriculacion(models.Model):
     def is_valido(self):
         """Verifica si el token aún es válido"""
         from django.utils import timezone
-        return timezone.now() < self.fecha_expiracion and self.estado in ['pendiente', 'correccion']
+        # Token válido solo si no está en estados terminales
+        estados_terminales = ['aprobado', 'rechazado', 'cancelado_expiracion', 'cancelado_usuario', 'token_usado']
+        return timezone.now() < self.fecha_expiracion and self.estado not in estados_terminales
+    
+    def cancelar_por_expiracion(self):
+        """Cancela la solicitud por expiración del token"""
+        from django.utils import timezone
+        if self.estado in ['pendiente', 'correccion']:
+            self.estado = 'cancelado_expiracion'
+            self.fecha_cancelacion = timezone.now()
+            self.motivo_cancelacion = f'Token expirado el {self.fecha_expiracion.strftime("%d/%m/%Y %H:%M")}'
+            self.save()
+            return True
+        return False
+    
+    def cancelar_por_usuario(self, motivo=''):
+        """Permite al usuario cancelar su solicitud"""
+        from django.utils import timezone
+        if self.estado in ['pendiente', 'correccion']:
+            self.estado = 'cancelado_usuario'
+            self.fecha_cancelacion = timezone.now()
+            self.motivo_cancelacion = motivo or 'Cancelado por el usuario'
+            self.save()
+            return True
+        return False
+    
+    def marcar_token_usado(self):
+        """Marca el token como usado después de aprobar la solicitud"""
+        from django.utils import timezone
+        if self.estado == 'aprobado':
+            self.estado = 'token_usado'
+            self.save()
+            return True
+        return False
+    
+    def delete(self, *args, **kwargs):
+        """Elimina archivos asociados antes de borrar la solicitud"""
+        import os
+        
+        # Lista de campos FileField a limpiar
+        campos_archivo = [
+            'foto_nino',
+            'carnet_vacunacion_nino',
+            'certificado_eps_nino',
+            'registro_civil_nino',
+            'documento_identidad_padre',
+            'clasificacion_sisben_padre',
+        ]
+        
+        # Eliminar cada archivo asociado
+        for campo in campos_archivo:
+            archivo = getattr(self, campo, None)
+            if archivo and archivo.name:
+                try:
+                    if os.path.exists(archivo.path):
+                        os.remove(archivo.path)
+                except Exception as e:
+                    # Log del error pero continuar con la eliminación
+                    print(f"Error al eliminar {campo}: {e}")
+        
+        # Eliminar notificaciones asociadas (cascade automático via signals)
+        # Llamar al delete original
+        super().delete(*args, **kwargs)
 
 # ------------------------
 # Historial de Cambios
