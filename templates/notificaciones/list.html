@@ -27,11 +27,11 @@
         }
 
         .header {
-            background: white;
+            background: rgba(222, 222, 222, 0.637);
             padding: 25px;
             border-radius: 12px;
             margin-bottom: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.164);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -66,7 +66,7 @@
         }
 
         .notifications-container {
-            background: white;
+            background: rgb(242, 242, 242);
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
@@ -79,6 +79,7 @@
             gap: 15px;
             align-items: flex-start;
             transition: background-color 0.2s;
+            cursor: pointer;
         }
 
         .notification-item:hover {
@@ -204,7 +205,8 @@
         <div class="notifications-container">
             {% if notificaciones %}
                 {% for notif in notificaciones %}
-                <div class="notification-item {% if not notif.read %}unread{% endif %}">
+                <div class="notification-item {% if not notif.read %}unread{% endif %}" 
+                     {% if notif.object_id %}onclick="handleNotificationClick({{ notif.object_id }}, {{ notif.id }}, '{{ notif.title }}');"{% endif %}>
                     <div class="notification-icon">
                         {% if notif.level == 'grave' %}
                             <i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>
@@ -233,7 +235,7 @@
                 {% endfor %}
             {% else %}
                 <div class="empty-state">
-                    <i class="fas fa-bell-slash"></i>
+                    <i class="fas fa-bell-slash"></i>ñ
                     <p>No tienes notificaciones</p>
                     <a href="{% url 'madre_dashboard' %}" class="back-btn">
                         <i class="fas fa-arrow-left"></i> Volver al Dashboard
@@ -261,6 +263,32 @@
                 })
                 .catch(error => console.error('Error:', error));
             }
+        }
+
+        function handleNotificationClick(objectId, notificationId, notificationTitle) {
+            // Marcar notificación como leída
+            fetch(`/notifications/${notificationId}/mark-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Si es una notificación de ausencias críticas, redirigir al historial de asistencia
+                if (notificationTitle && notificationTitle.includes('Ausencias críticas')) {
+                    window.location.href = `/asistencia/historial/${objectId}/`;
+                } else {
+                    // De lo contrario, redirigir al panel de revisión de solicitudes
+                    window.location.href = "/solicitudes/panel-revision/";
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Redirigir de todas formas al panel por defecto
+                window.location.href = "/solicitudes/panel-revision/";
+            });
         }
     </script>
 </body>

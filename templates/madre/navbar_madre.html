@@ -34,10 +34,11 @@
 
         <!-- Notificaciones -->
         <div class="notifications-menu-dropdown">
-            <button class="notifications-menu-button nav-btn">
-                <i class="fas fa-bell"></i>
-                {% if notifications_count > 0 %}
-                <span class="notification-badge">{{ notifications_count }}</span>
+            <button class="notifications-menu-button nav-btn{% if not notifications_count or notifications_count == 0 %} no-count{% endif %}" aria-haspopup="true" aria-expanded="false" aria-label="Notificaciones">
+                <!-- Mostrar siempre la campana; la burbuja solo si hay >0 -->
+                <i class="fas fa-bell notification-icon" aria-hidden="true"></i>
+                {% if notifications_count and notifications_count > 0 %}
+                    <span class="notification-badge">{{ notifications_count }}</span>
                 {% endif %}
             </button>
 
@@ -55,7 +56,7 @@
                         <div class="notification-item {% if not notification.read %}unread{% endif %}" 
                              data-level="{{ notification.level }}"
                              {% if notification.object_id %}
-                             onclick="irASolicitud({{ notification.object_id }}, {{ notification.id }})"
+                             onclick="irASolicitud({{ notification.object_id }}, {{ notification.id }}, '{{ notification.title }}')"
                              style="cursor: pointer;"
                              {% endif %}>
                             <div class="notification-icon">
@@ -87,17 +88,17 @@
                     {% endif %}
                 </div>
 
-                {% if notifications %}
                 <div class="notifications-footer">
                     <a href="{% url 'notifications:list' %}" class="view-all-btn">Ver todas las notificaciones</a>
                 </div>
-                {% endif %}
             </div>
         </div>
 
-        <div class="user-menu-dropdown"
-            <button class="user-menu-button nav-btn">
-                <i class="fas fa-user-circle"></i>
+        <div class="user-menu-dropdown">
+            <button class="user-menu-button nav-btn" aria-haspopup="true" aria-expanded="false" aria-label="Menú de usuario">
+                <!-- Mostrar la foto de perfil como icono con contorno morado -->
+                <img src="{% if foto_perfil_url %}{{ foto_perfil_url }}{% else %}{% static 'img/default_user.png' %}{% endif %}"
+                     alt="Foto de perfil" class="nav-profile-img" id="nav-img-foto-perfil">
             </button>
 
             <div class="user-menu-content">
@@ -276,6 +277,54 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Cuando no hay notificaciones mostrar la campana en estado tenue */
+.notifications-menu-button .bell-empty {
+    opacity: 0.65;
+    color: rgba(255,255,255,0.9);
+}
+
+/* Estilos para icono y estado sin notificaciones */
+.notifications-menu-button .notification-icon {
+    font-size: 20px;
+    color: #ffd54f; /* amarillo suave para destacar la campana */
+}
+.notifications-menu-button.no-count .notification-icon {
+    opacity: 0.9;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+}
+.notifications-menu-button .notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    border: 2px solid #fff;
+}
+
+/* Estilos para la imagen de perfil en el navbar (icono con contorno morado) */
+.nav-profile-img, #nav-img-foto-perfil, .profile-picture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #764ba2; /* contorno morado */
+    box-shadow: 0 2px 6px rgba(118,75,162,0.25);
+}
+.nav-profile-img {
+    display: inline-block;
+}
+.user-menu-button {
+    padding: 6px;
+}
+
 .notification-badge {
     position: absolute;
     top: 2px;
@@ -434,6 +483,7 @@
 .view-all-btn:hover {
     text-decoration: underline;
 }
+
 </style>
 
 <script>
@@ -454,7 +504,7 @@ function markAsRead(notificationId) {
     .catch(error => console.error('Error:', error));
 }
 
-function irASolicitud(solicitudId, notificationId) {
+function irASolicitud(solicitudId, notificationId, notificationTitle) {
     // Marcar notificación como leída
     fetch(`/notifications/${notificationId}/mark-read/`, {
         method: 'POST',
@@ -465,12 +515,17 @@ function irASolicitud(solicitudId, notificationId) {
     })
     .then(response => response.json())
     .then(data => {
-        // Redirigir al panel de revisión
-        window.location.href = "{% url 'panel_revision_solicitudes' %}";
+        // Si es una notificación de ausencias críticas, redirigir al historial de asistencia
+        if (notificationTitle && notificationTitle.includes('Ausencias críticas')) {
+            window.location.href = `/asistencia/historial/${solicitudId}/`;
+        } else {
+            // De lo contrario, redirigir al panel de revisión de solicitudes
+            window.location.href = "{% url 'panel_revision_solicitudes' %}";
+        }
     })
     .catch(error => {
         console.error('Error:', error);
-        // Redirigir de todas formas
+        // Redirigir de todas formas al panel por defecto
         window.location.href = "{% url 'panel_revision_solicitudes' %}";
     });
 }

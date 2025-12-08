@@ -1,0 +1,666 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asistencia de {{ nino.nombres }} - Padre</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+  
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-image: url("{% static 'img/fondopadres.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      min-height: 100vh;
+      padding: 0; /* header included via navbar */
+    }
+
+    .borde2 {
+      text-align: center;
+      background-color: #4DB6FF;
+      color: white;
+      padding: 10px 0;
+      font-size: 22px;
+      font-weight: bold;
+      border-bottom: 3px solid #FFEE58;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: rgba(255,255,255,0.62); /* frosted glass */
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+
+    /* ========== HEADER ========== */
+    .header {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .header h1 {
+      color: #3e23a0;
+      font-size: 28px;
+      margin: 0;
+    }
+
+    /* NiÃ±o foto en header */
+    .nino-photo {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #4DB6FF; /* contorno azul */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    
+    .header img.nino-photo {
+  max-width: 88px !important;
+  max-height: 88px !important;
+}
+
+
+    .header-subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #764ba2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .back-btn:hover {
+      background: #5a3583;
+      transform: translateX(-3px);
+    }
+
+    /* ========== ALERTA DE AUSENCIAS ========== */
+    .alert-box {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .alert-box.grave {
+      border-left: 5px solid #dc3545;
+      background: #fff5f5;
+    }
+
+    .alert-box.warning {
+      border-left: 5px solid #ff9800;
+      background: #fff8f0;
+    }
+
+    .alert-box.info {
+      border-left: 5px solid #2196f3;
+      background: #f0f8ff;
+    }
+
+    .alert-content {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .alert-icon {
+      font-size: 28px;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .alert-box.grave .alert-icon { color: #dc3545; }
+    .alert-box.warning .alert-icon { color: #ff9800; }
+    .alert-box.info .alert-icon { color: #2196f3; }
+
+    .alert-text h3 {
+      margin: 0 0 5px 0;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .alert-box.grave .alert-text h3 { color: #dc3545; }
+    .alert-box.warning .alert-text h3 { color: #ff9800; }
+    .alert-box.info .alert-text h3 { color: #2196f3; }
+
+    .alert-text p {
+      margin: 0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    /* ========== STATS CARDS ========== */
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+    }
+
+    .stat-card .icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: bold;
+      margin: 8px 0;
+      color: #222;
+    }
+
+    .stat-card .label {
+      font-size: 13px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-card .percentage {
+      font-size: 12px;
+      color: #999;
+      margin-top: 8px;
+    }
+
+    .stat-present { border-top: 4px solid #27ae60; }
+    .stat-present .icon { color: #27ae60; }
+
+    .stat-absent { border-top: 4px solid #dc3545; }
+    .stat-absent .icon { color: #dc3545; }
+
+    .stat-just { border-top: 4px solid #8e44ad; }
+    .stat-just .icon { color: #8e44ad; }
+
+    /* ========== FILTROS ========== */
+    .filtros-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .filtros-form {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .form-group {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #764ba2;
+      box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+    }
+
+    .btn-filtrar {
+      padding: 10px 24px;
+      background: #764ba2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-filtrar:hover {
+      background: #5a3583;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+    }
+
+    .btn-limpiar {
+      padding: 10px 24px;
+      background: #e0e0e0;
+      color: #333;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-limpiar:hover {
+      background: #d0d0d0;
+    }
+
+    /* ========== CONTENIDO PRINCIPAL ========== */
+    .contenido-horizontal {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    @media (max-width: 1024px) {
+      .contenido-horizontal {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ========== CALENDARIO ========== */
+    .bloque-calendario {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    #calendar {
+      font-size: 14px;
+      min-height: 560px;
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .fc {
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .fc .fc-button-primary {
+      background-color: #764ba2;
+      border-color: #764ba2;
+    }
+
+    .fc .fc-button-primary:hover {
+      background-color: #5a3583;
+      border-color: #5a3583;
+    }
+
+    .fc .fc-button-primary.fc-button-active {
+      background-color: #667eea;
+      border-color: #667eea;
+    }
+
+    /* ========== TABLA ========== */
+    .bloque-tabla {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      overflow-x: auto;
+    }
+
+    .tabla-historial {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .tabla-historial thead {
+      background: #f5f5f5;
+      border-bottom: 2px solid #764ba2;
+    }
+
+    .tabla-historial th {
+      padding: 14px;
+      text-align: left;
+      font-weight: bold;
+      color: #555;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .tabla-historial td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .tabla-historial tbody tr:nth-child(odd) { background: #ffffff; }
+    .tabla-historial tbody tr:nth-child(even) { background: #fbfbfb; }
+    .tabla-historial tbody tr:hover { transform: translateX(6px); box-shadow: 0 8px 22px rgba(0,0,0,0.06); }
+
+    .tabla-historial tbody tr {
+      transition: all 0.3s ease;
+    }
+
+    .tabla-historial tbody tr:hover {
+      background-color: #f9f9f9;
+      transform: translateX(4px);
+    }
+
+    .estado-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .estado-presente {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .estado-ausente {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .estado-justificado {
+      background: #e2e3e5;
+      color: #383d41;
+    }
+
+    .sin-datos {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+      font-size: 16px;
+    }
+
+    .sin-datos i {
+      font-size: 48px;
+      color: #ddd;
+      margin-bottom: 15px;
+      display: block;
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 22px;
+      }
+
+      .back-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .stats-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .tabla-historial {
+        font-size: 12px;
+      }
+
+      .tabla-historial th,
+      .tabla-historial td {
+        padding: 8px;
+      }
+
+      .filtros-form {
+        flex-direction: column;
+      }
+
+      .form-group {
+        width: 100%;
+      }
+
+      .btn-filtrar,
+      .btn-limpiar {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% include 'padre/navbar_padre.html' %}
+
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header" role="banner">
+      <div style="display:flex; align-items:center; gap:18px;">
+        {% if nino.foto %}
+          <img src="{{ nino.foto.url }}" alt="Foto de {{ nino.nombres }}" class="nino-photo" />
+        {% else %}
+          <img src="{% static 'img/default_user.png' %}" alt="Sin foto" class="nino-photo" />
+        {% endif %}
+        <div>
+          <h1><i class="fas fa-clipboard-list"></i> Asistencia — {{ nino.nombres }} {{ nino.apellidos }}</h1>
+          <p class="header-subtitle">Hogar: <strong>{{ nino.hogar.nombre_hogar }}</strong> • {{ nino.hogar.barrio }}</p>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <a href="{% url 'padre_dashboard' %}" class="back-btn" title="Volver al dashboard">
+          <i class="fas fa-arrow-left"></i> Volver
+        </a>
+      </div>
+    </div>
+
+    <!-- ALERTA DE AUSENCIAS CRÍTICAS -->
+    {% if alerta_ausencias.tiene_alerta %}
+    <div class="alert-box {{ alerta_ausencias.nivel }}">
+      <div class="alert-content">
+        <div class="alert-icon">
+          {% if alerta_ausencias.nivel == 'grave' %}
+            <i class="fas fa-exclamation-circle"></i>
+          {% elif alerta_ausencias.nivel == 'warning' %}
+            <i class="fas fa-exclamation-triangle"></i>
+          {% else %}
+            <i class="fas fa-info-circle"></i>
+          {% endif %}
+        </div>
+        <div class="alert-text">
+          <h3>
+            {% if alerta_ausencias.nivel == 'grave' %}
+              ⚠️ Alerta Grave
+            {% elif alerta_ausencias.nivel == 'warning' %}
+              ⚠️ Alerta de Seguimiento
+            {% else %}
+              ℹ️ Información
+            {% endif %}
+          </h3>
+          <p>
+            {% if alerta_ausencias.nivel == 'grave' %}
+              Se han registrado {{ alerta_ausencias.ausencias_sin_justificar }} ausencias sin justificar. 
+              Se requiere <strong>contacto inmediato</strong> con los acudientes.
+            {% elif alerta_ausencias.nivel == 'warning' %}
+              Se han registrado {{ alerta_ausencias.ausencias_sin_justificar }} ausencias sin justificar. 
+              Requiere seguimiento y revisión.
+            {% else %}
+              Se han registrado {{ alerta_ausencias.ausencias_sin_justificar }} ausencias sin justificar.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- TARJETAS DE ESTADÍSTICAS -->
+    <div class="stats-cards">
+      <div class="stat-card stat-present">
+        <div class="icon"><i class="fas fa-check-circle"></i></div>
+        <div class="label">Presentes</div>
+        <div class="value">{{ presentes }}</div>
+        <div class="percentage">{{ porc_presentes }}%</div>
+      </div>
+      <div class="stat-card stat-absent">
+        <div class="icon"><i class="fas fa-times-circle"></i></div>
+        <div class="label">Ausentes</div>
+        <div class="value">{{ ausentes }}</div>
+        <div class="percentage">{{ porc_ausentes }}%</div>
+      </div>
+      <div class="stat-card stat-just">
+        <div class="icon"><i class="fas fa-file-alt"></i></div>
+        <div class="label">Justificados</div>
+        <div class="value">{{ justificados }}</div>
+        <div class="percentage">{{ porc_justificados }}%</div>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filtros-section">
+      <form method="GET" class="filtros-form">
+        <div class="form-group">
+          <label for="start_date">Desde</label>
+          <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+        </div>
+        <div class="form-group">
+          <label for="end_date">Hasta</label>
+          <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+        </div>
+        <button type="submit" class="btn-filtrar">
+          <i class="fas fa-filter"></i> Filtrar
+        </button>
+        <a href="{% url 'padre_historial_asistencia' nino.id %}" class="btn-limpiar">
+          <i class="fas fa-redo"></i> Limpiar
+        </a>
+      </form>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="contenido-horizontal">
+      <!-- CALENDARIO -->
+      <div class="bloque-calendario">
+        <h3 style="text-align: center; margin-bottom: 20px; color: #764ba2;">
+          <i class="fas fa-calendar-alt"></i> Calendario
+        </h3>
+        <div id="calendar"></div>
+      </div>
+
+      <!-- TABLA DE HISTORIAL -->
+      <div class="bloque-tabla">
+        <h3 style="text-align: center; margin-bottom: 20px; color: #764ba2;">
+          <i class="fas fa-list"></i> Historial Detallado
+        </h3>
+        {% if historial %}
+        <table class="tabla-historial">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Día</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for asistencia in historial %}
+            <tr>
+              <td>{{ asistencia.fecha|date:"d/m/Y" }}</td>
+              <td>{{ asistencia.fecha|date:"l" }}</td>
+              <td>
+                {% if asistencia.estado == 'Presente' %}
+                  <span class="estado-badge estado-presente">Presente</span>
+                {% elif asistencia.estado == 'Ausente' %}
+                  <span class="estado-badge estado-ausente">Ausente</span>
+                {% else %}
+                  <span class="estado-badge estado-justificado">Justificado</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="sin-datos">
+          <i class="fas fa-inbox"></i>
+          <p>No hay registros de asistencia para este período.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const eventos = {{ eventos_json|safe }};
+      
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,listMonth'
+        },
+        events: eventos,
+        eventDisplay: 'block',
+        height: 'auto'
+      });
+      
+      calendar.render();
+    });
+  </script>
+</body>
+</html>

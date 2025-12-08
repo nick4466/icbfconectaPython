@@ -268,10 +268,29 @@
       </ul>
       {% endif %}
 
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="form-grid">
+          {% if user.foto_admin %}
+            <div style="grid-column: 1 / -1; display:flex; gap:18px; align-items:center;">
+              <img src="{{ user.foto_admin.url }}" alt="Foto de perfil" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #e8e8e8;" />
+              <div style="flex:1;">
+                <label style="font-weight:700; margin-bottom:6px; display:block;">Cambiar foto de perfil</label>
+                {{ form.foto_admin }}
+                <p style="font-size:13px; color:#666; margin-top:6px;">Formatos permitidos: JPG, PNG. Tamaño recomendado 400x400px.</p>
+              </div>
+            </div>
+          {% else %}
+            <div style="grid-column: 1 / -1; display:flex; gap:18px; align-items:center;">
+              <div style="flex:1;">
+                <label style="font-weight:700; margin-bottom:6px; display:block;">Foto de perfil</label>
+                {{ form.foto_admin }}
+                <p style="font-size:13px; color:#666; margin-top:6px;">Sube una foto para tu perfil (JPG/PNG).</p>
+              </div>
+            </div>
+          {% endif %}
           {% for field in form %}
+            {% if field.name != 'foto_admin' %}
             <div class="form-group">
               <label for="{{ field.id_for_label }}">{{ field.label }}</label>
               {{ field }}
@@ -281,6 +300,7 @@
                 </div>
               {% endif %}
             </div>
+            {% endif %}
           {% endfor %}
         </div>
 

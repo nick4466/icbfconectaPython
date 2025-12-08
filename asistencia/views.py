@@ -135,6 +135,18 @@ def historial_asistencia(request, nino_id):
     def porcentaje(valor):
         return round((valor / total) * 100) if total > 0 else 0
 
+    # Calcular si hay ausencias críticas (umbral de 3 o más ausencias sin justificar)
+    ausencias_sin_justificar = historial.filter(estado="Ausente").count()
+    tiene_alerta = ausencias_sin_justificar >= 3
+    
+    # Contexto para mostrar alerta
+    alerta_ausencias = {
+        'tiene_alerta': tiene_alerta,
+        'ausencias_sin_justificar': ausencias_sin_justificar,
+        'nivel': 'grave' if ausencias_sin_justificar >= 5 else 'warning' if ausencias_sin_justificar >= 3 else 'info',
+        'porcentaje_ausencias': porcentaje(ausentes),
+    }
+
     return render(request, 'asistencia/historial.html', {
         'nino': nino,
         'historial': historial,
@@ -147,6 +159,7 @@ def historial_asistencia(request, nino_id):
         'eventos_json': json.dumps(eventos, cls=DjangoJSONEncoder),
         'start_date': start_date,
         'end_date': end_date,
+        'alerta_ausencias': alerta_ausencias,
     })
 
 

@@ -176,10 +176,11 @@ class PadrePerfilForm(forms.ModelForm):
     """Formulario para que el Padre de Familia edite su perfil."""
     correo = forms.EmailField(label="Correo electrónico", required=True)
     ocupacion = forms.CharField(max_length=50, required=False)
+    foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))
 
     class Meta:
         model = Usuario
-        fields = ['nombres', 'apellidos', 'correo', 'telefono', 'direccion']
+        fields = ['nombres', 'apellidos', 'correo', 'telefono', 'direccion', 'foto_admin']
         widgets = {
             'telefono': forms.TextInput(attrs={'placeholder': 'Ej. 3112223344'}),
         }

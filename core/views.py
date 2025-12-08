@@ -1929,7 +1929,7 @@ def editar_perfil(request):
         initial_data = None
 
     if request.method == 'POST':
-        form = FormClass(request.POST, instance=user, initial=initial_data)
+        form = FormClass(request.POST, request.FILES, instance=user, initial=initial_data)
         if form.is_valid():
             # Guardar los datos del modelo Usuario
             user_instance = form.save(commit=False)
@@ -3408,3 +3408,88 @@ def formulario_matricula_publico(request, token):
             }, status=500)
     
     return JsonResponse({'success': False, 'error': 'Método no permitido.'}, status=405)
+
+
+# =====================================================
+# 👨‍👧 VISTA DE ASISTENCIA PARA PADRES
+# =====================================================
+@login_required
+def padre_historial_asistencia(request, nino_id):
+    """
+    Vista para que los padres vean el historial de asistencia de sus hijos.
+    Solo pueden ver la asistencia de sus propios hijos.
+    """
+    if request.user.rol.nombre_rol != 'padre':
+        return redirect('role_redirect')
+    
+    try:
+        # Verificar que el niño pertenece al padre autenticado
+        padre = Padre.objects.get(usuario=request.user)
+        nino = get_object_or_404(Nino, id=nino_id, padre=padre)
+        
+        # Obtener historial de asistencia
+        historial = Asistencia.objects.filter(nino=nino).order_by('-fecha')
+        
+        # Filtro por rango de fechas
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        if start_date and end_date:
+            historial = historial.filter(fecha__range=[start_date, end_date])
+        
+        # Vincular novedad por fecha y niño
+        for asistencia in historial:
+            novedad = Novedad.objects.filter(nino=nino, fecha=asistencia.fecha).first()
+            asistencia.novedad_id = novedad.id if novedad else None
+        
+        # Datos para calendario
+        eventos = [
+            {
+                "title": a.estado,
+                "start": a.fecha.strftime("%Y-%m-%d"),
+                "color": (
+                    "#28a745" if a.estado == "Presente" else
+                    "#dc3545" if a.estado == "Ausente" else
+                    "#6f42c1"
+                )
+            }
+            for a in historial
+        ]
+        
+        # Calcular estadísticas
+        total = historial.count()
+        presentes = historial.filter(estado="Presente").count()
+        ausentes = historial.filter(estado="Ausente").count()
+        justificados = historial.filter(estado="Justificado").count()
+        
+        def porcentaje(valor):
+            return round((valor / total) * 100) if total > 0 else 0
+        
+        # Calcular si hay ausencias críticas
+        ausencias_sin_justificar = historial.filter(estado="Ausente").count()
+        tiene_alerta = ausencias_sin_justificar >= 3
+        
+        alerta_ausencias = {
+            'tiene_alerta': tiene_alerta,
+            'ausencias_sin_justificar': ausencias_sin_justificar,
+            'nivel': 'grave' if ausencias_sin_justificar >= 5 else 'warning' if ausencias_sin_justificar >= 3 else 'info',
+            'porcentaje_ausencias': porcentaje(ausentes),
+        }
+        
+        return render(request, 'padre/asistencia_historial.html', {
+            'nino': nino,
+            'historial': historial,
+            'presentes': presentes,
+            'ausentes': ausentes,
+            'justificados': justificados,
+            'porc_presentes': porcentaje(presentes),
+            'porc_ausentes': porcentaje(ausentes),
+            'porc_justificados': porcentaje(justificados),
+            'eventos_json': json.dumps(eventos, cls=json.JSONEncoder),
+            'start_date': start_date,
+            'end_date': end_date,
+            'alerta_ausencias': alerta_ausencias,
+        })
+    except Padre.DoesNotExist:
+        return redirect('padre_dashboard')
+    except Nino.DoesNotExist:
+        return redirect('padre_dashboard')

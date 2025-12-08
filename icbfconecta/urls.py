@@ -74,6 +74,7 @@ urlpatterns = [
 
     # --- Vistas para Padres (Ahora con ID de niño) ---
     path('padre/desarrollo/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
+    path('padre/asistencia/<int:nino_id>/', views.padre_historial_asistencia, name='padre_historial_asistencia'),
     path('padre/calendario/', calendario_padres, name='calendario_padres'),
     path('padre/calendario/info/', obtener_info, name='obtener_info'),
 

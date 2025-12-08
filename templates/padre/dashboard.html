@@ -420,6 +420,9 @@
           <!-- FOOTER TARJETA -->
           <div class="card-footer">
             <div class="quick-actions">
+              <a href="{% url 'padre_historial_asistencia' data.nino.id %}" title="Ver Asistencias" style="margin-right: 12px;">
+                <i class="fas fa-clipboard-list" style="color: #4DB6FF; font-size: 18px;"></i>
+              </a>
               <a href="{% url 'calendario_padres' %}" title="Ver Calendario">
                 <i class="fas fa-calendar-alt"></i>
               </a>
