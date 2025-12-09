@@ -3675,3 +3675,43 @@ def padre_historial_asistencia(request, nino_id):
         return redirect('padre_dashboard')
     except Nino.DoesNotExist:
         return redirect('padre_dashboard')
+
+
+# ==========================================
+# VISTAS DE ERROR PERSONALIZADAS
+# ==========================================
+
+def custom_404(request, exception=None):
+    """
+    Vista personalizada para errores 404 (Página No Encontrada)
+    """
+    from django.conf import settings
+    
+    context = {
+        'request_path': request.path,
+        'timestamp': timezone.now().strftime('%d/%m/%Y %H:%M:%S'),
+        'exception': str(exception) if exception else None,
+        'settings': settings,
+    }
+    
+    return render(request, 'errors/404.html', context, status=404)
+
+
+def custom_500(request):
+    """
+    Vista personalizada para errores 500 (Error del Servidor)
+    """
+    from django.conf import settings
+    import sys
+    
+    # Obtener información del último error si está disponible
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    
+    context = {
+        'request_path': request.path if hasattr(request, 'path') else 'Desconocido',
+        'timestamp': timezone.now().strftime('%d/%m/%Y %H:%M:%S'),
+        'exception': str(exc_value) if exc_value else 'Error interno del servidor',
+        'settings': settings,
+    }
+    
+    return render(request, 'errors/500.html', context, status=500)

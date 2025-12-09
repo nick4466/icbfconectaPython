@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Error del Servidor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 650px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            opacity: 0.1;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .error-icon {
+            font-size: 100px;
+            color: #f5576c;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .error-code {
+            font-size: 120px;
+            font-weight: bold;
+            color: #f5576c;
+            margin: 20px 0;
+            text-shadow: 3px 3px 0 rgba(245, 87, 108, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .error-title {
+            font-size: 32px;
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        .error-message {
+            font-size: 18px;
+            color: #718096;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+        .error-details {
+            background: #fff5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #f5576c;
+            position: relative;
+            z-index: 1;
+        }
+
+        .error-details p {
+            color: #742a2a;
+            font-size: 14px;
+            margin: 5px 0;
+            text-align: left;
+        }
+
+        .error-details strong {
+            color: #c53030;
+        }
+
+        .technical-info {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .technical-info code {
+            display: block;
+            background: #2d3748;
+            color: #48bb78;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #fc8181;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #f56565;
+            transform: translateY(-2px);
+        }
+
+        .countdown {
+            margin-top: 30px;
+            padding: 15px;
+            background: #fef5e7;
+            border-radius: 10px;
+            border: 1px solid #f9e79f;
+            position: relative;
+            z-index: 1;
+        }
+
+        .countdown p {
+            color: #e67e22;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .countdown strong {
+            color: #d35400;
+            font-size: 18px;
+        }
+
+        .suggestions {
+            margin-top: 30px;
+            text-align: left;
+            padding: 20px;
+            background: #f0fff4;
+            border-radius: 10px;
+            border-left: 4px solid #48bb78;
+            position: relative;
+            z-index: 1;
+        }
+
+        .suggestions h3 {
+            color: #22543d;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .suggestions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .suggestions li {
+            color: #276749;
+            padding: 8px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .suggestions li i {
+            color: #48bb78;
+            margin-top: 3px;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #fff5f5;
+            border-radius: 20px;
+            color: #c53030;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #f5576c;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .error-container {
+                padding: 40px 20px;
+            }
+
+            .error-code {
+                font-size: 80px;
+            }
+
+            .error-title {
+                font-size: 24px;
+            }
+
+            .error-message {
+                font-size: 16px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape1 {
+            top: 10%;
+            left: 10%;
+            font-size: 60px;
+            animation-delay: 0s;
+        }
+
+        .shape2 {
+            top: 60%;
+            right: 15%;
+            font-size: 80px;
+            animation-delay: 2s;
+        }
+
+        .shape3 {
+            bottom: 20%;
+            left: 20%;
+            font-size: 50px;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(10deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-shapes">
+        <i class="fas fa-server shape shape1"></i>
+        <i class="fas fa-exclamation-circle shape shape2"></i>
+        <i class="fas fa-tools shape shape3"></i>
+    </div>
+
+    <div class="error-container">
+        <div class="error-background"></div>
+        
+        <div class="status-indicator">
+            <span class="status-dot"></span>
+            Sistema Temporalmente No Disponible
+        </div>
+        
+        <div class="error-icon">
+            <i class="fas fa-server"></i>
+        </div>
+        
+        <div class="error-code">500</div>
+        
+        <h1 class="error-title">¡Algo Salió Mal en el Servidor!</h1>
+        
+        <p class="error-message">
+            Lo sentimos, ocurrió un error interno en el servidor. Nuestro equipo ha sido notificado y está trabajando para resolverlo.
+        </p>
+
+        <div class="error-details">
+            <p><strong><i class="fas fa-exclamation-triangle"></i> Tipo de Error:</strong> Error Interno del Servidor (500)</p>
+            <p><strong><i class="fas fa-clock"></i> Fecha y Hora:</strong> {{ timestamp }}</p>
+            <p><strong><i class="fas fa-link"></i> URL Afectada:</strong> <code>{{ request_path }}</code></p>
+            
+            {% if exception and settings.DEBUG %}
+            <div class="technical-info">
+                <p><strong><i class="fas fa-code"></i> Información Técnica (Solo en Modo Debug):</strong></p>
+                <code>{{ exception }}</code>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="suggestions">
+            <h3><i class="fas fa-lightbulb"></i> ¿Qué puedes hacer?</h3>
+            <ul>
+                <li><i class="fas fa-redo"></i> <strong>Recargar la página:</strong> A veces es solo un problema temporal</li>
+                <li><i class="fas fa-clock"></i> <strong>Esperar unos minutos:</strong> El problema podría resolverse automáticamente</li>
+                <li><i class="fas fa-home"></i> <strong>Ir a la página principal:</strong> Intenta acceder desde el inicio</li>
+                <li><i class="fas fa-envelope"></i> <strong>Contactar soporte:</strong> Si el problema persiste, avísanos</li>
+                <li><i class="fas fa-bug"></i> <strong>Reportar el error:</strong> Ayúdanos a mejorar reportando este incidente</li>
+            </ul>
+        </div>
+
+        <div class="actions">
+            <button onclick="location.reload()" class="btn btn-danger">
+                <i class="fas fa-sync-alt"></i>
+                Recargar Página
+            </button>
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i>
+                Ir a Inicio
+            </a>
+            <button onclick="history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Volver Atrás
+            </button>
+        </div>
+
+        <div class="countdown" id="countdown">
+            <p>
+                <i class="fas fa-stopwatch"></i>
+                Intentando redirigir a inicio en <strong id="timer">15</strong> segundos...
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Countdown automático
+        let seconds = 15;
+        const timerElement = document.getElementById('timer');
+        
+        const countdown = setInterval(() => {
+            seconds--;
+            timerElement.textContent = seconds;
+            
+            if (seconds <= 0) {
+                clearInterval(countdown);
+                window.location.href = '/';
+            }
+        }, 1000);
+
+        // Efecto de partículas con mouse
+        document.addEventListener('mousemove', (e) => {
+            const shapes = document.querySelectorAll('.shape');
+            shapes.forEach((shape, index) => {
+                const speed = (index + 1) * 0.01;
+                const x = (e.clientX * speed);
+                const y = (e.clientY * speed);
+                shape.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+
+        // Log error en consola para debugging
+        console.error('Error 500 detectado en:', window.location.href);
+        console.error('Timestamp:', new Date().toISOString());
+    </script>
+</body>
+</html>
