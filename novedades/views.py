@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_date
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import get_template
 
@@ -167,6 +167,42 @@ def detalle_novedad(request, novedad_id):
     hogar_madre = HogarComunitario.objects.filter(madre=madre_profile).first()
     novedad = get_object_or_404(Novedad, id=novedad_id, nino__hogar=hogar_madre)
     return render(request, 'novedades/detalle.html', {'novedad': novedad})
+
+
+@login_required
+def detalle_novedad_padre(request, novedad_id):
+    """Permite a un padre ver la novedad si el niño pertenece a él.
+    Esta vista no requiere rol de madre; comprueba que el usuario sea el padre del niño.
+    """
+    # Verificar usuario autenticado y rol padre
+    if not request.user.is_authenticated or not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'padre':
+        return HttpResponseForbidden('Acceso denegado')
+
+    novedad = get_object_or_404(Novedad, id=novedad_id)
+    # Verificar que el niño de la novedad pertenezca al padre actual
+    if not hasattr(novedad.nino, 'padre') or novedad.nino.padre.usuario != request.user:
+        return HttpResponseForbidden('Acceso denegado')
+
+    return render(request, 'novedades/detalle_padre.html', {'novedad': novedad})
+
+
+@login_required
+def novedades_padre_nino(request, nino_id):
+    """Muestra las últimas 5 novedades para un niño dado, accesible solo por su padre."""
+    # Validar usuario padre
+    if not request.user.is_authenticated or not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'padre':
+        return HttpResponseForbidden('Acceso denegado')
+
+    # Import Nino local para evitar ciclos (ya importado en file head as core.models earlier?)
+    from core.models import Nino
+    nino = get_object_or_404(Nino, id=nino_id)
+
+    # Comprobar pertenencia
+    if not hasattr(nino, 'padre') or nino.padre.usuario != request.user:
+        return HttpResponseForbidden('Acceso denegado')
+
+    novedades = Novedad.objects.filter(nino=nino).order_by('-fecha')[:5]
+    return render(request, 'novedades/lista_padre_novedades.html', {'novedades': novedades, 'nino': nino})
 
 
 @login_required

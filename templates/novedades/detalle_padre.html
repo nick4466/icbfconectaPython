@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detalle de Novedad - Padre</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+  <style>
+    body { font-family: 'Roboto', sans-serif; margin:0; background:#f6f8fb; color:#222; }
+    header { background:#fff; padding:14px 20px; box-shadow:0 4px 12px rgba(0,0,0,0.06); display:flex; align-items:center; justify-content:center; }
+    .container { max-width:900px; margin:28px auto; background:#fff; border-radius:14px; padding:20px; box-shadow:0 8px 30px rgba(0,0,0,0.06); }
+    .title { font-size:20px; color:#4DB6FF; font-weight:700; margin-bottom:12px; display:flex; gap:10px; align-items:center; }
+    .meta { display:flex; gap:12px; align-items:center; margin-bottom:14px; }
+    .nino-photo { width:72px; height:72px; border-radius:50%; object-fit:cover; border:3px solid #4DB6FF; }
+    .section { background:#f7fbff; padding:12px; border-radius:10px; margin-bottom:12px; }
+    .section h4 { margin:0 0 8px 0; color:#333; }
+    .actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+    .btn { padding:8px 14px; border-radius:10px; font-weight:700; color:#fff; text-decoration:none; }
+    .btn-pdf { background: linear-gradient(90deg,#0043c0,#006bff); }
+    .btn-back { background: linear-gradient(90deg,#764ba2,#5a3583); }
+  </style>
+</head>
+<body>
+    {% include 'padre/navbar_padre.html' %}
+
+    <div class="page-bg"></div>
+
+    <div class="container">
+      <div class="title"><i class="fas fa-exclamation-triangle" style="color:#E57373"></i> Detalle de la Novedad</div>
+
+      <div class="meta">
+      {% if novedad.nino.foto %}
+        <img src="{{ novedad.nino.foto.url }}" alt="Foto niño" class="nino-photo" />
+      {% else %}
+        <img src="{% static 'img/nino_placeholder.jpg' %}" alt="Foto niño" class="nino-photo" />
+      {% endif %}
+      <div>
+        <div style="font-weight:700; font-size:16px;">{{ novedad.nino.nombres }} {{ novedad.nino.apellidos }}</div>
+        <div style="color:#666; font-size:13px;">Hogar: {{ novedad.nino.hogar.nombre_hogar }}</div>
+        <div style="color:#888; font-size:13px; margin-top:6px;">Fecha: {{ novedad.fecha|date:'d/m/Y' }}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h4>Tipo</h4>
+      <div>{{ novedad.get_tipo_display }}</div>
+    </div>
+
+    <div class="section">
+      <h4>Descripción</h4>
+      <div>{{ novedad.descripcion }}</div>
+    </div>
+
+    <div class="section">
+      <h4>Observaciones</h4>
+      <div>{{ novedad.observaciones }}</div>
+    </div>
+
+    {% if novedad.archivo_pdf %}
+    <div class="section">
+      <h4>Soporte (PDF)</h4>
+      <div>
+        <a href="{{ novedad.archivo_pdf.url }}" target="_blank" class="btn btn-pdf"><i class="fas fa-file-pdf"></i> Ver PDF</a>
+        <a href="{{ novedad.archivo_pdf.url }}" download class="btn btn-back" style="margin-left:8px;">Descargar</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="actions">
+      <a href="{% url 'padre_historial_asistencia' novedad.nino.id %}" class="btn btn-back"><i class="fas fa-clipboard-list"></i> Ver Asistencias</a>
+      <a href="{% url 'padre_dashboard' %}" class="btn btn-pdf"><i class="fas fa-arrow-left"></i> Volver</a>
+    </div>
+  </div>
+
+  <style>
+    :root{--glass-bg: rgba(255,255,255,0.62);--accent:#4DB6FF;--muted:#666}
+    body{font-family:'Roboto',sans-serif;margin:0;background:#f3f6fa}
+    .page-bg{position:fixed;inset:0;background-image: url('{% static "img/fondopadres.jpg" %}');background-size:cover;background-position:center;filter:brightness(0.85);z-index:-2}
+    .container{max-width:980px;margin:28px auto;padding:22px;border-radius:14px;background:var(--glass-bg);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 12px 40px rgba(0,0,0,0.12)}
+    .title{font-size:20px;color:var(--accent);font-weight:700;display:flex;gap:10px;align-items:center}
+    .meta{display:flex;gap:14px;align-items:center;margin:14px 0}
+    .nino-photo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);box-shadow:0 6px 18px rgba(0,0,0,0.12)}
+    .section{background:#fff;padding:14px;border-radius:10px;margin-bottom:12px;box-shadow:0 8px 20px rgba(0,0,0,0.06)}
+    .section h4{margin:0 0 8px 0;color:#333}
+    .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+    .btn{padding:10px 14px;border-radius:10px;text-decoration:none;color:#fff;font-weight:700}
+    .btn-pdf{background:linear-gradient(90deg,#0043c0,#006bff)}
+    .btn-back{background:linear-gradient(135deg,#764ba2,#5a3583)}
+    @media (max-width:720px){.meta{flex-direction:column;align-items:flex-start}.actions{justify-content:stretch}}</style>
+
+</body>
+</html>

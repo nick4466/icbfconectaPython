@@ -317,6 +317,29 @@ input[type="radio"]:checked + label {
   border-radius:8px;
 
 }
+/* Botón pequeño para ver historial desde la tabla */
+.btn-mini-historial {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #764ba2, #5a3583);
+  color: white;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+
+.btn-mini-historial i { font-size: 14px; }
+
+.btn-mini-historial:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+  text-decoration: none;
+}
 /* -------- Botones "Todos presentes / Todos ausentes" -------- */
 
 .btn-presente, .btn-ausente {

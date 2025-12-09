@@ -407,12 +407,12 @@
             {% endif %}
 
             {% if data.ultima_novedad %}
-            <div class="info-section novedad-reciente">
+            <a href="{% url 'novedades:detalle_padre' data.ultima_novedad.id %}" class="info-section novedad-reciente" style="text-decoration:none;color:inherit;display:block;">
               <h4><i class="fas fa-exclamation-triangle"></i> Novedad Reciente</h4>
               <p><strong>{{ data.ultima_novedad.get_tipo_display }}:</strong>
                 {{ data.ultima_novedad.descripcion|truncatewords:15 }}
               </p>
-            </div>
+            </a>
             {% endif %}
 
           </div>
@@ -422,6 +422,9 @@
             <div class="quick-actions">
               <a href="{% url 'padre_historial_asistencia' data.nino.id %}" title="Ver Asistencias" style="margin-right: 12px;">
                 <i class="fas fa-clipboard-list" style="color: #4DB6FF; font-size: 18px;"></i>
+              </a>
+              <a href="{% url 'novedades:lista_padre_novedades' data.nino.id %}" title="Justificaciones" style="margin-right: 12px;">
+                <i class="fas fa-file-medical-alt" style="color: #E57373; font-size: 18px;"></i>
               </a>
               <a href="{% url 'calendario_padres' %}" title="Ver Calendario">
                 <i class="fas fa-calendar-alt"></i>

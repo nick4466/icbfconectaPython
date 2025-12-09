@@ -20,6 +20,9 @@ urlpatterns = [
 
     # Vista reducida para modal
     path('detalle-modal/<int:novedad_id>/', views.detalle_novedad, name='detalle'),
+    # Vista para padres: detalle de novedad (solo acceso si el niño pertenece al padre logeado)
+    path('padre/detalle/<int:novedad_id>/', views.detalle_novedad_padre, name='detalle_padre'),
+    path('padre/lista/<int:nino_id>/', views.novedades_padre_nino, name='lista_padre_novedades'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
