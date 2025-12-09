@@ -751,9 +751,53 @@
                      {% if 'correo_padre' in campos_corregir %}class="editable"{% endif %} required>
             </div>
 
+            <!-- 🆕 CAMPOS GEOGRÁFICOS -->
+            <div class="form-group">
+              <label>
+                Departamento <span class="required">*</span>
+                {% if 'departamento_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <select name="departamento_padre" id="id_departamento_padre" 
+                      {% if en_correccion and 'departamento_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if 'departamento_padre' in campos_corregir %}class="editable"{% endif %} 
+                      required>
+                <option value="">-- Seleccione un Departamento --</option>
+                {% for dept in departamentos %}
+                <option value="{{ dept.id }}" {% if solicitud.departamento_padre_id == dept.id %}selected{% endif %}>
+                  {{ dept.nombre }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Ciudad/Municipio <span class="required">*</span>
+                {% if 'ciudad_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <select name="ciudad_padre" id="id_ciudad_padre" 
+                      {% if en_correccion and 'ciudad_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if 'ciudad_padre' in campos_corregir %}class="editable"{% endif %} 
+                      required>
+                <option value="">-- Seleccione una Ciudad --</option>
+              </select>
+            </div>
+
+            <div class="form-group localidad-padre-container" style="display: none;">
+              <label>
+                Localidad (solo Bogotá)
+                {% if 'localidad_bogota_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <select name="localidad_bogota_padre" id="id_localidad_bogota_padre" 
+                      {% if en_correccion and 'localidad_bogota_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if 'localidad_bogota_padre' in campos_corregir %}class="editable"{% endif %}>
+                <option value="">-- Seleccione una Localidad --</option>
+              </select>
+            </div>
+
             <div class="form-group full-width">
               <label>
-                Dirección <span class="required">*</span>
+                Dirección Completa <span class="required">*</span>
                 {% if 'direccion_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <input type="text" name="direccion_padre" value="{{ solicitud.direccion_padre }}" 
@@ -1442,6 +1486,36 @@
         }
       }
     }
+  </script>
+  
+  <!-- 🆕 Script de Geografía de Colombia -->
+  {% load static %}
+  <script src="{% static 'js/geografia_colombia.js' %}"></script>
+  <script>
+    // Configuración específica para formulario público (ID de padre)
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inicializar geografía para campos de padre
+      initGeografiaColombia({
+        departamentoSelector: '#id_departamento_padre',
+        municipioSelector: '#id_ciudad_padre',
+        localidadSelector: '#id_localidad_bogota_padre',
+        localidadContainer: '.localidad-padre-container',
+      });
+      
+      // Preseleccionar valores si existen (modo edición/corrección)
+      {% if solicitud.departamento_padre_id %}
+        document.getElementById('id_departamento_padre').value = '{{ solicitud.departamento_padre_id }}';
+        document.getElementById('id_departamento_padre').dataset.selectedId = '{{ solicitud.departamento_padre_id }}';
+      {% endif %}
+      
+      {% if solicitud.ciudad_padre_id %}
+        document.getElementById('id_ciudad_padre').dataset.selectedId = '{{ solicitud.ciudad_padre_id }}';
+      {% endif %}
+      
+      {% if solicitud.localidad_bogota_padre_id %}
+        document.getElementById('id_localidad_bogota_padre').dataset.selectedId = '{{ solicitud.localidad_bogota_padre_id }}';
+      {% endif %}
+    });
   </script>
 </body>
 </html>

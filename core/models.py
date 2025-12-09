@@ -62,7 +62,7 @@ def admin_upload_path(instance, filename):
     # Guarda la foto en una carpeta por documento, igual que madres
     return f"administradores/fotos/{instance.documento}/{filename}"
 # ------------------------
-# Ciudades
+# Ciudades (para Hogares Comunitarios - relación con Regional)
 # ------------------------
 class Ciudad(models.Model):
     nombre = models.CharField(max_length=120)
@@ -70,6 +70,54 @@ class Ciudad(models.Model):
 
     def __str__(self):
         return self.nombre
+
+# ------------------------
+# 🆕 GEOGRAFÍA DE COLOMBIA
+# ------------------------
+class Departamento(models.Model):
+    """Departamentos de Colombia (32 + Bogotá D.C.)"""
+    nombre = models.CharField(max_length=100, unique=True)
+    codigo = models.CharField(max_length=10, unique=True, null=True, blank=True)  # Código DANE
+    
+    class Meta:
+        db_table = 'departamentos'
+        verbose_name = 'Departamento'
+        verbose_name_plural = 'Departamentos'
+        ordering = ['nombre']
+    
+    def __str__(self):
+        return self.nombre
+
+class Municipio(models.Model):
+    """Municipios (ciudades y pueblos) de Colombia por departamento"""
+    nombre = models.CharField(max_length=150)
+    departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE, related_name='municipios')
+    codigo = models.CharField(max_length=10, null=True, blank=True)  # Código DANE
+    es_capital = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'municipios'
+        verbose_name = 'Municipio'
+        verbose_name_plural = 'Municipios'
+        ordering = ['departamento__nombre', 'nombre']
+        unique_together = ['nombre', 'departamento']
+    
+    def __str__(self):
+        return f"{self.nombre} ({self.departamento.nombre})"
+
+class LocalidadBogota(models.Model):
+    """20 Localidades de Bogotá D.C."""
+    nombre = models.CharField(max_length=100, unique=True)
+    numero = models.IntegerField(unique=True)  # 1-20
+    
+    class Meta:
+        db_table = 'localidades_bogota'
+        verbose_name = 'Localidad de Bogotá'
+        verbose_name_plural = 'Localidades de Bogotá'
+        ordering = ['numero']
+    
+    def __str__(self):
+        return f"{self.numero}. {self.nombre}"
 
 # ------------------------
 # Gestor de usuarios personalizado
@@ -110,14 +158,28 @@ class Usuario(AbstractUser):
         ('CE', 'Cédula de extranjería'),
         ('PA', 'Pasaporte'),
     ]
+    
+    SEXO_CHOICES = [
+        ('M', 'Masculino'),
+        ('F', 'Femenino'),
+        ('O', 'Otro'),
+    ]
+    
     username = None
-
 
     tipo_documento = models.CharField(max_length=5, choices=TIPO_DOCUMENTO_CHOICES, default='CC')
     documento = models.BigIntegerField(unique=True)
     nombres = models.CharField(max_length=50)
     apellidos = models.CharField(max_length=50)
     correo = models.EmailField(max_length=100, unique=True)
+    sexo = models.CharField(max_length=1, choices=SEXO_CHOICES, default='F')
+    
+    # 🆕 Ubicación geográfica
+    departamento_residencia = models.ForeignKey(Departamento, on_delete=models.SET_NULL, null=True, blank=True, related_name='residentes')
+    ciudad_residencia = models.ForeignKey(Municipio, on_delete=models.SET_NULL, null=True, blank=True, related_name='residentes')
+    localidad_bogota = models.ForeignKey(LocalidadBogota, on_delete=models.SET_NULL, null=True, blank=True, related_name='residentes', 
+                                         help_text='Solo aplica si vive en Bogotá D.C.')
+    
     direccion = models.CharField(max_length=100, null=True, blank=True)
     barrio = models.CharField(max_length=100, null=True, blank=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
@@ -503,6 +565,13 @@ class SolicitudMatriculacion(models.Model):
     apellidos_padre = models.CharField(max_length=100, null=True, blank=True)
     correo_padre = models.EmailField(max_length=100, null=True, blank=True)
     telefono_padre = models.CharField(max_length=20, null=True, blank=True)
+    
+    # 🆕 Ubicación geográfica del padre
+    departamento_padre = models.ForeignKey(Departamento, on_delete=models.SET_NULL, null=True, blank=True, related_name='padres_solicitantes')
+    ciudad_padre = models.ForeignKey(Municipio, on_delete=models.SET_NULL, null=True, blank=True, related_name='padres_solicitantes')
+    localidad_bogota_padre = models.ForeignKey(LocalidadBogota, on_delete=models.SET_NULL, null=True, blank=True, related_name='padres_solicitantes',
+                                                help_text='Solo si vive en Bogotá D.C.')
+    
     direccion_padre = models.CharField(max_length=200, null=True, blank=True)
     barrio_padre = models.CharField(max_length=100, null=True, blank=True)
     ocupacion_padre = models.CharField(max_length=100, null=True, blank=True)

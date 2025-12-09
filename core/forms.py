@@ -1,7 +1,8 @@
 # core/forms.py
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
-from .models import Usuario, Nino, MadreComunitaria, HogarComunitario, Regional, Ciudad, Discapacidad
+from .models import (Usuario, Nino, MadreComunitaria, HogarComunitario, Regional, Ciudad, Discapacidad,
+                     Departamento, Municipio, LocalidadBogota)
 
 
 # ----------------------------------------------------
@@ -24,11 +25,59 @@ class UsuarioMadreForm(forms.ModelForm):
     correo = forms.EmailField(label="Correo electrónico", required=True)
     nombres = forms.CharField(label="Nombres", max_length=50, required=True)
     apellidos = forms.CharField(label="Apellidos", max_length=50, required=True)
+    sexo = forms.ChoiceField(
+        label="Sexo",
+        choices=[
+            ('M', 'Masculino'),
+            ('F', 'Femenino'),
+            ('O', 'Otro'),
+        ],
+        initial='F',
+        required=True,
+        widget=forms.RadioSelect
+    )
+    
+    # 🆕 Campos geográficos
+    departamento_residencia = forms.ModelChoiceField(
+        queryset=Departamento.objects.all().order_by('nombre'),
+        required=True,
+        label="Departamento de Residencia",
+        empty_label="-- Seleccione un Departamento --"
+    )
+    ciudad_residencia = forms.ModelChoiceField(
+        queryset=Municipio.objects.none(),
+        required=True,
+        label="Ciudad/Municipio de Residencia",
+        empty_label="-- Seleccione una Ciudad --"
+    )
+    localidad_bogota = forms.ModelChoiceField(
+        queryset=LocalidadBogota.objects.all().order_by('numero'),
+        required=False,
+        label="Localidad (solo Bogotá)",
+        empty_label="-- Seleccione una Localidad --"
+    )
     
     class Meta:
         model = Usuario
-        # Incluye todos los campos de Usuario que necesitas para el registro
-        fields = ['documento', 'tipo_documento', 'nombres', 'apellidos', 'correo', 'telefono', 'direccion']
+        fields = ['documento', 'tipo_documento', 'nombres', 'apellidos', 'sexo', 'correo', 'telefono',
+                  'departamento_residencia', 'ciudad_residencia', 'localidad_bogota', 'direccion', 'barrio']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Cargar municipios si hay departamento seleccionado
+        if 'departamento_residencia' in self.data:
+            try:
+                departamento_id = int(self.data.get('departamento_residencia'))
+                self.fields['ciudad_residencia'].queryset = Municipio.objects.filter(
+                    departamento_id=departamento_id
+                ).order_by('nombre')
+            except (ValueError, TypeError):
+                self.fields['ciudad_residencia'].queryset = Municipio.objects.none()
+        elif self.instance.pk and self.instance.departamento_residencia:
+            self.fields['ciudad_residencia'].queryset = Municipio.objects.filter(
+                departamento=self.instance.departamento_residencia
+            ).order_by('nombre')
 
 # --- Formulario del Perfil MadreComunitaria ---
 class MadreProfileForm(forms.ModelForm):
@@ -69,7 +118,59 @@ class HogarForm(forms.ModelForm):
 
     class Meta:
         model = HogarComunitario
-        fields = ['regional', 'ciudad', 'direccion', 'localidad']  # Ajusta según los campos reales del modelo
+        fields = [
+            'regional', 'ciudad', 'nombre_hogar', 'direccion', 'localidad', 'barrio', 'estrato',
+            'num_habitaciones', 'num_banos', 'material_construccion', 'riesgos_cercanos',
+            'fotos_interior', 'fotos_exterior',
+            'geolocalizacion_lat', 'geolocalizacion_lon',
+            'tipo_tenencia', 'documento_tenencia_pdf',
+            'capacidad_maxima', 'estado'
+        ]
+        labels = {
+            'nombre_hogar': 'Nombre del Hogar Comunitario',
+            'direccion': 'Dirección Completa',
+            'localidad': 'Localidad',
+            'barrio': 'Barrio',
+            'estrato': 'Estrato Socioeconómico',
+            'num_habitaciones': 'Número de Habitaciones',
+            'num_banos': 'Número de Baños',
+            'material_construccion': 'Material de Construcción',
+            'riesgos_cercanos': 'Riesgos Cercanos al Hogar',
+            'fotos_interior': 'Fotos del Interior',
+            'fotos_exterior': 'Fotos del Exterior',
+            'geolocalizacion_lat': 'Latitud',
+            'geolocalizacion_lon': 'Longitud',
+            'tipo_tenencia': 'Tipo de Tenencia del Inmueble',
+            'documento_tenencia_pdf': 'Documento de Tenencia (PDF)',
+            'capacidad_maxima': 'Capacidad Máxima de Niños',
+            'estado': 'Estado del Hogar',
+        }
+        widgets = {
+            'fotos_interior': forms.FileInput(attrs={'accept': 'image/*'}),
+            'fotos_exterior': forms.FileInput(attrs={'accept': 'image/*'}),
+            'documento_tenencia_pdf': forms.FileInput(attrs={'accept': 'application/pdf'}),
+            'riesgos_cercanos': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Ej: Cerca de vías principales, zona de inundación, etc.'}),
+            'material_construccion': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Ej: Ladrillo, concreto, madera, etc.'}),
+            'geolocalizacion_lat': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': 'Ej: 4.6097100'}),
+            'geolocalizacion_lon': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': 'Ej: -74.0817500'}),
+            'nombre_hogar': forms.TextInput(attrs={'placeholder': 'Ej: Hogar Comunitario Los Ángeles'}),
+            'direccion': forms.TextInput(attrs={'placeholder': 'Calle, Carrera, Número, etc.'}),
+            'localidad': forms.TextInput(attrs={'placeholder': 'Ej: Usaquén, Suba, Kennedy, etc.'}),
+            'barrio': forms.TextInput(attrs={'placeholder': 'Ej: El Poblado, Chapinero, etc.'}),
+            'estrato': forms.NumberInput(attrs={'min': 1, 'max': 6}),
+            'num_habitaciones': forms.NumberInput(attrs={'min': 1}),
+            'num_banos': forms.NumberInput(attrs={'min': 1}),
+            'capacidad_maxima': forms.NumberInput(attrs={'min': 1, 'max': 30}),
+        }
+        help_texts = {
+            'geolocalizacion_lat': 'Coordenada de latitud (opcional, use Google Maps para obtenerla)',
+            'geolocalizacion_lon': 'Coordenada de longitud (opcional, use Google Maps para obtenerla)',
+            'capacidad_maxima': 'Número máximo de niños que puede atender el hogar (por defecto 15)',
+            'tipo_tenencia': 'Indique si el inmueble es propio, arrendado o en comodato',
+            'fotos_interior': 'Suba fotos del interior del hogar (opcional)',
+            'fotos_exterior': 'Suba fotos del exterior del hogar (opcional)',
+            'documento_tenencia_pdf': 'Documento que acredite la tenencia del inmueble (opcional)',
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -301,7 +402,29 @@ class PadreForm(forms.ModelForm):
         required=True
     )
     telefono = forms.CharField(max_length=20, label="Teléfono", required=True)
-    direccion = forms.CharField(max_length=100, label="Dirección", required=False)
+    
+    # 🆕 Campos geográficos
+    departamento_residencia = forms.ModelChoiceField(
+        queryset=Departamento.objects.all().order_by('nombre'),
+        required=True,
+        label="Departamento de Residencia",
+        empty_label="-- Seleccione un Departamento --"
+    )
+    ciudad_residencia = forms.ModelChoiceField(
+        queryset=Municipio.objects.none(),
+        required=True,
+        label="Ciudad/Municipio",
+        empty_label="-- Seleccione una Ciudad --"
+    )
+    localidad_bogota = forms.ModelChoiceField(
+        queryset=LocalidadBogota.objects.all().order_by('numero'),
+        required=False,
+        label="Localidad (solo Bogotá)",
+        empty_label="-- Seleccione una Localidad --"
+    )
+    
+    direccion = forms.CharField(max_length=100, label="Dirección Completa", required=True)
+    barrio = forms.CharField(max_length=100, label="Barrio", required=False)
     
     # Campos de Padre (perfil)
     OCUPACION_CHOICES = [
@@ -375,10 +498,28 @@ class PadreForm(forms.ModelForm):
 
     class Meta:
         model = Usuario
-        fields = ['tipo_documento', 'documento', 'nombres', 'apellidos', 'correo', 'telefono', 'direccion']
+        fields = ['tipo_documento', 'documento', 'nombres', 'apellidos', 'correo', 'telefono',
+                  'departamento_residencia', 'ciudad_residencia', 'localidad_bogota', 'direccion', 'barrio']
         widgets = {
             'telefono': forms.TextInput(attrs={'required': True}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Cargar municipios si hay departamento seleccionado
+        if 'departamento_residencia' in self.data:
+            try:
+                departamento_id = int(self.data.get('departamento_residencia'))
+                self.fields['ciudad_residencia'].queryset = Municipio.objects.filter(
+                    departamento_id=departamento_id
+                ).order_by('nombre')
+            except (ValueError, TypeError):
+                self.fields['ciudad_residencia'].queryset = Municipio.objects.none()
+        elif self.instance.pk and self.instance.departamento_residencia:
+            self.fields['ciudad_residencia'].queryset = Municipio.objects.filter(
+                departamento=self.instance.departamento_residencia
+            ).order_by('nombre')
 
     def clean_correo(self):
         correo = self.cleaned_data.get('correo')

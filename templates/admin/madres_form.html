@@ -344,5 +344,18 @@
       updateIndicators(currentStep);
     }
   </script>
+  
+  <!-- 🆕 Script de Geografía de Colombia -->
+  <script src="{% static 'js/geografia_colombia.js' %}"></script>
+  <script>
+    // Ocultar campo localidad inicialmente (se muestra solo si es Bogotá)
+    document.addEventListener('DOMContentLoaded', function() {
+      const localidadGroup = document.querySelector('[for="id_localidad_bogota"]')?.closest('.form-group');
+      if (localidadGroup) {
+        localidadGroup.classList.add('localidad-container');
+        localidadGroup.style.display = 'none';
+      }
+    });
+  </script>
 </body>
 </html>

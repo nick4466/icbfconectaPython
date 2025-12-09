@@ -2792,6 +2792,10 @@ def aprobar_solicitud_matricula(request):
                         apellidos=solicitud.apellidos_padre,
                         telefono=solicitud.telefono_padre,
                         correo=solicitud.correo_padre,
+                        # 🆕 Datos geográficos
+                        departamento_residencia=solicitud.departamento_padre,
+                        ciudad_residencia=solicitud.ciudad_padre,
+                        localidad_bogota=solicitud.localidad_bogota_padre,
                         direccion=solicitud.direccion_padre or '',
                         barrio=solicitud.barrio_padre or '',
                         nivel_educativo=solicitud.nivel_educativo_padre or '',
@@ -3342,6 +3346,10 @@ def formulario_matricula_publico(request, token):
         # Obtener todas las discapacidades disponibles
         discapacidades = Discapacidad.objects.all().order_by('nombre')
         
+        # 🆕 Obtener departamentos para el select
+        from core.models import Departamento
+        departamentos = Departamento.objects.all().order_by('nombre')
+        
         return render(request, 'public/formulario_matricula_publico.html', {
             'token_valido': True,
             'solicitud': solicitud,
@@ -3349,6 +3357,7 @@ def formulario_matricula_publico(request, token):
             'campos_corregir': solicitud.campos_corregir or [],
             'intentos_restantes': 3 - solicitud.intentos_correccion if solicitud.estado == 'correccion' else 3,
             'discapacidades': discapacidades,
+            'departamentos': departamentos,  # 🆕
         })
     
     # POST: Procesar formulario
@@ -3416,6 +3425,21 @@ def formulario_matricula_publico(request, token):
                         'success': False,
                         'error': f'El correo {solicitud.correo_padre} ya está registrado con otro documento. Si ya tienes cuenta, usa el mismo documento.'
                     }, status=400)
+            
+            # 🆕 Datos geográficos del padre
+            departamento_id = request.POST.get('departamento_padre', '').strip()
+            ciudad_id = request.POST.get('ciudad_padre', '').strip()
+            localidad_id = request.POST.get('localidad_bogota_padre', '').strip()
+            
+            if departamento_id:
+                from core.models import Departamento
+                solicitud.departamento_padre_id = departamento_id
+            if ciudad_id:
+                from core.models import Municipio
+                solicitud.ciudad_padre_id = ciudad_id
+            if localidad_id:
+                from core.models import LocalidadBogota
+                solicitud.localidad_bogota_padre_id = localidad_id
             
             solicitud.direccion_padre = request.POST.get('direccion_padre', '')
             solicitud.barrio_padre = request.POST.get('barrio_padre', '')
@@ -3715,3 +3739,71 @@ def custom_500(request):
     }
     
     return render(request, 'errors/500.html', context, status=500)
+
+
+# ============================================================================
+# 🆕 VISTAS AJAX PARA GEOGRAFÍA DE COLOMBIA
+# ============================================================================
+
+def ajax_cargar_municipios(request):
+    """
+    Vista AJAX para cargar municipios según el departamento seleccionado
+    GET: /ajax/cargar-municipios/?departamento_id=X
+    Returns: JSON con lista de municipios [{id, nombre, es_capital}, ...]
+    """
+    from core.models import Municipio
+    
+    departamento_id = request.GET.get('departamento_id')
+    
+    if not departamento_id:
+        return JsonResponse({'error': 'Departamento no especificado'}, status=400)
+    
+    municipios = Municipio.objects.filter(departamento_id=departamento_id).order_by('nombre')
+    
+    data = [
+        {
+            'id': mun.id,
+            'nombre': mun.nombre,
+            'es_capital': mun.es_capital,
+        }
+        for mun in municipios
+    ]
+    
+    return JsonResponse(data, safe=False)
+
+
+def ajax_cargar_localidades_bogota(request):
+    """
+    Vista AJAX para cargar localidades de Bogotá si el municipio seleccionado es Bogotá D.C.
+    GET: /ajax/cargar-localidades-bogota/?municipio_id=X
+    Returns: JSON con lista de localidades [{id, numero, nombre}, ...]
+    """
+    from core.models import Municipio, LocalidadBogota
+    
+    municipio_id = request.GET.get('municipio_id')
+    
+    if not municipio_id:
+        return JsonResponse({'error': 'Municipio no especificado'}, status=400)
+    
+    try:
+        municipio = Municipio.objects.get(id=municipio_id)
+        
+        # Solo devolver localidades si es Bogotá D.C.
+        if municipio.nombre == 'Bogotá D.C.' or municipio.departamento.nombre == 'Bogotá D.C.':
+            localidades = LocalidadBogota.objects.all().order_by('numero')
+            
+            data = [
+                {
+                    'id': loc.id,
+                    'numero': loc.numero,
+                    'nombre': loc.nombre,
+                }
+                for loc in localidades
+            ]
+            
+            return JsonResponse({'es_bogota': True, 'localidades': data}, safe=False)
+        else:
+            return JsonResponse({'es_bogota': False, 'localidades': []}, safe=False)
+            
+    except Municipio.DoesNotExist:
+        return JsonResponse({'error': 'Municipio no encontrado'}, status=404)

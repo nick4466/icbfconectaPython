@@ -145,8 +145,10 @@ urlpatterns = [
     # Se incluye el archivo de URLs de la app 'planeaciones'<--- tener encuenta para los botones dirigidos a planeaciones
     path('planeaciones/', include(('planeaciones.urls', 'planeaciones'), namespace='planeaciones')),
 
-     # --- URL para cargar ciudades según la regional seleccionada (AJAX) ---
-     path("ajax/cargar-ciudades/", views.cargar_ciudades, name="cargar_ciudades"),
+     # --- URLs AJAX para cargar datos geográficos dinámicamente ---
+     path("ajax/cargar-ciudades/", views.cargar_ciudades, name="cargar_ciudades"),  # Para hogares (Regional→Ciudad)
+     path("ajax/cargar-municipios/", views.ajax_cargar_municipios, name="ajax_cargar_municipios"),  # Departamento→Municipio
+     path("ajax/cargar-localidades-bogota/", views.ajax_cargar_localidades_bogota, name="ajax_cargar_localidades_bogota"),  # Bogotá→Localidades
 
     #-----------------------------------------------juanito---------------------------------------------#
     # --- URLs de Asistencias no borrar please ultra importarte ;D #---
