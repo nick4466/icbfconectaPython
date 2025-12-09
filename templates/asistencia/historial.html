@@ -10,8 +10,8 @@
     body {
       margin: 0;
       font-family: 'Roboto', sans-serif;
-      background-color: #c0c0c07b;   
-  
+      background-color: #ffffff; /* fondo más claro */
+
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -21,12 +21,52 @@
     .container {
       max-width: 1000px;
       margin: 40px auto;
-      background-color: rgba(241, 240, 240, 0.575);
+      background-color: rgba(255, 255, 255, 0.575);
       padding: 30px;
       border-radius: 12px;
       backdrop-filter: blur(4px);
       box-shadow: 0 6px 12px rgba(0,0,0,0.1);
     }
+
+    /* ---------- Tarjetas de resumen ---------- */
+    .stats-cards {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin: 10px 0 20px 0;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 14px 18px;
+      min-width: 160px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .stat-card .icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .stat-card .meta { font-size: 13px; color: #666; }
+    .stat-card .value { font-size: 20px; font-weight: 700; color: #222; }
+    .stat-present { background: linear-gradient(135deg,#27ae60,#2ecc71); }
+    .stat-absent { background: linear-gradient(135deg,#c0392b,#e74c3c); }
+    .stat-just { background: linear-gradient(135deg,#8e44ad,#7a3eb1); }
+
+    /* Mejora visual de la tabla */
+    .tabla-compacta td { padding: 12px; }
+    .tabla-compacta th { padding: 12px; }
+    .tabla-compacta tbody tr:hover { transform: translateX(6px); box-shadow: 0 6px 18px rgba(122,62,177,0.06); }
 
     h1, h4 {
       text-align: center;
@@ -208,9 +248,58 @@
   </style>
 </head>
 <body>
+  {% include 'madre/navbar_madre.html' %}
 <div class="container">
   <h1>Historial de Asistencia</h1>
   <p><strong>Niño:</strong> {{ nino.nombres }} {{ nino.apellidos }}</p>
+
+  <!-- ALERTA DE AUSENCIAS CRÍTICAS -->
+  {% if alerta_ausencias.tiene_alerta %}
+  <div id="alerta-ausencias" style="padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid; display: flex; align-items: center; gap: 15px;">
+    <i id="alerta-icon" class="fas" style="font-size: 24px;"></i>
+    <div>
+      <strong id="alerta-titulo"></strong>
+      <br>
+      <span style="font-size: 14px; margin-top: 4px;" id="alerta-mensaje"></span>
+    </div>
+  </div>
+  <script>
+    (function() {
+      const nivel = '{{ alerta_ausencias.nivel }}';
+      const ausencias = {{ alerta_ausencias.ausencias_sin_justificar }};
+      const porcentaje = {{ alerta_ausencias.porcentaje_ausencias }};
+      const alerta = document.getElementById('alerta-ausencias');
+      const icon = document.getElementById('alerta-icon');
+      const titulo = document.getElementById('alerta-titulo');
+      const mensaje = document.getElementById('alerta-mensaje');
+      
+      if (nivel === 'grave') {
+        alerta.style.backgroundColor = '#ffe0e0';
+        alerta.style.borderColor = '#e74c3c';
+        alerta.style.color = '#721c24';
+        icon.className = 'fas fa-exclamation-circle';
+        titulo.textContent = '⚠️ AUSENCIAS CRÍTICAS - NIVEL GRAVE';
+        mensaje.innerHTML = `<strong>${ausencias}</strong> ausencias registradas (${porcentaje}% del total) - Se recomienda contacto inmediato con acudientes.`;
+      } else if (nivel === 'warning') {
+        alerta.style.backgroundColor = '#fff3cd';
+        alerta.style.borderColor = '#f39c12';
+        alerta.style.color = '#856404';
+        icon.className = 'fas fa-exclamation-triangle';
+        titulo.textContent = '⚠️ AUSENCIAS CRÍTICAS - ALERTA';
+        mensaje.innerHTML = `<strong>${ausencias}</strong> ausencias registradas (${porcentaje}% del total) - Requiere seguimiento y justificación.`;
+      } else {
+        alerta.style.backgroundColor = '#d4e8fc';
+        alerta.style.borderColor = '#3498db';
+        alerta.style.color = '#1e73be';
+        icon.className = 'fas fa-info-circle';
+        titulo.textContent = 'ℹ️ Monitoreo de Asistencia';
+        mensaje.innerHTML = `<strong>${ausencias}</strong> ausencias registradas (${porcentaje}% del total)`;
+      }
+    })();
+  </script>
+  {% endif %}
+
+  <!-- Tarjetas resumen: Presentes / Ausentes / Justificados (se muestran más abajo en lugar del resumen numérico) -->
 
   <!-- Filtro por fechas -->
 <form method="get" class="filtro-fechas">
@@ -265,11 +354,31 @@
     </div>
   </div>
 
-  <!-- Resumen numérico -->
-  <div class="resumen">
-    <span class="estado-presente">Presente: {{ presentes }}</span> |
-    <span class="estado-ausente">Ausente: {{ ausentes }}</span> |
-    <span class="estado-justificado">Justificado: {{ justificados }}</span>
+  <!-- Tarjetas resumen: Presentes / Ausentes / Justificados (moved here) -->
+  <div class="stats-cards">
+    <div class="stat-card">
+      <div class="icon stat-present"><i class="fas fa-user-check"></i></div>
+      <div>
+        <div class="meta">Presentes</div>
+        <div class="value">{{ presentes }} <small style="color:#7a3eb1;">({{ porc_presentes }}%)</small></div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="icon stat-absent"><i class="fas fa-user-times"></i></div>
+      <div>
+        <div class="meta">Ausentes</div>
+        <div class="value">{{ ausentes }} <small style="color:#c0392b;">({{ porc_ausentes }}%)</small></div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="icon stat-just"><i class="fas fa-user-shield"></i></div>
+      <div>
+        <div class="meta">Justificados</div>
+        <div class="value">{{ justificados }} <small style="color:#7a3eb1;">({{ porc_justificados }}%)</small></div>
+      </div>
+    </div>
   </div>
 
   <!-- Gráfico de barras -->

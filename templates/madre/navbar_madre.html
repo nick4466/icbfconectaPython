@@ -1,7 +1,8 @@
 {% load static %}
 <!-- Navbar Unificada para Madre Comunitaria -->
+<!-- FIX: Añadida la referencia a Font Awesome para que los íconos sean visibles -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="{% static 'css/navbar_madre.css' %}">
-
 <header class="navbar-madre">
     <div class="header-left">
         <a href="{% url 'madre_dashboard' %}" class="logo-link">
@@ -9,6 +10,11 @@
             <h1>ICBF Conecta</h1>
         </a>
     </div>
+
+    <!-- Botón de hamburguesa para móvil, se muestra con CSS -->
+    <button class="navbar-toggle" aria-label="Abrir menú">
+        <i class="fas fa-bars"></i>
+    </button>
 
     <nav class="navbar-menu">
         <ul>
@@ -19,7 +25,6 @@
             <li><a href="{% url 'novedades:novedades_list' %}" class="btn-novedades"><i class="fas fa-exclamation-circle"></i> Novedades</a></li>
             <li><a href="{% url 'correos:enviar' %}" class="btn-correos"><i class="fas fa-envelope"></i> Enviar Correos</a></li>
             <li><a href="{% url 'gestion_ninos' %}" class="btn-gestion"><i class="fas fa-users"></i> Gestión de Niños</a></li>
-
         </ul>
     </nav>
 
@@ -29,10 +34,11 @@
 
         <!-- Notificaciones -->
         <div class="notifications-menu-dropdown">
-            <button class="notifications-menu-button nav-btn">
-                <i class="fas fa-bell"></i>
-                {% if notifications_count > 0 %}
-                <span class="notification-badge">{{ notifications_count }}</span>
+            <button class="notifications-menu-button nav-btn{% if not notifications_count or notifications_count == 0 %} no-count{% endif %}" aria-haspopup="true" aria-expanded="false" aria-label="Notificaciones">
+                <!-- Mostrar siempre la campana; la burbuja solo si hay >0 -->
+                <i class="fas fa-bell notification-icon" aria-hidden="true"></i>
+                {% if notifications_count and notifications_count > 0 %}
+                    <span class="notification-badge">{{ notifications_count }}</span>
                 {% endif %}
             </button>
 
@@ -50,7 +56,7 @@
                         <div class="notification-item {% if not notification.read %}unread{% endif %}" 
                              data-level="{{ notification.level }}"
                              {% if notification.object_id %}
-                             onclick="irASolicitud({{ notification.object_id }}, {{ notification.id }})"
+                             onclick="irASolicitud({{ notification.object_id }}, {{ notification.id }}, '{{ notification.title }}')"
                              style="cursor: pointer;"
                              {% endif %}>
                             <div class="notification-icon">
@@ -82,17 +88,17 @@
                     {% endif %}
                 </div>
 
-                {% if notifications %}
                 <div class="notifications-footer">
                     <a href="{% url 'notifications:list' %}" class="view-all-btn">Ver todas las notificaciones</a>
                 </div>
-                {% endif %}
             </div>
         </div>
 
-        <div class="user-menu-dropdown"
-            <button class="user-menu-button nav-btn">
-                <i class="fas fa-user-circle"></i>
+        <div class="user-menu-dropdown">
+            <button class="user-menu-button nav-btn" aria-haspopup="true" aria-expanded="false" aria-label="Menú de usuario">
+                <!-- Mostrar la foto de perfil como icono con contorno morado -->
+                <img src="{% if foto_perfil_url %}{{ foto_perfil_url }}{% else %}{% static 'img/default_user.png' %}{% endif %}"
+                     alt="Foto de perfil" class="nav-profile-img" id="nav-img-foto-perfil">
             </button>
 
             <div class="user-menu-content">
@@ -128,6 +134,126 @@
 </header>
 
 <style>
+    /* FIX: Asegurar que el header principal sea flexible para alinear el botón de hamburguesa */
+    .navbar-madre {
+        display: flex;
+        justify-content: space-between; /* Alinea los grupos de elementos a los extremos */
+        align-items: center;
+        position: relative; /* Necesario para el menú desplegable */
+    }
+
+    /* Estilos para hacer la barra de navegación responsive */
+    @media (max-width: 1024px) {
+        .navbar-menu {
+            display: none; /* Ocultar el menú por defecto en pantallas pequeñas */
+            position: absolute;
+            top: 100%; /* Posicionarlo debajo del header */
+            left: 0;
+            width: 100%;
+            background-color: white; /* Fondo del menú desplegado */
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            flex-direction: column;
+            align-items: stretch;
+            padding: 10px 0;
+        }
+
+        .navbar-menu.active {
+            display: flex; /* Mostrar el menú cuando tiene la clase 'active' */
+        }
+
+        .navbar-menu ul {
+            flex-direction: column;
+            width: 100%;
+            gap: 0;
+        }
+
+        .navbar-menu ul li {
+            width: 100%;
+            text-align: center;
+        }
+
+        .navbar-menu ul li a {
+            padding: 15px 20px;
+            border-radius: 0;
+            width: 100%;
+            display: block;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: white; /* Color del texto en el menú desplegado */
+        }
+
+        .navbar-menu ul li a:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* BOTÓN HAMBURGUESA — estilo elegante neutral */
+.navbar-toggle {
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease-in-out !important;
+}
+        .navbar-toggle {
+            display: block; /* Mostrar el botón de hamburguesa */
+            background: none;
+            border: none;
+            color: white;
+            font-size: 22px; /* Ligeramente más pequeño para un mejor ajuste */
+            cursor: pointer;
+            padding: 8px 12px; /* Padding consistente con otros botones */
+            margin-right: 15px;
+            border-radius: 8px; /* Bordes redondeados */
+            transition: background-color 0.3s; /* Transición suave */
+        }
+
+/* Icono */
+.navbar-toggle i {
+    font-size: 20px;
+    color: #333; /* gris oscuro, combina con cualquier navbar */
+    transition: color 0.2s ease;
+}
+        .navbar-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.15); /* Efecto hover */
+        }
+
+/* Hover */
+.navbar-toggle:hover {
+    background: rgba(255, 255, 255, 1) !important;
+    transform: scale(1.05);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25) !important;
+}
+
+.navbar-toggle:hover i {
+    color: #222;
+}
+
+/* En pantallas grandes se oculta */
+@media (min-width: 1025px) {
+    .navbar-toggle {
+        display: none;
+    }
+}
+
+
+
+
+        .navbar-user-name {
+            display: none; /* Ocultar el nombre en pantallas pequeñas para más espacio */
+        }
+    }
+
+    @media (min-width: 1025px) {
+        .navbar-toggle {
+            display: none; /* Ocultar el botón de hamburguesa en pantallas grandes */
+        }
+    }
+
+
     
 /* Estilos para notificaciones */
 .notifications-menu-dropdown {
@@ -149,6 +275,54 @@
 
 .notifications-menu-button:hover {
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Cuando no hay notificaciones mostrar la campana en estado tenue */
+.notifications-menu-button .bell-empty {
+    opacity: 0.65;
+    color: rgba(255,255,255,0.9);
+}
+
+/* Estilos para icono y estado sin notificaciones */
+.notifications-menu-button .notification-icon {
+    font-size: 20px;
+    color: #ffd54f; /* amarillo suave para destacar la campana */
+}
+.notifications-menu-button.no-count .notification-icon {
+    opacity: 0.9;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+}
+.notifications-menu-button .notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    border: 2px solid #fff;
+}
+
+/* Estilos para la imagen de perfil en el navbar (icono con contorno morado) */
+.nav-profile-img, #nav-img-foto-perfil, .profile-picture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #764ba2; /* contorno morado */
+    box-shadow: 0 2px 6px rgba(118,75,162,0.25);
+}
+.nav-profile-img {
+    display: inline-block;
+}
+.user-menu-button {
+    padding: 6px;
 }
 
 .notification-badge {
@@ -309,6 +483,7 @@
 .view-all-btn:hover {
     text-decoration: underline;
 }
+
 </style>
 
 <script>
@@ -329,7 +504,7 @@ function markAsRead(notificationId) {
     .catch(error => console.error('Error:', error));
 }
 
-function irASolicitud(solicitudId, notificationId) {
+function irASolicitud(solicitudId, notificationId, notificationTitle) {
     // Marcar notificación como leída
     fetch(`/notifications/${notificationId}/mark-read/`, {
         method: 'POST',
@@ -340,18 +515,33 @@ function irASolicitud(solicitudId, notificationId) {
     })
     .then(response => response.json())
     .then(data => {
-        // Redirigir al panel de revisión
-        window.location.href = "{% url 'panel_revision_solicitudes' %}";
+        // Si es una notificación de ausencias críticas, redirigir al historial de asistencia
+        if (notificationTitle && notificationTitle.includes('Ausencias críticas')) {
+            window.location.href = `/asistencia/historial/${solicitudId}/`;
+        } else {
+            // De lo contrario, redirigir al panel de revisión de solicitudes
+            window.location.href = "{% url 'panel_revision_solicitudes' %}";
+        }
     })
     .catch(error => {
         console.error('Error:', error);
-        // Redirigir de todas formas
+        // Redirigir de todas formas al panel por defecto
         window.location.href = "{% url 'panel_revision_solicitudes' %}";
     });
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('input-foto-perfil');
+    const toggleButton = document.querySelector('.navbar-toggle');
+    const navbarMenu = document.querySelector('.navbar-menu');
+
+    // La lógica del toggle ya está en el script, solo la muevo aquí para agruparla
+    if (toggleButton && navbarMenu) { // Asegurarse de que los elementos existen
+      toggleButton.addEventListener('click', function() {
+        navbarMenu.classList.toggle('active');
+      });
+    }
+
+    const fileInput = document.getElementById('input-foto-perfil'); // Mover la declaración aquí
     const form = document.getElementById('form-foto-perfil');
     const profileImage = document.getElementById('img-foto-perfil');
 

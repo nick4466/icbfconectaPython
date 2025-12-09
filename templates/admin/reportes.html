@@ -254,6 +254,9 @@
         flex-direction: column;
         align-items: stretch;
       }
+      .form-group-span-2 {
+        grid-column: auto !important; /* Restablecer el span en móvil */
+      }
     }
   </style>
 </head>
@@ -297,7 +300,7 @@
       <!-- Reporte de Administradores -->
       <div class="report-section">
         <h3><i class="fa-solid fa-user-shield" style="margin-right: 10px;"></i>Reporte de Administradores</h3>
-        <form action="{% url 'reporte_administradores_excel' %}" method="get" target="_blank">
+        <form action="{% url 'reporte_administradores_excel' %}" method="get">
           <div class="form-group">
             <label for="admin_nombre">Nombre o Apellido</label>
             <input type="text" name="nombre" id="admin_nombre" placeholder="Filtrar por nombre...">
@@ -316,7 +319,7 @@
       <!-- Reporte de Madres Comunitarias -->
       <div class="report-section">
         <h3><i class="fa-solid fa-user-group" style="margin-right: 10px;"></i>Reporte de Madres Comunitarias</h3>
-        <form action="{% url 'reporte_madres_excel' %}" method="get" target="_blank">
+        <form action="{% url 'reporte_madres_excel' %}" method="get">
           <div class="form-group">
             <label for="madre_nombre">Nombre o Apellido</label>
             <input type="text" name="nombre" id="madre_nombre" placeholder="Filtrar por nombre...">
@@ -344,7 +347,7 @@
       <!-- Reporte de Hogares Comunitarios -->
       <div class="report-section">
         <h3><i class="fa-solid fa-house-chimney-user" style="margin-right: 10px;"></i>Reporte de Hogares Comunitarios</h3>
-        <form action="{% url 'reporte_hogares_excel' %}" method="get" target="_blank">
+        <form action="{% url 'reporte_hogares_excel' %}" method="get">
           <div class="form-group">
             <label for="hogar_nombre">Nombre del Hogar</label>
             <input type="text" name="nombre_hogar" id="hogar_nombre" placeholder="Filtrar por nombre...">
@@ -364,13 +367,46 @@
             <label for="hogar_madre_comunitaria">Madre Comunitaria</label>
             <input type="text" name="madre_comunitaria" id="hogar_madre_comunitaria" placeholder="Nombre de la madre...">
           </div>
-          <div class="form-group">
+          <div class="form-group form-group-span-2" style="display: flex; flex-direction: column; justify-content: flex-end; grid-column: span 2;">
             <label for="hogar_ninos_matriculados">Niños Matriculados</label>
-            <input type="number" name="ninos_matriculados" id="hogar_ninos_matriculados" placeholder="Número exacto...">
+            <div style="display: flex; gap: 10px;">
+              <input type="number" name="ninos_matriculados" id="hogar_ninos_matriculados" placeholder="Número exacto..." style="flex: 1;">
+              <button type="reset" class="btn-limpiar"><i class="fa-solid fa-eraser"></i> Limpiar</button>
+              <button type="submit" class="btn-reporte"><i class="fa-solid fa-file-excel"></i> Generar Excel</button>
+            </div>
           </div>
-          <div class="form-actions">
-            <button type="reset" class="btn-limpiar"><i class="fa-solid fa-eraser"></i> Limpiar</button>
-            <button type="submit" class="btn-reporte"><i class="fa-solid fa-file-excel"></i> Generar Excel</button>
+        </form>
+      </div>
+
+      <!-- Reporte de Niños -->
+      <div class="report-section">
+        <h3><i class="fa-solid fa-child" style="margin-right: 10px;"></i>Reporte de Niños</h3>
+        <form action="{% url 'reporte_ninos_excel' %}" method="get">
+          <div class="form-group">
+            <label for="nino_hogar">Hogar Comunitario</label>
+            <input type="text" name="hogar" id="nino_hogar" placeholder="Filtrar por hogar...">
+          </div>
+          <div class="form-group">
+            <label for="nino_regional">Regional</label>
+            <select name="regional" id="nino_regional">
+              <option value="">Todas</option>
+              {% for regional in regionales_filtro %}<option value="{{ regional.id }}">{{ regional.nombre }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="nino_madre">Madre Comunitaria</label>
+            <input type="text" name="madre" id="nino_madre" placeholder="Nombre de la madre...">
+          </div>
+          <div class="form-group">
+            <label for="nino_padre">Acudiente (Padre/Tutor)</label>
+            <input type="text" name="padre" id="nino_padre" placeholder="Nombre del acudiente...">
+          </div>
+          <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-end;">
+            <label style="visibility: hidden;">Acciones</label> <!-- Etiqueta invisible para alineación -->
+            <div class="form-actions" style="grid-column: auto;"> <!-- Reseteamos el grid-column -->
+              <button type="reset" class="btn-limpiar"><i class="fa-solid fa-eraser"></i> Limpiar</button>
+              <button type="submit" class="btn-reporte"><i class="fa-solid fa-file-excel"></i> Generar Excel</button>
+            </div>
           </div>
         </form>
       </div>

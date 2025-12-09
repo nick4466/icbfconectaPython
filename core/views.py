@@ -904,7 +904,7 @@ def _setup_excel_report_header(ws, title, record_count, num_columns):
     fecha_label.font = info_label_font
 
     ws.merge_cells(start_row=3, start_column=mid_point_col + 1, end_row=3, end_column=num_columns)
-    fecha_value = ws.cell(row=3, column=mid_point_col + 1, value=timezone.now().strftime('%Y-%m-%d %H:%M:%S'))
+    fecha_value = ws.cell(row=3, column=mid_point_col + 1, value=timezone.now().strftime('%Y-%m-%d'))
     fecha_value.alignment = left_alignment
 
     # Aplicar borde a toda la fila 3
@@ -997,7 +997,7 @@ def reporte_administradores_excel(request):
 
     # Preparar la respuesta HTTP
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="reporte_administradores.xlsx"'
+    response['Content-Disposition'] = 'inline; filename="reporte_administradores.xlsx"'
     wb.save(response)
     return response
 
@@ -1069,7 +1069,7 @@ def reporte_madres_excel(request):
         ws.column_dimensions[column_letter].width = adjusted_width
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="reporte_madres_comunitarias.xlsx"'
+    response['Content-Disposition'] = 'inline; filename="reporte_madres_comunitarias.xlsx"'
     wb.save(response)
     return response
 
@@ -1149,10 +1149,118 @@ def reporte_hogares_excel(request):
         ws.column_dimensions[column_letter].width = adjusted_width
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="reporte_hogares_comunitarios.xlsx"'
+    response['Content-Disposition'] = 'inline; filename="reporte_hogares_comunitarios.xlsx"'
     wb.save(response)
     return response
+    
+@login_required
+@rol_requerido('administrador')
+def reporte_ninos_excel(request):
+    # Obtener filtros de la URL
+    hogar_nombre = request.GET.get('hogar', '')
+    regional_id = request.GET.get('regional', '')
+    madre_nombre = request.GET.get('madre', '')
+    estado_nino = request.GET.get('estado', '')
+    padre_nombre = request.GET.get('padre', '')
 
+    # Consulta base
+    ninos = Nino.objects.select_related(
+        'hogar', 'hogar__madre__usuario', 'hogar__regional', 'padre__usuario'
+    ).order_by('hogar__regional__nombre', 'hogar__nombre_hogar', 'apellidos')
+
+    # Aplicar filtros
+    if hogar_nombre:
+        ninos = ninos.filter(hogar__nombre_hogar__icontains=hogar_nombre)
+    if regional_id:
+        ninos = ninos.filter(hogar__regional_id=regional_id)
+    if madre_nombre:
+        ninos = ninos.filter(
+            Q(hogar__madre__usuario__nombres__icontains=madre_nombre) |
+            Q(hogar__madre__usuario__apellidos__icontains=madre_nombre)
+        )
+    if padre_nombre:
+        ninos = ninos.filter(
+            Q(padre__usuario__nombres__icontains=padre_nombre) |
+            Q(padre__usuario__apellidos__icontains=padre_nombre)
+        )
+    if estado_nino:
+        ninos = ninos.filter(estado=estado_nino)
+
+    # --- Encabezados y configuración inicial ---
+    headers = [
+        'Nombres', 'Apellidos', 'Fecha de Nacimiento', 'Edad (años)', 'Género',
+        'Hogar Comunitario', 'Madre Comunitaria', 'Regional', 'Acudiente', 'Correo del Acudiente'
+    ]
+    num_columns = len(headers)
+
+    # --- Crear libro de Excel ---
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Niños Registrados'
+
+    # --- Generar encabezado del reporte ---
+    start_row = _setup_excel_report_header(ws, "Reporte de Niños", ninos.count(), num_columns)
+
+    # --- ESTILOS PARA LA TABLA DE DATOS ---
+    header_font = Font(name='Poppins', bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='004080', end_color='004080', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center')
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+    # --- Escribir encabezados de la tabla de datos ---
+    for col_num, header_title in enumerate(headers, 1):
+        cell = ws.cell(row=start_row, column=col_num, value=header_title)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    ws.row_dimensions[start_row].height = 25
+
+    # --- Llenar datos ---
+    from datetime import date
+    hoy = date.today()
+    for nino in ninos:
+        start_row += 1
+        # --- CÁLCULO DE EDAD ---
+        edad = (hoy.year - nino.fecha_nacimiento.year - ((hoy.month, hoy.day) < (nino.fecha_nacimiento.month, nino.fecha_nacimiento.day))) if nino.fecha_nacimiento else 'N/A'        
+
+        # --- OBTENCIÓN DE NOMBRES RELACIONADOS (CORRECCIÓN FINAL) ---
+        # Se concatena nombres y apellidos directamente, como se hace en otros reportes funcionales.
+        madre_comunitaria_nombre = 'N/A'
+        if nino.hogar and nino.hogar.madre and nino.hogar.madre.usuario:
+            madre_comunitaria_nombre = f"{nino.hogar.madre.usuario.nombres} {nino.hogar.madre.usuario.apellidos}"
+
+        acudiente_nombre = 'N/A'
+        acudiente_correo = 'N/A'
+        if nino.padre and nino.padre.usuario:
+            acudiente_nombre = f"{nino.padre.usuario.nombres} {nino.padre.usuario.apellidos}"
+            acudiente_correo = nino.padre.usuario.correo
+
+        row_data = [
+            nino.nombres, nino.apellidos, nino.fecha_nacimiento, edad, nino.get_genero_display(),
+            nino.hogar.nombre_hogar if nino.hogar else 'N/A', madre_comunitaria_nombre, nino.hogar.regional.nombre if nino.hogar and nino.hogar.regional else 'N/A',
+            acudiente_nombre, acudiente_correo
+        ]
+        for col_num, cell_value in enumerate(row_data, 1):
+            ws.cell(row=start_row, column=col_num, value=cell_value)
+
+    # --- AJUSTAR ANCHO DE COLUMNAS Y BORDES ---
+    for col_num, header_title in enumerate(headers, 1):
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(col_num)
+        for cell in ws[column_letter]:
+            cell.border = thin_border
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 4)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'inline; filename="reporte_ninos.xlsx"'
+    wb.save(response)
+    return response
 @login_required
 def eliminar_administrador(request, id):
     Usuario.objects.filter(id=id).delete()
@@ -1821,7 +1929,7 @@ def editar_perfil(request):
         initial_data = None
 
     if request.method == 'POST':
-        form = FormClass(request.POST, instance=user, initial=initial_data)
+        form = FormClass(request.POST, request.FILES, instance=user, initial=initial_data)
         if form.is_valid():
             # Guardar los datos del modelo Usuario
             user_instance = form.save(commit=False)
@@ -3482,3 +3590,88 @@ def formulario_matricula_publico(request, token):
             }, status=500)
     
     return JsonResponse({'success': False, 'error': 'Método no permitido.'}, status=405)
+
+
+# =====================================================
+# 👨‍👧 VISTA DE ASISTENCIA PARA PADRES
+# =====================================================
+@login_required
+def padre_historial_asistencia(request, nino_id):
+    """
+    Vista para que los padres vean el historial de asistencia de sus hijos.
+    Solo pueden ver la asistencia de sus propios hijos.
+    """
+    if request.user.rol.nombre_rol != 'padre':
+        return redirect('role_redirect')
+    
+    try:
+        # Verificar que el niño pertenece al padre autenticado
+        padre = Padre.objects.get(usuario=request.user)
+        nino = get_object_or_404(Nino, id=nino_id, padre=padre)
+        
+        # Obtener historial de asistencia
+        historial = Asistencia.objects.filter(nino=nino).order_by('-fecha')
+        
+        # Filtro por rango de fechas
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        if start_date and end_date:
+            historial = historial.filter(fecha__range=[start_date, end_date])
+        
+        # Vincular novedad por fecha y niño
+        for asistencia in historial:
+            novedad = Novedad.objects.filter(nino=nino, fecha=asistencia.fecha).first()
+            asistencia.novedad_id = novedad.id if novedad else None
+        
+        # Datos para calendario
+        eventos = [
+            {
+                "title": a.estado,
+                "start": a.fecha.strftime("%Y-%m-%d"),
+                "color": (
+                    "#28a745" if a.estado == "Presente" else
+                    "#dc3545" if a.estado == "Ausente" else
+                    "#6f42c1"
+                )
+            }
+            for a in historial
+        ]
+        
+        # Calcular estadísticas
+        total = historial.count()
+        presentes = historial.filter(estado="Presente").count()
+        ausentes = historial.filter(estado="Ausente").count()
+        justificados = historial.filter(estado="Justificado").count()
+        
+        def porcentaje(valor):
+            return round((valor / total) * 100) if total > 0 else 0
+        
+        # Calcular si hay ausencias críticas
+        ausencias_sin_justificar = historial.filter(estado="Ausente").count()
+        tiene_alerta = ausencias_sin_justificar >= 3
+        
+        alerta_ausencias = {
+            'tiene_alerta': tiene_alerta,
+            'ausencias_sin_justificar': ausencias_sin_justificar,
+            'nivel': 'grave' if ausencias_sin_justificar >= 5 else 'warning' if ausencias_sin_justificar >= 3 else 'info',
+            'porcentaje_ausencias': porcentaje(ausentes),
+        }
+        
+        return render(request, 'padre/asistencia_historial.html', {
+            'nino': nino,
+            'historial': historial,
+            'presentes': presentes,
+            'ausentes': ausentes,
+            'justificados': justificados,
+            'porc_presentes': porcentaje(presentes),
+            'porc_ausentes': porcentaje(ausentes),
+            'porc_justificados': porcentaje(justificados),
+            'eventos_json': json.dumps(eventos, cls=json.JSONEncoder),
+            'start_date': start_date,
+            'end_date': end_date,
+            'alerta_ausencias': alerta_ausencias,
+        })
+    except Padre.DoesNotExist:
+        return redirect('padre_dashboard')
+    except Nino.DoesNotExist:
+        return redirect('padre_dashboard')

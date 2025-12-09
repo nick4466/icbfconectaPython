@@ -329,12 +329,13 @@
 }
 
 .user-menu-content .profile-picture {
-    width: 90px; /* Un poco más grande */
-    height: 90px;
+    width: 72px; /* Cambiado a 72px */
+    height: 72px; /* Cambiado a 72px */
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid var(--primary-color);
+    border: 3px solid #4DB6FF; /* contorno azul */
 }
+
 
 .user-menu-content .user-name {
     font-weight: bold;
@@ -511,3 +512,27 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+/* Imagen del botón del usuario en el navbar */
+.navbar-madre .nav-profile-img,
+.user-menu-button img {
+    width: 45px !important;
+    height: 45px !important;
+    max-width: 45px !important;
+    max-height: 45px !important;
+    display: block;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid #4DB6FF !important;
+}
+
+/* Imagen dentro del menú desplegable (perfil) */
+.user-menu-content .profile-picture {
+    width: 72px !important;
+    height: 72px !important;
+    max-width: 72px !important;
+    max-height: 72px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 3px solid #4DB6FF !important;
+}
+

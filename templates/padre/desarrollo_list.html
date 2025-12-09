@@ -71,6 +71,32 @@
             grid-template-columns: 30% 1fr;
             gap: 25px;
         }
+        
+    /* ======================== */
+    /*     ESTILOS RESPONSIVE   */
+    /* ======================== */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+      }
+
+      nav ul {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .dashboard-container {
+        padding: 20px;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+    }
         .columna1, .columna2 {
             display: flex;
             flex-direction: column;
@@ -415,7 +441,7 @@
                         {% elif desarrollo.logro_mes == 'En Proceso' %}card-accent-baja
                         {% else %}card-accent-default{% endif %}">
                         <span class="badge-promedio">Logro: {{ desarrollo.logro_mes|default:'N/A' }}</span>
-                        <i class="fas fa-chart-line card-icon"></i> 
+                    <i class="fas fa-heart card-icon"></i> 
                         <div class="card-header"> <br><br>
                             <span class="fecha"><i class="fas fa-calendar-alt"></i> {{ desarrollo.fecha_fin_mes|date:"d \\d\\e F \\d\\e Y" }}</span>
                         </div>

@@ -128,6 +128,32 @@
       box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
 
+    /* ======================== */
+    /*     ESTILOS RESPONSIVE   */
+    /* ======================== */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+      }
+
+      nav ul {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .dashboard-container {
+        padding: 20px;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+    }
+
     h1 {
       text-align: center;
       font-size: 28px;
@@ -394,6 +420,9 @@
           <!-- FOOTER TARJETA -->
           <div class="card-footer">
             <div class="quick-actions">
+              <a href="{% url 'padre_historial_asistencia' data.nino.id %}" title="Ver Asistencias" style="margin-right: 12px;">
+                <i class="fas fa-clipboard-list" style="color: #4DB6FF; font-size: 18px;"></i>
+              </a>
               <a href="{% url 'calendario_padres' %}" title="Ver Calendario">
                 <i class="fas fa-calendar-alt"></i>
               </a>
