@@ -230,6 +230,16 @@
       transform: translateY(-1px);
     }
 
+    .btn-warning {
+      background: var(--warning);
+      color: white;
+    }
+
+    .btn-warning:hover {
+      background: #d97706;
+      transform: translateY(-1px);
+    }
+
     .btn-outline {
       background: white;
       color: var(--text);
@@ -407,6 +417,41 @@
     .info-row i {
       width: 18px;
       color: var(--text-light);
+    }
+
+    .info-row.visita-info {
+      color: var(--secondary);
+      font-weight: 500;
+    }
+
+    .info-row.visita-info i {
+      color: var(--secondary);
+    }
+
+    .info-row.visita-pendiente {
+      background: #fee2e2;
+      color: var(--danger);
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-top: 8px;
+      font-weight: 600;
+      animation: pulse 2s infinite;
+    }
+
+    .info-row.visita-pendiente i {
+      color: var(--danger);
+      animation: shake 0.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
     }
 
     .hogar-stats {
@@ -690,6 +735,78 @@
         padding: 16px;
       }
     }
+    /* ========== FORMULARIO DE VISITAS ========== */
+    .visita-form-container {
+      padding: 8px 0;
+    }
+
+    .visita-status-card {
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      border-left: 4px solid var(--info);
+    }
+
+    .visita-status-card.pendiente {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      border-left-color: var(--danger);
+    }
+
+    .visita-status-card.activa {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      border-left-color: var(--secondary);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .form-group label i {
+      color: var(--primary);
+      margin-right: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .form-text {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
   </style>
 </head>
 <body>
@@ -713,14 +830,14 @@
         </div>
         <div class="nav-item">
           <a href="{% url 'hogares_dashboard' %}" class="nav-link active">
-            <i class="fas fa-home"></i>
-            <span>Dashboard Hogares</span>
+            <i class="fas fa-calendar-check"></i>
+            <span>Gestión de Visitas</span>
           </a>
         </div>
         <div class="nav-item">
           <a href="{% url 'listar_hogares' %}" class="nav-link">
-            <i class="fas fa-house-user"></i>
-            <span>Gestionar Hogares</span>
+            <i class="fas fa-home"></i>
+            <span>Hogares</span>
           </a>
         </div>
         <div class="nav-item">
@@ -766,11 +883,11 @@
     <main class="main-content">
       <!-- TOPBAR -->
       <div class="topbar">
-        <h1>🏘️ Gestión de Hogares Comunitarios</h1>
+        <h1>📅 Gestión de Visitas</h1>
         <div class="breadcrumb">
           <a href="{% url 'dashboard_admin' %}">Dashboard</a>
           <span>/</span>
-          <span>Hogares</span>
+          <span>Gestión de Visitas</span>
         </div>
       </div>
 
@@ -884,6 +1001,17 @@
                     <i class="fas fa-phone"></i>
                     <span>{{ hogar.madre.usuario.telefono }}</span>
                   </div>
+                  {% if hogar.ultima_visita %}
+                  <div class="info-row visita-info">
+                    <i class="fas fa-clock"></i>
+                    <span>Última visita: {{ hogar.ultima_visita|date:"d/m/Y" }}</span>
+                  </div>
+                  {% else %}
+                  <div class="info-row visita-pendiente">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span><strong>¡Sin visita registrada!</strong></span>
+                  </div>
+                  {% endif %}
                 </div>
                 
                 <div class="hogar-stats">
@@ -902,6 +1030,10 @@
                     <i class="fas fa-edit"></i>
                     Editar
                   </a>
+                  <button class="btn btn-warning btn-small" onclick="abrirModalVisita({{ hogar.id }}, '{{ hogar.nombre_hogar|escapejs }}', '{{ hogar.ultima_visita|date:"Y-m-d"|default:"" }}', '{{ hogar.proxima_visita|date:"Y-m-d"|default:"" }}', '{{ hogar.estado_aptitud }}', '{{ hogar.observaciones_visita|escapejs }}')">
+                    <i class="fas fa-calendar-check"></i>
+                    Visita
+                  </button>
                   <button class="btn btn-primary btn-small" onclick="verHogarDetalle({{ hogar.id }})">
                     <i class="fas fa-folder-open"></i>
                     Ver Carpeta
@@ -940,6 +1072,66 @@
         <div class="empty-state">
           <i class="fas fa-spinner fa-spin"></i>
           <p>Cargando información del hogar...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MODAL GESTIÓN DE VISITAS ========== -->
+  <div class="modal" id="modalGestionVisita">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i class="fas fa-calendar-check"></i>
+          Gestión de Visitas
+        </h2>
+        <button class="modal-close" onclick="cerrarModalVisita()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="visita-form-container">
+          <h3 id="visitaHogarNombre" style="color: var(--primary); margin-bottom: 20px;"></h3>
+          
+          <div class="visita-status-card" id="visitaStatusCard">
+            <!-- Se llenará dinámicamente -->
+          </div>
+
+          <form id="formGestionVisita" onsubmit="guardarVisita(event)">
+            <input type="hidden" id="visitaHogarId" name="hogar_id">
+            
+            <div class="form-group">
+              <label for="visitaUltimaFecha">
+                <i class="fas fa-clock"></i> Última Visita Realizada
+              </label>
+              <input type="date" id="visitaUltimaFecha" name="ultima_visita" class="form-control">
+              <small class="form-text">Fecha de la última visita técnica realizada</small>
+            </div>
+
+            <div class="form-group">
+              <label for="visitaProximaFecha">
+                <i class="fas fa-calendar-alt"></i> Próxima Visita Programada
+              </label>
+              <input type="date" id="visitaProximaFecha" name="proxima_visita" class="form-control">
+              <small class="form-text">Fecha programada para la siguiente visita</small>
+            </div>
+
+            <div class="form-group">
+              <label for="visitaObservaciones">
+                <i class="fas fa-comment"></i> Observaciones
+              </label>
+              <textarea id="visitaObservaciones" name="observaciones" class="form-control" rows="4" placeholder="Notas sobre la visita..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn btn-outline" onclick="cerrarModalVisita()">
+                <i class="fas fa-times"></i> Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -1081,6 +1273,161 @@
         cerrarModal();
       }
     });
+
+    // ========== FUNCIONES GESTIÓN DE VISITAS ==========
+    function abrirModalVisita(hogarId, nombreHogar, ultimaVisita, proximaVisita, estadoAptitud, observaciones) {
+      const modal = document.getElementById('modalGestionVisita');
+      const statusCard = document.getElementById('visitaStatusCard');
+      
+      // Establecer nombre del hogar
+      document.getElementById('visitaHogarNombre').textContent = nombreHogar;
+      document.getElementById('visitaHogarId').value = hogarId;
+      
+      // Establecer fechas
+      document.getElementById('visitaUltimaFecha').value = ultimaVisita || '';
+      document.getElementById('visitaProximaFecha').value = proximaVisita || '';
+      
+      // Establecer observaciones
+      document.getElementById('visitaObservaciones').value = observaciones || '';
+      
+      // Determinar estado de visita y mostrar card de estado
+      let statusHTML = '';
+      
+      // Estado basado en estado_aptitud
+      if (estadoAptitud === 'no_apto' || !ultimaVisita) {
+        statusCard.className = 'visita-status-card pendiente';
+        statusHTML = `
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 32px; color: var(--danger);"></i>
+            <div>
+              <div style="font-weight: 700; font-size: 18px; color: var(--danger); margin-bottom: 4px;">
+                ⚠️ Hogar No Apto - Sin Primera Visita
+              </div>
+              <div style="color: #991b1b; font-size: 14px;">
+                Este hogar necesita su primera visita técnica para obtener el estado "Apto".
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        const diasDesdeUltima = Math.floor((new Date() - new Date(ultimaVisita)) / (1000 * 60 * 60 * 24));
+        
+        if (diasDesdeUltima > 365) {
+          statusCard.className = 'visita-status-card pendiente';
+          statusHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fas fa-calendar-times" style="font-size: 32px; color: var(--warning);"></i>
+              <div>
+                <div style="font-weight: 700; font-size: 18px; color: var(--warning); margin-bottom: 4px;">
+                  ⚠️ Visita Vencida (> 1 Año)
+                </div>
+                <div style="color: #92400e; font-size: 14px;">
+                  Última visita hace ${diasDesdeUltima} días (${Math.floor(diasDesdeUltima/365)} año(s)). Se requiere visita urgente.
+                </div>
+              </div>
+            </div>
+          `;
+        } else if (diasDesdeUltima > 300) {
+          statusCard.className = 'visita-status-card warning';
+          statusHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fas fa-clock" style="font-size: 32px; color: var(--warning);"></i>
+              <div>
+                <div style="font-weight: 700; font-size: 18px; color: var(--warning); margin-bottom: 4px;">
+                  Visita Próxima a Vencer
+                </div>
+                <div style="color: #92400e; font-size: 14px;">
+                  Última visita hace ${diasDesdeUltima} días. Se recomienda programar nueva visita pronto.
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          statusCard.className = 'visita-status-card activa';
+          statusHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fas fa-check-circle" style="font-size: 32px; color: var(--secondary);"></i>
+              <div>
+                <div style="font-weight: 700; font-size: 18px; color: var(--secondary); margin-bottom: 4px;">
+                  ✓ Hogar Apto - Visita Al Día
+                </div>
+                <div style="color: #065f46; font-size: 14px;">
+                  Última visita hace ${diasDesdeUltima} días. ${proximaVisita ? 'Próxima visita programada: ' + new Date(proximaVisita).toLocaleDateString('es-CO') : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+      
+      statusCard.innerHTML = statusHTML;
+      modal.classList.add('active');
+    }
+
+    function cerrarModalVisita() {
+      document.getElementById('modalGestionVisita').classList.remove('active');
+      document.getElementById('formGestionVisita').reset();
+    }
+
+    function guardarVisita(event) {
+      event.preventDefault();
+      
+      const hogarId = document.getElementById('visitaHogarId').value;
+      const ultimaVisita = document.getElementById('visitaUltimaFecha').value;
+      const proximaVisita = document.getElementById('visitaProximaFecha').value;
+      const observaciones = document.getElementById('visitaObservaciones').value;
+      
+      // Enviar datos al servidor
+      fetch(`/api/hogares/${hogarId}/actualizar-visitas/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+          ultima_visita: ultimaVisita,
+          proxima_visita: proximaVisita,
+          observaciones: observaciones
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('✅ Visita actualizada correctamente');
+          cerrarModalVisita();
+          location.reload(); // Recargar para mostrar cambios
+        } else {
+          alert('❌ Error al actualizar la visita: ' + (data.error || 'Error desconocido'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('❌ Error al guardar la visita');
+      });
+    }
+
+    // Cerrar modal de visita al hacer clic fuera
+    document.getElementById('modalGestionVisita').addEventListener('click', function(e) {
+      if (e.target === this) {
+        cerrarModalVisita();
+      }
+    });
+
+    // Función auxiliar para obtener cookie CSRF
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
   </script>
 
 </body>

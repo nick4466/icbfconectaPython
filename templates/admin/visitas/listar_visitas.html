@@ -5,36 +5,61 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Listado de Visitas Técnicas</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #3b82f6;
+      --secondary: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --light: #f8fafc;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --sidebar-width: 260px;
+      --topbar-height: 70px;
+    }
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:"Poppins",sans-serif;background:#f3f6fa;color:#333;display:flex;min-height:100vh}
-    .sidebar{width:250px;background:linear-gradient(180deg,#004080,#007bff);color:white;display:flex;flex-direction:column;padding:25px 0}
-    .sidebar img{height:70px;margin:0 auto 20px}
-    .sidebar h2{text-align:center;font-weight:700;margin-bottom:25px;font-size:18px}
-    .sidebar a{color:white;text-decoration:none;padding:14px 25px;display:flex;align-items:center;gap:10px;font-weight:500;transition:background .3s ease}
-    .sidebar a:hover,.sidebar a.active{background:rgba(255,255,255,0.15);border-left:4px solid #fff}
-    .main{flex:1;padding:40px;max-width:1600px;margin:0 auto;width:100%}
-    .main header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
-    .main header h1{font-size:28px;color:#004080;font-weight:700}
+    body{font-family:"Inter",sans-serif;background:var(--light);color:var(--text);min-height:100vh}
+    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-width);height:100vh;background:linear-gradient(180deg,var(--primary) 0%,#1e40af 100%);color:white;display:flex;flex-direction:column;z-index:1000;box-shadow:2px 0 10px rgba(0,0,0,0.1)}
+    .sidebar-header{padding:1.5rem 1rem;border-bottom:1px solid rgba(255,255,255,0.1)}
+    .sidebar-logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:white}
+    .sidebar-logo img{width:45px;height:45px;object-fit:contain}
+    .sidebar-logo-text h2{font-size:18px;font-weight:700;margin:0}
+    .sidebar-logo-text p{font-size:11px;opacity:0.9;margin:0}
+    .sidebar-nav{flex:1;padding:1rem 0;overflow-y:auto}
+    .nav-item{margin-bottom:0.25rem}
+    .nav-link{display:flex;align-items:center;gap:12px;padding:12px 20px;color:rgba(255,255,255,0.9);text-decoration:none;transition:all 0.2s;font-size:14px;font-weight:500;border-left:3px solid transparent}
+    .nav-link:hover{background:rgba(255,255,255,0.1);border-left-color:white}
+    .nav-link.active{background:rgba(255,255,255,0.15);border-left-color:white;color:white}
+    .nav-link i{width:20px;text-align:center;font-size:16px}
+    .main-content{margin-left:var(--sidebar-width);min-height:100vh;display:flex;flex-direction:column}
+    .topbar{height:var(--topbar-height);background:white;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+    .topbar-left h1{font-size:24px;font-weight:700;color:var(--primary);margin:0}
+    .topbar-right{display:flex;align-items:center;gap:1.5rem}
+    .user-menu{display:flex;align-items:center;gap:12px}
+    .user-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px}
+    .content-wrapper{flex:1;padding:2rem}
     .filters{background:white;padding:25px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);margin-bottom:30px}
     .filters form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;align-items:end}
-    .filter-group label{display:block;font-weight:600;margin-bottom:5px;font-size:14px;color:#333}
-    .filter-group select{width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-family:"Poppins",sans-serif;font-size:14px}
-    .filter-group select:focus{border-color:#007bff;outline:none}
+    .filter-group label{display:block;font-weight:600;margin-bottom:5px;font-size:14px;color:var(--text)}
+    .filter-group select{width:100%;padding:10px;border:2px solid var(--border);border-radius:6px;font-family:"Inter",sans-serif;font-size:14px}
+    .filter-group select:focus{border-color:var(--primary-light);outline:none}
     .btn{padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s;font-size:14px}
-    .btn-primary{background:#007bff;color:white}
-    .btn-primary:hover{background:#0056b3}
-    .btn-secondary{background:#6c757d;color:white}
-    .btn-secondary:hover{background:#5a6268}
+    .btn-primary{background:var(--primary-light);color:white}
+    .btn-primary:hover{background:var(--primary)}
+    .btn-secondary{background:var(--secondary);color:white}
+    .btn-secondary:hover{background:#475569}
     .btn-sm{padding:6px 12px;font-size:13px}
     .table-container{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);overflow:hidden}
     table{width:100%;border-collapse:collapse}
-    thead{background:linear-gradient(90deg,#004080,#007bff);color:white}
+    thead{background:linear-gradient(90deg,var(--primary),var(--primary-light));color:white}
     thead th{padding:15px 12px;text-align:left;font-weight:600;font-size:14px}
-    tbody tr{border-bottom:1px solid #e0e0e0;transition:background .2s}
-    tbody tr:hover{background:#f8f9fa}
+    tbody tr{border-bottom:1px solid var(--border);transition:background .2s}
+    tbody tr:hover{background:var(--light)}
     tbody td{padding:12px;font-size:14px}
     .badge{padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap}
     .badge.agendada{background:#d1ecf1;color:#0c5460}
@@ -47,27 +72,105 @@
     .badge.v3{background:#ffe5d0;color:#984c0c}
     .actions{display:flex;gap:8px}
     .pagination{display:flex;justify-content:center;gap:10px;margin-top:20px;padding:20px}
-    .pagination a,.pagination span{padding:8px 12px;background:white;border-radius:6px;text-decoration:none;color:#004080;border:1px solid #ddd}
-    .pagination .current{background:#004080;color:white;border-color:#004080}
+    .pagination a,.pagination span{padding:8px 12px;background:white;border-radius:6px;text-decoration:none;color:var(--primary);border:1px solid #ddd}
+    .pagination .current{background:var(--primary);color:white;border-color:var(--primary)}
     .empty{text-align:center;padding:60px 20px;color:#999}
     .empty i{font-size:64px;margin-bottom:20px;display:block;opacity:0.5}
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
-    <h2>Panel de Administrador</h2>
-    <a href="{% url 'dashboard_admin' %}"><i class="fas fa-home"></i> Inicio</a>
-    <a href="{% url 'listar_madres' %}"><i class="fas fa-users"></i> Agentes Educativos</a>
-    <a href="{% url 'listar_hogares_pendientes_visita' %}"><i class="fas fa-clipboard-check"></i> Hogares Pendientes</a>
-    <a href="{% url 'listar_visitas_tecnicas' %}" class="active"><i class="fas fa-list"></i> Todas las Visitas</a>
-    <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
-  </div>
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a href="{% url 'home' %}" class="sidebar-logo">
+        <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF">
+        <div class="sidebar-logo-text">
+          <h2>ICBF Conecta</h2>
+          <p>Panel Administrativo</p>
+        </div>
+      </a>
+    </div>
 
-  <div class="main">
-    <header>
-      <h1><i class="fas fa-clipboard-list"></i> Historial de Visitas Técnicas</h1>
-    </header>
+    <nav class="sidebar-nav">
+      <div class="nav-item">
+        <a href="{% url 'dashboard_admin' %}" class="nav-link">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Inicio</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'hogares_dashboard' %}" class="nav-link">
+          <i class="fas fa-home"></i>
+          <span>Dashboard Hogares</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_hogares' %}" class="nav-link">
+          <i class="fas fa-calendar-check"></i>
+          <span>Gestión de Visitas</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_madres' %}" class="nav-link">
+          <i class="fas fa-user-group"></i>
+          <span>Agentes Educativos</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_hogares_pendientes_visita' %}" class="nav-link">
+          <i class="fas fa-clipboard-check"></i>
+          <span>Hogares Pendientes</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_visitas_tecnicas' %}" class="nav-link active">
+          <i class="fas fa-list"></i>
+          <span>Todas las Visitas</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'editar_perfil' %}" class="nav-link">
+          <i class="fas fa-user-pen"></i>
+          <span>Editar Perfil</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'cambiar_contrasena' %}" class="nav-link">
+          <i class="fas fa-key"></i>
+          <span>Cambiar Contraseña</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'logout' %}" class="nav-link">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="main-content">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1><i class="fas fa-clipboard-list"></i> Historial de Visitas Técnicas</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="user-menu">
+          <div class="user-avatar">
+            {{ request.user.nombres.0 }}{{ request.user.apellidos.0 }}
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 14px;">{{ request.user.nombres }}</div>
+            <div style="font-size: 12px; color: var(--text-light);">Administrador</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content-wrapper">
 
     <!-- Filtros -->
     <div class="filters">
@@ -215,13 +318,14 @@
         {% endif %}
       </div>
       {% endif %}
-    </div>
 
     <div style="margin-top:30px;text-align:center">
       <a href="{% url 'listar_hogares_pendientes_visita' %}" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> Volver a Hogares Pendientes
       </a>
     </div>
-  </div>
+
+    </div> <!-- fin content-wrapper -->
+  </main> <!-- fin main-content -->
 </body>
 </html>

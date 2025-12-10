@@ -318,6 +318,20 @@ class HogarComunitario(models.Model):
     # 🆕 NUEVOS CAMPOS - FORMULARIO 1
     fecha_primera_visita = models.DateField(null=True, blank=True, help_text="Fecha programada para la primera visita técnica")
     
+    # 🆕 SISTEMA DE VISITAS Y ESTADO DE APTITUD
+    ultima_visita = models.DateField(null=True, blank=True, help_text="Fecha de la última visita técnica realizada")
+    proxima_visita = models.DateField(null=True, blank=True, help_text="Fecha programada para la próxima visita técnica (calculada automáticamente)")
+    observaciones_visita = models.TextField(blank=True, help_text="Observaciones de la última visita técnica realizada")
+    estado_aptitud = models.CharField(
+        max_length=20,
+        choices=[
+            ('no_apto', 'No Apto'),
+            ('apto', 'Apto'),
+        ],
+        default='no_apto',
+        help_text="Estado de aptitud del hogar. Se actualiza a 'Apto' después de la primera visita aprobada"
+    )
+    
     # 🆕 NUEVOS CAMPOS - FORMULARIO 2 (Visita Técnica)
     area_social_m2 = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, 
                                          help_text="Metros cuadrados del área social disponible para los niños")

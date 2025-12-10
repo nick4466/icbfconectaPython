@@ -5344,3 +5344,187 @@ def programar_visita(request, hogar_id):
     }
     
     return render(request, 'admin/programar_visita.html', context)
+
+
+# ------------------------
+# API: Actualizar Visitas del Hogar (Sistema de Gestión de Visitas)
+# ------------------------
+@login_required
+@require_http_methods(["POST"])
+def actualizar_visitas_hogar(request, hogar_id):
+    """
+    API para actualizar las fechas de visitas de un hogar comunitario.
+    Recibe: ultima_visita, proxima_visita, observaciones
+    Devuelve: JSON con success/error
+    
+    Lógica de negocio:
+    - Si es la primera visita registrada (ultima_visita != null y estado_aptitud == 'no_apto'):
+      -> Cambia estado_aptitud a 'apto'
+    - Si proxima_visita no se proporciona, la calcula automáticamente:
+      -> proxima_visita = ultima_visita + 365 días
+      -> Ajusta a día laboral (lunes-viernes, no festivo)
+    - Actualiza observaciones_visita
+    """
+    try:
+        # Verificar permisos
+        if request.user.rol.nombre not in ['administrador', 'madre_comunitaria']:
+            return JsonResponse({
+                'success': False,
+                'error': 'No tienes permisos para actualizar visitas'
+            }, status=403)
+        
+        # Obtener el hogar
+        hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+        
+        # Verificar que el usuario tiene acceso a este hogar
+        if request.user.rol.nombre == 'madre_comunitaria':
+            if hogar.madre.usuario != request.user:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No tienes acceso a este hogar'
+                }, status=403)
+        
+        # Parsear JSON del body
+        data = json.loads(request.body)
+        
+        # Obtener datos del request
+        ultima_visita_str = data.get('ultima_visita')
+        proxima_visita_str = data.get('proxima_visita')
+        observaciones = data.get('observaciones', '')
+        
+        # Validar que al menos ultima_visita esté presente
+        if not ultima_visita_str:
+            return JsonResponse({
+                'success': False,
+                'error': 'Debe proporcionar la fecha de la última visita'
+            }, status=400)
+        
+        # Convertir fechas
+        try:
+            ultima_visita = datetime.strptime(ultima_visita_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Formato de fecha inválido para última visita (use YYYY-MM-DD)'
+            }, status=400)
+        
+        # Validar que la fecha no sea futura
+        if ultima_visita > date.today():
+            return JsonResponse({
+                'success': False,
+                'error': 'La fecha de la última visita no puede ser futura'
+            }, status=400)
+        
+        # Detectar si es la primera visita
+        es_primera_visita = (hogar.ultima_visita is None and hogar.estado_aptitud == 'no_apto')
+        
+        # Actualizar ultima_visita
+        hogar.ultima_visita = ultima_visita
+        
+        # Si es la primera visita, cambiar estado a "Apto"
+        if es_primera_visita:
+            hogar.estado_aptitud = 'apto'
+        
+        # Calcular próxima visita si no se proporcionó
+        if proxima_visita_str:
+            try:
+                proxima_visita = datetime.strptime(proxima_visita_str, '%Y-%m-%d').date()
+                hogar.proxima_visita = proxima_visita
+            except ValueError:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Formato de fecha inválido para próxima visita (use YYYY-MM-DD)'
+                }, status=400)
+        else:
+            # Auto-calcular próxima visita (1 año después, en día laboral)
+            hogar.proxima_visita = calcular_proxima_visita(ultima_visita)
+        
+        # Actualizar observaciones
+        hogar.observaciones_visita = observaciones
+        
+        # Guardar cambios
+        hogar.save()
+        
+        # Preparar respuesta
+        mensaje = '✅ Visita registrada exitosamente'
+        if es_primera_visita:
+            mensaje += '. El hogar ahora tiene estado "Apto"'
+        
+        return JsonResponse({
+            'success': True,
+            'message': mensaje,
+            'hogar': {
+                'id': hogar.id,
+                'nombre': hogar.nombre_hogar,
+                'ultima_visita': hogar.ultima_visita.strftime('%Y-%m-%d') if hogar.ultima_visita else None,
+                'proxima_visita': hogar.proxima_visita.strftime('%Y-%m-%d') if hogar.proxima_visita else None,
+                'estado_aptitud': hogar.estado_aptitud,
+                'observaciones': hogar.observaciones_visita
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Error al procesar datos JSON'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error inesperado: {str(e)}'
+        }, status=500)
+
+
+def calcular_proxima_visita(fecha_base):
+    """
+    Calcula la próxima fecha de visita técnica:
+    - Suma 365 días a la fecha base
+    - Ajusta a día laboral (lunes-viernes)
+    - Evita festivos nacionales (Colombia)
+    
+    Args:
+        fecha_base: datetime.date - Fecha de la última visita
+    
+    Returns:
+        datetime.date - Fecha calculada para próxima visita
+    """
+    # Sumar 1 año (365 días)
+    proxima = fecha_base + timedelta(days=365)
+    
+    # Festivos fijos de Colombia (simplificado - en producción usar librería)
+    festivos_colombia_2024 = [
+        date(2024, 1, 1),   # Año Nuevo
+        date(2024, 1, 8),   # Reyes Magos (movido)
+        date(2024, 3, 25),  # San José (movido)
+        date(2024, 3, 28),  # Jueves Santo
+        date(2024, 3, 29),  # Viernes Santo
+        date(2024, 5, 1),   # Día del Trabajo
+        date(2024, 5, 13),  # Ascensión (movido)
+        date(2024, 6, 3),   # Corpus Christi (movido)
+        date(2024, 6, 10),  # Sagrado Corazón (movido)
+        date(2024, 7, 1),   # San Pedro y San Pablo (movido)
+        date(2024, 7, 20),  # Independencia
+        date(2024, 8, 7),   # Batalla de Boyacá
+        date(2024, 8, 19),  # Asunción (movido)
+        date(2024, 10, 14), # Día de la Raza (movido)
+        date(2024, 11, 4),  # Todos los Santos (movido)
+        date(2024, 11, 11), # Independencia de Cartagena (movido)
+        date(2024, 12, 8),  # Inmaculada Concepción
+        date(2024, 12, 25), # Navidad
+    ]
+    
+    # Ajustar a día laboral (evitar sábados, domingos y festivos)
+    while proxima.weekday() >= 5 or proxima in festivos_colombia_2024:
+        proxima += timedelta(days=1)
+        
+        # Si avanzamos al siguiente año, actualizar lista de festivos
+        # (En producción, usar librería como workalendar o API de festivos)
+        if proxima.year > 2024:
+            # Por simplicidad, solo verificar fines de semana en años futuros
+            # TODO: Implementar librería de festivos para todos los años
+            while proxima.weekday() >= 5:
+                proxima += timedelta(days=1)
+            break
+    
+    return proxima
+

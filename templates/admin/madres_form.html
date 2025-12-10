@@ -6,23 +6,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% if modo_edicion %}Editar{% else %}Crear{% endif %} Agente Educativo</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:"Poppins",sans-serif;background:#f3f6fa;color:#333;display:flex;min-height:100vh}
-    .sidebar{width:250px;background:linear-gradient(180deg,#004080,#007bff);color:white;display:flex;flex-direction:column;padding:25px 0}
-    .sidebar img{height:70px;margin:0 auto 20px}
-    .sidebar h2{text-align:center;font-weight:700;margin-bottom:25px;font-size:18px}
-    .sidebar a{color:white;text-decoration:none;padding:14px 25px;display:flex;align-items:center;gap:10px;font-weight:500;transition:background .3s ease}
-    .sidebar a:hover,.sidebar a.active{background:rgba(255,255,255,0.15);border-left:4px solid #fff}
-    .sidebar .dropdown{position:relative}
-    .sidebar .dropdown-menu{display:none;position:absolute;left:100%;top:0;background:#004080;min-width:200px;box-shadow:0 8px 16px rgba(0,0,0,.2);z-index:1;border-radius:0 8px 8px 0}
-    .sidebar .dropdown:hover .dropdown-menu{display:block}
-    .sidebar .dropdown-menu a{padding:12px 16px;border-left:none!important}
-    .main{flex:1;padding:40px;max-width:1200px;margin:0 auto}
-    .main header{display:flex;justify-content:space-between;align-items:center;margin-bottom:40px}
-    .main header h1{font-size:28px;color:#004080;font-weight:700}
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #3b82f6;
+      --secondary: #64748b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --light: #f8fafc;
+      --dark: #0f172a;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --sidebar-width: 260px;
+      --topbar-height: 70px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--text); min-height: 100vh; }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: linear-gradient(180deg, var(--primary) 0%, #1e40af 100%); color: white; display: flex; flex-direction: column; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+    .sidebar-header { padding: 1.5rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: white; }
+    .sidebar-logo img { width: 45px; height: 45px; object-fit: contain; }
+    .sidebar-logo-text h2 { font-size: 18px; font-weight: 700; margin: 0; }
+    .sidebar-logo-text p { font-size: 11px; opacity: 0.9; margin: 0; }
+    .sidebar-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
+    .nav-item { margin-bottom: 0.25rem; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: rgba(255,255,255,0.9); text-decoration: none; transition: all 0.2s; font-size: 14px; font-weight: 500; border-left: 3px solid transparent; }
+    .nav-link:hover { background: rgba(255,255,255,0.1); border-left-color: white; }
+    .nav-link.active { background: rgba(255,255,255,0.15); border-left-color: white; color: white; }
+    .nav-link i { width: 20px; text-align: center; font-size: 16px; }
+
+    /* ========== MAIN CONTENT ========== */
+    .main-content { margin-left: var(--sidebar-width); min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar { height: var(--topbar-height); background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .topbar-left h1 { font-size: 24px; font-weight: 700; color: var(--primary); margin: 0; }
+    .topbar-right { display: flex; align-items: center; gap: 1.5rem; }
+    .user-menu { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
+    .content-wrapper { flex: 1; padding: 2rem; }
     
     /* Contenedor de formulario centrado - más ancho para dos columnas */
     .step-form{max-width:1400px;margin:0 auto;background:white;padding:30px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08)}
@@ -33,42 +60,42 @@
     
     /* Paneles con borde */
     .column-panel{background:#f8f9fa;padding:20px;border-radius:8px;border:1px solid #e0e0e0}
-    .column-panel h4{color:#004080;margin:0 0 15px 0;font-size:16px;border-left:4px solid #007bff;padding-left:10px}
+    .column-panel h4{color:var(--primary);margin:0 0 15px 0;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px}
     
     .form-group{margin-bottom:24px}
     form label{font-weight:600;color:#555;margin-bottom:8px;font-size:14px;display:block}
-    form input, form select, form textarea{width:100%;padding:12px;border-radius:8px;border:1px solid #ddd;font-family:"Poppins",sans-serif;font-size:15px;transition:all 0.3s ease}
-    form input:focus, form select:focus, form textarea:focus{border-color:#007bff;box-shadow:0 0 0 3px rgba(0,123,255,.15);outline:none}
+    form input, form select, form textarea{width:100%;padding:12px;border-radius:8px;border:1px solid #ddd;font-family:"Inter",sans-serif;font-size:15px;transition:all 0.3s ease}
+    form input:focus, form select:focus, form textarea:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(0,123,255,.15);outline:none}
     form input[type="file"]{padding:8px;background:#f8f9fa;border:2px dashed #ccc;cursor:pointer}
-    form input[type="file"]:hover{border-color:#007bff;background:#f0f7ff}
+    form input[type="file"]:hover{border-color:var(--primary-light);background:#f0f7ff}
     
     /* Vista previa de archivos */
     .file-preview-container{margin-top:15px;padding:15px;background:#f8f9fa;border-radius:8px;border:1px solid #e0e0e0}
     .file-preview-container img{max-width:100%;max-height:300px;border-radius:8px;display:block;margin:0 auto}
     .file-preview-container iframe{width:100%;height:400px;border:none;border-radius:8px}
     .file-preview-container .pdf-icon{text-align:center;padding:20px}
-    .file-preview-container .pdf-icon i{font-size:64px;color:#dc3545;margin-bottom:10px}
+    .file-preview-container .pdf-icon i{font-size:64px;color:var(--danger);margin-bottom:10px}
     .file-preview-container .file-name{font-size:14px;color:#666;margin-top:10px;text-align:center;word-break:break-all}
-    .remove-file-btn{background:#dc3545;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;margin-top:10px;display:block;margin-left:auto;margin-right:auto}
+    .remove-file-btn{background:var(--danger);color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;margin-top:10px;display:block;margin-left:auto;margin-right:auto}
     .remove-file-btn:hover{background:#c82333}
     .form-actions{margin-top:30px;display:flex;gap:15px;justify-content:flex-end}
     .btn-guardar,.btn-volver{padding:10px 28px;border:none;border-radius:6px;color:white;font-weight:600;font-size:16px;cursor:pointer;transition:background .2s}
-    .btn-guardar{background:linear-gradient(90deg,#28a745,#218838)}
+    .btn-guardar{background:linear-gradient(90deg,var(--success),#218838)}
     .btn-volver{background:#6c757d}
     .btn-volver:hover{background:#495057}
     .btn-guardar:hover{background:#218838}
     .messages{list-style:none;padding:0;margin:0 0 20px 0}
     .messages li{padding:12px;border-radius:6px;margin-bottom:8px;color:white;font-weight:500;display:flex;justify-content:space-between;align-items:center}
-    .messages li.success{background:#28a745}
-    .messages li.error{background:#dc3545}
+    .messages li.success{background:var(--success)}
+    .messages li.error{background:var(--danger)}
     .close-message{background:none;border:none;color:white;font-size:20px;cursor:pointer}
-    .required-star{color:#dc3545;margin-left:4px;font-weight:bold}
+    .required-star{color:var(--danger);margin-left:4px;font-weight:bold}
     
     /* Indicadores de pasos mejorados */
     .step-indicators{display:flex;justify-content:center;gap:20px;margin-bottom:40px;padding:20px;background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
     .step-indicator{display:flex;align-items:center;gap:10px;padding:12px 24px;border-radius:8px;background:#f8f9fa;color:#999;font-weight:600;transition:all 0.3s ease}
     .step-indicator.active{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;box-shadow:0 4px 15px rgba(102,126,234,0.4)}
-    .step-indicator.completed{background:#28a745;color:white}
+    .step-indicator.completed{background:var(--success);color:white}
     .step-indicator i{font-size:20px}
     
     /* Alertas de validación */
@@ -117,35 +144,98 @@
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
-    <h2>ICBF Conecta</h2>
-    <a href="{% url 'dashboard_admin' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
-    <a href="{% url 'listar_hogares' %}"><i class="fa-solid fa-house"></i> Hogares</a>
-    <a href="{% url 'listar_madres' %}" class="active"><i class="fa-solid fa-users"></i> Agentes Educativos</a>
-    <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
-    <a href="{% url 'admin_reportes' %}" ><i class="fa-solid fa-chart-line"></i> Reportes</a>
-    <div class="dropdown">
-      <a href="#"><i class="fa-solid fa-cog"></i> Ajustes</a>
-      <div class="dropdown-menu">
-        <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-        <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+    <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a href="{% url 'home' %}" class="sidebar-logo">
+        <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF">
+        <div class="sidebar-logo-text">
+          <h2>ICBF Conecta</h2>
+          <p>Panel Administrativo</p>
+        </div>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item">
+        <a href="{% url 'dashboard_admin' %}" class="nav-link">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Inicio</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'hogares_dashboard' %}" class="nav-link">
+          <i class="fas fa-calendar-check"></i>
+          <span>Gestión de Visitas</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_hogares' %}" class="nav-link">
+          <i class="fas fa-home"></i>
+          <span>Hogares</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_madres' %}" class="nav-link">
+          <i class="fas fa-user-group"></i>
+          <span>Agentes Educativos</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_administradores' %}" class="nav-link">
+          <i class="fas fa-user-shield"></i>
+          <span>Administradores</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'admin_reportes' %}" class="nav-link">
+          <i class="fas fa-chart-line"></i>
+          <span>Reportes</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'editar_perfil' %}" class="nav-link">
+          <i class="fas fa-user-pen"></i>
+          <span>Editar Perfil</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'cambiar_contrasena' %}" class="nav-link">
+          <i class="fas fa-key"></i>
+          <span>Cambiar Contraseña</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'logout' %}" class="nav-link">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="main-content">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>{% if modo_edicion %}Editar{% else %}Crear{% endif %} Agente Educativo</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="user-menu">
+          <div class="user-avatar">
+            {{ request.user.nombres.0 }}{{ request.user.apellidos.0 }}
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 14px;">{{ request.user.nombres }}</div>
+            <div style="font-size: 12px; color: var(--text-light);">Administrador</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="logout">
-      <form method="post" action="{% url 'logout' %}" style="display:inline">
-        {% csrf_token %}
-        <button type="submit" style="background:none;border:none;color:white;cursor:pointer;padding:14px 25px;display:flex;align-items:center;gap:10px;font-family:'Poppins',sans-serif;font-size:16px;font-weight:500;width:100%;text-align:left;">
-          <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
-        </button>
-      </form>
-    </div>
-  </div>
 
-  <div class="main">
-    <header>
-      <h1>{% if modo_edicion %}Editar{% else %}Crear{% endif %} Agente Educativo</h1>
-    </header>
+    <!-- CONTENT -->
+    <div class="content-wrapper">
 
     {% if messages %}
     <ul class="messages">
@@ -170,7 +260,7 @@
         <hr style="margin-bottom:20px" />
         
         <!-- ==================== SECCIÓN 1: INFORMACIÓN PERSONAL ==================== -->
-        <h3 class="full-width" style="color:#004080;margin:25px 0 15px;font-size:18px;border-bottom:2px solid #007bff;padding-bottom:8px">
+        <h3 class="full-width" style="color:var(--primary);margin:25px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
           <i class="fas fa-user"></i> 1. Información Personal del Agente Educativo
         </h3>
         
@@ -271,7 +361,7 @@
             </div>
           </div>
         </div>        <!-- ==================== SECCIÓN 2: INFORMACIÓN ACADÉMICA Y DOCUMENTOS ==================== -->
-        <h3 class="full-width" style="color:#004080;margin:40px 0 15px;font-size:18px;border-bottom:2px solid #007bff;padding-bottom:8px">
+        <h3 class="full-width" style="color:var(--primary);margin:40px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
           <i class="fas fa-graduation-cap"></i> 2. Información Académica y Documentos del Agente Educativo
         </h3>
 
@@ -339,7 +429,7 @@
             <h4 style="margin-top:20px"><i class="fas fa-check-circle"></i> Declaraciones</h4>
             
             <div class="form-group">
-              <div style="display:flex;align-items:flex-start;gap:10px;padding:15px;background-color:#e8f4f8;border-radius:8px;border-left:4px solid #007bff;">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:15px;background-color:#e8f4f8;border-radius:8px;border-left:4px solid var(--primary-light);">
                 <label for="{{ madre_profile_form.no_retirado_icbf.id_for_label }}" style="margin:0;cursor:pointer;flex:1;order:1;">
                   <strong>Declaro que no he sido retirado del programa ICBF</strong>
                   <br><small style="color:#666;">Confirmo que nunca he sido desvinculado del programa</small>
@@ -380,7 +470,7 @@
         </div>
 
         <!-- Subsección: Autorización de Datos Personales -->
-        <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+        <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
           <i class="fas fa-shield-alt"></i> Protección de Datos Personales
         </h4>
         
@@ -400,7 +490,7 @@
         </div>
 
         <!-- Subsección: Documentos Personales -->
-        <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+        <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
           <i class="fas fa-file-upload"></i> Documentos Personales
         </h4>
         
@@ -455,7 +545,7 @@
         </div>
 
         <!-- Sección: Documentos de Soporte -->
-        <h3 style="color:#004080;margin:25px 0 15px;font-size:18px;border-bottom:2px solid #007bff;padding-bottom:8px">
+        <h3 style="color:var(--primary);margin:25px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
           <i class="fas fa-folder-open"></i> Documentos de Soporte
         </h3>
         
@@ -592,7 +682,7 @@
         </div>
 
         <!-- ==================== SECCIÓN 3: INFORMACIÓN DEL HOGAR COMUNITARIO ==================== -->
-        <h3 class="full-width" style="color:#004080;margin:40px 0 15px;font-size:18px;border-bottom:2px solid #007bff;padding-bottom:8px">
+        <h3 class="full-width" style="color:var(--primary);margin:40px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
           <i class="fas fa-home"></i> 3. Información del Hogar Comunitario
         </h3>
 
@@ -845,7 +935,7 @@
         
         <!-- SECCIÓN DE CONVIVIENTES (ANCHO COMPLETO) -->
         <div class="full-width">
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-users"></i> Personas que Viven en el Hogar
           </h4>
 
@@ -863,7 +953,7 @@
         </div>
 
         <div id="seccion-visita-tecnica" style="{% if not modo_edicion %}opacity:0.5;pointer-events:none;{% endif %}">
-          <h3 style="color:#004080;margin:40px 0 15px;font-size:18px;border-bottom:2px solid #007bff;padding-bottom:8px">
+          <h3 style="color:var(--primary);margin:40px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
             <i class="fas fa-clipboard-check"></i> 4. Formulario de Primera Visita Técnica
           </h3>
           
@@ -874,7 +964,7 @@
           {% endif %}
 
           <!-- Subsección: Tipo y Características de la Vivienda -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-home"></i> Tipo y Características de la Vivienda
           </h4>
 
@@ -911,7 +1001,7 @@
           </div>
 
           <!-- Subsección: Servicios Públicos -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-plug"></i> Servicios Públicos
           </h4>
 
@@ -958,7 +1048,7 @@
           </div>
 
           <!-- Subsección: Espacios de la Vivienda -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-door-open"></i> Espacios de la Vivienda
           </h4>
 
@@ -1003,7 +1093,7 @@
           </div>
 
           <!-- Subsección: Condiciones Generales -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-tasks"></i> Condiciones Generales
           </h4>
 
@@ -1043,7 +1133,7 @@
           </div>
 
           <!-- Subsección: Otros Aspectos -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-info-circle"></i> Otros Aspectos
           </h4>
 
@@ -1074,7 +1164,7 @@
           </div>
 
           <!-- Subsección: Espacios para los Niños -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-child"></i> Espacios Específicos para los Niños
           </h4>
 
@@ -1109,7 +1199,7 @@
           </div>
 
           <!-- Subsección: Condiciones Ambientales -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-wind"></i> Condiciones Ambientales
           </h4>
 
@@ -1160,7 +1250,7 @@
           </div>
 
           <!-- Subsección: Aspectos Familiares y Convivencia -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-users"></i> Aspectos Familiares y Convivencia
           </h4>
 
@@ -1181,7 +1271,7 @@
           </div>
 
           <!-- Subsección: Capacidad para el Cuidado Infantil -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-baby"></i> Capacidad para el Cuidado Infantil
           </h4>
 
@@ -1211,7 +1301,7 @@
           </div>
 
           <!-- Subsección: Observaciones y Conclusiones de la Visita -->
-          <h4 style="color:#004080;margin:20px 0 10px;font-size:16px;border-left:4px solid #007bff;padding-left:10px">
+          <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
             <i class="fas fa-clipboard"></i> Observaciones y Conclusiones
           </h4>
 
@@ -1699,7 +1789,7 @@
                 documentoValidation.style.color = '#721c24';
                 documentoValidation.style.border = '1px solid #f5c6cb';
                 documentoValidation.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Advertencia:</strong> ${data.mensaje}`;
-                documentoInput.style.borderColor = '#dc3545';
+                documentoInput.style.borderColor = 'var(--danger)';
                 documentoInput.style.borderWidth = '2px';
               } else {
                 documentoValidation.style.display = 'block';
@@ -1707,7 +1797,7 @@
                 documentoValidation.style.color = '#155724';
                 documentoValidation.style.border = '1px solid #c3e6cb';
                 documentoValidation.innerHTML = '<i class="fas fa-check-circle"></i> Documento disponible';
-                documentoInput.style.borderColor = '#28a745';
+                documentoInput.style.borderColor = 'var(--success)';
                 documentoInput.style.borderWidth = '2px';
                 
                 // Ocultar mensaje de éxito después de 2 segundos
@@ -1755,27 +1845,27 @@
           edadValidation.style.display = 'block';
           edadValidation.style.backgroundColor = '#f8d7da';
           edadValidation.style.color = '#721c24';
-          edadValidation.style.border = '2px solid #dc3545';
+          edadValidation.style.border = '2px solid var(--danger)';
           edadValidation.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> El agente educativo debe tener al menos 20 años. Edad actual: ${edad} años.`;
-          this.style.borderColor = '#dc3545';
+          this.style.borderColor = 'var(--danger)';
           this.style.borderWidth = '2px';
           edadValida = false;
         } else if (edad > 45) {
           edadValidation.style.display = 'block';
           edadValidation.style.backgroundColor = '#f8d7da';
           edadValidation.style.color = '#721c24';
-          edadValidation.style.border = '2px solid #dc3545';
+          edadValidation.style.border = '2px solid var(--danger)';
           edadValidation.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> El agente educativo no puede tener más de 45 años. Edad actual: ${edad} años.`;
-          this.style.borderColor = '#dc3545';
+          this.style.borderColor = 'var(--danger)';
           this.style.borderWidth = '2px';
           edadValida = false;
         } else {
           edadValidation.style.display = 'block';
           edadValidation.style.backgroundColor = '#d4edda';
           edadValidation.style.color = '#155724';
-          edadValidation.style.border = '2px solid #28a745';
+          edadValidation.style.border = '2px solid var(--success)';
           edadValidation.innerHTML = `<i class="fas fa-check-circle"></i> Edad válida: ${edad} años (cumple con el requisito de 20-45 años)`;
-          this.style.borderColor = '#28a745';
+          this.style.borderColor = 'var(--success)';
           this.style.borderWidth = '2px';
           edadValida = true;
           
@@ -1832,7 +1922,7 @@
                 nombreHogarValidation.style.color = '#721c24';
                 nombreHogarValidation.style.border = '1px solid #f5c6cb';
                 nombreHogarValidation.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Advertencia:</strong> ${data.mensaje}`;
-                nombreHogarInput.style.borderColor = '#dc3545';
+                nombreHogarInput.style.borderColor = 'var(--danger)';
                 nombreHogarInput.style.borderWidth = '2px';
               } else {
                 nombreHogarValidation.style.display = 'block';
@@ -1840,7 +1930,7 @@
                 nombreHogarValidation.style.color = '#155724';
                 nombreHogarValidation.style.border = '1px solid #c3e6cb';
                 nombreHogarValidation.innerHTML = '<i class="fas fa-check-circle"></i> Nombre disponible';
-                nombreHogarInput.style.borderColor = '#28a745';
+                nombreHogarInput.style.borderColor = 'var(--success)';
                 nombreHogarInput.style.borderWidth = '2px';
                 
                 // Ocultar mensaje de éxito después de 2 segundos
@@ -1902,7 +1992,7 @@
         
         // Validar que no sea pasada
         if (fechaSeleccionada < manana) {
-          this.style.borderColor = '#dc3545';
+          this.style.borderColor = 'var(--danger)';
           this.style.borderWidth = '2px';
           fechaVisitaValidation.style.display = 'block';
           fechaVisitaValidation.style.backgroundColor = '#f8d7da';
@@ -1915,7 +2005,7 @@
         
         // Validar que no supere 5 semanas
         if (fechaSeleccionada > maxFecha) {
-          this.style.borderColor = '#dc3545';
+          this.style.borderColor = 'var(--danger)';
           this.style.borderWidth = '2px';
           fechaVisitaValidation.style.display = 'block';
           fechaVisitaValidation.style.backgroundColor = '#f8d7da';
@@ -1929,7 +2019,7 @@
         // Validar que no sea sábado o domingo
         const diaSemana = fechaSeleccionada.getDay();
         if (diaSemana === 0 || diaSemana === 6) {
-          this.style.borderColor = '#dc3545';
+          this.style.borderColor = 'var(--danger)';
           this.style.borderWidth = '2px';
           fechaVisitaValidation.style.display = 'block';
           fechaVisitaValidation.style.backgroundColor = '#f8d7da';
@@ -1942,7 +2032,7 @@
         
         // Validar que no sea festivo
         if (festivos.includes(fechaStr)) {
-          this.style.borderColor = '#dc3545';
+          this.style.borderColor = 'var(--danger)';
           this.style.borderWidth = '2px';
           fechaVisitaValidation.style.display = 'block';
           fechaVisitaValidation.style.backgroundColor = '#f8d7da';
@@ -1954,7 +2044,7 @@
         }
         
         // Fecha válida
-        this.style.borderColor = '#28a745';
+        this.style.borderColor = 'var(--success)';
         this.style.borderWidth = '2px';
         fechaVisitaValidation.style.display = 'block';
         fechaVisitaValidation.style.backgroundColor = '#d4edda';
@@ -1984,10 +2074,10 @@
       for (let i = 0; i < cantidad; i++) {
         const convivienteDiv = document.createElement('div');
         convivienteDiv.className = 'conviviente-card';
-        convivienteDiv.style.cssText = 'border:2px solid #007bff;border-radius:8px;padding:20px;margin-bottom:20px;background:#f8f9fa;';
+        convivienteDiv.style.cssText = 'border:2px solid var(--primary-light);border-radius:8px;padding:20px;margin-bottom:20px;background:#f8f9fa;';
         
         convivienteDiv.innerHTML = `
-          <h5 style="color:#004080;margin:0 0 15px;font-size:16px;border-bottom:2px solid #007bff;padding-bottom:8px;">
+          <h5 style="color:var(--primary);margin:0 0 15px;font-size:16px;border-bottom:2px solid var(--primary-light);padding-bottom:8px;">
             <i class="fas fa-user"></i> Conviviente ${i + 1}
           </h5>
           
