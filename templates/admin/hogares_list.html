@@ -174,9 +174,9 @@
   <div class="sidebar">
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
     <h2>ICBF Conecta</h2>
-    <a href="{% url 'admin_dashboard' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
+    <a href="{% url 'dashboard_admin' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
     <a href="{% url 'listar_hogares' %}" class="active"><i class="fa-solid fa-house"></i> Hogares</a>
-    <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Madres</a>
+    <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Agentes Educativos</a>
     <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
     <a href="{% url 'admin_reportes' %}" ><i class="fa-solid fa-chart-line"></i> Reportes</a>
     <div class="dropdown">
@@ -203,7 +203,7 @@
     </header>
 
     <div class="info-box">
-      💡 Para registrar un nuevo hogar, debes hacerlo a través de la sección de <a href="{% url 'listar_madres' %}">Gestión de Madres Comunitarias</a>, ya que cada hogar está asociado a una madre.
+      💡 Para registrar un nuevo hogar, debes hacerlo a través de la sección de <a href="{% url 'listar_madres' %}">Gestión de Agentes Educativos</a>, ya que cada hogar está asociado a un agente educativo.
     </div>    
 
     <div class="tabla-container">
@@ -214,7 +214,7 @@
             <input type="text" name="nombre_hogar" id="nombre_hogar" value="{{ filtros.nombre_hogar|default:'' }}" placeholder="Ej: Mi Pequeño Mundo">
           </div>
           <div class="form-group">
-            <label for="madre">Madre Comunitaria</label>
+            <label for="madre">Agente Educativo</label>
             <input type="text" name="madre" id="madre" value="{{ filtros.madre|default:'' }}" placeholder="Nombre o Apellido">
           </div>
           <div class="form-group">
@@ -240,7 +240,7 @@
         <thead>
           <tr>
             <th>Nombre del Hogar</th>
-            <th>Madre Comunitaria</th>
+            <th>Agente Educativo</th>
             <th>Regional</th>
             <th>Ciudad</th>
             <th>Localidad</th>

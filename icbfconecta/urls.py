@@ -67,10 +67,21 @@ urlpatterns = [
     path('dashboard/', views.role_redirect, name='role_redirect'),
     
     # Dashboards
-    path('dashboard/admin/', views.admin_dashboard, name='admin_dashboard'),
+    path('dashboard/admin/', views.admin_dashboard, name='dashboard_admin'),
     path('dashboard/admin/reportes/', views.admin_reportes, name='admin_reportes'),
+    path('dashboard/admin/hogares/', views.hogares_dashboard, name='hogares_dashboard'),  # Nuevo dashboard de hogares
     path('dashboard/madre/', views.madre_dashboard, name='madre_dashboard'), # Nuevo
     path('dashboard/padre/', views.padre_dashboard, name='padre_dashboard'), # Nuevo para padres
+    
+    # --- 🆕 APIs del Dashboard Mejorado ---
+    path('api/hogares/<int:hogar_id>/detalle/', views.hogar_detalle_api, name='hogar_detalle_api'),
+    path('api/ninos/<int:nino_id>/detalle/', views.nino_detalle_api, name='nino_detalle_api'),
+    path('preview/<str:tipo>/<int:id>/<str:campo>/', views.preview_document, name='preview_document'),
+    path('ninos/<int:nino_id>/carpeta/', views.nino_carpeta_view, name='nino_carpeta'),
+
+    # --- Visitas Técnicas y Gestión de Hogares ---
+    path('hogares/<int:hogar_id>/realizar-visita/', views.realizar_visita_tecnica, name='realizar_visita_tecnica'),
+    path('hogares/<int:hogar_id>/programar-visita/', views.programar_visita, name='programar_visita'),
 
     # --- Vistas para Padres (Ahora con ID de niño) ---
     path('padre/desarrollo/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
@@ -149,6 +160,29 @@ urlpatterns = [
      path("ajax/cargar-ciudades/", views.cargar_ciudades, name="cargar_ciudades"),  # Para hogares (Regional→Ciudad)
      path("ajax/cargar-municipios/", views.ajax_cargar_municipios, name="ajax_cargar_municipios"),  # Departamento→Municipio
      path("ajax/cargar-localidades-bogota/", views.ajax_cargar_localidades_bogota, name="ajax_cargar_localidades_bogota"),  # Bogotá→Localidades
+     
+     # --- URLs AJAX para validaciones en tiempo real ---
+     path("ajax/validar-nombre-hogar/", views.validar_nombre_hogar, name="validar_nombre_hogar"),  # Validar nombre hogar duplicado
+     path("ajax/validar-documento-madre/", views.validar_documento_madre, name="validar_documento_madre"),  # Validar documento duplicado
+
+    # --- URLs de Visitas Técnicas ---
+    path('visitas/hogares-pendientes/', views.listar_hogares_pendientes_visita, name='listar_hogares_pendientes_visita'),
+    path('visitas/agendar/<int:hogar_id>/', views.agendar_visita_tecnica, name='agendar_visita_tecnica'),
+    path('visitas/crear-acta/<int:visita_id>/', views.crear_acta_visita, name='crear_acta_visita'),
+    path('visitas/ver-acta/<int:acta_id>/', views.ver_acta_visita, name='ver_acta_visita'),
+    path('visitas/descargar-acta/<int:acta_id>/', views.descargar_acta_pdf, name='descargar_acta_pdf'),
+    path('visitas/listar/', views.listar_visitas_tecnicas, name='listar_visitas_tecnicas'),
+
+    # --- 🆕 URLs Formulario 2 - Sistema de Dos Fases ---
+    path('hogares/revision/', views.lista_hogares_revision, name='lista_hogares_revision'),
+    path('hogares/<int:hogar_id>/visita-tecnica/', views.completar_visita_tecnica, name='completar_visita_tecnica'),
+    path('hogares/<int:hogar_id>/aprobar-rechazar/', views.aprobar_rechazar_hogar, name='aprobar_rechazar_hogar'),
+    path('hogares/<int:hogar_id>/detalle/', views.detalle_hogar, name='detalle_hogar'),
+
+    # --- 🆕 URLs Dashboard del Padre Mejorado ---
+    path('padre/hogares/', views.padre_ver_hogares, name='padre_ver_hogares'),
+    path('padre/hogares/<int:hogar_id>/', views.padre_detalle_hogar, name='padre_detalle_hogar'),
+    path('padre/dashboard-mejorado/', views.padre_dashboard_mejorado, name='padre_dashboard_mejorado'),
 
     #-----------------------------------------------juanito---------------------------------------------#
     # --- URLs de Asistencias no borrar please ultra importarte ;D #---

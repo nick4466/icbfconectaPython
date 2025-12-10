@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Acta de Visita Técnica V1</title>
+  <style>
+    @page{size:letter;margin:2cm}
+    body{font-family:Arial,sans-serif;font-size:11pt;color:#000;line-height:1.4}
+    .header{text-align:center;margin-bottom:20px;padding-bottom:15px;border-bottom:3px solid#004080}
+    .header h1{margin:0;font-size:18pt;color:#004080}
+    .header p{margin:5px 0;font-size:10pt}
+    .resultado{text-align:center;padding:12px;margin:15px 0;border-radius:5px;font-weight:bold;font-size:13pt}
+    .resultado.aprobado{background:#d4edda;color:#155724;border:2px solid#28a745}
+    .resultado.aprobado-condiciones{background:#fff3cd;color:#856404;border:2px solid#ffc107}
+    .resultado.rechazado{background:#f8d7da;color:#721c24;border:2px solid#dc3545}
+    .section{margin:20px 0;page-break-inside:avoid}
+    .section-title{background:#004080;color:white;padding:8px 12px;margin-bottom:12px;font-size:13pt;font-weight:bold}
+    table{width:100%;border-collapse:collapse;margin-bottom:15px}
+    table th{background:#f0f0f0;padding:6px;text-align:left;font-size:10pt;border:1px solid#ddd}
+    table td{padding:6px;border:1px solid#ddd;font-size:10pt}
+    .label{font-weight:bold;color:#333}
+    .value{color:#000}
+    .si{color:green;font-weight:bold}
+    .no{color:red;font-weight:bold}
+    .foto-container{text-align:center;margin:10px 0}
+    .foto-container img{max-width:180px;max-height:180px;border:1px solid#999}
+    .foto-label{font-size:9pt;margin-top:5px;color:#666}
+    .firmas{display:flex;justify-content:space-around;margin-top:30px;page-break-inside:avoid}
+    .firma-box{text-align:center;width:45%}
+    .firma-box img{max-width:150px;border:1px solid#000;padding:5px}
+    .firma-box p{margin-top:8px;font-size:10pt;font-weight:bold}
+    .firma-box small{font-size:9pt;color:#666}
+    hr{border:none;border-top:2px solid#ddd;margin:15px 0}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ACTA DE VISITA TÉCNICA V1</h1>
+    <p><strong>INSTITUTO COLOMBIANO DE BIENESTAR FAMILIAR - ICBF</strong></p>
+    <p>Habilitación de Hogar Comunitario</p>
+  </div>
+
+  <table>
+    <tr>
+      <th>Hogar Comunitario</th>
+      <td>{{ acta.visita.hogar.nombre_hogar }}</td>
+    </tr>
+    <tr>
+      <th>Agente Educativo</th>
+      <td>{{ acta.visita.hogar.madre.usuario.nombres }} {{ acta.visita.hogar.madre.usuario.apellidos }}</td>
+    </tr>
+    <tr>
+      <th>Documento</th>
+      <td>{{ acta.visita.hogar.madre.usuario.tipo_documento }} {{ acta.visita.hogar.madre.usuario.documento }}</td>
+    </tr>
+    <tr>
+      <th>Dirección</th>
+      <td>{{ acta.visita.hogar.direccion }}, {{ acta.visita.hogar.ciudad.nombre }}</td>
+    </tr>
+    <tr>
+      <th>Visitador</th>
+      <td>{{ acta.completado_por.nombres }} {{ acta.completado_por.apellidos }}</td>
+    </tr>
+    <tr>
+      <th>Fecha de Visita</th>
+      <td>{{ acta.visita.fecha_programada|date:"d/m/Y H:i" }}</td>
+    </tr>
+    <tr>
+      <th>Fecha del Acta</th>
+      <td>{{ acta.fecha_creacion|date:"d/m/Y H:i" }}</td>
+    </tr>
+  </table>
+
+  <!-- Resultado -->
+  <div class="resultado {% if acta.resultado_visita == 'aprobado' %}aprobado{% elif acta.resultado_visita == 'aprobado_condiciones' %}aprobado-condiciones{% else %}rechazado{% endif %}">
+    {% if acta.resultado_visita == 'aprobado' %}
+      ✓ HOGAR APROBADO PARA HABILITACIÓN
+    {% elif acta.resultado_visita == 'aprobado_condiciones' %}
+      ⚠ APROBADO CON CONDICIONES
+    {% else %}
+      ✗ HOGAR NO APROBADO
+    {% endif %}
+  </div>
+
+  {% if acta.resultado_visita == 'aprobado_condiciones' and acta.condiciones_aprobacion %}
+  <div style="padding:10px;background:#fff3cd;border-left:4px solid#ffc107;margin-bottom:15px">
+    <strong>Condiciones para la Aprobación:</strong><br>
+    {{ acta.condiciones_aprobacion }}
+  </div>
+  {% endif %}
+
+  {% if acta.resultado_visita == 'rechazado' and acta.motivos_rechazo %}
+  <div style="padding:10px;background:#f8d7da;border-left:4px solid#dc3545;margin-bottom:15px">
+    <strong>Motivos del Rechazo:</strong><br>
+    {{ acta.motivos_rechazo }}
+  </div>
+  {% endif %}
+
+  <hr>
+
+  <!-- SECCIÓN A -->
+  <div class="section">
+    <div class="section-title">A. GEOLOCALIZACIÓN Y DIRECCIÓN</div>
+    <table>
+      <tr>
+        <th>Latitud GPS</th>
+        <td>{{ acta.latitud_verificada }}</td>
+        <th>Longitud GPS</th>
+        <td>{{ acta.longitud_verificada }}</td>
+      </tr>
+      <tr>
+        <th>Dirección Validada</th>
+        <td class="{% if acta.direccion_validada %}si{% else %}no{% endif %}">
+          {% if acta.direccion_validada %}✓ SÍ{% else %}✗ NO{% endif %}
+        </td>
+        <th>Estrato Verificado</th>
+        <td>{{ acta.estrato_verificado }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- SECCIÓN B -->
+  <div class="section">
+    <div class="section-title">B. SERVICIOS PÚBLICOS E INFRAESTRUCTURA</div>
+    <table>
+      <tr>
+        <th>Agua Potable</th>
+        <td class="{% if acta.tiene_agua_potable %}si{% else %}no{% endif %}">
+          {% if acta.tiene_agua_potable %}✓ SÍ{% else %}✗ NO{% endif %}
+        </td>
+        <th>Energía Eléctrica</th>
+        <td class="{% if acta.tiene_energia_electrica %}si{% else %}no{% endif %}">
+          {% if acta.tiene_energia_electrica %}✓ SÍ{% else %}✗ NO{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>Alcantarillado</th>
+        <td class="{% if acta.tiene_alcantarillado %}si{% else %}no{% endif %}">
+          {% if acta.tiene_alcantarillado %}✓ SÍ{% else %}✗ NO{% endif %}
+        </td>
+        <th>Riesgos Identificados</th>
+        <td class="{% if acta.hay_riesgos_identificados %}no{% else %}si{% endif %}">
+          {% if acta.hay_riesgos_identificados %}✓ SÍ{% else %}✗ NO{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>Estado del Techo</th>
+        <td>{{ acta.get_estado_techo_display }}</td>
+        <th>Estado de Paredes</th>
+        <td>{{ acta.get_estado_paredes_display }}</td>
+      </tr>
+      <tr>
+        <th colspan="2">Estado de Pisos</th>
+        <td colspan="2">{{ acta.get_estado_pisos_display }}</td>
+      </tr>
+    </table>
+    {% if acta.hay_riesgos_identificados %}
+    <div style="padding:8px;background:#fff3cd;border-left:4px solid#856404">
+      <strong>Descripción de Riesgos:</strong><br>
+      {{ acta.descripcion_riesgos }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- SECCIÓN C -->
+  <div class="section">
+    <div class="section-title">C. ESPACIOS Y MEDICIONES</div>
+    <table>
+      <tr>
+        <th>Área Social - Largo</th>
+        <td>{{ acta.area_social_largo }} m</td>
+        <th>Área Social - Ancho</th>
+        <td>{{ acta.area_social_ancho }} m</td>
+      </tr>
+      <tr>
+        <th colspan="2">Área Social Total</th>
+        <td colspan="2"><strong>{{ acta.area_social_total }} m²</strong></td>
+      </tr>
+      <tr>
+        <th>Tiene Patio Cubierto</th>
+        <td class="{% if acta.tiene_patio_cubierto %}si{% else %}no{% endif %}">
+          {% if acta.tiene_patio_cubierto %}✓ SÍ{% else %}✗ NO{% endif %}
+        </td>
+        <th>Número de Baños</th>
+        <td>{{ acta.num_banos }}</td>
+      </tr>
+      {% if acta.tiene_patio_cubierto %}
+      <tr>
+        <th>Patio - Largo</th>
+        <td>{{ acta.patio_largo }} m</td>
+        <th>Patio - Ancho</th>
+        <td>{{ acta.patio_ancho }} m</td>
+      </tr>
+      <tr>
+        <th colspan="2">Área Patio Total</th>
+        <td colspan="2"><strong>{{ acta.area_patio_total }} m²</strong></td>
+      </tr>
+      {% endif %}
+      <tr>
+        <th colspan="2">Estado de Baños</th>
+        <td colspan="2">{{ acta.get_estado_banos_display }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- SECCIÓN D -->
+  <div class="section">
+    <div class="section-title">D. CÁLCULO DE CAPACIDAD</div>
+    <table>
+      <tr>
+        <th>Área Total Disponible</th>
+        <td><strong style="font-size:12pt;color:#007bff">{{ acta.area_total_disponible }} m²</strong></td>
+      </tr>
+      <tr>
+        <th>Capacidad Calculada (1.5 m²/niño)</th>
+        <td><strong style="font-size:12pt;color:#28a745">{{ acta.capacidad_calculada }} niños</strong></td>
+      </tr>
+      <tr>
+        <th>Capacidad Recomendada</th>
+        <td><strong style="font-size:12pt;color:#004080">{{ acta.capacidad_recomendada }} niños</strong></td>
+      </tr>
+    </table>
+    {% if acta.observaciones_capacidad %}
+    <div style="padding:8px;background:#d1ecf1;border-left:4px solid#0c5460">
+      <strong>Observaciones sobre Capacidad:</strong><br>
+      {{ acta.observaciones_capacidad }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Observaciones Generales -->
+  {% if acta.observaciones_generales %}
+  <div class="section">
+    <div class="section-title">OBSERVACIONES GENERALES</div>
+    <div style="padding:10px;background:#f8f9fa;border:1px solid#ddd">
+      {{ acta.observaciones_generales }}
+    </div>
+  </div>
+  {% endif %}
+
+  <hr>
+
+  <!-- Firmas -->
+  <div class="firmas">
+    <div class="firma-box">
+      {% if acta.firma_visitador %}
+      <img src="{{ acta.firma_visitador.url }}" alt="Firma Visitador">
+      {% else %}
+      <div style="height:80px;border:1px solid#000;margin:0 auto;width:150px"></div>
+      {% endif %}
+      <p>{{ acta.completado_por.nombres }} {{ acta.completado_por.apellidos }}</p>
+      <small>Visitador Técnico ICBF</small>
+    </div>
+    <div class="firma-box">
+      {% if acta.firma_madre %}
+      <img src="{{ acta.firma_madre.url }}" alt="Firma Madre">
+      {% else %}
+      <div style="height:80px;border:1px solid#000;margin:0 auto;width:150px"></div>
+      {% endif %}
+      <p>{{ acta.visita.hogar.madre.usuario.nombres }} {{ acta.visita.hogar.madre.usuario.apellidos }}</p>
+      <small>Agente Educativo</small>
+    </div>
+  </div>
+
+  <div style="margin-top:30px;text-align:center;font-size:9pt;color:#666">
+    <p>Este documento certifica la visita técnica realizada al hogar comunitario<br>
+    y constituye el acta oficial de evaluación para habilitación.</p>
+    <p><strong>INSTITUTO COLOMBIANO DE BIENESTAR FAMILIAR - ICBF</strong></p>
+  </div>
+</body>
+</html>

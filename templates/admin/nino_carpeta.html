@@ -1,0 +1,610 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carpeta del Niño - ICBF Conecta</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #2563eb;
+      --secondary: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --dark: #1f2937;
+      --light: #f9fafb;
+      --border: #e5e7eb;
+      --text: #374151;
+      --text-light: #6b7280;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f3f4f6;
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .carpeta-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .carpeta-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 32px;
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .nino-photo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid white;
+      object-fit: cover;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      font-weight: 700;
+    }
+
+    .nino-photo img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .header-info h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .header-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
+      opacity: 0.95;
+    }
+
+    .header-meta i {
+      margin-right: 6px;
+    }
+
+    .carpeta-body {
+      padding: 32px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .tab {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-light);
+      transition: all 0.3s;
+      margin-bottom: -2px;
+    }
+
+    .tab:hover {
+      color: var(--primary);
+    }
+
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .info-card {
+      background: var(--light);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .info-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-item {
+      margin-bottom: 16px;
+    }
+
+    .info-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: 15px;
+      color: var(--dark);
+      font-weight: 500;
+    }
+
+    .badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .badge-success { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+
+    .documentos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 16px;
+    }
+
+    .documento-card {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.3s;
+      cursor: pointer;
+      background: white;
+    }
+
+    .documento-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    .documento-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .icon-pdf { background: #fee2e2; color: #dc2626; }
+    .icon-imagen { background: #dbeafe; color: #2563eb; }
+    .icon-doc { background: #e0e7ff; color: #4f46e5; }
+
+    .documento-nombre {
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+
+    .documento-tipo {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #1e40af;
+    }
+
+    .btn-outline {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      background: var(--light);
+    }
+
+    .actions-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 40px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .timeline-item:last-child {
+      border-bottom: none;
+    }
+
+    .timeline-marker {
+      position: absolute;
+      left: -32px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+
+    .timeline-date {
+      font-size: 13px;
+      color: var(--text-light);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .timeline-content {
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .tutor-card {
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .tutor-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .tutor-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .tutor-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .tutor-relation {
+      font-size: 14px;
+      color: var(--text-light);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="carpeta-container">
+    <!-- HEADER -->
+    <div class="carpeta-header">
+      <div class="nino-photo" id="ninoPhoto">
+        {{ nino.nombres.0 }}
+      </div>
+      <div class="header-info">
+        <h1>{{ nino.nombres }} {{ nino.apellidos }}</h1>
+        <div class="header-meta">
+          <span><i class="fas fa-id-card"></i> {{ nino.numero_documento }}</span>
+          <span><i class="fas fa-birthday-cake"></i> {{ nino.edad }} años</span>
+          <span><i class="fas fa-calendar"></i> Ingreso: {{ nino.fecha_ingreso|date:"d/m/Y" }}</span>
+          <span><i class="fas fa-home"></i> {{ nino.hogar.nombre_hogar }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="carpeta-body">
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab active" onclick="cambiarTab('info')">
+          <i class="fas fa-info-circle"></i> Información General
+        </button>
+        <button class="tab" onclick="cambiarTab('tutor')">
+          <i class="fas fa-users"></i> Tutor/Familia
+        </button>
+        <button class="tab" onclick="cambiarTab('documentos')">
+          <i class="fas fa-folder-open"></i> Documentos
+        </button>
+        <button class="tab" onclick="cambiarTab('historial')">
+          <i class="fas fa-history"></i> Historial
+        </button>
+      </div>
+
+      <!-- TAB: INFORMACIÓN GENERAL -->
+      <div class="tab-content active" id="tab-info">
+        <div class="info-grid">
+          <div class="info-card">
+            <h3><i class="fas fa-user"></i> Datos Personales</h3>
+            <div class="info-item">
+              <div class="info-label">Nombres Completos</div>
+              <div class="info-value">{{ nino.nombres }} {{ nino.apellidos }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Documento</div>
+              <div class="info-value">{{ nino.numero_documento }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Fecha de Nacimiento</div>
+              <div class="info-value">{{ nino.fecha_nacimiento|date:"d/m/Y" }} ({{ nino.edad }} años)</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Género</div>
+              <div class="info-value">{{ nino.get_genero_display }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Estado</div>
+              <div class="info-value">
+                <span class="badge badge-success">{{ nino.get_estado_display }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h3><i class="fas fa-home"></i> Información del Hogar</h3>
+            <div class="info-item">
+              <div class="info-label">Hogar Comunitario</div>
+              <div class="info-value">{{ nino.hogar.nombre_hogar }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Agente Educativo</div>
+              <div class="info-value">{{ nino.hogar.madre.usuario.nombres }} {{ nino.hogar.madre.usuario.apellidos }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Dirección</div>
+              <div class="info-value">{{ nino.hogar.direccion }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Localidad</div>
+              <div class="info-value">{{ nino.hogar.localidad }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Fecha de Ingreso</div>
+              <div class="info-value">{{ nino.fecha_ingreso|date:"d/m/Y" }}</div>
+            </div>
+          </div>
+
+          {% if nino.observaciones %}
+          <div class="info-card" style="grid-column: 1 / -1;">
+            <h3><i class="fas fa-notes-medical"></i> Observaciones</h3>
+            <div class="info-value">{{ nino.observaciones }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- TAB: TUTOR/FAMILIA -->
+      <div class="tab-content" id="tab-tutor">
+        {% if tutor %}
+        <div class="tutor-card">
+          <div class="tutor-header">
+            <div class="tutor-avatar">{{ tutor.nombres.0 }}{{ tutor.apellidos.0 }}</div>
+            <div>
+              <div class="tutor-name">{{ tutor.nombres }} {{ tutor.apellidos }}</div>
+              <div class="tutor-relation">{{ tutor.parentesco }}</div>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Documento</div>
+              <div class="info-value">{{ tutor.documento }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Teléfono</div>
+              <div class="info-value">{{ tutor.telefono }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Ocupación</div>
+              <div class="info-value">{{ tutor.ocupacion }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Situación Económica</div>
+              <div class="info-value">{{ tutor.situacion_economica }}</div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <p style="text-align: center; padding: 60px; color: var(--text-light);">
+          <i class="fas fa-user-slash" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
+          No hay información del tutor disponible
+        </p>
+        {% endif %}
+      </div>
+
+      <!-- TAB: DOCUMENTOS -->
+      <div class="tab-content" id="tab-documentos">
+        <div class="documentos-grid">
+          {% for documento in documentos %}
+          <div class="documento-card" onclick="abrirDocumento('{{ documento.url }}', '{{ documento.tipo }}')">
+            <div class="documento-icon icon-{{ documento.tipo }}">
+              <i class="fas fa-{% if documento.tipo == 'pdf' %}file-pdf{% elif documento.tipo == 'imagen' %}image{% else %}file{% endif %}"></i>
+            </div>
+            <div class="documento-nombre">{{ documento.nombre }}</div>
+            <div class="documento-tipo">{{ documento.tipo|upper }}</div>
+          </div>
+          {% empty %}
+          <p style="grid-column: 1 / -1; text-align: center; padding: 60px; color: var(--text-light);">
+            <i class="fas fa-folder-open" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
+            No hay documentos disponibles
+          </p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- TAB: HISTORIAL -->
+      <div class="tab-content" id="tab-historial">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-date">{{ nino.fecha_ingreso|date:"d/m/Y" }}</div>
+            <div class="timeline-content">
+              <strong>Ingreso al hogar comunitario</strong><br>
+              Niño ingresó al hogar {{ nino.hogar.nombre_hogar }}
+            </div>
+          </div>
+          
+          {% for evento in historial %}
+          <div class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-date">{{ evento.fecha|date:"d/m/Y" }}</div>
+            <div class="timeline-content">
+              <strong>{{ evento.titulo }}</strong><br>
+              {{ evento.descripcion }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="actions-bar">
+        <a href="{% url 'editar_nino' nino.id %}" class="btn btn-primary">
+          <i class="fas fa-edit"></i>
+          Editar Información
+        </a>
+        <button class="btn btn-outline" onclick="imprimirCarpeta()">
+          <i class="fas fa-print"></i>
+          Imprimir Carpeta
+        </button>
+        <button class="btn btn-outline" onclick="exportarPDF()">
+          <i class="fas fa-file-pdf"></i>
+          Exportar PDF
+        </button>
+        <button class="btn btn-outline" onclick="window.history.back()">
+          <i class="fas fa-arrow-left"></i>
+          Volver
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Cargar foto del niño si existe
+    const fotoUrl = "{{ nino.foto.url }}";
+    if (fotoUrl && fotoUrl !== "") {
+      document.getElementById('ninoPhoto').innerHTML = `<img src="${fotoUrl}" alt="{{ nino.nombres }}">`;
+    }
+
+    // Cambiar tabs
+    function cambiarTab(tabName) {
+      // Desactivar todos los tabs
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      // Activar el tab seleccionado
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabName).classList.add('active');
+    }
+
+    // Abrir documento en modal preview
+    function abrirDocumento(url, tipo) {
+      // Abrir en nueva ventana con vista previa
+      window.open(url, '_blank', 'width=1200,height=800');
+    }
+
+    function imprimirCarpeta() {
+      window.print();
+    }
+
+    function exportarPDF() {
+      alert('Función de exportar PDF en desarrollo');
+      // Implementar exportación a PDF
+    }
+  </script>
+
+</body>
+</html>

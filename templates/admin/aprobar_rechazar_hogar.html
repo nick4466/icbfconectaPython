@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Aprobar/Rechazar Hogar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .decision-card {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .decision-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .decision-card.selected {
+        border-width: 3px;
+    }
+    .decision-card.aprobar {
+        border-color: #28a745;
+    }
+    .decision-card.aprobar.selected {
+        background: #d4edda;
+    }
+    .decision-card.rechazar {
+        border-color: #dc3545;
+    }
+    .decision-card.rechazar.selected {
+        background: #f8d7da;
+    }
+    .decision-card.mantenimiento {
+        border-color: #ffc107;
+    }
+    .decision-card.mantenimiento.selected {
+        background: #fff3cd;
+    }
+    .area-badge {
+        font-size: 1.2rem;
+        padding: 10px 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard_admin' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'lista_hogares_revision' %}">Hogares en Revisión</a></li>
+            <li class="breadcrumb-item active">Aprobar/Rechazar</li>
+        </ol>
+    </nav>
+
+    <!-- Encabezado -->
+    <div class="mb-4">
+        <h2>✅❌ Decisión Final del Hogar</h2>
+        <h4 class="text-muted">{{ hogar.nombre_hogar }}</h4>
+    </div>
+
+    <!-- Información del Hogar -->
+    <div class="info-section">
+        <h5 class="mb-3">📋 Información del Hogar</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Nombre:</strong> {{ hogar.nombre_hogar }}</p>
+                <p><strong>Dirección:</strong> {{ hogar.direccion }}</p>
+                <p><strong>Regional:</strong> {{ hogar.regional.nombre }}</p>
+                {% if hogar.localidad_bogota %}
+                    <p><strong>Localidad:</strong> {{ hogar.localidad_bogota.nombre }}</p>
+                {% elif hogar.ciudad %}
+                    <p><strong>Ciudad:</strong> {{ hogar.ciudad.nombre }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <p><strong>Agente Educativo:</strong> {{ hogar.madre.usuario.get_full_name }}</p>
+                <p><strong>Documento:</strong> {{ hogar.madre.usuario.documento }}</p>
+                <p><strong>Teléfono:</strong> {{ hogar.madre.usuario.telefono|default:"No registrado" }}</p>
+                <p><strong>Correo:</strong> {{ hogar.madre.usuario.correo }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Características Físicas -->
+    <div class="info-section">
+        <h5 class="mb-3">🏠 Características Físicas</h5>
+        <div class="row">
+            <div class="col-md-3">
+                <p><strong>Estrato:</strong> {{ hogar.estrato|default:"No especificado" }}</p>
+            </div>
+            <div class="col-md-3">
+                <p><strong>Habitaciones:</strong> {{ hogar.num_habitaciones|default:"No especificado" }}</p>
+            </div>
+            <div class="col-md-3">
+                <p><strong>Baños:</strong> {{ hogar.num_banos|default:"No especificado" }}</p>
+            </div>
+            <div class="col-md-3">
+                <p><strong>Tenencia:</strong> {{ hogar.get_tipo_tenencia_display|default:"No especificado" }}</p>
+            </div>
+        </div>
+        {% if hogar.material_construccion %}
+            <p><strong>Material:</strong> {{ hogar.material_construccion }}</p>
+        {% endif %}
+        {% if hogar.riesgos_cercanos %}
+            <p><strong>Riesgos:</strong> {{ hogar.riesgos_cercanos }}</p>
+        {% endif %}
+    </div>
+
+    <!-- ÁREA Y CAPACIDAD (CRÍTICO) -->
+    <div class="info-section {% if area_insuficiente %}border border-danger{% elif puede_aprobar %}border border-success{% endif %}">
+        <h5 class="mb-3">📐 Área Social y Capacidad</h5>
+        <div class="row text-center">
+            <div class="col-md-6">
+                <div class="mb-2">
+                    <span class="badge area-badge {% if area_insuficiente %}bg-danger{% elif hogar.area_social_m2 >= 30 %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                        {{ hogar.area_social_m2|floatformat:2 }} m²
+                    </span>
+                </div>
+                <p class="text-muted mb-0">Área Social Disponible</p>
+                <small>(Mínimo requerido: 24 m²)</small>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-2">
+                    <span class="badge area-badge {% if area_insuficiente %}bg-secondary{% else %}bg-primary{% endif %}">
+                        {% if hogar.capacidad_calculada %}
+                            {{ hogar.capacidad_calculada }} niños
+                        {% else %}
+                            No calculada
+                        {% endif %}
+                    </span>
+                </div>
+                <p class="text-muted mb-0">Capacidad Calculada</p>
+                <small>(Fórmula: piso(m²/2), máximo 15)</small>
+            </div>
+        </div>
+
+        {% if area_insuficiente %}
+            <div class="alert alert-danger mt-3 mb-0">
+                <strong>⚠️ ADVERTENCIA:</strong> El área social ({{ hogar.area_social_m2 }} m²) es inferior al mínimo requerido (24 m²).
+                <br><strong>ESTE HOGAR NO PUEDE SER APROBADO.</strong>
+                <br>Debe ser rechazado o solicitar modificaciones al inmueble.
+            </div>
+        {% elif puede_aprobar %}
+            <div class="alert alert-success mt-3 mb-0">
+                <strong>✅ CUMPLE REQUISITOS:</strong> El área social cumple con el mínimo requerido.
+                El hogar está listo para ser aprobado.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Formulario de Decisión -->
+    <form method="post" id="form-decision">
+        {% csrf_token %}
+        
+        <h5 class="mb-3">🎯 Seleccione una Decisión</h5>
+
+        <!-- Opción: Aprobar -->
+        {% if puede_aprobar %}
+            <div class="decision-card aprobar" data-action="aprobar">
+                <div class="d-flex align-items-center">
+                    <input type="radio" name="accion" value="aprobar" id="radio-aprobar" class="form-check-input me-3" style="width: 24px; height: 24px;">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1 text-success">✅ Aprobar Hogar</h5>
+                        <p class="mb-0 text-muted">
+                            El hogar cumple con todos los requisitos. Será habilitado para atender niños.
+                            Capacidad autorizada: <strong>{{ hogar.capacidad_calculada }} niños</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="decision-card" style="opacity: 0.5; cursor: not-allowed; background: #f8f9fa;">
+                <div class="d-flex align-items-center">
+                    <input type="radio" disabled class="form-check-input me-3" style="width: 24px; height: 24px;">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1 text-muted">✅ Aprobar Hogar</h5>
+                        <p class="mb-0 text-muted">
+                            <strong>NO DISPONIBLE:</strong> El área social es inferior al mínimo requerido (24 m²).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Opción: Rechazar -->
+        <div class="decision-card rechazar" data-action="rechazar">
+            <div class="d-flex align-items-center">
+                <input type="radio" name="accion" value="rechazar" id="radio-rechazar" class="form-check-input me-3" style="width: 24px; height: 24px;">
+                <div class="flex-grow-1">
+                    <h5 class="mb-1 text-danger">❌ Rechazar Hogar</h5>
+                    <p class="mb-0 text-muted">
+                        El hogar NO cumple con los requisitos mínimos y no puede ser habilitado.
+                    </p>
+                </div>
+            </div>
+            <div id="observaciones-rechazar" style="display: none;" class="mt-3">
+                <label class="form-label"><strong>Motivos del Rechazo (Obligatorio):</strong></label>
+                <textarea name="observaciones" class="form-control" rows="4" 
+                          placeholder="Especifique las razones del rechazo (área insuficiente, condiciones inadecuadas, etc.)"></textarea>
+            </div>
+        </div>
+
+        <!-- Opción: Mantenimiento -->
+        <div class="decision-card mantenimiento" data-action="mantenimiento">
+            <div class="d-flex align-items-center">
+                <input type="radio" name="accion" value="mantenimiento" id="radio-mantenimiento" class="form-check-input me-3" style="width: 24px; height: 24px;">
+                <div class="flex-grow-1">
+                    <h5 class="mb-1 text-warning">🔧 En Mantenimiento</h5>
+                    <p class="mb-0 text-muted">
+                        El hogar requiere mejoras o reparaciones antes de poder ser aprobado.
+                    </p>
+                </div>
+            </div>
+            <div id="observaciones-mantenimiento" style="display: none;" class="mt-3">
+                <label class="form-label"><strong>Observaciones de Mantenimiento:</strong></label>
+                <textarea name="observaciones" class="form-control" rows="4" 
+                          placeholder="Especifique las mejoras requeridas..."></textarea>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{% url 'lista_hogares_revision' %}" class="btn btn-secondary">
+                ← Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-confirmar" disabled>
+                💾 Confirmar Decisión
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.decision-card');
+    const radios = document.querySelectorAll('input[name="accion"]');
+    const btnConfirmar = document.getElementById('btn-confirmar');
+    const obsRechazar = document.getElementById('observaciones-rechazar');
+    const obsMantenimiento = document.getElementById('observaciones-mantenimiento');
+
+    // Manejar selección de tarjetas
+    cards.forEach(card => {
+        card.addEventListener('click', function() {
+            const action = this.dataset.action;
+            if (!action) return; // Tarjeta deshabilitada
+            
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio && !radio.disabled) {
+                radio.checked = true;
+                updateSelection();
+            }
+        });
+    });
+
+    // Manejar cambios en radios
+    radios.forEach(radio => {
+        radio.addEventListener('change', updateSelection);
+    });
+
+    function updateSelection() {
+        // Remover selección de todas las tarjetas
+        cards.forEach(c => c.classList.remove('selected'));
+        
+        // Ocultar todos los campos de observaciones
+        obsRechazar.style.display = 'none';
+        obsMantenimiento.style.display = 'none';
+        
+        // Obtener la acción seleccionada
+        const selectedRadio = document.querySelector('input[name="accion"]:checked');
+        if (selectedRadio) {
+            const selectedCard = selectedRadio.closest('.decision-card');
+            selectedCard.classList.add('selected');
+            btnConfirmar.disabled = false;
+            
+            // Mostrar campo de observaciones si es necesario
+            if (selectedRadio.value === 'rechazar') {
+                obsRechazar.style.display = 'block';
+                btnConfirmar.textContent = '❌ Rechazar Hogar';
+                btnConfirmar.className = 'btn btn-danger btn-lg';
+            } else if (selectedRadio.value === 'aprobar') {
+                btnConfirmar.textContent = '✅ Aprobar Hogar';
+                btnConfirmar.className = 'btn btn-success btn-lg';
+            } else if (selectedRadio.value === 'mantenimiento') {
+                obsMantenimiento.style.display = 'block';
+                btnConfirmar.textContent = '🔧 Marcar en Mantenimiento';
+                btnConfirmar.className = 'btn btn-warning btn-lg';
+            }
+        } else {
+            btnConfirmar.disabled = true;
+        }
+    }
+
+    // Validación antes de enviar
+    document.getElementById('form-decision').addEventListener('submit', function(e) {
+        const accion = document.querySelector('input[name="accion"]:checked');
+        
+        if (!accion) {
+            e.preventDefault();
+            alert('⚠️ Debe seleccionar una decisión antes de continuar.');
+            return false;
+        }
+
+        if (accion.value === 'rechazar') {
+            const obs = document.querySelector('#observaciones-rechazar textarea').value.trim();
+            if (!obs) {
+                e.preventDefault();
+                alert('⚠️ Debe proporcionar los motivos del rechazo.');
+                document.querySelector('#observaciones-rechazar textarea').focus();
+                return false;
+            }
+        }
+
+        // Confirmación final
+        let mensaje = '';
+        if (accion.value === 'aprobar') {
+            mensaje = '¿Está seguro de APROBAR este hogar?\n\n' +
+                     'Capacidad autorizada: {{ hogar.capacidad_calculada }} niños\n' +
+                     'El hogar quedará habilitado para atender niños.';
+        } else if (accion.value === 'rechazar') {
+            mensaje = '¿Está seguro de RECHAZAR este hogar?\n\n' +
+                     'El hogar NO podrá ser habilitado.\n' +
+                     'Se notificará al agente educativo.';
+        } else if (accion.value === 'mantenimiento') {
+            mensaje = '¿Está seguro de marcar este hogar EN MANTENIMIENTO?\n\n' +
+                     'El hogar requerirá revisión posterior.';
+        }
+
+        if (!confirm(mensaje)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

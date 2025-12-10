@@ -783,7 +783,7 @@
               </select>
             </div>
 
-            <div class="form-group localidad-padre-container" style="display: none;">
+            <div class="form-group" id="localidad-padre-group" style="display: none;">
               <label>
                 Localidad (solo Bogotá)
                 {% if 'localidad_bogota_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
@@ -793,6 +793,7 @@
                       {% if 'localidad_bogota_padre' in campos_corregir %}class="editable"{% endif %}>
                 <option value="">-- Seleccione una Localidad --</option>
               </select>
+              <small style="color:#666;display:block;margin-top:5px;">Solo se muestra si vive en Bogotá D.C.</small>
             </div>
 
             <div class="form-group full-width">
@@ -1499,7 +1500,7 @@
         departamentoSelector: '#id_departamento_padre',
         municipioSelector: '#id_ciudad_padre',
         localidadSelector: '#id_localidad_bogota_padre',
-        localidadContainer: '.localidad-padre-container',
+        localidadContainer: '#localidad-padre-group',
       });
       
       // Preseleccionar valores si existen (modo edición/corrección)

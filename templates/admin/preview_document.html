@@ -1,0 +1,296 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vista Previa - {{ nombre_archivo }}</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #1f2937;
+      color: white;
+      overflow: hidden;
+    }
+
+    .preview-header {
+      background: #111827;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #374151;
+    }
+
+    .preview-header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-download {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-download:hover {
+      background: #2563eb;
+    }
+
+    .btn-close {
+      background: #374151;
+      color: white;
+    }
+
+    .btn-close:hover {
+      background: #4b5563;
+    }
+
+    .preview-container {
+      width: 100%;
+      height: calc(100vh - 60px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+    }
+
+    /* PDF Viewer */
+    .pdf-viewer {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Image Viewer */
+    .image-viewer {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .zoom-controls {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111827;
+      padding: 12px;
+      border-radius: 12px;
+      display: flex;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+
+    .zoom-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: none;
+      background: #374151;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .zoom-btn:hover {
+      background: #4b5563;
+    }
+
+    .zoom-level {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .unsupported {
+      text-align: center;
+      padding: 60px 24px;
+    }
+
+    .unsupported i {
+      font-size: 64px;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+
+    .unsupported h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: #9ca3af;
+    }
+
+    .unsupported p {
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-header">
+    <h1>
+      <i class="fas fa-{{ tipo_archivo == 'pdf'|yesno:'file-pdf,image' }}"></i>
+      {{ nombre_archivo }}
+    </h1>
+    <div class="preview-actions">
+      <a href="{{ archivo_url }}" download class="btn btn-download">
+        <i class="fas fa-download"></i>
+        Descargar
+      </a>
+      <button class="btn btn-close" onclick="window.close()">
+        <i class="fas fa-times"></i>
+        Cerrar
+      </button>
+    </div>
+  </div>
+
+  <div class="preview-container">
+    {% if tipo_archivo == 'pdf' %}
+      <!-- PDF Viewer -->
+      <iframe src="{{ archivo_url }}" class="pdf-viewer"></iframe>
+      
+    {% elif tipo_archivo == 'imagen' %}
+      <!-- Image Viewer with Zoom -->
+      <img src="{{ archivo_url }}" alt="{{ nombre_archivo }}" class="image-viewer" id="imagePreview">
+      
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomOut()">
+          <i class="fas fa-minus"></i>
+        </button>
+        <div class="zoom-level" id="zoomLevel">100%</div>
+        <button class="zoom-btn" onclick="zoomIn()">
+          <i class="fas fa-plus"></i>
+        </button>
+        <button class="zoom-btn" onclick="resetZoom()">
+          <i class="fas fa-redo"></i>
+        </button>
+        <button class="zoom-btn" onclick="rotateImage()">
+          <i class="fas fa-rotate-right"></i>
+        </button>
+      </div>
+      
+    {% else %}
+      <!-- Unsupported File Type -->
+      <div class="unsupported">
+        <i class="fas fa-file"></i>
+        <h2>Tipo de archivo no soportado</h2>
+        <p>No se puede previsualizar este tipo de archivo en el navegador.</p>
+        <a href="{{ archivo_url }}" download class="btn btn-download">
+          <i class="fas fa-download"></i>
+          Descargar archivo
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    // Image Zoom & Rotation Controls
+    let currentZoom = 100;
+    let currentRotation = 0;
+    const img = document.getElementById('imagePreview');
+    const zoomLevelDisplay = document.getElementById('zoomLevel');
+
+    function updateTransform() {
+      if (img) {
+        img.style.transform = `scale(${currentZoom / 100}) rotate(${currentRotation}deg)`;
+        img.style.transition = 'transform 0.3s ease';
+        zoomLevelDisplay.textContent = currentZoom + '%';
+      }
+    }
+
+    function zoomIn() {
+      if (currentZoom < 200) {
+        currentZoom += 10;
+        updateTransform();
+      }
+    }
+
+    function zoomOut() {
+      if (currentZoom > 50) {
+        currentZoom -= 10;
+        updateTransform();
+      }
+    }
+
+    function resetZoom() {
+      currentZoom = 100;
+      currentRotation = 0;
+      updateTransform();
+    }
+
+    function rotateImage() {
+      currentRotation += 90;
+      if (currentRotation >= 360) currentRotation = 0;
+      updateTransform();
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        window.close();
+      } else if (e.key === '+' || e.key === '=') {
+        zoomIn();
+      } else if (e.key === '-') {
+        zoomOut();
+      } else if (e.key === '0') {
+        resetZoom();
+      } else if (e.key === 'r' || e.key === 'R') {
+        rotateImage();
+      }
+    });
+
+    // Mouse wheel zoom for images
+    if (img) {
+      img.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          zoomIn();
+        } else {
+          zoomOut();
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

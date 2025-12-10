@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hogares Comunitarios Disponibles{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hogar-card {
+        height: 100%;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+    .hogar-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    .capacidad-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.9rem;
+        padding: 5px 10px;
+    }
+    .foto-hogar {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .ocupacion-bar {
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .ocupacion-fill {
+        height: 100%;
+        transition: width 0.3s;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>🏠 Hogares Comunitarios Disponibles</h2>
+            <p class="text-muted mb-0">Encuentra el hogar comunitario ideal para tu hijo(a)</p>
+        </div>
+        <div>
+            <a href="{% url 'padre_dashboard' %}" class="btn btn-outline-secondary">
+                ← Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ total_hogares }}</h3>
+                        <p class="mb-0">Hogares Aprobados</p>
+                        <small>Disponibles en toda la ciudad</small>
+                    </div>
+                    <div style="font-size: 3rem; opacity: 0.3;">🏠</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ total_capacidad }}</h3>
+                        <p class="mb-0">Capacidad Total</p>
+                        <small>Niños que pueden ser atendidos</small>
+                    </div>
+                    <div style="font-size: 3rem; opacity: 0.3;">👶</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Regional</label>
+                    <select name="regional" class="form-select">
+                        <option value="">Todas las regionales</option>
+                        {% for regional in regionales %}
+                            <option value="{{ regional.id }}" {% if regional_filter == regional.id|stringformat:'s' %}selected{% endif %}>
+                                {{ regional.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Localidad</label>
+                    <select name="localidad" class="form-select">
+                        <option value="">Todas las localidades</option>
+                        {% for localidad in localidades %}
+                            <option value="{{ localidad.id }}" {% if localidad_filter == localidad.id|stringformat:'s' %}selected{% endif %}>
+                                {{ localidad.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="buscar" class="form-control" 
+                           placeholder="Nombre, dirección, barrio..."
+                           value="{{ buscar }}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">🔍</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Hogares -->
+    {% if hogares %}
+        <div class="row">
+            {% for item in hogares %}
+                {% with hogar=item.hogar %}
+                <div class="col-md-4 mb-4">
+                    <div class="card hogar-card" onclick="window.location.href='{% url 'padre_detalle_hogar' hogar.id %}'">
+                        <!-- Foto -->
+                        {% if hogar.fotos_exterior %}
+                            <img src="{{ hogar.fotos_exterior.url }}" class="card-img-top foto-hogar" alt="{{ hogar.nombre_hogar }}">
+                        {% else %}
+                            <div class="foto-hogar d-flex align-items-center justify-content-center">
+                                <h1 class="text-white opacity-50">🏠</h1>
+                            </div>
+                        {% endif %}
+
+                        <!-- Badge de Capacidad -->
+                        <span class="badge 
+                            {% if item.capacidad_disponible > 5 %}bg-success
+                            {% elif item.capacidad_disponible > 0 %}bg-warning text-dark
+                            {% else %}bg-danger{% endif %}
+                            capacidad-badge">
+                            {% if item.capacidad_disponible > 0 %}
+                                {{ item.capacidad_disponible }} cupos
+                            {% else %}
+                                Sin cupos
+                            {% endif %}
+                        </span>
+
+                        <div class="card-body">
+                            <h5 class="card-title">{{ hogar.nombre_hogar }}</h5>
+                            
+                            <!-- Ubicación -->
+                            <p class="text-muted mb-2">
+                                <small>
+                                    📍 {{ hogar.direccion }}<br>
+                                    {% if hogar.localidad_bogota %}
+                                        {{ hogar.localidad_bogota.nombre }}
+                                    {% elif hogar.ciudad %}
+                                        {{ hogar.ciudad.nombre }}
+                                    {% endif %}
+                                    {% if hogar.barrio %} - {{ hogar.barrio }}{% endif %}
+                                </small>
+                            </p>
+
+                            <!-- Agente Educativo -->
+                            <p class="mb-2">
+                                <small>
+                                    <strong>👤 Agente Educativo:</strong><br>
+                                    {{ hogar.madre.usuario.get_full_name }}
+                                </small>
+                            </p>
+
+                            <!-- Capacidad y Ocupación -->
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small><strong>Capacidad:</strong> {{ hogar.capacidad_calculada }} niños</small>
+                                    <small><strong>Ocupación:</strong> {{ item.ocupacion_pct }}%</small>
+                                </div>
+                                <div class="ocupacion-bar">
+                                    <div class="ocupacion-fill 
+                                        {% if item.ocupacion_pct < 70 %}bg-success
+                                        {% elif item.ocupacion_pct < 90 %}bg-warning
+                                        {% else %}bg-danger{% endif %}"
+                                        style="width: {{ item.ocupacion_pct }}%">
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    {{ item.ninos_count }} de {{ hogar.capacidad_calculada }} cupos ocupados
+                                </small>
+                            </div>
+
+                            <!-- Botón -->
+                            <a href="{% url 'padre_detalle_hogar' hogar.id %}" class="btn btn-primary btn-sm w-100 mt-2">
+                                👁️ Ver Información Completa
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if hogares.has_other_pages %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center">
+                    {% if hogares.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ hogares.previous_page_number }}{% if localidad_filter %}&localidad={{ localidad_filter }}{% endif %}{% if regional_filter %}&regional={{ regional_filter }}{% endif %}{% if buscar %}&buscar={{ buscar }}{% endif %}">
+                                Anterior
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in hogares.paginator.page_range %}
+                        {% if hogares.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > hogares.number|add:'-3' and num < hogares.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if localidad_filter %}&localidad={{ localidad_filter }}{% endif %}{% if regional_filter %}&regional={{ regional_filter }}{% endif %}{% if buscar %}&buscar={{ buscar }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if hogares.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ hogares.next_page_number }}{% if localidad_filter %}&localidad={{ localidad_filter }}{% endif %}{% if regional_filter %}&regional={{ regional_filter }}{% endif %}{% if buscar %}&buscar={{ buscar }}{% endif %}">
+                                Siguiente
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info text-center">
+            <h4>No se encontraron hogares</h4>
+            <p>No hay hogares comunitarios disponibles con los filtros seleccionados.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle del Hogar - {{ hogar.nombre_hogar }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .section-card {
+        margin-bottom: 20px;
+    }
+    .info-label {
+        font-weight: bold;
+        color: #6c757d;
+    }
+    .status-badge {
+        font-size: 1.1rem;
+        padding: 8px 15px;
+    }
+    .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    .photo-item img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard_admin' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'lista_hogares_revision' %}">Hogares en Revisión</a></li>
+            <li class="breadcrumb-item active">{{ hogar.nombre_hogar }}</li>
+        </ol>
+    </nav>
+
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2>🏠 {{ hogar.nombre_hogar }}</h2>
+            <p class="text-muted mb-2">{{ hogar.direccion }}</p>
+            <div>
+                <span class="badge status-badge 
+                    {% if hogar.estado == 'pendiente_revision' %}bg-warning text-dark
+                    {% elif hogar.estado == 'en_revision' %}bg-info
+                    {% elif hogar.estado == 'aprobado' %}bg-success
+                    {% elif hogar.estado == 'rechazado' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                    {{ hogar.get_estado_display }}
+                </span>
+                {% if hogar.formulario_completo %}
+                    <span class="badge bg-success status-badge">✅ Formulario Completo</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark status-badge">⏳ Formulario Incompleto</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="btn-group-vertical">
+            {% if puede_completar_visita %}
+                <a href="{% url 'completar_visita_tecnica' hogar.id %}" class="btn btn-warning mb-2">
+                    📝 Completar Visita Técnica
+                </a>
+            {% endif %}
+            {% if puede_aprobar %}
+                <a href="{% url 'aprobar_rechazar_hogar' hogar.id %}" class="btn btn-success mb-2">
+                    ✅ Aprobar/Rechazar
+                </a>
+            {% endif %}
+            <a href="{% url 'lista_hogares_revision' %}" class="btn btn-outline-secondary">
+                ← Volver a Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna Izquierda -->
+        <div class="col-md-6">
+            <!-- Información del Agente Educativo -->
+            <div class="card section-card">
+                <div class="card-header bg-primary text-white">
+                    👤 Agente Educativo
+                </div>
+                <div class="card-body">
+                    <p><span class="info-label">Nombre:</span> {{ hogar.madre.usuario.get_full_name }}</p>
+                    <p><span class="info-label">Documento:</span> {{ hogar.madre.usuario.documento }}</p>
+                    <p><span class="info-label">Correo:</span> {{ hogar.madre.usuario.correo }}</p>
+                    <p class="mb-0"><span class="info-label">Teléfono:</span> {{ hogar.madre.usuario.telefono|default:"No registrado" }}</p>
+                </div>
+            </div>
+
+            <!-- Ubicación -->
+            <div class="card section-card">
+                <div class="card-header bg-success text-white">
+                    📍 Ubicación
+                </div>
+                <div class="card-body">
+                    <p><span class="info-label">Regional:</span> {{ hogar.regional.nombre }}</p>
+                    {% if hogar.localidad_bogota %}
+                        <p><span class="info-label">Localidad:</span> {{ hogar.localidad_bogota.nombre }}</p>
+                    {% elif hogar.ciudad %}
+                        <p><span class="info-label">Ciudad:</span> {{ hogar.ciudad.nombre }}</p>
+                    {% endif %}
+                    <p><span class="info-label">Barrio:</span> {{ hogar.barrio|default:"No especificado" }}</p>
+                    <p><span class="info-label">Dirección:</span> {{ hogar.direccion }}</p>
+                    {% if hogar.geolocalizacion_lat and hogar.geolocalizacion_lon %}
+                        <p class="mb-0">
+                            <span class="info-label">Coordenadas:</span> 
+                            {{ hogar.geolocalizacion_lat }}, {{ hogar.geolocalizacion_lon }}
+                            <a href="https://www.google.com/maps?q={{ hogar.geolocalizacion_lat }},{{ hogar.geolocalizacion_lon }}" 
+                               target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                                🗺️ Ver en Mapa
+                            </a>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Convivientes -->
+            {% if convivientes %}
+            <div class="card section-card">
+                <div class="card-header bg-info text-white">
+                    👨‍👩‍👧‍👦 Personas que Viven en el Hogar ({{ convivientes.count }})
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Documento</th>
+                                    <th>Parentesco</th>
+                                    <th>Antecedentes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for conviviente in convivientes %}
+                                <tr>
+                                    <td>{{ conviviente.nombre_completo }}</td>
+                                    <td>{{ conviviente.get_tipo_documento_display }} {{ conviviente.numero_documento }}</td>
+                                    <td>{{ conviviente.parentesco }}</td>
+                                    <td>
+                                        {% if conviviente.antecedentes_pdf %}
+                                            <a href="{{ conviviente.antecedentes_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                📄 Ver PDF
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">No disponible</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna Derecha -->
+        <div class="col-md-6">
+            <!-- Área y Capacidad -->
+            {% if hogar.area_social_m2 %}
+            <div class="card section-card">
+                <div class="card-header bg-warning text-dark">
+                    📐 Área y Capacidad
+                </div>
+                <div class="card-body text-center">
+                    <div class="row">
+                        <div class="col-6">
+                            <h3 class="mb-0">{{ hogar.area_social_m2 }} m²</h3>
+                            <p class="text-muted mb-0">Área Social</p>
+                            <small>(Mínimo: 24 m²)</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="mb-0">{{ hogar.capacidad_calculada|default:"--" }} niños</h3>
+                            <p class="text-muted mb-0">Capacidad Calculada</p>
+                            <small>(Máximo: 15)</small>
+                        </div>
+                    </div>
+                    {% if hogar.area_social_m2 < 24 %}
+                        <div class="alert alert-danger mt-3 mb-0">
+                            <strong>⚠️ Área insuficiente</strong><br>
+                            No cumple con el mínimo de 24 m²
+                        </div>
+                    {% elif hogar.area_social_m2 >= 30 %}
+                        <div class="alert alert-success mt-3 mb-0">
+                            <strong>✅ Área óptima</strong><br>
+                            Cumple ampliamente con los requisitos
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mt-3 mb-0">
+                            <strong>✅ Área aceptable</strong><br>
+                            Cumple con el mínimo requerido
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Características Físicas -->
+            {% if tiene_formulario_completo %}
+            <div class="card section-card">
+                <div class="card-header bg-secondary text-white">
+                    🏗️ Características Físicas
+                </div>
+                <div class="card-body">
+                    <p><span class="info-label">Estrato:</span> {{ hogar.estrato|default:"No especificado" }}</p>
+                    <p><span class="info-label">Habitaciones:</span> {{ hogar.num_habitaciones|default:"No especificado" }}</p>
+                    <p><span class="info-label">Baños:</span> {{ hogar.num_banos|default:"No especificado" }}</p>
+                    {% if hogar.material_construccion %}
+                        <p><span class="info-label">Material:</span> {{ hogar.material_construccion }}</p>
+                    {% endif %}
+                    {% if hogar.riesgos_cercanos %}
+                        <p><span class="info-label">Riesgos:</span> {{ hogar.riesgos_cercanos }}</p>
+                    {% endif %}
+                    <p class="mb-0"><span class="info-label">Tenencia:</span> {{ hogar.get_tipo_tenencia_display|default:"No especificado" }}</p>
+                    {% if hogar.documento_tenencia_pdf %}
+                        <a href="{{ hogar.documento_tenencia_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                            📄 Ver Documento de Tenencia
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Fechas -->
+            <div class="card section-card">
+                <div class="card-header bg-dark text-white">
+                    📅 Fechas Importantes
+                </div>
+                <div class="card-body">
+                    <p><span class="info-label">Registro:</span> {{ hogar.fecha_registro|date:"d/m/Y H:i" }}</p>
+                    {% if hogar.fecha_primera_visita %}
+                        <p class="mb-0"><span class="info-label">Primera Visita Programada:</span> {{ hogar.fecha_primera_visita|date:"d/m/Y" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fotos -->
+    {% if hogar.fotos_interior or hogar.fotos_exterior %}
+    <div class="card section-card mt-3">
+        <div class="card-header bg-primary text-white">
+            📸 Fotografías del Hogar
+        </div>
+        <div class="card-body">
+            <div class="photo-grid">
+                {% if hogar.fotos_interior %}
+                    <div class="photo-item">
+                        <img src="{{ hogar.fotos_interior.url }}" alt="Interior">
+                        <p class="text-center mt-2 mb-0"><small>Interior</small></p>
+                    </div>
+                {% endif %}
+                {% if hogar.fotos_exterior %}
+                    <div class="photo-item">
+                        <img src="{{ hogar.fotos_exterior.url }}" alt="Exterior">
+                        <p class="text-center mt-2 mb-0"><small>Exterior</small></p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

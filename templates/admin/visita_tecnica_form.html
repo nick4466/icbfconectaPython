@@ -1,0 +1,932 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ICBF Conecta - Realizar Visita Técnica</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #f3f6fa;
+      color: #333;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #004080 0%, #0066cc 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .info-banner {
+      background: #e3f2fd;
+      border-left: 5px solid #2196f3;
+      padding: 20px;
+      margin: 20px 30px;
+      border-radius: 5px;
+    }
+
+    .info-banner h3 {
+      color: #004080;
+      margin-bottom: 10px;
+    }
+
+    .info-banner p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    .form-content {
+      padding: 30px;
+    }
+
+    .section {
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section-title {
+      background: #f8f9fa;
+      padding: 15px 20px;
+      margin: 0 -30px 25px -30px;
+      border-left: 5px solid #004080;
+    }
+
+    .section-title h2 {
+      color: #004080;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .form-group label .required {
+      color: #dc3545;
+      margin-left: 3px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="file"],
+    .form-group select,
+    .form-group textarea {
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: 'Poppins', sans-serif;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #004080;
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-group small {
+      color: #666;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .radio-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .radio-option label {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .photo-upload {
+      border: 2px dashed #ddd;
+      border-radius: 5px;
+      padding: 20px;
+      text-align: center;
+      background: #fafafa;
+      transition: all 0.3s ease;
+    }
+
+    .photo-upload:hover {
+      border-color: #004080;
+      background: #f0f7ff;
+    }
+
+    .photo-upload i {
+      font-size: 48px;
+      color: #004080;
+      margin-bottom: 10px;
+    }
+
+    .photo-preview {
+      margin-top: 15px;
+      max-width: 300px;
+      max-height: 300px;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .calculated-field {
+      background: #e8f5e9;
+      border: 2px solid #4caf50;
+      padding: 15px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .calculated-field i {
+      font-size: 24px;
+      color: #4caf50;
+    }
+
+    .calculated-field .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2e7d32;
+    }
+
+    .alert {
+      padding: 15px 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .alert i {
+      font-size: 20px;
+      margin-top: 2px;
+    }
+
+    .alert-warning {
+      background: #fff3cd;
+      border-left: 5px solid #ffc107;
+      color: #856404;
+    }
+
+    .alert-info {
+      background: #d1ecf1;
+      border-left: 5px solid #17a2b8;
+      color: #0c5460;
+    }
+
+    .alert-danger {
+      background: #f8d7da;
+      border-left: 5px solid #dc3545;
+      color: #721c24;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+      padding: 30px;
+      background: #f8f9fa;
+      margin: 0 -30px -30px -30px;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, #0056b3, #007bff);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #545b62;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1><i class="fas fa-clipboard-check"></i> Acta de Visita Técnica</h1>
+      <p>Evaluación para habilitación de Hogar Comunitario</p>
+    </div>
+
+    {% if not puede_realizar_visita %}
+    <div style="padding: 30px;">
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div>
+          <strong>Visita No Disponible</strong><br>
+          Esta visita está programada para el <strong>{{ visita.fecha_programada|date:"d/m/Y" }}</strong>. 
+          Solo puedes realizar la visita en esa fecha o después.
+        </div>
+      </div>
+      <a href="{% url 'hogares_dashboard' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+      </a>
+    </div>
+    {% else %}
+
+    <div class="info-banner">
+      <h3><i class="fas fa-home"></i> {{ hogar.nombre_hogar }}</h3>
+      <p><strong>Agente Educativo:</strong> {{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}</p>
+      <p><strong>Dirección:</strong> {{ hogar.direccion }}, {{ hogar.barrio }}</p>
+      <p><strong>Fecha Programada:</strong> {{ visita.fecha_programada|date:"d/m/Y H:i" }}</p>
+      <p><strong>Tipo de Visita:</strong> {{ visita.get_tipo_visita_display }}</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="visitaForm">
+      {% csrf_token %}
+
+      <div class="form-content">
+
+        <!-- SECCIÓN A: GEOLOCALIZACIÓN -->
+        <div class="section">
+          <div class="section-title">
+            <h2><i class="fas fa-map-marker-alt"></i> A. Geolocalización y Verificación de Dirección</h2>
+            <p class="section-subtitle">Confirma la ubicación exacta del hogar comunitario</p>
+          </div>
+
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+              Al hacer clic en "Capturar Ubicación", se tomará automáticamente tu ubicación GPS actual.
+              Asegúrate de estar en el hogar comunitario.
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Latitud <span class="required">*</span></label>
+              <input type="text" name="geolocalizacion_lat_verificada" id="lat" readonly required>
+            </div>
+            <div class="form-group">
+              <label>Longitud <span class="required">*</span></label>
+              <input type="text" name="geolocalizacion_lon_verificada" id="lon" readonly required>
+            </div>
+            <div class="form-group">
+              <button type="button" class="btn btn-primary" onclick="capturarUbicacion()">
+                <i class="fas fa-crosshairs"></i> Capturar Ubicación
+              </button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Dirección Verificada <span class="required">*</span></label>
+              <input type="text" name="direccion_verificada" value="{{ hogar.direccion }}" required>
+              <small>Confirma o corrige la dirección según lo observado</small>
+            </div>
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" name="direccion_coincide" id="direccion_coincide">
+            <label for="direccion_coincide">La dirección verificada coincide con la reportada en el formulario inicial</label>
+          </div>
+
+          <div class="form-group">
+            <label>Observaciones sobre la Dirección</label>
+            <textarea name="observaciones_direccion" placeholder="Si la dirección no coincide, describe las diferencias..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Estrato Verificado <span class="required">*</span></label>
+              <select name="estrato_verificado" required>
+                <option value="">Seleccione...</option>
+                <option value="1">Estrato 1</option>
+                <option value="2">Estrato 2</option>
+                <option value="3">Estrato 3</option>
+                <option value="4">Estrato 4</option>
+                <option value="5">Estrato 5</option>
+                <option value="6">Estrato 6</option>
+              </select>
+              <small>Verificar según recibo de servicio público</small>
+            </div>
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" name="estrato_coincide" id="estrato_coincide">
+            <label for="estrato_coincide">El estrato verificado coincide con el reportado</label>
+          </div>
+
+          <div class="form-group">
+            <label>Foto del Recibo de Servicio Público <span class="required">*</span></label>
+            <div class="photo-upload">
+              <i class="fas fa-file-invoice"></i>
+              <p>Sube una foto clara del recibo donde se vea el estrato</p>
+              <input type="file" name="foto_recibo_servicio" accept="image/*" required onchange="previewImage(this, 'preview_recibo')">
+            </div>
+            <img id="preview_recibo" class="photo-preview">
+          </div>
+        </div>
+
+        <!-- SECCIÓN B: SERVICIOS Y SEGURIDAD -->
+        <div class="section">
+          <div class="section-title">
+            <h2><i class="fas fa-shield-alt"></i> B. Servicios Básicos y Seguridad</h2>
+            <p class="section-subtitle">Evaluación de infraestructura y condiciones de seguridad</p>
+          </div>
+
+          <h3 style="color: #004080; margin-bottom: 15px;">Servicios Públicos</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Agua Potable</label>
+              <div class="checkbox-group">
+                <input type="checkbox" name="tiene_agua_potable" id="agua_potable">
+                <label for="agua_potable">Tiene conexión</label>
+              </div>
+              <div class="checkbox-group">
+                <input type="checkbox" name="agua_continua" id="agua_continua">
+                <label for="agua_continua">Suministro continuo</label>
+              </div>
+              <div class="checkbox-group">
+                <input type="checkbox" name="agua_legal" id="agua_legal">
+                <label for="agua_legal">Conexión legal</label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Energía Eléctrica</label>
+              <div class="checkbox-group">
+                <input type="checkbox" name="tiene_energia" id="energia">
+                <label for="energia">Tiene conexión</label>
+              </div>
+              <div class="checkbox-group">
+                <input type="checkbox" name="energia_continua" id="energia_continua">
+                <label for="energia_continua">Suministro continuo</label>
+              </div>
+              <div class="checkbox-group">
+                <input type="checkbox" name="energia_legal" id="energia_legal">
+                <label for="energia_legal">Conexión legal</label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Alcantarillado</label>
+              <div class="checkbox-group">
+                <input type="checkbox" name="tiene_alcantarillado" id="alcantarillado">
+                <label for="alcantarillado">Tiene conexión</label>
+              </div>
+              <div class="checkbox-group">
+                <input type="checkbox" name="manejo_excretas_adecuado" id="excretas">
+                <label for="excretas">Manejo adecuado de excretas</label>
+              </div>
+            </div>
+          </div>
+
+          <h3 style="color: #004080; margin: 30px 0 15px 0;">Estado de Infraestructura</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Estado de los Pisos <span class="required">*</span></label>
+              <select name="estado_pisos" required>
+                <option value="">Seleccione...</option>
+                <option value="excelente">Excelente</option>
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+                <option value="muy_malo">Muy Malo</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Estado de las Paredes <span class="required">*</span></label>
+              <select name="estado_paredes" required>
+                <option value="">Seleccione...</option>
+                <option value="excelente">Excelente</option>
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+                <option value="muy_malo">Muy Malo</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Estado de los Techos <span class="required">*</span></label>
+              <select name="estado_techos" required>
+                <option value="">Seleccione...</option>
+                <option value="excelente">Excelente</option>
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+                <option value="muy_malo">Muy Malo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="checkbox-group">
+              <input type="checkbox" name="ventilacion_adecuada" id="ventilacion">
+              <label for="ventilacion">Ventilación adecuada</label>
+            </div>
+            <div class="checkbox-group">
+              <input type="checkbox" name="iluminacion_natural_adecuada" id="iluminacion">
+              <label for="iluminacion">Iluminación natural adecuada</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Observaciones sobre Infraestructura</label>
+            <textarea name="observaciones_infraestructura" placeholder="Describe el estado general de la infraestructura..."></textarea>
+          </div>
+
+          <h3 style="color: #004080; margin: 30px 0 15px 0;">Evaluación de Riesgos Ambientales</h3>
+
+          <div class="form-row">
+            <div class="checkbox-group">
+              <input type="checkbox" name="proximidad_rios" id="rios">
+              <label for="rios">Proximidad a ríos/quebradas</label>
+            </div>
+            <div class="checkbox-group">
+              <input type="checkbox" name="proximidad_deslizamientos" id="deslizamientos">
+              <label for="deslizamientos">Riesgo de deslizamientos</label>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="checkbox-group">
+              <input type="checkbox" name="proximidad_trafico_intenso" id="trafico">
+              <label for="trafico">Proximidad a vías de alto tráfico</label>
+            </div>
+            <div class="checkbox-group">
+              <input type="checkbox" name="proximidad_contaminacion" id="contaminacion">
+              <label for="contaminacion">Fuentes de contaminación cercanas</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Nivel de Riesgo General <span class="required">*</span></label>
+            <select name="nivel_riesgo_general" required>
+              <option value="sin_riesgo">Sin Riesgo</option>
+              <option value="riesgo_bajo">Riesgo Bajo</option>
+              <option value="riesgo_medio">Riesgo Medio</option>
+              <option value="riesgo_alto">Riesgo Alto</option>
+              <option value="riesgo_critico">Riesgo Crítico</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Descripción de Riesgos Identificados</label>
+            <textarea name="descripcion_riesgos" placeholder="Describe los riesgos encontrados y medidas de mitigación..."></textarea>
+          </div>
+        </div>
+
+        <!-- SECCIÓN C: ESPACIOS Y CAPACIDAD -->
+        <div class="section">
+          <div class="section-title">
+            <h2><i class="fas fa-ruler-combined"></i> C. Medición de Espacios y Cálculo de Capacidad</h2>
+            <p class="section-subtitle">Mediciones para determinar la capacidad máxima del hogar</p>
+          </div>
+
+          <div class="alert alert-info">
+            <i class="fas fa-calculator"></i>
+            <div>
+              <strong>Fórmula de Capacidad:</strong> Se requieren 1.5 m² por niño en áreas sociales.
+              La capacidad se calculará automáticamente.
+            </div>
+          </div>
+
+          <h3 style="color: #004080; margin-bottom: 15px;">Área Social (Sala de Cuidado)</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Largo del Área Social (metros) <span class="required">*</span></label>
+              <input type="number" name="area_social_largo" id="area_largo" step="0.01" min="0" required onchange="calcularAreas()">
+            </div>
+            <div class="form-group">
+              <label>Ancho del Área Social (metros) <span class="required">*</span></label>
+              <input type="number" name="area_social_ancho" id="area_ancho" step="0.01" min="0" required onchange="calcularAreas()">
+            </div>
+          </div>
+
+          <div class="calculated-field">
+            <i class="fas fa-calculator"></i>
+            <div>
+              <strong>Área Total:</strong> <span class="value" id="area_total">0</span> m²
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 20px;">
+            <label>Foto del Área Social con Medidas <span class="required">*</span></label>
+            <div class="photo-upload">
+              <i class="fas fa-image"></i>
+              <p>Foto mostrando el área social y las medidas tomadas</p>
+              <input type="file" name="foto_area_social_medidas" accept="image/*" required onchange="previewImage(this, 'preview_area')">
+            </div>
+            <img id="preview_area" class="photo-preview">
+          </div>
+
+          <h3 style="color: #004080; margin: 30px 0 15px 0;">Patio Cubierto (Opcional)</h3>
+
+          <div class="checkbox-group">
+            <input type="checkbox" name="tiene_patio_cubierto" id="tiene_patio" onchange="togglePatio()">
+            <label for="tiene_patio">El hogar tiene patio cubierto</label>
+          </div>
+
+          <div id="patio_fields" style="display:none; margin-top: 20px;">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Largo del Patio (metros)</label>
+                <input type="number" name="patio_largo" id="patio_largo" step="0.01" min="0" onchange="calcularAreas()">
+              </div>
+              <div class="form-group">
+                <label>Ancho del Patio (metros)</label>
+                <input type="number" name="patio_ancho" id="patio_ancho" step="0.01" min="0" onchange="calcularAreas()">
+              </div>
+            </div>
+
+            <div class="calculated-field">
+              <i class="fas fa-calculator"></i>
+              <div>
+                <strong>Área de Patio:</strong> <span class="value" id="patio_total">0</span> m²
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+              <label>Foto del Patio con Medidas</label>
+              <div class="photo-upload">
+                <i class="fas fa-image"></i>
+                <p>Foto mostrando el patio cubierto y las medidas</p>
+                <input type="file" name="foto_patio_medidas" accept="image/*" onchange="previewImage(this, 'preview_patio')">
+              </div>
+              <img id="preview_patio" class="photo-preview">
+            </div>
+          </div>
+
+          <h3 style="color: #004080; margin: 30px 0 15px 0;">Baños</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Número de Baños <span class="required">*</span></label>
+              <input type="number" name="num_banos_verificado" min="1" required>
+            </div>
+            <div class="form-group">
+              <label>Estado de Higiene de los Baños <span class="required">*</span></label>
+              <select name="estado_higiene_banos" required>
+                <option value="">Seleccione...</option>
+                <option value="excelente">Excelente</option>
+                <option value="bueno">Bueno</option>
+                <option value="aceptable">Aceptable</option>
+                <option value="deficiente">Deficiente</option>
+                <option value="inaceptable">Inaceptable</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Foto del Baño Principal <span class="required">*</span></label>
+              <div class="photo-upload">
+                <i class="fas fa-camera"></i>
+                <p>Foto clara del baño principal</p>
+                <input type="file" name="foto_bano_1" accept="image/*" required onchange="previewImage(this, 'preview_bano1')">
+              </div>
+              <img id="preview_bano1" class="photo-preview">
+            </div>
+
+            <div class="form-group">
+              <label>Foto del Baño Adicional (si aplica)</label>
+              <div class="photo-upload">
+                <i class="fas fa-camera"></i>
+                <p>Foto del segundo baño (opcional)</p>
+                <input type="file" name="foto_bano_2" accept="image/*" onchange="previewImage(this, 'preview_bano2')">
+              </div>
+              <img id="preview_bano2" class="photo-preview">
+            </div>
+          </div>
+
+          <h3 style="color: #004080; margin: 30px 0 15px 0;">Fachada</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Foto de la Fachada <span class="required">*</span></label>
+              <div class="photo-upload">
+                <i class="fas fa-home"></i>
+                <p>Foto de la fachada completa del hogar</p>
+                <input type="file" name="foto_fachada" accept="image/*" required onchange="previewImage(this, 'preview_fachada')">
+              </div>
+              <img id="preview_fachada" class="photo-preview">
+            </div>
+
+            <div class="form-group">
+              <label>Foto de la Numeración</label>
+              <div class="photo-upload">
+                <i class="fas fa-hashtag"></i>
+                <p>Foto del número de la casa</p>
+                <input type="file" name="foto_fachada_numeracion" accept="image/*" onchange="previewImage(this, 'preview_numero')">
+              </div>
+              <img id="preview_numero" class="photo-preview">
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN D: CAPACIDAD RECOMENDADA -->
+        <div class="section">
+          <div class="section-title">
+            <h2><i class="fas fa-users"></i> D. Determinación de Capacidad</h2>
+            <p class="section-subtitle">Capacidad final recomendada según evaluación</p>
+          </div>
+
+          <div class="calculated-field" style="margin-bottom: 20px;">
+            <i class="fas fa-calculator"></i>
+            <div>
+              <strong>Capacidad Calculada Automáticamente:</strong> 
+              <span class="value" id="capacidad_calculada">0</span> niños
+              <input type="hidden" name="capacidad_calculada" id="capacidad_calculada_input">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Capacidad Recomendada por el Visitador <span class="required">*</span></label>
+            <input type="number" name="capacidad_recomendada" id="capacidad_recomendada" min="1" max="20" required>
+            <small>Puede ajustar la capacidad calculada según criterios técnicos</small>
+          </div>
+
+          <div class="form-group">
+            <label>Justificación de la Capacidad Recomendada</label>
+            <textarea name="justificacion_capacidad" placeholder="Si la capacidad recomendada difiere de la calculada, explica los criterios utilizados..."></textarea>
+          </div>
+        </div>
+
+        <!-- SECCIÓN E: CONCLUSIONES -->
+        <div class="section">
+          <div class="section-title">
+            <h2><i class="fas fa-check-circle"></i> E. Conclusiones y Recomendación</h2>
+            <p class="section-subtitle">Decisión final sobre la habilitación del hogar</p>
+          </div>
+
+          <div class="form-group">
+            <label>Recomendación de Habilitación <span class="required">*</span></label>
+            <select name="recomendacion_habilitacion" id="recomendacion" required onchange="toggleRecomendacion()">
+              <option value="">Seleccione...</option>
+              <option value="aprobado">✅ APROBAR - El hogar cumple todos los requisitos</option>
+              <option value="aprobado_condiciones">⚠️ APROBAR CON CONDICIONES - Requiere mejoras menores</option>
+              <option value="rechazado">❌ RECHAZAR - No cumple con requisitos mínimos</option>
+            </select>
+          </div>
+
+          <div id="condiciones_field" style="display:none;">
+            <div class="form-group">
+              <label>Condiciones para la Aprobación</label>
+              <textarea name="condiciones_aprobacion" placeholder="Enumera las mejoras o condiciones que deben cumplirse..."></textarea>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Observaciones Generales de la Visita</label>
+            <textarea name="observaciones_generales" placeholder="Observaciones adicionales sobre la visita técnica..." rows="5"></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="btn-group">
+        <a href="{% url 'hogares_dashboard' %}" class="btn btn-secondary">
+          <i class="fas fa-times"></i> Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Guardar Acta de Visita
+        </button>
+      </div>
+
+    </form>
+
+    {% endif %}
+  </div>
+
+  <script>
+    // Capturar ubicación GPS
+    function capturarUbicacion() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            document.getElementById('lat').value = position.coords.latitude.toFixed(7);
+            document.getElementById('lon').value = position.coords.longitude.toFixed(7);
+            alert('✅ Ubicación capturada correctamente');
+          },
+          function(error) {
+            alert('❌ Error al capturar ubicación. Verifica que hayas dado permisos de ubicación.');
+          }
+        );
+      } else {
+        alert('❌ Tu navegador no soporta geolocalización');
+      }
+    }
+
+    // Calcular áreas y capacidad
+    function calcularAreas() {
+      const largo = parseFloat(document.getElementById('area_largo').value) || 0;
+      const ancho = parseFloat(document.getElementById('area_ancho').value) || 0;
+      const areaTotal = largo * ancho;
+      
+      let patioLargo = 0;
+      let patioAncho = 0;
+      let patioTotal = 0;
+      
+      if (document.getElementById('tiene_patio').checked) {
+        patioLargo = parseFloat(document.getElementById('patio_largo').value) || 0;
+        patioAncho = parseFloat(document.getElementById('patio_ancho').value) || 0;
+        patioTotal = patioLargo * patioAncho;
+      }
+      
+      document.getElementById('area_total').textContent = areaTotal.toFixed(2);
+      document.getElementById('patio_total').textContent = patioTotal.toFixed(2);
+      
+      // Calcular capacidad (1.5 m² por niño)
+      const areaDisponible = areaTotal + (patioTotal * 0.5); // Patio cuenta 50%
+      const capacidad = Math.floor(areaDisponible / 1.5);
+      
+      document.getElementById('capacidad_calculada').textContent = capacidad;
+      document.getElementById('capacidad_calculada_input').value = capacidad;
+      document.getElementById('capacidad_recomendada').value = capacidad;
+    }
+
+    // Toggle campos de patio
+    function togglePatio() {
+      const tienePatio = document.getElementById('tiene_patio').checked;
+      document.getElementById('patio_fields').style.display = tienePatio ? 'block' : 'none';
+      if (!tienePatio) {
+        document.getElementById('patio_largo').value = '';
+        document.getElementById('patio_ancho').value = '';
+      }
+      calcularAreas();
+    }
+
+    // Toggle campo de condiciones
+    function toggleRecomendacion() {
+      const recomendacion = document.getElementById('recomendacion').value;
+      document.getElementById('condiciones_field').style.display = 
+        recomendacion === 'aprobado_condiciones' ? 'block' : 'none';
+    }
+
+    // Preview de imágenes
+    function previewImage(input, previewId) {
+      const preview = document.getElementById(previewId);
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // Validación del formulario
+    document.getElementById('visitaForm').addEventListener('submit', function(e) {
+      const lat = document.getElementById('lat').value;
+      const lon = document.getElementById('lon').value;
+      
+      if (!lat || !lon) {
+        e.preventDefault();
+        alert('⚠️ Debes capturar la ubicación GPS antes de guardar');
+        return false;
+      }
+
+      const capacidad = parseInt(document.getElementById('capacidad_recomendada').value);
+      if (!capacidad || capacidad < 1) {
+        e.preventDefault();
+        alert('⚠️ Debes ingresar una capacidad recomendada válida');
+        return false;
+      }
+
+      return confirm('¿Estás seguro de que deseas guardar el acta de visita? Esta acción no se puede deshacer.');
+    });
+  </script>
+</body>
+</html>

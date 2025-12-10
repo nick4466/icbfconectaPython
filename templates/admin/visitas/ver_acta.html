@@ -1,0 +1,322 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ver Acta - {{ acta.visita.hogar.nombre_hogar }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Poppins",sans-serif;background:#f3f6fa;color:#333}
+    .container{max-width:1000px;margin:30px auto;padding:0 20px}
+    .header{background:linear-gradient(135deg,#004080,#007bff);color:white;padding:30px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);margin-bottom:30px;display:flex;justify-content:space-between;align-items:center}
+    .header-left h1{font-size:26px;margin-bottom:10px}
+    .header-left p{opacity:0.9;font-size:14px}
+    .btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:10px;transition:all .3s}
+    .btn-white{background:white;color:#004080}
+    .btn-white:hover{background:#f0f0f0}
+    .btn-success{background:#28a745;color:white}
+    .btn-success:hover{background:#218838}
+    .resultado-badge{padding:12px 24px;border-radius:8px;font-weight:700;font-size:16px;margin-bottom:25px;display:inline-block}
+    .resultado-badge.aprobado{background:#d4edda;color:#155724;border:2px solid#28a745}
+    .resultado-badge.aprobado-condiciones{background:#fff3cd;color:#856404;border:2px solid#ffc107}
+    .resultado-badge.rechazado{background:#f8d7da;color:#721c24;border:2px solid#dc3545}
+    .section{background:white;padding:30px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);margin-bottom:25px}
+    .section-title{font-size:20px;color:#004080;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid #e0e0e0;display:flex;align-items:center;gap:12px}
+    .data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+    .data-item{padding:15px;background:#f8f9fa;border-radius:8px;border-left:4px solid #007bff}
+    .data-item label{display:block;font-size:12px;color:#666;margin-bottom:5px;font-weight:600;text-transform:uppercase}
+    .data-item .value{font-size:16px;color:#333;font-weight:600}
+    .data-item .value.si{color:#28a745}
+    .data-item .value.no{color:#dc3545}
+    .full-width{grid-column:1/-1}
+    .photo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-top:15px}
+    .photo-item{text-align:center}
+    .photo-item img{width:100%;max-width:250px;border-radius:8px;border:2px solid #e0e0e0;cursor:pointer;transition:transform .2s}
+    .photo-item img:hover{transform:scale(1.05);border-color:#007bff}
+    .photo-item p{margin-top:8px;font-size:13px;color:#666;font-weight:600}
+    .firma-container{display:flex;gap:30px;justify-content:center;margin-top:20px}
+    .firma-item{text-align:center}
+    .firma-item img{max-width:200px;border:2px solid #333;padding:10px;background:white;border-radius:8px}
+    .firma-item p{margin-top:10px;font-weight:600;color:#333}
+    .alert{padding:15px 20px;border-radius:8px;margin-bottom:20px;display:flex;align-items:start;gap:12px;line-height:1.6}
+    .alert.warning{background:#fff3cd;color:#856404;border-left:4px solid#856404}
+    .alert.success{background:#d4edda;color:#155724;border-left:4px solid#28a745}
+    .alert.info{background:#d1ecf1;color:#0c5460;border-left:4px solid#0c5460}
+    .actions{display:flex;gap:15px;justify-content:center;padding:30px 0}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <h1><i class="fas fa-file-alt"></i> Acta de Visita Técnica V1</h1>
+        <p><strong>Hogar:</strong> {{ acta.visita.hogar.nombre_hogar }}</p>
+        <p><strong>Agente Educativo:</strong> {{ acta.visita.hogar.madre.usuario.nombres }} {{ acta.visita.hogar.madre.usuario.apellidos }}</p>
+        <p><strong>Fecha:</strong> {{ acta.fecha_creacion|date:"d/m/Y H:i" }}</p>
+      </div>
+      <div>
+        <a href="{% url 'descargar_acta_pdf' acta.id %}" class="btn btn-white" target="_blank">
+          <i class="fas fa-download"></i> Descargar PDF
+        </a>
+      </div>
+    </div>
+
+    <!-- Resultado -->
+    <div style="text-align:center;">
+      {% if acta.resultado_visita == 'aprobado' %}
+        <div class="resultado-badge aprobado">
+          <i class="fas fa-check-circle"></i> HOGAR APROBADO
+        </div>
+      {% elif acta.resultado_visita == 'aprobado_condiciones' %}
+        <div class="resultado-badge aprobado-condiciones">
+          <i class="fas fa-exclamation-circle"></i> APROBADO CON CONDICIONES
+        </div>
+      {% elif acta.resultado_visita == 'rechazado' %}
+        <div class="resultado-badge rechazado">
+          <i class="fas fa-times-circle"></i> HOGAR RECHAZADO
+        </div>
+      {% endif %}
+    </div>
+
+    {% if acta.resultado_visita == 'aprobado_condiciones' and acta.condiciones_aprobacion %}
+    <div class="alert warning">
+      <i class="fas fa-list-ul"></i>
+      <div>
+        <strong>Condiciones:</strong><br>
+        {{ acta.condiciones_aprobacion|linebreaks }}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if acta.resultado_visita == 'rechazado' and acta.motivos_rechazo %}
+    <div class="alert warning">
+      <i class="fas fa-times-circle"></i>
+      <div>
+        <strong>Motivos del Rechazo:</strong><br>
+        {{ acta.motivos_rechazo|linebreaks }}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Sección A: Geolocalización -->
+    <div class="section">
+      <h2 class="section-title"><i class="fas fa-map-marker-alt"></i> A. Geolocalización y Dirección</h2>
+      <div class="data-grid">
+        <div class="data-item">
+          <label>Latitud GPS</label>
+          <div class="value">{{ acta.latitud_verificada }}</div>
+        </div>
+        <div class="data-item">
+          <label>Longitud GPS</label>
+          <div class="value">{{ acta.longitud_verificada }}</div>
+        </div>
+        <div class="data-item">
+          <label>Dirección Validada</label>
+          <div class="value {% if acta.direccion_validada %}si{% else %}no{% endif %}">
+            {% if acta.direccion_validada %}
+              <i class="fas fa-check-circle"></i> Sí
+            {% else %}
+              <i class="fas fa-times-circle"></i> No
+            {% endif %}
+          </div>
+        </div>
+        <div class="data-item">
+          <label>Estrato Verificado</label>
+          <div class="value">{{ acta.estrato_verificado }}</div>
+        </div>
+      </div>
+      {% if acta.foto_estrato %}
+      <div class="photo-grid">
+        <div class="photo-item">
+          <img src="{{ acta.foto_estrato.url }}" alt="Foto Estrato" onclick="window.open(this.src)">
+          <p>Recibo con Estrato</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sección B: Servicios -->
+    <div class="section">
+      <h2 class="section-title"><i class="fas fa-tools"></i> B. Servicios e Infraestructura</h2>
+      <div class="data-grid">
+        <div class="data-item">
+          <label>Agua Potable</label>
+          <div class="value {% if acta.tiene_agua_potable %}si{% else %}no{% endif %}">
+            {% if acta.tiene_agua_potable %}<i class="fas fa-check-circle"></i> Sí{% else %}<i class="fas fa-times-circle"></i> No{% endif %}
+          </div>
+        </div>
+        <div class="data-item">
+          <label>Energía Eléctrica</label>
+          <div class="value {% if acta.tiene_energia_electrica %}si{% else %}no{% endif %}">
+            {% if acta.tiene_energia_electrica %}<i class="fas fa-check-circle"></i> Sí{% else %}<i class="fas fa-times-circle"></i> No{% endif %}
+          </div>
+        </div>
+        <div class="data-item">
+          <label>Alcantarillado</label>
+          <div class="value {% if acta.tiene_alcantarillado %}si{% else %}no{% endif %}">
+            {% if acta.tiene_alcantarillado %}<i class="fas fa-check-circle"></i> Sí{% else %}<i class="fas fa-times-circle"></i> No{% endif %}
+          </div>
+        </div>
+        <div class="data-item">
+          <label>Estado del Techo</label>
+          <div class="value">{{ acta.get_estado_techo_display }}</div>
+        </div>
+        <div class="data-item">
+          <label>Estado de Paredes</label>
+          <div class="value">{{ acta.get_estado_paredes_display }}</div>
+        </div>
+        <div class="data-item">
+          <label>Estado de Pisos</label>
+          <div class="value">{{ acta.get_estado_pisos_display }}</div>
+        </div>
+      </div>
+      {% if acta.hay_riesgos_identificados %}
+      <div class="alert warning" style="margin-top:20px;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div>
+          <strong>Riesgos Identificados:</strong><br>
+          {{ acta.descripcion_riesgos|linebreaks }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sección C: Espacios -->
+    <div class="section">
+      <h2 class="section-title"><i class="fas fa-ruler-combined"></i> C. Espacios y Mediciones</h2>
+      <div class="data-grid">
+        <div class="data-item">
+          <label>Área Social - Largo</label>
+          <div class="value">{{ acta.area_social_largo }} m</div>
+        </div>
+        <div class="data-item">
+          <label>Área Social - Ancho</label>
+          <div class="value">{{ acta.area_social_ancho }} m</div>
+        </div>
+        <div class="data-item">
+          <label>Área Social Total</label>
+          <div class="value">{{ acta.area_social_total }} m²</div>
+        </div>
+        <div class="data-item">
+          <label>Tiene Patio Cubierto</label>
+          <div class="value {% if acta.tiene_patio_cubierto %}si{% else %}no{% endif %}">
+            {% if acta.tiene_patio_cubierto %}<i class="fas fa-check-circle"></i> Sí{% else %}<i class="fas fa-times-circle"></i> No{% endif %}
+          </div>
+        </div>
+        {% if acta.tiene_patio_cubierto %}
+        <div class="data-item">
+          <label>Patio - Largo</label>
+          <div class="value">{{ acta.patio_largo }} m</div>
+        </div>
+        <div class="data-item">
+          <label>Patio - Ancho</label>
+          <div class="value">{{ acta.patio_ancho }} m</div>
+        </div>
+        <div class="data-item">
+          <label>Área Patio Total</label>
+          <div class="value">{{ acta.area_patio_total }} m²</div>
+        </div>
+        {% endif %}
+        <div class="data-item">
+          <label>Número de Baños</label>
+          <div class="value">{{ acta.num_banos }}</div>
+        </div>
+        <div class="data-item">
+          <label>Estado de Baños</label>
+          <div class="value">{{ acta.get_estado_banos_display }}</div>
+        </div>
+      </div>
+      
+      <div class="photo-grid">
+        {% if acta.foto_area_social %}
+        <div class="photo-item">
+          <img src="{{ acta.foto_area_social.url }}" alt="Área Social" onclick="window.open(this.src)">
+          <p>Área Social / Comedor</p>
+        </div>
+        {% endif %}
+        {% if acta.foto_banos %}
+        <div class="photo-item">
+          <img src="{{ acta.foto_banos.url }}" alt="Baños" onclick="window.open(this.src)">
+          <p>Baños</p>
+        </div>
+        {% endif %}
+        {% if acta.foto_fachada %}
+        <div class="photo-item">
+          <img src="{{ acta.foto_fachada.url }}" alt="Fachada" onclick="window.open(this.src)">
+          <p>Fachada</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Sección D: Capacidad -->
+    <div class="section">
+      <h2 class="section-title"><i class="fas fa-calculator"></i> D. Capacidad Calculada</h2>
+      <div class="data-grid">
+        <div class="data-item">
+          <label>Área Total Disponible</label>
+          <div class="value" style="font-size:20px;color:#007bff;">{{ acta.area_total_disponible }} m²</div>
+        </div>
+        <div class="data-item">
+          <label>Capacidad Calculada (1.5m²/niño)</label>
+          <div class="value" style="font-size:20px;color:#28a745;">{{ acta.capacidad_calculada }} niños</div>
+        </div>
+        <div class="data-item">
+          <label>Capacidad Recomendada</label>
+          <div class="value" style="font-size:20px;color:#004080;">{{ acta.capacidad_recomendada }} niños</div>
+        </div>
+      </div>
+      {% if acta.observaciones_capacidad %}
+      <div class="alert info" style="margin-top:20px;">
+        <i class="fas fa-info-circle"></i>
+        <div>
+          <strong>Observaciones:</strong><br>
+          {{ acta.observaciones_capacidad|linebreaks }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sección E: Observaciones -->
+    {% if acta.observaciones_generales %}
+    <div class="section">
+      <h2 class="section-title"><i class="fas fa-comment-dots"></i> Observaciones Generales</h2>
+      <div class="alert info">
+        {{ acta.observaciones_generales|linebreaks }}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Firmas -->
+    <div class="section">
+      <h2 class="section-title"><i class="fas fa-signature"></i> Firmas</h2>
+      <div class="firma-container">
+        {% if acta.firma_visitador %}
+        <div class="firma-item">
+          <img src="{{ acta.firma_visitador.url }}" alt="Firma Visitador">
+          <p>{{ acta.completado_por.nombres }} {{ acta.completado_por.apellidos }}<br><small>Visitador</small></p>
+        </div>
+        {% endif %}
+        {% if acta.firma_madre %}
+        <div class="firma-item">
+          <img src="{{ acta.firma_madre.url }}" alt="Firma Madre">
+          <p>{{ acta.visita.hogar.madre.usuario.nombres }} {{ acta.visita.hogar.madre.usuario.apellidos }}<br><small>Agente Educativo</small></p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="actions">
+      <a href="{% url 'listar_hogares_pendientes_visita' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver al Listado
+      </a>
+      <a href="{% url 'descargar_acta_pdf' acta.id %}" class="btn btn-success" target="_blank">
+        <i class="fas fa-file-pdf"></i> Descargar PDF
+      </a>
+    </div>
+  </div>
+</body>
+</html>

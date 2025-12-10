@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Panel del Padre{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-radius: 12px;
+        padding: 25px;
+        color: white;
+        text-align: center;
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card h2 {
+        font-size: 3rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .stat-card p {
+        font-size: 1.1rem;
+        margin: 0;
+        opacity: 0.9;
+    }
+    .gradient-1 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .gradient-2 {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .gradient-3 {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    .gradient-4 {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+    .chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .nino-card {
+        border-left: 4px solid #667eea;
+        margin-bottom: 15px;
+        transition: box-shadow 0.2s;
+    }
+    .nino-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .asistencia-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 mb-2">Bienvenido, {{ request.user.get_full_name }}</h1>
+            <p class="text-muted">Panel de Control - Gestión de tus Hijos</p>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card gradient-1">
+                <p>Tus Hijos</p>
+                <h2>{{ ninos.count }}</h2>
+                <small>Niño{{ ninos.count|pluralize }}</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card gradient-2">
+                <p>Hogares Totales</p>
+                <h2>{{ total_hogares }}</h2>
+                <small>Disponible{{ total_hogares|pluralize }}</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card gradient-3">
+                <p>Hogares Activos</p>
+                <h2>{{ hogares_activos }}</h2>
+                <small>Con niños matriculados</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card gradient-4">
+                <p>En Proceso</p>
+                <h2>{{ hogares_pendientes }}</h2>
+                <small>Pendiente{{ hogares_pendientes|pluralize }} de aprobación</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna Izquierda: Gráficas -->
+        <div class="col-md-8">
+            <!-- Gráfica: Hogares por Localidad -->
+            <div class="chart-card">
+                <h5 class="mb-3">📊 Hogares Disponibles por Localidad (Top 5)</h5>
+                <canvas id="chartLocalidades" height="80"></canvas>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="chart-card">
+                <h5 class="mb-3">⚡ Acciones Rápidas</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'padre_ver_hogares' %}" class="btn btn-primary w-100 py-3">
+                            <i class="bi bi-house-door"></i><br>
+                            <strong>Ver Hogares</strong><br>
+                            <small>Explorar disponibles</small>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'padre_dashboard' %}" class="btn btn-success w-100 py-3">
+                            <i class="bi bi-person"></i><br>
+                            <strong>Mis Hijos</strong><br>
+                            <small>Información completa</small>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'perfil_usuario' %}" class="btn btn-info w-100 py-3">
+                            <i class="bi bi-gear"></i><br>
+                            <strong>Mi Perfil</strong><br>
+                            <small>Editar datos</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Hogares Activos -->
+            {% if hogares_activos > 0 %}
+            <div class="chart-card">
+                <h5 class="mb-3">🏠 Hogares donde están Matriculados tus Hijos</h5>
+                {% for nino_data in ninos %}
+                    {% if nino_data.hogar %}
+                        <div class="card mb-3" style="border-left: 4px solid #667eea;">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6 class="mb-1">{{ nino_data.hogar.nombre_hogar }}</h6>
+                                        <p class="text-muted mb-1">
+                                            <small>
+                                                <strong>Niño:</strong> {{ nino_data.get_full_name }}<br>
+                                                <strong>Agente Educativo:</strong> {{ nino_data.hogar.madre.usuario.get_full_name }}<br>
+                                                <strong>Dirección:</strong> {{ nino_data.hogar.direccion }}
+                                            </small>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <a href="{% url 'padre_detalle_hogar' nino_data.hogar.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            Ver Detalles
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna Derecha: Niños y Asistencia -->
+        <div class="col-md-4">
+            <!-- Listado de Niños -->
+            <div class="chart-card">
+                <h5 class="mb-3">👶 Mis Hijos</h5>
+                {% if ninos %}
+                    {% for nino_data in ninos %}
+                        <div class="card nino-card position-relative">
+                            <div class="card-body">
+                                {% if nino_data.ultima_asistencia %}
+                                    <span class="badge asistencia-badge 
+                                        {% if nino_data.ultima_asistencia.asistio %}bg-success{% else %}bg-warning{% endif %}">
+                                        {% if nino_data.ultima_asistencia.asistio %}✓ Asistió{% else %}⚠ Faltó{% endif %}
+                                    </span>
+                                {% endif %}
+                                
+                                <h6 class="mb-1">{{ nino_data.get_full_name }}</h6>
+                                <p class="text-muted mb-2">
+                                    <small>
+                                        <strong>Edad:</strong> {{ nino_data.calcular_edad }} años<br>
+                                        <strong>Documento:</strong> {{ nino_data.documento }}
+                                    </small>
+                                </p>
+                                
+                                {% if nino_data.hogar %}
+                                    <div class="mb-2">
+                                        <span class="badge bg-primary">
+                                            🏠 {{ nino_data.hogar.nombre_hogar }}
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">
+                                        <strong>Agente:</strong> {{ nino_data.hogar.madre.usuario.get_full_name }}
+                                    </small>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">
+                                        ⚠️ Sin hogar asignado
+                                    </span>
+                                {% endif %}
+                                
+                                {% if nino_data.ultima_asistencia %}
+                                    <div class="mt-2 pt-2 border-top">
+                                        <small class="text-muted">
+                                            <strong>Última asistencia:</strong><br>
+                                            {{ nino_data.ultima_asistencia.fecha|date:"d/m/Y" }}
+                                        </small>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <p class="mb-0">
+                            <strong>No tienes niños registrados.</strong><br>
+                            <small>Contacta al administrador para registrar un niño.</small>
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Ayuda y Soporte -->
+            <div class="chart-card">
+                <h5 class="mb-3">❓ Ayuda</h5>
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <strong>¿Cómo inscribir a mi hijo?</strong>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <strong>Requisitos de ingreso</strong>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <strong>Horarios de atención</strong>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <strong>Contactar soporte</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Datos desde Django
+    const localidadesData = {{ localidades_json|safe }};
+    
+    // Gráfica de Hogares por Localidad
+    const ctxLocalidades = document.getElementById('chartLocalidades').getContext('2d');
+    new Chart(ctxLocalidades, {
+        type: 'bar',
+        data: {
+            labels: localidadesData.map(item => item.localidad),
+            datasets: [{
+                label: 'Hogares Disponibles',
+                data: localidadesData.map(item => item.total),
+                backgroundColor: [
+                    'rgba(102, 126, 234, 0.8)',
+                    'rgba(118, 75, 162, 0.8)',
+                    'rgba(240, 147, 251, 0.8)',
+                    'rgba(245, 87, 108, 0.8)',
+                    'rgba(79, 172, 254, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(102, 126, 234, 1)',
+                    'rgba(118, 75, 162, 1)',
+                    'rgba(240, 147, 251, 1)',
+                    'rgba(245, 87, 108, 1)',
+                    'rgba(79, 172, 254, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' hogar' + (context.parsed.y !== 1 ? 'es' : '');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -25,7 +25,7 @@ function initGeografiaColombia(config = {}) {
         departamentoSelector: '#id_departamento_residencia',
         municipioSelector: '#id_ciudad_residencia',
         localidadSelector: '#id_localidad_bogota',
-        localidadContainer: '.localidad-container',
+        localidadContainer: '#localidad-bogota-group',  // ID específico del contenedor
     };
     
     const settings = { ...defaults, ...config };
@@ -98,13 +98,17 @@ function initGeografiaColombia(config = {}) {
     // ========================================
     // MOSTRAR LOCALIDADES SI ES BOGOTÁ
     // ========================================
-    if (municipioSelect && localidadSelect && localidadContainer) {
+    if (municipioSelect && localidadSelect) {
         municipioSelect.addEventListener('change', function() {
             const municipioId = this.value;
+            const municipioText = this.options[this.selectedIndex]?.text || '';
             
             if (!municipioId) {
-                localidadContainer.style.display = 'none';
+                if (localidadContainer) {
+                    localidadContainer.style.display = 'none';
+                }
                 localidadSelect.disabled = true;
+                localidadSelect.required = false;
                 return;
             }
             
@@ -113,6 +117,8 @@ function initGeografiaColombia(config = {}) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.es_bogota && data.localidades) {
+                        console.log('Es Bogotá, mostrando localidades:', data.localidades.length);
+                        
                         // Mostrar select de localidades
                         localidadSelect.innerHTML = '<option value="">-- Seleccione una Localidad --</option>';
                         
@@ -123,23 +129,46 @@ function initGeografiaColombia(config = {}) {
                             localidadSelect.appendChild(option);
                         });
                         
-                        localidadContainer.style.display = 'block';
+                        // Mostrar el contenedor
+                        if (localidadContainer) {
+                            localidadContainer.style.display = 'block';
+                        } else {
+                            // Si no hay contenedor, buscar el form-group del select
+                            const formGroup = localidadSelect.closest('.form-group');
+                            if (formGroup) {
+                                formGroup.style.display = 'block';
+                            }
+                        }
+                        
                         localidadSelect.disabled = false;
+                        localidadSelect.required = true;
                         
                         // Si hay un valor seleccionado previamente, seleccionarlo
                         if (localidadSelect.dataset.selectedId) {
                             localidadSelect.value = localidadSelect.dataset.selectedId;
                         }
                     } else {
+                        console.log('No es Bogotá, ocultando localidades');
+                        
                         // Ocultar select de localidades
-                        localidadContainer.style.display = 'none';
+                        if (localidadContainer) {
+                            localidadContainer.style.display = 'none';
+                        } else {
+                            const formGroup = localidadSelect.closest('.form-group');
+                            if (formGroup) {
+                                formGroup.style.display = 'none';
+                            }
+                        }
                         localidadSelect.disabled = true;
+                        localidadSelect.required = false;
                         localidadSelect.value = '';
                     }
                 })
                 .catch(error => {
                     console.error('Error al verificar localidades de Bogotá:', error);
-                    localidadContainer.style.display = 'none';
+                    if (localidadContainer) {
+                        localidadContainer.style.display = 'none';
+                    }
                 });
         });
     }

@@ -200,9 +200,9 @@
   <div class="sidebar">
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
     <h2>ICBF Conecta</h2>
-    <a href="{% url 'admin_dashboard' %}" class="active"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
+    <a href="{% url 'dashboard_admin' %}" class="active"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
     <a href="{% url 'listar_hogares' %}" ><i class="fa-solid fa-house"></i> Hogares</a>
-    <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Madres</a>
+    <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Agentes Educativos</a>
     <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
     <a href="{% url 'admin_reportes' %}"><i class="fa-solid fa-chart-line"></i> Reportes</a>
     <div class="dropdown">
@@ -239,9 +239,9 @@
       </div>
 
       <div class="card" onclick="location.href='{% url 'listar_madres' %}'">
-        <i class="fa-solid fa-users"></i>
-        <h3>Gestionar Madres</h3>
-        <p>Consulta, edita o agrega nuevas madres comunitarias registradas.</p>
+        <i class="fa-solid fa-user-group"></i>
+        <h3>Gestionar Agentes Educativos</h3>
+        <p>Consulta, edita o agrega nuevos agentes educativos registrados.</p>
         <a href="{% url 'listar_madres' %}">Entrar</a>
       </div>
 

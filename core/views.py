@@ -5,11 +5,11 @@ from django.contrib import messages
 from django.db import transaction
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q, Count
-from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional, SolicitudMatriculacion, Discapacidad
+from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional, SolicitudMatriculacion, Discapacidad, VisitaTecnica, ActaVisitaTecnica
 from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
-from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm, AdminForm, NinoSoloForm, BuscarPadreForm, CambiarPadreForm
+from .forms import AdminPerfilForm, MadrePerfilForm, PadrePerfilForm, NinoForm, PadreForm, CustomAuthForm, AdminForm, NinoSoloForm, BuscarPadreForm, CambiarPadreForm, AgendarVisitaTecnicaForm, ActaVisitaTecnicaForm, HogarFormulario2Form
 from desarrollo.models import DesarrolloNino
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -28,6 +28,9 @@ from django.http import JsonResponse
 from datetime import date, datetime, timedelta
 import calendar
 from datetime import date
+
+# Importar vistas del dashboard mejorado
+from .views_dashboard import *
 from calendar import monthrange
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -461,7 +464,15 @@ def home(request):
     return render(request, 'home.html')
 @login_required
 def admin_dashboard(request):
-    return render(request, 'admin/dashboard.html')
+    """
+    Dashboard mejorado - redirige a la nueva versión completa
+    Para mantener compatibilidad, puedes elegir cuál template usar
+    """
+    # Opción 1: Usar el nuevo dashboard completo
+    return dashboard_admin(request)
+    
+    # Opción 2: Mantener el dashboard antiguo (comentar la línea anterior y descomentar esta)
+    # return render(request, 'admin/dashboard.html')
 
 @login_required
 @rol_requerido('administrador')
@@ -586,10 +597,35 @@ def crear_madre(request):
 
     regionales = Regional.objects.all().order_by('nombre')
     if request.method == 'POST':
+        # DEBUG: Imprimir datos recibidos
+        print("=" * 80)
+        print("DEBUG - Datos POST recibidos:")
+        print(f"Regional: {request.POST.get('regional')}")
+        print(f"Ciudad: {request.POST.get('ciudad')}")
+        print(f"Estado: {request.POST.get('estado')}")
+        print(f"Capacidad máxima: {request.POST.get('capacidad_maxima')}")
+        print(f"Nombre hogar: {request.POST.get('nombre_hogar')}")
+        print(f"Dirección: {request.POST.get('direccion')}")
+        print("=" * 80)
+        
         usuario_form = UsuarioMadreForm(request.POST, request.FILES)
         madre_profile_form = MadreProfileForm(request.POST, request.FILES)
         hogar_form = HogarForm(request.POST)  # ¡Esta es la línea que faltaba!
         error_step = 1
+
+        # DEBUG: Imprimir errores de cada formulario
+        print("=" * 80)
+        print("DEBUG - Validación de formularios:")
+        print(f"UsuarioForm válido: {usuario_form.is_valid()}")
+        if not usuario_form.is_valid():
+            print(f"  Errores: {usuario_form.errors}")
+        print(f"MadreProfileForm válido: {madre_profile_form.is_valid()}")
+        if not madre_profile_form.is_valid():
+            print(f"  Errores: {madre_profile_form.errors}")
+        print(f"HogarForm válido: {hogar_form.is_valid()}")
+        if not hogar_form.is_valid():
+            print(f"  Errores: {hogar_form.errors}")
+        print("=" * 80)
 
         if usuario_form.is_valid() and madre_profile_form.is_valid() and hogar_form.is_valid():
             documento = usuario_form.cleaned_data.get('documento')
@@ -599,7 +635,8 @@ def crear_madre(request):
                 nombre_hogar = "Hogar de " + usuario_form.cleaned_data.get('nombres', '').split(' ')[0]
 
             direccion_hogar = hogar_form.cleaned_data.get('direccion')
-            localidad = hogar_form.cleaned_data.get('localidad')
+            localidad_bogota = hogar_form.cleaned_data.get('localidad_bogota')
+            ciudad = hogar_form.cleaned_data.get('ciudad')
 
             # Validación de documento duplicado
             if Usuario.objects.filter(documento=documento).exists():
@@ -609,11 +646,8 @@ def crear_madre(request):
                     'initial_step': 1, 'regionales': regionales
                 })
 
-            # Validación de hogar duplicado
-            if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar, localidad__iexact=localidad).exists():
-                messages.error(request, f"Ya existe un hogar llamado '{nombre_hogar}' en la localidad '{localidad}'.")
-                error_step = 3
-            elif HogarComunitario.objects.filter(direccion__iexact=direccion_hogar).exists():
+            # Validación de hogar duplicado por dirección
+            if HogarComunitario.objects.filter(direccion__iexact=direccion_hogar).exists():
                 messages.error(request, f"La dirección '{direccion_hogar}' ya está registrada para otro hogar.")
                 error_step = 3
 
@@ -643,9 +677,113 @@ def crear_madre(request):
                     hogar = hogar_form.save(commit=False)
                     hogar.madre = madre_profile
                     hogar.nombre_hogar = nombre_hogar
+                    # Mantener compatibilidad: guardar nombre de localidad en campo texto
+                    if localidad_bogota:
+                        hogar.localidad = localidad_bogota.nombre
+                    else:
+                        hogar.localidad = ciudad.nombre if ciudad else ''
+                    # 🆕 El hogar inicia en estado "pendiente_visita" hasta que se realice la visita técnica
+                    hogar.estado = 'pendiente_visita'
+                    
+                    # Guardar fecha de primera visita si está disponible
+                    fecha_primera_visita = request.POST.get('fecha_primera_visita')
+                    if fecha_primera_visita:
+                        from datetime import datetime
+                        hogar.fecha_primera_visita = datetime.strptime(fecha_primera_visita, '%Y-%m-%d').date()
+                    
                     hogar.save()
 
-                messages.success(request, '¡Madre comunitaria y hogar creados exitosamente! Contraseña por defecto: 123456')
+                    # 4️⃣ Crear visita técnica programada
+                    if fecha_primera_visita:
+                        from .models import VisitaTecnica
+                        from datetime import datetime
+                        fecha_visita_dt = datetime.strptime(fecha_primera_visita, '%Y-%m-%d')
+                        
+                        visita = VisitaTecnica.objects.create(
+                            hogar=hogar,
+                            fecha_programada=fecha_visita_dt,
+                            tipo_visita='V1',
+                            estado='agendada',
+                            creado_por=request.user,
+                            observaciones_agenda=f'Primera visita programada al crear el hogar {nombre_hogar}'
+                        )
+                        
+                        # Enviar correo de notificación
+                        try:
+                            from django.core.mail import send_mail
+                            from django.template.loader import render_to_string
+                            from django.utils.html import strip_tags
+                            
+                            asunto = f'Visita Técnica Programada - {nombre_hogar}'
+                            mensaje_html = f"""
+                            <html>
+                            <body style="font-family: Arial, sans-serif;">
+                                <h2 style="color: #004080;">Visita Técnica Programada</h2>
+                                <p>Estimado/a <strong>{usuario.nombres} {usuario.apellidos}</strong>,</p>
+                                <p>Se ha programado la primera visita técnica para el hogar comunitario:</p>
+                                <div style="background-color: #f0f8ff; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0;">
+                                    <p><strong>Hogar:</strong> {nombre_hogar}</p>
+                                    <p><strong>Dirección:</strong> {direccion_hogar}</p>
+                                    <p><strong>Fecha de Visita:</strong> {fecha_visita_dt.strftime('%d de %B de %Y')}</p>
+                                </div>
+                                <p>Durante esta visita se evaluarán las condiciones del hogar para determinar su capacidad y habilitación.</p>
+                                <p><strong>Importante:</strong> Por favor asegúrese de estar presente en la fecha programada.</p>
+                                <br>
+                                <p>Atentamente,</p>
+                                <p><strong>Sistema ICBF Conecta</strong></p>
+                            </body>
+                            </html>
+                            """
+                            mensaje_texto = strip_tags(mensaje_html)
+                            
+                            send_mail(
+                                asunto,
+                                mensaje_texto,
+                                'noreply@icbf.gov.co',
+                                [usuario.correo],
+                                html_message=mensaje_html,
+                                fail_silently=True
+                            )
+                            
+                            visita.correo_enviado = True
+                            from django.utils import timezone
+                            visita.fecha_envio_correo = timezone.now()
+                            visita.save()
+                            
+                        except Exception as e:
+                            print(f"Error al enviar correo: {e}")
+
+                    # 5️⃣ Crear convivientes del hogar
+                    num_convivientes = request.POST.get('num_convivientes', 0)
+                    try:
+                        num_convivientes = int(num_convivientes)
+                    except (ValueError, TypeError):
+                        num_convivientes = 0
+                    
+                    for i in range(num_convivientes):
+                        tipo_doc = request.POST.get(f'conviviente_{i}_tipo_documento')
+                        numero_doc = request.POST.get(f'conviviente_{i}_numero_documento')
+                        nombre = request.POST.get(f'conviviente_{i}_nombre_completo')
+                        parentesco = request.POST.get(f'conviviente_{i}_parentesco')
+                        antecedentes = request.FILES.get(f'conviviente_{i}_antecedentes')
+                        
+                        if tipo_doc and numero_doc and nombre and parentesco:
+                            from .models import ConvivienteHogar
+                            ConvivienteHogar.objects.create(
+                                hogar=hogar,
+                                tipo_documento=tipo_doc,
+                                numero_documento=numero_doc,
+                                nombre_completo=nombre,
+                                parentesco=parentesco,
+                                antecedentes_pdf=antecedentes
+                            )
+
+                mensaje_exito = '¡Agente educativo y hogar registrados exitosamente! '
+                if fecha_primera_visita:
+                    mensaje_exito += f'Primera visita técnica programada para el {fecha_visita_dt.strftime("%d de %B de %Y")}. Se ha enviado un correo de confirmación. '
+                mensaje_exito += 'Contraseña temporal: 123456'
+                
+                messages.success(request, mensaje_exito)
                 return redirect('listar_madres')
 
             except Exception as e:
@@ -1282,7 +1420,7 @@ def role_redirect(request):
     role = request.user.rol.nombre_rol.lower()
 
     if role == 'administrador':
-        return redirect('admin_dashboard')
+        return redirect('dashboard_admin')
     elif role == 'madre_comunitaria':
         return redirect('madre_dashboard')
     elif role == 'padre':
@@ -3807,3 +3945,1429 @@ def ajax_cargar_localidades_bogota(request):
             
     except Municipio.DoesNotExist:
         return JsonResponse({'error': 'Municipio no encontrado'}, status=404)
+
+
+# ========================================================================================
+# 🔍 VALIDACIONES AJAX EN TIEMPO REAL
+# ========================================================================================
+
+def validar_nombre_hogar(request):
+    """
+    Vista AJAX para validar si un nombre de hogar ya existe en la base de datos.
+    GET: /ajax/validar-nombre-hogar/?nombre=Hogar Los Angeles&hogar_id=5 (opcional)
+    Returns: JSON con {existe: true/false, mensaje: "..."}
+    """
+    from core.models import HogarComunitario
+    
+    nombre = request.GET.get('nombre', '').strip()
+    hogar_id = request.GET.get('hogar_id', None)  # Para excluir el hogar actual en modo edición
+    
+    if not nombre:
+        return JsonResponse({'existe': False, 'mensaje': ''})
+    
+    # Buscar hogares con el mismo nombre (case-insensitive)
+    hogares = HogarComunitario.objects.filter(nombre_hogar__iexact=nombre)
+    
+    # Si estamos editando, excluir el hogar actual
+    if hogar_id:
+        hogares = hogares.exclude(id=hogar_id)
+    
+    if hogares.exists():
+        hogar_existente = hogares.first()
+        mensaje = f'Ya existe un hogar con el nombre "{nombre}" en {hogar_existente.ciudad.nombre}'
+        return JsonResponse({
+            'existe': True, 
+            'mensaje': mensaje,
+            'hogar_id': hogar_existente.id
+        })
+    else:
+        return JsonResponse({
+            'existe': False, 
+            'mensaje': 'Nombre disponible'
+        })
+
+
+def validar_documento_madre(request):
+    """
+    Vista AJAX para validar si un documento de agente educativo ya existe.
+    GET: /ajax/validar-documento-madre/?documento=123456789&usuario_id=5 (opcional)
+    Returns: JSON con {existe: true/false, mensaje: "..."}
+    """
+    from core.models import Usuario
+    
+    documento = request.GET.get('documento', '').strip()
+    usuario_id = request.GET.get('usuario_id', None)  # Para excluir el usuario actual en modo edición
+    
+    if not documento:
+        return JsonResponse({'existe': False, 'mensaje': ''})
+    
+    # Buscar usuarios con el mismo documento
+    usuarios = Usuario.objects.filter(documento=documento)
+    
+    # Si estamos editando, excluir el usuario actual
+    if usuario_id:
+        usuarios = usuarios.exclude(id=usuario_id)
+    
+    if usuarios.exists():
+        usuario_existente = usuarios.first()
+        mensaje = f'El documento {documento} ya está registrado para {usuario_existente.nombres} {usuario_existente.apellidos}'
+        return JsonResponse({
+            'existe': True, 
+            'mensaje': mensaje,
+            'usuario_id': usuario_existente.id,
+            'nombre_completo': f'{usuario_existente.nombres} {usuario_existente.apellidos}'
+        })
+    else:
+        return JsonResponse({
+            'existe': False, 
+            'mensaje': 'Documento disponible'
+        })
+
+
+# ========================================================================================
+# 🏠 SISTEMA DE VISITAS TÉCNICAS PARA HABILITACIÓN DE HOGARES
+# ========================================================================================
+
+@login_required
+def listar_hogares_pendientes_visita(request):
+    """
+    Lista todos los hogares que están pendientes de visita técnica o con visita agendada.
+    """
+    hogares = HogarComunitario.objects.filter(
+        estado__in=['pendiente_visita', 'visita_agendada', 'en_evaluacion']
+    ).select_related(
+        'madre__usuario', 'regional', 'ciudad', 'localidad_bogota'
+    ).prefetch_related('visitas_tecnicas').order_by('-fecha_registro')
+    
+    # Paginación
+    paginator = Paginator(hogares, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'total_pendientes': hogares.filter(estado='pendiente_visita').count(),
+        'total_agendadas': hogares.filter(estado='visita_agendada').count(),
+        'total_evaluacion': hogares.filter(estado='en_evaluacion').count(),
+    }
+    
+    return render(request, 'admin/visitas/listar_hogares_pendientes.html', context)
+
+
+@login_required
+def agendar_visita_tecnica(request, hogar_id):
+    """
+    Agenda una visita técnica para un hogar comunitario y envía correo a la madre.
+    """
+    hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+    
+    if request.method == 'POST':
+        form = AgendarVisitaTecnicaForm(request.POST)
+        if form.is_valid():
+            visita = form.save(commit=False)
+            visita.creado_por = request.user
+            visita.save()
+            
+            # Actualizar estado del hogar
+            hogar.estado = 'visita_agendada'
+            hogar.save()
+            
+            # Enviar correo a la madre
+            enviar_correo_visita_agendada(visita)
+            
+            messages.success(
+                request,
+                f'Visita agendada exitosamente para {hogar.nombre_hogar}. '
+                f'Se ha enviado un correo a {hogar.madre.usuario.correo}'
+            )
+            return redirect('listar_hogares_pendientes_visita')
+    else:
+        form = AgendarVisitaTecnicaForm(initial={'hogar': hogar})
+    
+    context = {
+        'form': form,
+        'hogar': hogar,
+    }
+    
+    return render(request, 'admin/visitas/agendar_visita.html', context)
+
+
+@login_required
+def crear_acta_visita(request, visita_id):
+    """
+    Formulario para crear el Acta de Visita Técnica (V1).
+    Dividido en pasos para facilitar el llenado.
+    """
+    visita = get_object_or_404(VisitaTecnica, id=visita_id)
+    
+    # Verificar si ya existe un acta
+    try:
+        acta = visita.acta
+        editing = True
+    except ActaVisitaTecnica.DoesNotExist:
+        acta = None
+        editing = False
+    
+    if request.method == 'POST':
+        if acta:
+            form = ActaVisitaTecnicaForm(request.POST, request.FILES, instance=acta)
+        else:
+            form = ActaVisitaTecnicaForm(request.POST, request.FILES)
+        
+        if form.is_valid():
+            acta_obj = form.save(commit=False)
+            acta_obj.visita = visita
+            acta_obj.completado_por = request.user
+            acta_obj.save()
+            
+            # Actualizar estado de la visita
+            visita.estado = 'completada'
+            visita.fecha_realizacion = timezone.now()
+            visita.save()
+            
+            # Actualizar estado del hogar según resultado
+            hogar = visita.hogar
+            if acta_obj.resultado_visita == 'aprobado':
+                hogar.estado = 'activo'
+                hogar.fecha_habilitacion = timezone.now()
+                hogar.capacidad_maxima = acta_obj.capacidad_recomendada
+                # Actualizar geolocalización verificada
+                hogar.geolocalizacion_lat = acta_obj.geolocalizacion_lat_verificada
+                hogar.geolocalizacion_lon = acta_obj.geolocalizacion_lon_verificada
+                hogar.save()
+                enviar_correo_hogar_aprobado(hogar, acta_obj)
+                
+            elif acta_obj.resultado_visita == 'aprobado_condiciones':
+                hogar.estado = 'activo'
+                hogar.fecha_habilitacion = timezone.now()
+                hogar.capacidad_maxima = acta_obj.capacidad_recomendada
+                hogar.geolocalizacion_lat = acta_obj.geolocalizacion_lat_verificada
+                hogar.geolocalizacion_lon = acta_obj.geolocalizacion_lon_verificada
+                hogar.save()
+                enviar_correo_hogar_aprobado_condiciones(hogar, acta_obj)
+                
+            elif acta_obj.resultado_visita == 'rechazado':
+                hogar.estado = 'rechazado'
+                hogar.save()
+                enviar_correo_hogar_rechazado(hogar, acta_obj)
+                
+            elif acta_obj.resultado_visita == 'requiere_segunda_visita':
+                hogar.estado = 'en_evaluacion'
+                hogar.save()
+            
+            messages.success(request, f'Acta de visita guardada exitosamente. Estado del hogar: {hogar.get_estado_display()}')
+            return redirect('ver_acta_visita', acta_id=acta_obj.id)
+    else:
+        if acta:
+            form = ActaVisitaTecnicaForm(instance=acta)
+        else:
+            form = ActaVisitaTecnicaForm()
+    
+    # Obtener el paso actual
+    current_step = request.GET.get('step', '1')
+    
+    context = {
+        'form': form,
+        'visita': visita,
+        'hogar': visita.hogar,
+        'current_step': current_step,
+        'editing': editing,
+    }
+    
+    return render(request, 'admin/visitas/crear_acta.html', context)
+
+
+@login_required
+def ver_acta_visita(request, acta_id):
+    """
+    Vista completa del acta de visita técnica.
+    """
+    acta = get_object_or_404(ActaVisitaTecnica, id=acta_id)
+    
+    context = {
+        'acta': acta,
+        'visita': acta.visita,
+        'hogar': acta.visita.hogar,
+    }
+    
+    return render(request, 'admin/visitas/ver_acta.html', context)
+
+
+@login_required
+def descargar_acta_pdf(request, acta_id):
+    """
+    Genera y descarga el acta de visita en formato PDF.
+    """
+    acta = get_object_or_404(ActaVisitaTecnica, id=acta_id)
+    
+    template = get_template('admin/visitas/acta_pdf.html')
+    context = {
+        'acta': acta,
+        'visita': acta.visita,
+        'hogar': acta.visita.hogar,
+    }
+    html = template.render(context)
+    
+    # Crear PDF
+    result = io.BytesIO()
+    pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
+    
+    if not pdf.err:
+        response = HttpResponse(result.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="Acta_Visita_{acta.visita.hogar.nombre_hogar}.pdf"'
+        return response
+    
+    return HttpResponse('Error al generar PDF', status=400)
+
+
+@login_required
+def listar_visitas_tecnicas(request):
+    """
+    Lista todas las visitas técnicas con filtros.
+    """
+    visitas = VisitaTecnica.objects.select_related(
+        'hogar__madre__usuario', 'visitador', 'creado_por'
+    ).order_by('-fecha_programada')
+    
+    # Filtros
+    estado = request.GET.get('estado')
+    if estado:
+        visitas = visitas.filter(estado=estado)
+    
+    tipo = request.GET.get('tipo')
+    if tipo:
+        visitas = visitas.filter(tipo_visita=tipo)
+    
+    visitador_id = request.GET.get('visitador')
+    if visitador_id:
+        visitas = visitas.filter(visitador_id=visitador_id)
+    
+    # Paginación
+    paginator = Paginator(visitas, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Lista de visitadores para el filtro
+    visitadores = Usuario.objects.filter(rol='administrador').order_by('nombres')
+    
+    context = {
+        'page_obj': page_obj,
+        'visitadores': visitadores,
+        'estado_filtro': estado,
+        'tipo_filtro': tipo,
+    }
+    
+    return render(request, 'admin/visitas/listar_visitas.html', context)
+
+
+# ========================================================================================
+# 📧 FUNCIONES DE ENVÍO DE CORREOS
+# ========================================================================================
+
+def enviar_correo_visita_agendada(visita):
+    """
+    Envía correo a la madre comunitaria informando la visita agendada.
+    """
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    
+    hogar = visita.hogar
+    madre = hogar.madre
+    
+    subject = f'Visita Técnica Agendada - {hogar.nombre_hogar}'
+    
+    context = {
+        'madre': madre,
+        'hogar': hogar,
+        'visita': visita,
+    }
+    
+    message = render_to_string('emails/visita_agendada.html', context)
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [madre.usuario.correo],
+            fail_silently=False,
+            html_message=message
+        )
+        
+        # Actualizar registro de envío
+        visita.correo_enviado = True
+        visita.fecha_envio_correo = timezone.now()
+        visita.save()
+        
+        return True
+    except Exception as e:
+        print(f"Error enviando correo: {e}")
+        return False
+
+
+def enviar_correo_hogar_aprobado(hogar, acta):
+    """
+    Envía correo a la madre cuando el hogar es aprobado.
+    """
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    
+    madre = hogar.madre
+    
+    subject = f'¡Felicidades! Tu hogar ha sido habilitado - {hogar.nombre_hogar}'
+    
+    context = {
+        'madre': madre,
+        'hogar': hogar,
+        'acta': acta,
+    }
+    
+    message = render_to_string('emails/hogar_aprobado.html', context)
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [madre.usuario.correo],
+            fail_silently=False,
+            html_message=message
+        )
+        return True
+    except Exception as e:
+        print(f"Error enviando correo: {e}")
+        return False
+
+
+def enviar_correo_hogar_aprobado_condiciones(hogar, acta):
+    """
+    Envía correo cuando el hogar es aprobado con condiciones.
+    """
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    
+    madre = hogar.madre
+    
+    subject = f'Hogar Aprobado con Condiciones - {hogar.nombre_hogar}'
+    
+    context = {
+        'madre': madre,
+        'hogar': hogar,
+        'acta': acta,
+        'condiciones': acta.condiciones_aprobacion,
+    }
+    
+    message = render_to_string('emails/hogar_aprobado_condiciones.html', context)
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [madre.usuario.correo],
+            fail_silently=False,
+            html_message=message
+        )
+        return True
+    except Exception as e:
+        print(f"Error enviando correo: {e}")
+        return False
+
+
+def enviar_correo_hogar_rechazado(hogar, acta):
+    """
+    Envía correo cuando el hogar es rechazado.
+    """
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    
+    madre = hogar.madre
+    
+    subject = f'Resultado de Visita Técnica - {hogar.nombre_hogar}'
+    
+    context = {
+        'madre': madre,
+        'hogar': hogar,
+        'acta': acta,
+    }
+    
+    message = render_to_string('emails/hogar_rechazado.html', context)
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [madre.usuario.correo],
+            fail_silently=False,
+            html_message=message
+        )
+        return True
+    except Exception as e:
+        print(f"Error enviando correo: {e}")
+        return False
+
+
+# ============================================================================
+# 🆕 NUEVAS VISTAS - SISTEMA DE DOS FASES (FORMULARIO 2)
+# ============================================================================
+
+@login_required
+@rol_requerido('administrador')
+def completar_visita_tecnica(request, hogar_id):
+    """
+    Vista para completar el Formulario 2 (Visita Técnica).
+    
+    Esta vista se accede cuando:
+    1. La visita técnica ya ocurrió
+    2. El administrador necesita completar la revisión del hogar
+    
+    Solo es accesible si:
+    - El hogar está en estado 'pendiente_revision' o 'en_revision'
+    - El formulario técnico NO está completo (formulario_completo = False)
+    """
+    hogar = get_object_or_404(HogarComunitario, pk=hogar_id)
+    
+    # Verificar que el hogar no esté ya completado
+    if hogar.formulario_completo:
+        messages.warning(
+            request, 
+            f'El hogar "{hogar.nombre_hogar}" ya tiene el formulario técnico completo. '
+            'Use la opción de edición si necesita modificar los datos.'
+        )
+        return redirect('detalle_hogar', hogar_id=hogar.id)
+    
+    # Verificar que el hogar esté en un estado válido para completar
+    estados_validos = ['pendiente_revision', 'en_revision', 'pendiente_visita']
+    if hogar.estado not in estados_validos:
+        messages.error(
+            request,
+            f'No se puede completar la visita técnica. '
+            f'Estado actual: {hogar.get_estado_display()}. '
+            f'Estados válidos: Pendiente de Revisión, En Revisión.'
+        )
+        return redirect('detalle_hogar', hogar_id=hogar.id)
+    
+    if request.method == 'POST':
+        form = HogarFormulario2Form(request.POST, request.FILES, instance=hogar)
+        
+        if form.is_valid():
+            # El formulario automáticamente:
+            # - Calcula la capacidad: piso(área_m²/2)
+            # - Establece formulario_completo = True
+            # - Cambia estado a 'en_revision'
+            hogar_actualizado = form.save()
+            
+            # Mensajes informativos según el área
+            area = hogar_actualizado.area_social_m2
+            capacidad = hogar_actualizado.capacidad_calculada
+            
+            if area < 24:
+                messages.error(
+                    request,
+                    f'⚠️ HOGAR NO APTO: El área social ({area} m²) es inferior al mínimo requerido (24 m²). '
+                    f'Este hogar NO PUEDE SER APROBADO.'
+                )
+            elif 24 <= area < 30:
+                messages.success(
+                    request,
+                    f'✅ Visita técnica completada exitosamente. '
+                    f'Área: {area} m². Capacidad calculada: {capacidad} niños. '
+                    f'Estado: En Revisión. Puede proceder a aprobar el hogar.'
+                )
+            else:  # area >= 30
+                messages.success(
+                    request,
+                    f'✅ Visita técnica completada exitosamente. '
+                    f'Área: {area} m². Capacidad máxima: {capacidad} niños (límite 15). '
+                    f'Estado: En Revisión. Puede proceder a aprobar el hogar.'
+                )
+            
+            return redirect('lista_hogares_revision')
+        else:
+            messages.error(
+                request, 
+                'Por favor corrija los errores del formulario antes de continuar.'
+            )
+    else:
+        form = HogarFormulario2Form(instance=hogar)
+    
+    context = {
+        'form': form,
+        'hogar': hogar,
+        'titulo': f'Visita Técnica - {hogar.nombre_hogar}',
+        'es_nuevo': not hogar.area_social_m2,  # True si es primera vez
+    }
+    return render(request, 'admin/hogar_formulario2.html', context)
+
+
+@login_required
+@rol_requerido('administrador')
+def lista_hogares_revision(request):
+    """
+    Panel principal de gestión de hogares.
+    
+    Muestra todos los hogares con filtros avanzados y alertas de visitas.
+    Estados: pendiente_revision, en_revision, aprobado, rechazado, en_mantenimiento
+    """
+    from datetime import timedelta
+    from django.utils import timezone
+    
+    # Filtros
+    estado_filter = request.GET.get('estado', '')
+    regional_filter = request.GET.get('regional', '')
+    localidad_filter = request.GET.get('localidad', '')
+    buscar = request.GET.get('buscar', '')
+    alerta_filter = request.GET.get('alerta', '')  # visitas próximas, vencidas
+    
+    # Query base
+    hogares = HogarComunitario.objects.select_related(
+        'madre__usuario', 'regional', 'ciudad', 'localidad_bogota'
+    ).order_by('-fecha_registro')
+    
+    # Aplicar filtros
+    if estado_filter:
+        hogares = hogares.filter(estado=estado_filter)
+    
+    if regional_filter:
+        hogares = hogares.filter(regional_id=regional_filter)
+    
+    if localidad_filter:
+        hogares = hogares.filter(localidad_bogota_id=localidad_filter)
+    
+    if buscar:
+        hogares = hogares.filter(
+            Q(nombre_hogar__icontains=buscar) |
+            Q(direccion__icontains=buscar) |
+            Q(barrio__icontains=buscar) |
+            Q(madre__usuario__nombres__icontains=buscar) |
+            Q(madre__usuario__apellidos__icontains=buscar)
+        )
+    
+    # Filtros de alertas de visitas
+    hoy = timezone.now().date()
+    if alerta_filter == 'proximas':
+        # Visitas en los próximos 7 días
+        fecha_limite = hoy + timedelta(days=7)
+        hogares = hogares.filter(
+            fecha_primera_visita__gte=hoy,
+            fecha_primera_visita__lte=fecha_limite
+        )
+    elif alerta_filter == 'vencidas':
+        # Visitas que ya pasaron pero el hogar no está aprobado
+        hogares = hogares.filter(
+            fecha_primera_visita__lt=hoy,
+            estado__in=['pendiente_revision', 'en_revision']
+        )
+    
+    # Contar por estado
+    total_hogares = HogarComunitario.objects.count()
+    hogares_pendientes = HogarComunitario.objects.filter(estado='pendiente_revision').count()
+    hogares_en_revision = HogarComunitario.objects.filter(estado='en_revision').count()
+    hogares_aprobados = HogarComunitario.objects.filter(estado='aprobado').count()
+    hogares_rechazados = HogarComunitario.objects.filter(estado='rechazado').count()
+    hogares_mantenimiento = HogarComunitario.objects.filter(estado='en_mantenimiento').count()
+    
+    # Alertas de visitas
+    visitas_proximas = HogarComunitario.objects.filter(
+        fecha_primera_visita__gte=hoy,
+        fecha_primera_visita__lte=hoy + timedelta(days=7),
+        estado__in=['pendiente_revision', 'en_revision']
+    ).count()
+    
+    visitas_vencidas = HogarComunitario.objects.filter(
+        fecha_primera_visita__lt=hoy,
+        estado__in=['pendiente_revision', 'en_revision']
+    ).count()
+    
+    # Paginación
+    paginator = Paginator(hogares, 20)
+    page = request.GET.get('page', 1)
+    hogares_paginados = paginator.get_page(page)
+    
+    # Datos para filtros
+    regionales = Regional.objects.all().order_by('nombre')
+    from core.models import LocalidadBogota
+    localidades = LocalidadBogota.objects.all().order_by('nombre')
+    
+    context = {
+        'hogares': hogares_paginados,
+        'total_hogares': total_hogares,
+        'hogares_pendientes': hogares_pendientes,
+        'hogares_en_revision': hogares_en_revision,
+        'hogares_aprobados': hogares_aprobados,
+        'hogares_rechazados': hogares_rechazados,
+        'hogares_mantenimiento': hogares_mantenimiento,
+        'visitas_proximas': visitas_proximas,
+        'visitas_vencidas': visitas_vencidas,
+        'regionales': regionales,
+        'localidades': localidades,
+        'estado_filter': estado_filter,
+        'regional_filter': regional_filter,
+        'localidad_filter': localidad_filter,
+        'buscar': buscar,
+        'alerta_filter': alerta_filter,
+        'hoy': hoy,
+    }
+    return render(request, 'admin/lista_hogares_revision.html', context)
+
+
+@login_required
+@rol_requerido('administrador')
+def aprobar_rechazar_hogar(request, hogar_id):
+    """
+    Vista para aprobar o rechazar un hogar después de la revisión.
+    
+    Solo accesible si:
+    - El hogar está en estado 'en_revision'
+    - El formulario técnico está completo
+    - El área cumple con los requisitos (≥24 m² para aprobar)
+    """
+    hogar = get_object_or_404(HogarComunitario, pk=hogar_id)
+    
+    # Verificar que el hogar esté listo para revisión final
+    if hogar.estado not in ['en_revision', 'pendiente_revision']:
+        messages.error(
+            request,
+            f'Este hogar no está en estado de revisión. '
+            f'Estado actual: {hogar.get_estado_display()}'
+        )
+        return redirect('detalle_hogar', hogar_id=hogar.id)
+    
+    # Verificar que el formulario técnico esté completo
+    if not hogar.formulario_completo:
+        messages.error(
+            request,
+            'Debe completar la visita técnica (Formulario 2) antes de aprobar o rechazar el hogar.'
+        )
+        return redirect('completar_visita_tecnica', hogar_id=hogar.id)
+    
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+        observaciones = request.POST.get('observaciones', '').strip()
+        
+        if accion == 'aprobar':
+            # Verificar área mínima antes de aprobar
+            if hogar.area_social_m2 and hogar.area_social_m2 < 24:
+                messages.error(
+                    request,
+                    f'⚠️ NO SE PUEDE APROBAR: El área social ({hogar.area_social_m2} m²) '
+                    f'es inferior al mínimo requerido (24 m²). '
+                    f'Debe rechazar el hogar o solicitar modificaciones.'
+                )
+                return redirect('aprobar_rechazar_hogar', hogar_id=hogar.id)
+            
+            # Aprobar hogar
+            hogar.estado = 'aprobado'
+            hogar.save()
+            
+            messages.success(
+                request,
+                f'✅ Hogar "{hogar.nombre_hogar}" APROBADO exitosamente. '
+                f'Capacidad autorizada: {hogar.capacidad_calculada} niños. '
+                f'La madre comunitaria ha sido notificada.'
+            )
+            
+            # TODO: Enviar correo de aprobación
+            
+        elif accion == 'rechazar':
+            if not observaciones:
+                messages.error(
+                    request,
+                    'Debe proporcionar observaciones al rechazar un hogar.'
+                )
+                return redirect('aprobar_rechazar_hogar', hogar_id=hogar.id)
+            
+            # Rechazar hogar
+            hogar.estado = 'rechazado'
+            hogar.save()
+            
+            messages.warning(
+                request,
+                f'Hogar "{hogar.nombre_hogar}" RECHAZADO. '
+                f'Se ha notificado a la madre comunitaria.'
+            )
+            
+            # TODO: Guardar observaciones y enviar correo de rechazo
+            
+        elif accion == 'mantenimiento':
+            hogar.estado = 'en_mantenimiento'
+            hogar.save()
+            
+            messages.info(
+                request,
+                f'Hogar "{hogar.nombre_hogar}" marcado como EN MANTENIMIENTO.'
+            )
+        
+        return redirect('lista_hogares_revision')
+    
+    # GET - Mostrar formulario de aprobación/rechazo
+    context = {
+        'hogar': hogar,
+        'puede_aprobar': hogar.area_social_m2 and hogar.area_social_m2 >= 24,
+        'area_insuficiente': hogar.area_social_m2 and hogar.area_social_m2 < 24,
+    }
+    return render(request, 'admin/aprobar_rechazar_hogar.html', context)
+
+
+@login_required
+@rol_requerido('administrador')
+def detalle_hogar(request, hogar_id):
+    """
+    Vista detallada de un hogar comunitario.
+    Muestra toda la información de ambos formularios si están completos.
+    """
+    hogar = get_object_or_404(
+        HogarComunitario.objects.select_related(
+            'madre__usuario', 'regional', 'ciudad', 'localidad_bogota'
+        ),
+        pk=hogar_id
+    )
+    
+    # Obtener convivientes del hogar
+    from core.models import ConvivienteHogar
+    convivientes = ConvivienteHogar.objects.filter(hogar=hogar).order_by('fecha_registro')
+    
+    context = {
+        'hogar': hogar,
+        'convivientes': convivientes,
+        'tiene_formulario_completo': hogar.formulario_completo,
+        'puede_completar_visita': not hogar.formulario_completo and hogar.estado in ['pendiente_revision', 'en_revision', 'pendiente_visita'],
+        'puede_aprobar': hogar.formulario_completo and hogar.estado == 'en_revision',
+    }
+    return render(request, 'admin/detalle_hogar.html', context)
+
+
+# ============================================================================
+# 🆕 DASHBOARD DEL PADRE - VISTA DE HOGARES COMUNITARIOS
+# ============================================================================
+
+@login_required
+@rol_requerido('padre')
+def padre_ver_hogares(request):
+    """
+    Vista para que los padres vean todos los hogares comunitarios disponibles.
+    Permite filtrar por localidad y ver información completa.
+    """
+    # Filtros
+    localidad_filter = request.GET.get('localidad', '')
+    regional_filter = request.GET.get('regional', '')
+    buscar = request.GET.get('buscar', '')
+    
+    # Solo hogares aprobados
+    hogares = HogarComunitario.objects.filter(
+        estado='aprobado'
+    ).select_related(
+        'madre__usuario', 'regional', 'ciudad', 'localidad_bogota'
+    ).order_by('nombre_hogar')
+    
+    # Aplicar filtros
+    if localidad_filter:
+        hogares = hogares.filter(localidad_bogota_id=localidad_filter)
+    
+    if regional_filter:
+        hogares = hogares.filter(regional_id=regional_filter)
+    
+    if buscar:
+        hogares = hogares.filter(
+            Q(nombre_hogar__icontains=buscar) |
+            Q(direccion__icontains=buscar) |
+            Q(barrio__icontains=buscar) |
+            Q(madre__usuario__nombres__icontains=buscar) |
+            Q(madre__usuario__apellidos__icontains=buscar)
+        )
+    
+    # Estadísticas generales
+    total_hogares = HogarComunitario.objects.filter(estado='aprobado').count()
+    total_capacidad = sum([h.capacidad_calculada or 0 for h in HogarComunitario.objects.filter(estado='aprobado')])
+    
+    # Calcular capacidad disponible (aproximado - restar niños matriculados)
+    hogares_con_ninos = []
+    for hogar in hogares:
+        ninos_count = Nino.objects.filter(hogar=hogar).count()
+        capacidad_disponible = (hogar.capacidad_calculada or 0) - ninos_count
+        hogares_con_ninos.append({
+            'hogar': hogar,
+            'ninos_count': ninos_count,
+            'capacidad_disponible': max(0, capacidad_disponible),
+            'ocupacion_pct': int((ninos_count / hogar.capacidad_calculada * 100)) if hogar.capacidad_calculada else 0
+        })
+    
+    # Paginación
+    paginator = Paginator(hogares_con_ninos, 12)
+    page = request.GET.get('page', 1)
+    hogares_paginados = paginator.get_page(page)
+    
+    # Datos para filtros
+    from core.models import LocalidadBogota
+    localidades = LocalidadBogota.objects.all().order_by('nombre')
+    regionales = Regional.objects.all().order_by('nombre')
+    
+    context = {
+        'hogares': hogares_paginados,
+        'total_hogares': total_hogares,
+        'total_capacidad': total_capacidad,
+        'localidades': localidades,
+        'regionales': regionales,
+        'localidad_filter': localidad_filter,
+        'regional_filter': regional_filter,
+        'buscar': buscar,
+    }
+    return render(request, 'padre/hogares_disponibles.html', context)
+
+
+@login_required
+@rol_requerido('padre')
+def padre_detalle_hogar(request, hogar_id):
+    """
+    Vista detallada de un hogar comunitario para padres.
+    Muestra información completa, lista de niños, fotos, etc.
+    """
+    hogar = get_object_or_404(
+        HogarComunitario.objects.select_related(
+            'madre__usuario', 'regional', 'ciudad', 'localidad_bogota'
+        ),
+        pk=hogar_id,
+        estado='aprobado'  # Solo hogares aprobados visibles para padres
+    )
+    
+    # Obtener convivientes
+    from core.models import ConvivienteHogar
+    convivientes = ConvivienteHogar.objects.filter(hogar=hogar).order_by('nombre_completo')
+    
+    # Obtener niños del hogar
+    ninos = Nino.objects.filter(hogar=hogar).select_related('padre__usuario')
+    
+    # Calcular capacidad disponible
+    capacidad_ocupada = ninos.count()
+    capacidad_disponible = (hogar.capacidad_calculada or 0) - capacidad_ocupada
+    
+    context = {
+        'hogar': hogar,
+        'convivientes': convivientes,
+        'ninos': ninos,
+        'capacidad_ocupada': capacidad_ocupada,
+        'capacidad_disponible': max(0, capacidad_disponible),
+        'ocupacion_pct': int((capacidad_ocupada / hogar.capacidad_calculada * 100)) if hogar.capacidad_calculada else 0,
+    }
+    return render(request, 'padre/detalle_hogar_publico.html', context)
+
+
+@login_required
+@rol_requerido('padre')
+def padre_dashboard_mejorado(request):
+    """
+    Dashboard mejorado para padres con estadísticas y gráficas.
+    """
+    import json
+    
+    try:
+        padre = Padre.objects.get(usuario=request.user)
+        
+        # Niños del padre
+        ninos = Nino.objects.filter(padre=padre).select_related('hogar', 'hogar__madre__usuario')
+        
+        # Estadísticas de hogares
+        total_hogares = HogarComunitario.objects.filter(estado='aprobado').count()
+        hogares_activos = HogarComunitario.objects.filter(
+            estado='aprobado',
+            nino__padre=padre
+        ).distinct().count()
+        
+        hogares_pendientes = HogarComunitario.objects.filter(
+            estado__in=['pendiente_revision', 'en_revision']
+        ).count()
+        
+        # Estadísticas por localidad
+        from django.db.models import Count
+        from core.models import LocalidadBogota
+        
+        hogares_por_localidad = HogarComunitario.objects.filter(
+            estado='aprobado',
+            localidad_bogota__isnull=False
+        ).values('localidad_bogota__nombre').annotate(
+            total=Count('id')
+        ).order_by('-total')[:5]
+        
+        # Convertir datos para Chart.js
+        localidades_json = json.dumps([
+            {
+                'localidad': item['localidad_bogota__nombre'],
+                'total': item['total']
+            }
+            for item in hogares_por_localidad
+        ])
+        
+        # Última asistencia de los niños
+        ninos_data = []
+        for nino in ninos:
+            ultima_asistencia = Asistencia.objects.filter(
+                nino=nino
+            ).order_by('-fecha').first()
+            
+            ninos_data.append({
+                'nino': nino,
+                'get_full_name': nino.get_full_name(),
+                'calcular_edad': nino.calcular_edad(),
+                'documento': nino.documento,
+                'hogar': nino.hogar,
+                'ultima_asistencia': ultima_asistencia,
+            })
+        
+        context = {
+            'padre': padre,
+            'ninos': ninos_data,
+            'total_hogares': total_hogares,
+            'hogares_activos': hogares_activos,
+            'hogares_pendientes': hogares_pendientes,
+            'hogares_por_localidad': hogares_por_localidad,
+            'localidades_json': localidades_json,
+        }
+        return render(request, 'padre/dashboard_mejorado.html', context)
+        
+    except Padre.DoesNotExist:
+        messages.error(request, 'No se encontró información de padre asociada a su usuario.')
+        return redirect('home')
+
+
+# ---------- DASHBOARD DE HOGARES COMUNITARIOS ----------
+@login_required
+@rol_requerido('administrador')
+def hogares_dashboard(request):
+    """Dashboard para gestionar hogares comunitarios, visitas técnicas y aprobaciones."""
+    from django.db.models import Prefetch, Q, Max, Count
+    from datetime import timedelta
+    
+    # Query base con relaciones pre-cargadas
+    hogares_query = HogarComunitario.objects.select_related(
+        'madre__usuario',
+        'regional',
+        'ciudad'
+    ).prefetch_related(
+        Prefetch('visitastecnicas_hogar', queryset=VisitaTecnica.objects.order_by('-fecha_programada'))
+    ).order_by('-fecha_creacion')
+    
+    # Filtros desde GET params
+    filtro_estado = request.GET.get('estado', '')
+    busqueda = request.GET.get('search', '').strip()
+    
+    # Aplicar filtro por estado
+    if filtro_estado and filtro_estado != 'todos':
+        if filtro_estado == 'alertas':
+            # Hogares sin visita en el último año
+            fecha_limite = timezone.now().date() - timedelta(days=365)
+            hogares_query = hogares_query.annotate(
+                ultima_visita_fecha=Max('visitastecnicas_hogar__fecha_realizada')
+            ).filter(
+                Q(ultima_visita_fecha__lt=fecha_limite) | Q(ultima_visita_fecha__isnull=True)
+            )
+        else:
+            hogares_query = hogares_query.filter(estado=filtro_estado)
+    
+    # Aplicar búsqueda
+    if busqueda:
+        hogares_query = hogares_query.filter(
+            Q(nombre_hogar__icontains=busqueda) |
+            Q(madre__usuario__nombres__icontains=busqueda) |
+            Q(madre__usuario__apellidos__icontains=busqueda) |
+            Q(madre__usuario__documento__icontains=busqueda)
+        )
+    
+    # Calcular estadísticas
+    total_hogares = HogarComunitario.objects.count()
+    pendientes_count = HogarComunitario.objects.filter(estado='pendiente_visita').count()
+    revision_count = HogarComunitario.objects.filter(estado='en_revision').count()
+    aprobados_count = HogarComunitario.objects.filter(estado='aprobado').count()
+    
+    # Calcular alertas (hogares sin visita en 1 año)
+    fecha_limite = timezone.now().date() - timedelta(days=365)
+    alertas_count = HogarComunitario.objects.annotate(
+        ultima_visita_fecha=Max('visitastecnicas_hogar__fecha_realizada')
+    ).filter(
+        Q(ultima_visita_fecha__lt=fecha_limite) | Q(ultima_visita_fecha__isnull=True)
+    ).count()
+    
+    # Preparar datos de hogares con información de visitas
+    hogares_data = []
+    for hogar in hogares_query:
+        # Obtener próxima visita programada
+        proxima_visita = hogar.visitastecnicas_hogar.filter(
+            estado='agendada',
+            fecha_programada__gte=timezone.now().date()
+        ).order_by('fecha_programada').first()
+        
+        # Obtener última visita realizada
+        ultima_visita = hogar.visitastecnicas_hogar.filter(
+            fecha_realizada__isnull=False
+        ).order_by('-fecha_realizada').first()
+        
+        # Determinar si tiene alerta
+        tiene_alerta = False
+        if ultima_visita:
+            dias_desde_visita = (timezone.now().date() - ultima_visita.fecha_realizada).days
+            tiene_alerta = dias_desde_visita > 365
+        elif hogar.fecha_registro:
+            dias_desde_creacion = (timezone.now().date() - hogar.fecha_registro.date()).days
+            tiene_alerta = dias_desde_creacion > 365
+        
+        hogares_data.append({
+            'hogar': hogar,
+            'madre_nombre': f"{hogar.madre.usuario.nombres} {hogar.madre.usuario.apellidos}",
+            'madre_documento': hogar.madre.usuario.documento,
+            'proxima_visita': proxima_visita,
+            'ultima_visita': ultima_visita,
+            'tiene_alerta': tiene_alerta,
+        })
+    
+    # Paginación
+    paginator = Paginator(hogares_data, 20)  # 20 hogares por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'total_hogares': total_hogares,
+        'pendientes_count': pendientes_count,
+        'revision_count': revision_count,
+        'aprobados_count': aprobados_count,
+        'alertas_count': alertas_count,
+        'filtro_estado': filtro_estado,
+        'busqueda': busqueda,
+        'today': timezone.now().date(),
+    }
+    
+    return render(request, 'admin/hogares_dashboard.html', context)
+
+
+# ---------- REALIZAR VISITA TÉCNICA ----------
+@login_required
+@rol_requerido('administrador')
+def realizar_visita_tecnica(request, hogar_id):
+    """
+    Vista para realizar la visita técnica y completar el acta de evaluación.
+    Solo accesible en la fecha programada o después.
+    """
+    hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+    
+    # Obtener la visita programada
+    visita = hogar.visitastecnicas_hogar.filter(
+        estado='agendada'
+    ).order_by('fecha_programada').first()
+    
+    if not visita:
+        messages.error(request, 'No hay visitas programadas para este hogar.')
+        return redirect('hogares_dashboard')
+    
+    # Verificar si se puede realizar la visita (fecha programada o posterior)
+    puede_realizar_visita = visita.fecha_programada.date() <= timezone.now().date()
+    
+    if request.method == 'POST' and puede_realizar_visita:
+        try:
+            with transaction.atomic():
+                # Crear el acta de visita
+                acta = ActaVisitaTecnica.objects.create(
+                    visita=visita,
+                    # Geolocalización
+                    geolocalizacion_lat_verificada=request.POST.get('geolocalizacion_lat_verificada'),
+                    geolocalizacion_lon_verificada=request.POST.get('geolocalizacion_lon_verificada'),
+                    direccion_verificada=request.POST.get('direccion_verificada'),
+                    direccion_coincide='direccion_coincide' in request.POST,
+                    observaciones_direccion=request.POST.get('observaciones_direccion', ''),
+                    estrato_verificado=request.POST.get('estrato_verificado'),
+                    estrato_coincide='estrato_coincide' in request.POST,
+                    foto_recibo_servicio=request.FILES.get('foto_recibo_servicio'),
+                    
+                    # Servicios básicos
+                    tiene_agua_potable='tiene_agua_potable' in request.POST,
+                    agua_continua='agua_continua' in request.POST,
+                    agua_legal='agua_legal' in request.POST,
+                    tiene_energia='tiene_energia' in request.POST,
+                    energia_continua='energia_continua' in request.POST,
+                    energia_legal='energia_legal' in request.POST,
+                    tiene_alcantarillado='tiene_alcantarillado' in request.POST,
+                    manejo_excretas_adecuado='manejo_excretas_adecuado' in request.POST,
+                    
+                    # Infraestructura
+                    estado_pisos=request.POST.get('estado_pisos'),
+                    estado_paredes=request.POST.get('estado_paredes'),
+                    estado_techos=request.POST.get('estado_techos'),
+                    ventilacion_adecuada='ventilacion_adecuada' in request.POST,
+                    iluminacion_natural_adecuada='iluminacion_natural_adecuada' in request.POST,
+                    observaciones_infraestructura=request.POST.get('observaciones_infraestructura', ''),
+                    
+                    # Riesgos
+                    proximidad_rios='proximidad_rios' in request.POST,
+                    proximidad_deslizamientos='proximidad_deslizamientos' in request.POST,
+                    proximidad_trafico_intenso='proximidad_trafico_intenso' in request.POST,
+                    proximidad_contaminacion='proximidad_contaminacion' in request.POST,
+                    nivel_riesgo_general=request.POST.get('nivel_riesgo_general'),
+                    descripcion_riesgos=request.POST.get('descripcion_riesgos', ''),
+                    
+                    # Espacios
+                    area_social_largo=request.POST.get('area_social_largo'),
+                    area_social_ancho=request.POST.get('area_social_ancho'),
+                    foto_area_social_medidas=request.FILES.get('foto_area_social_medidas'),
+                    tiene_patio_cubierto='tiene_patio_cubierto' in request.POST,
+                    patio_largo=request.POST.get('patio_largo') if 'tiene_patio_cubierto' in request.POST else None,
+                    patio_ancho=request.POST.get('patio_ancho') if 'tiene_patio_cubierto' in request.POST else None,
+                    foto_patio_medidas=request.FILES.get('foto_patio_medidas'),
+                    
+                    # Baños
+                    num_banos_verificado=request.POST.get('num_banos_verificado'),
+                    estado_higiene_banos=request.POST.get('estado_higiene_banos'),
+                    foto_bano_1=request.FILES.get('foto_bano_1'),
+                    foto_bano_2=request.FILES.get('foto_bano_2'),
+                    
+                    # Fachada
+                    foto_fachada=request.FILES.get('foto_fachada'),
+                    foto_fachada_numeracion=request.FILES.get('foto_fachada_numeracion'),
+                    
+                    # Capacidad
+                    capacidad_calculada=request.POST.get('capacidad_calculada'),
+                    capacidad_recomendada=request.POST.get('capacidad_recomendada'),
+                    justificacion_capacidad=request.POST.get('justificacion_capacidad', ''),
+                    
+                    # Conclusión
+                    resultado_visita=request.POST.get('recomendacion_habilitacion'),
+                    condiciones_aprobacion=request.POST.get('condiciones_aprobacion', ''),
+                    observaciones_generales=request.POST.get('observaciones_generales', ''),
+                    completado_por=request.user
+                )
+                
+                # Calcular áreas
+                area_social_total = float(acta.area_social_largo) * float(acta.area_social_ancho)
+                acta.area_social_total = area_social_total
+                
+                if acta.tiene_patio_cubierto and acta.patio_largo and acta.patio_ancho:
+                    acta.patio_total = float(acta.patio_largo) * float(acta.patio_ancho)
+                
+                acta.save()
+                
+                # Actualizar el estado de la visita
+                visita.estado = 'completada'
+                visita.fecha_realizacion = timezone.now()
+                visita.visitador = request.user
+                visita.save()
+                
+                # Actualizar el hogar según la recomendación
+                recomendacion = request.POST.get('recomendacion_habilitacion')
+                if recomendacion == 'aprobado':
+                    hogar.estado = 'aprobado'
+                    hogar.capacidad_maxima = int(request.POST.get('capacidad_recomendada'))
+                    hogar.fecha_habilitacion = timezone.now()
+                    hogar.formulario_completo = True
+                    
+                    # Enviar correo de aprobación con credenciales
+                    enviar_correo_aprobacion(hogar, request.user)
+                    
+                elif recomendacion == 'aprobado_condicional' or recomendacion == 'aprobado_condiciones':
+                    hogar.estado = 'en_revision'
+                    hogar.capacidad_maxima = int(request.POST.get('capacidad_recomendada'))
+                    
+                else:  # rechazado
+                    hogar.estado = 'rechazado'
+                
+                # Actualizar ubicación del hogar
+                hogar.geolocalizacion_lat = acta.geolocalizacion_lat_verificada
+                hogar.geolocalizacion_lon = acta.geolocalizacion_lon_verificada
+                hogar.num_habitaciones = acta.num_banos_verificado
+                hogar.save()
+                
+                messages.success(request, f'✅ Acta de visita guardada exitosamente. Hogar actualizado a estado: {hogar.get_estado_display()}')
+                return redirect('detalle_hogar', hogar_id=hogar.id)
+                
+        except Exception as e:
+            messages.error(request, f'❌ Error al guardar el acta: {str(e)}')
+            return redirect('hogares_dashboard')
+    
+    context = {
+        'hogar': hogar,
+        'visita': visita,
+        'puede_realizar_visita': puede_realizar_visita,
+    }
+    
+    return render(request, 'admin/visita_tecnica_form.html', context)
+
+
+# ---------- ENVIAR CORREO DE APROBACIÓN ----------
+def enviar_correo_aprobacion(hogar, aprobador):
+    """
+    Envía correo al agente educativo cuando su hogar es aprobado.
+    Incluye credenciales de acceso al sistema.
+    """
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
+    
+    usuario = hogar.madre.usuario
+    
+    # Generar contraseña temporal (documento)
+    contraseña_temporal = usuario.documento
+    
+    # Si el usuario no tiene contraseña, configurarla
+    if not usuario.password or usuario.password == '':
+        usuario.set_password(contraseña_temporal)
+        usuario.save()
+    
+    # Mensaje HTML
+    mensaje_html = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #004080 0%, #0066cc 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+            .content {{ background: white; padding: 30px; border: 1px solid #ddd; }}
+            .credentials {{ background: #e8f5e9; border-left: 5px solid #4caf50; padding: 20px; margin: 20px 0; border-radius: 5px; }}
+            .credentials h3 {{ color: #2e7d32; margin-top: 0; }}
+            .credential-item {{ margin: 10px 0; font-size: 16px; }}
+            .credential-item strong {{ display: inline-block; width: 120px; }}
+            .footer {{ background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; font-size: 12px; color: #666; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🎉 ¡Felicitaciones!</h1>
+                <p>Su Hogar Comunitario ha sido APROBADO</p>
+            </div>
+            
+            <div class="content">
+                <p>Estimado/a <strong>{usuario.nombres} {usuario.apellidos}</strong>,</p>
+                
+                <p>Nos complace informarle que su hogar comunitario <strong>"{hogar.nombre_hogar}"</strong> ha sido aprobado exitosamente tras la visita técnica realizada.</p>
+                
+                <div class="credentials">
+                    <h3>📋 Datos del Hogar Aprobado:</h3>
+                    <div class="credential-item"><strong>Hogar:</strong> {hogar.nombre_hogar}</div>
+                    <div class="credential-item"><strong>Dirección:</strong> {hogar.direccion}, {hogar.barrio}</div>
+                    <div class="credential-item"><strong>Capacidad Máxima:</strong> {hogar.capacidad_maxima} niños</div>
+                    <div class="credential-item"><strong>Regional:</strong> {hogar.regional.nombre}</div>
+                    <div class="credential-item"><strong>Ciudad:</strong> {hogar.ciudad.nombre}</div>
+                </div>
+                
+                <div class="credentials">
+                    <h3>🔑 Credenciales de Acceso al Sistema</h3>
+                    <p>Ya puedes ingresar a la plataforma ICBF Conecta con las siguientes credenciales:</p>
+                    <div class="credential-item"><strong>Usuario:</strong> {usuario.documento}</div>
+                    <div class="credential-item"><strong>Contraseña:</strong> {contraseña_temporal}</div>
+                    <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                        <em>⚠️ Por seguridad, te recomendamos cambiar tu contraseña en tu primer ingreso.</em>
+                    </p>
+                </div>
+                
+                <div style="text-align: center;">
+                    <a href="http://localhost:8000/login/" class="btn">Ingresar a ICBF Conecta</a>
+                </div>
+                
+                <h3 style="color: #004080; margin-top: 30px;">📝 Próximos Pasos:</h3>
+                <ol>
+                    <li>Ingresa al sistema con tus credenciales</li>
+                    <li>Completa tu perfil y revisa la información del hogar</li>
+                    <li>Comienza el proceso de matriculación de niños</li>
+                    <li>Mantén actualizada la información del hogar</li>
+                </ol>
+                
+                <p style="margin-top: 20px;">Aprobado por: <strong>{aprobador.nombres} {aprobador.apellidos}</strong></p>
+                <p>Fecha de aprobación: <strong>{timezone.now().strftime('%d de %B de %Y')}</strong></p>
+            </div>
+            
+            <div class="footer">
+                <p><strong>ICBF Conecta</strong></p>
+                <p>Sistema de Gestión de Hogares Comunitarios</p>
+                <p>Instituto Colombiano de Bienestar Familiar</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    mensaje_texto = strip_tags(mensaje_html)
+    
+    try:
+        send_mail(
+            '🎉 Hogar Comunitario Aprobado - Credenciales de Acceso',
+            mensaje_texto,
+            'noreply@icbf.gov.co',
+            [usuario.correo],
+            html_message=mensaje_html,
+            fail_silently=False
+        )
+        return True
+    except Exception as e:
+        print(f"Error al enviar correo de aprobación: {e}")
+        return False
+
+
+# ---------- PROGRAMAR NUEVA VISITA ----------
+@login_required
+@rol_requerido('administrador')
+def programar_visita(request, hogar_id):
+    """
+    Programa una nueva visita técnica para un hogar.
+    """
+    hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+    
+    if request.method == 'POST':
+        fecha_programada = request.POST.get('fecha_programada')
+        tipo_visita = request.POST.get('tipo_visita', 'V2')
+        observaciones = request.POST.get('observaciones', '')
+        
+        try:
+            # Crear la visita
+            visita = VisitaTecnica.objects.create(
+                hogar=hogar,
+                fecha_programada=fecha_programada,
+                tipo_visita=tipo_visita,
+                estado='agendada',
+                creado_por=request.user,
+                observaciones_agenda=observaciones
+            )
+            
+            # Enviar correo de notificación
+            from django.core.mail import send_mail
+            usuario = hogar.madre.usuario
+            
+            mensaje = f"""
+            Estimado/a {usuario.nombres} {usuario.apellidos},
+            
+            Se ha programado una nueva visita técnica para su hogar "{hogar.nombre_hogar}":
+            
+            Fecha: {visita.fecha_programada.strftime('%d de %B de %Y a las %H:%M')}
+            Tipo: {visita.get_tipo_visita_display()}
+            Observaciones: {observaciones}
+            
+            Por favor esté disponible en esa fecha.
+            
+            Saludos,
+            ICBF Conecta
+            """
+            
+            send_mail(
+                'Nueva Visita Técnica Programada - ICBF Conecta',
+                mensaje,
+                'noreply@icbf.gov.co',
+                [usuario.correo],
+                fail_silently=True
+            )
+            
+            visita.correo_enviado = True
+            visita.fecha_envio_correo = timezone.now()
+            visita.save()
+            
+            messages.success(request, '✅ Visita programada exitosamente. Se envió notificación por correo.')
+            return redirect('hogares_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'❌ Error al programar visita: {str(e)}')
+    
+    context = {
+        'hogar': hogar,
+    }
+    
+    return render(request, 'admin/programar_visita.html', context)

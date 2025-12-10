@@ -4,7 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lista de Madres Comunitarias</title>
+    <title>Lista de Agentes Educativos</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
       rel="stylesheet"
@@ -356,10 +356,10 @@
     <div class="sidebar">
       <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
       <h2>ICBF Conecta</h2>
-      <a href="{% url 'admin_dashboard' %}">
+      <a href="{% url 'dashboard_admin' %}">
         <i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
       <a href="{% url 'listar_hogares' %}"><i class="fa-solid fa-house"></i> Hogares</a>
-      <a href="{% url 'listar_madres' %}" class="active"><i class="fa-solid fa-users"></i> Madres</a>
+      <a href="{% url 'listar_madres' %}" class="active"><i class="fa-solid fa-users"></i> Agentes Educativos</a>
       <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
       <a href="{% url 'admin_reportes' %}" ><i class="fa-solid fa-chart-line"></i> Reportes</a>
       <div class="dropdown">
@@ -399,7 +399,7 @@
     <!-- MAIN -->
     <div class="main">
       <header>
-        <h1>Lista de Madres Comunitarias</h1>
+        <h1>Lista de Agentes Educativos</h1>
       </header>
       <div class="content-container">
         <div class="top-bar">
@@ -418,7 +418,7 @@
             </div>
           </form>
           <div class="page-actions">
-            <a href="{% url 'crear_madre' %}" class="btn-crear"><i class="fa fa-plus"></i> Nueva Madre</a>
+            <a href="{% url 'crear_madre' %}" class="btn-crear"><i class="fa fa-plus"></i> Nuevo Agente Educativo</a>
           </div>
         </div>
         {% if messages %}
@@ -473,12 +473,12 @@
                 <td class="acciones">
                     <button class="btn-ver ver-detalles" data-madre-id="{{ madre_perfil.id }}">Ver</button>
                     <a href="{% url 'editar_madre' madre_perfil.usuario.id %}" class="btn-editar">Editar</a>
-                    <a href="{% url 'eliminar_madre' madre_perfil.usuario.id %}" class="btn-eliminar" onclick="return confirm('¿Estás seguro de que deseas eliminar a esta madre comunitaria? Esta acción no se puede deshacer.');">Eliminar</a>
+                    <a href="{% url 'eliminar_madre' madre_perfil.usuario.id %}" class="btn-eliminar" onclick="return confirm('¿Estás seguro de que deseas eliminar a este agente educativo? Esta acción no se puede deshacer.');">Eliminar</a>
                 </td>
             </tr>
         {% empty %}
             <tr>
-                <td colspan="6" style="text-align: center; padding: 20px; color: #888;">No hay madres comunitarias registradas.</td>
+                <td colspan="6" style="text-align: center; padding: 20px; color: #888;">No hay agentes educativos registrados.</td>
             </tr>
         {% endfor %}
     </tbody>

@@ -266,9 +266,9 @@
   <div class="sidebar">
     <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
     <h2>ICBF Conecta</h2>
-    <a href="{% url 'admin_dashboard' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
+    <a href="{% url 'dashboard_admin' %}"><i class="fa-solid fa-tachometer-alt"></i> Inicio</a>
     <a href="{% url 'listar_hogares' %}"><i class="fa-solid fa-house"></i> Hogares</a>
-    <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Madres</a>
+    <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Agentes Educativos</a>
     <a href="{% url 'listar_administradores' %}"><i class="fa-solid fa-user-shield"></i> Administradores</a>
     <a href="{% url 'admin_reportes' %}" class="active"><i class="fa-solid fa-chart-line"></i> Reportes</a>
     <div class="dropdown">
@@ -364,7 +364,7 @@
             <input type="text" name="ciudad" id="hogar_ciudad" placeholder="Filtrar por ciudad...">
           </div>
           <div class="form-group">
-            <label for="hogar_madre_comunitaria">Madre Comunitaria</label>
+            <label for="hogar_madre_comunitaria">Agente Educativo</label>
             <input type="text" name="madre_comunitaria" id="hogar_madre_comunitaria" placeholder="Nombre de la madre...">
           </div>
           <div class="form-group form-group-span-2" style="display: flex; flex-direction: column; justify-content: flex-end; grid-column: span 2;">
@@ -394,7 +394,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="nino_madre">Madre Comunitaria</label>
+            <label for="nino_madre">Agente Educativo</label>
             <input type="text" name="madre" id="nino_madre" placeholder="Nombre de la madre...">
           </div>
           <div class="form-group">

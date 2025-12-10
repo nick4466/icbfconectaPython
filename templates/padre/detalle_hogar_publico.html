@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ hogar.nombre_hogar }} - Información Completa{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 0;
+        margin-bottom: 30px;
+    }
+    .info-card {
+        margin-bottom: 20px;
+    }
+    .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    .photo-item img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 3px solid #dee2e6;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .photo-item img:hover {
+        transform: scale(1.05);
+    }
+    .capacidad-display {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+    }
+    .nino-card {
+        border-left: 4px solid #0d6efd;
+        transition: box-shadow 0.2s;
+    }
+    .nino-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb bg-transparent mb-3">
+                <li class="breadcrumb-item"><a href="{% url 'padre_dashboard' %}" class="text-white">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'padre_ver_hogares' %}" class="text-white">Hogares</a></li>
+                <li class="breadcrumb-item active text-white">{{ hogar.nombre_hogar }}</li>
+            </ol>
+        </nav>
+        
+        <h1 class="display-4">{{ hogar.nombre_hogar }}</h1>
+        <p class="lead mb-0">{{ hogar.direccion }}</p>
+        <div class="mt-3">
+            <span class="badge bg-light text-dark me-2">
+                ✅ Hogar Aprobado
+            </span>
+            <span class="badge bg-light text-dark">
+                👶 Capacidad: {{ hogar.capacidad_calculada }} niños
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row">
+        <!-- Columna Izquierda -->
+        <div class="col-md-8">
+            <!-- Información del Agente Educativo -->
+            <div class="card info-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">👤 Agente Educativo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            {% if hogar.madre.usuario.foto_perfil %}
+                                <img src="{{ hogar.madre.usuario.foto_perfil.url }}" class="rounded-circle" 
+                                     style="width: 100px; height: 100px; object-fit: cover;" alt="Foto">
+                            {% else %}
+                                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center"
+                                     style="width: 100px; height: 100px; margin: 0 auto;">
+                                    <h1 class="text-white mb-0">👤</h1>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <h4>{{ hogar.madre.usuario.get_full_name }}</h4>
+                            <p class="mb-1"><strong>Documento:</strong> {{ hogar.madre.usuario.documento }}</p>
+                            <p class="mb-1"><strong>Teléfono:</strong> {{ hogar.madre.usuario.telefono|default:"No registrado" }}</p>
+                            <p class="mb-1"><strong>Correo:</strong> {{ hogar.madre.usuario.correo }}</p>
+                            {% if hogar.madre.años_experiencia %}
+                                <p class="mb-0"><strong>Experiencia:</strong> {{ hogar.madre.años_experiencia }} años</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ubicación y Características -->
+            <div class="card info-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">📍 Ubicación y Características</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Regional:</strong> {{ hogar.regional.nombre }}</p>
+                            {% if hogar.localidad_bogota %}
+                                <p><strong>Localidad:</strong> {{ hogar.localidad_bogota.nombre }}</p>
+                            {% elif hogar.ciudad %}
+                                <p><strong>Ciudad:</strong> {{ hogar.ciudad.nombre }}</p>
+                            {% endif %}
+                            <p><strong>Barrio:</strong> {{ hogar.barrio|default:"No especificado" }}</p>
+                            <p><strong>Dirección:</strong> {{ hogar.direccion }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Estrato:</strong> {{ hogar.estrato|default:"No especificado" }}</p>
+                            <p><strong>Habitaciones:</strong> {{ hogar.num_habitaciones|default:"No especificado" }}</p>
+                            <p><strong>Baños:</strong> {{ hogar.num_banos|default:"No especificado" }}</p>
+                            <p><strong>Tenencia:</strong> {{ hogar.get_tipo_tenencia_display|default:"No especificado" }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if hogar.geolocalizacion_lat and hogar.geolocalizacion_lon %}
+                        <div class="mt-3">
+                            <a href="https://www.google.com/maps?q={{ hogar.geolocalizacion_lat }},{{ hogar.geolocalizacion_lon }}" 
+                               target="_blank" class="btn btn-outline-success">
+                                🗺️ Ver Ubicación en Google Maps
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Fotografías del Hogar -->
+            {% if hogar.fotos_interior or hogar.fotos_exterior %}
+            <div class="card info-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📸 Fotografías del Hogar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="photo-grid">
+                        {% if hogar.fotos_interior %}
+                            <div class="photo-item">
+                                <img src="{{ hogar.fotos_interior.url }}" alt="Interior" 
+                                     onclick="window.open('{{ hogar.fotos_interior.url }}', '_blank')">
+                                <p class="text-center mt-2 mb-0"><small><strong>Interior</strong></small></p>
+                            </div>
+                        {% endif %}
+                        {% if hogar.fotos_exterior %}
+                            <div class="photo-item">
+                                <img src="{{ hogar.fotos_exterior.url }}" alt="Exterior"
+                                     onclick="window.open('{{ hogar.fotos_exterior.url }}', '_blank')">
+                                <p class="text-center mt-2 mb-0"><small><strong>Exterior</strong></small></p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Niños del Hogar -->
+            {% if ninos %}
+            <div class="card info-card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">👶 Niños Matriculados ({{ ninos.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for nino in ninos %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card nino-card">
+                                    <div class="card-body">
+                                        <h6 class="mb-1">{{ nino.get_full_name }}</h6>
+                                        <p class="text-muted mb-1">
+                                            <small>
+                                                <strong>Edad:</strong> {{ nino.calcular_edad }} años<br>
+                                                <strong>Padre/Tutor:</strong> {{ nino.padre.usuario.get_full_name }}
+                                            </small>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Personas que Viven en el Hogar -->
+            {% if convivientes %}
+            <div class="card info-card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">👨‍👩‍👧‍👦 Personas que Viven en el Hogar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Documento</th>
+                                    <th>Parentesco</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for conviviente in convivientes %}
+                                <tr>
+                                    <td>{{ conviviente.nombre_completo }}</td>
+                                    <td>{{ conviviente.get_tipo_documento_display }} {{ conviviente.numero_documento }}</td>
+                                    <td>{{ conviviente.parentesco }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Columna Derecha -->
+        <div class="col-md-4">
+            <!-- Capacidad -->
+            <div class="card info-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📊 Capacidad del Hogar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="capacidad-display mb-3">
+                        <h2 class="text-primary mb-0">{{ hogar.capacidad_calculada }}</h2>
+                        <p class="text-muted mb-0">Capacidad Total</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small><strong>Ocupados:</strong></small>
+                            <small><strong>{{ capacidad_ocupada }}</strong></small>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar 
+                                {% if ocupacion_pct < 70 %}bg-success
+                                {% elif ocupacion_pct < 90 %}bg-warning
+                                {% else %}bg-danger{% endif %}"
+                                role="progressbar" 
+                                style="width: {{ ocupacion_pct }}%">
+                                {{ ocupacion_pct }}%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="capacidad-display">
+                        <h3 class="
+                            {% if capacidad_disponible > 5 %}text-success
+                            {% elif capacidad_disponible > 0 %}text-warning
+                            {% else %}text-danger{% endif %}
+                            mb-0">
+                            {{ capacidad_disponible }}
+                        </h3>
+                        <p class="text-muted mb-0">Cupos Disponibles</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área Social -->
+            {% if hogar.area_social_m2 %}
+            <div class="card info-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">📐 Área Social</h5>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="text-success">{{ hogar.area_social_m2 }} m²</h2>
+                    <p class="text-muted mb-0">Espacio para actividades</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información de Contacto -->
+            <div class="card info-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📞 Información de Contacto</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Teléfono:</strong><br>
+                        <a href="tel:{{ hogar.madre.usuario.telefono }}">{{ hogar.madre.usuario.telefono|default:"No disponible" }}</a>
+                    </p>
+                    <p class="mb-0">
+                        <strong>Correo:</strong><br>
+                        <a href="mailto:{{ hogar.madre.usuario.correo }}">{{ hogar.madre.usuario.correo }}</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="d-grid gap-2">
+                <a href="{% url 'padre_ver_hogares' %}" class="btn btn-outline-secondary">
+                    ← Volver a Lista de Hogares
+                </a>
+                <a href="{% url 'padre_dashboard' %}" class="btn btn-outline-primary">
+                    🏠 Ir al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

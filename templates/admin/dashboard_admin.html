@@ -1,0 +1,1078 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Administrativo - ICBF Conecta</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --secondary: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #06b6d4;
+      --dark: #1f2937;
+      --light: #f9fafb;
+      --border: #e5e7eb;
+      --text: #374151;
+      --text-light: #6b7280;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f3f4f6;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 100vh;
+      width: 260px;
+      background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+      padding: 20px 0;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar-header {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
+      text-decoration: none;
+    }
+
+    .sidebar-logo img {
+      width: 45px;
+      height: 45px;
+      border-radius: 8px;
+    }
+
+    .sidebar-logo-text h2 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .sidebar-logo-text p {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .sidebar-nav {
+      padding: 0 10px;
+    }
+
+    .nav-item {
+      margin-bottom: 4px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      color: rgba(255,255,255,0.9);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .nav-link:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .nav-link.active {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+
+    .nav-link i {
+      width: 20px;
+      font-size: 18px;
+    }
+
+    /* ========== MAIN CONTENT ========== */
+    .main-content {
+      margin-left: 260px;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: white;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-left h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      padding: 10px 16px 10px 40px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 300px;
+      font-size: 14px;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+
+    .user-menu:hover {
+      background: var(--light);
+    }
+
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+    }
+
+    .content-wrapper {
+      padding: 32px;
+    }
+
+    /* ========== STATISTICS CARDS ========== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+    }
+
+    .stat-icon.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+    .stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .stat-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .stat-icon.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .stat-icon.cyan { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+
+    .stat-content h3 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+
+    .stat-content p {
+      font-size: 14px;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    .stat-content small {
+      font-size: 12px;
+      color: var(--secondary);
+      font-weight: 600;
+    }
+
+    /* ========== CHARTS ========== */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .chart-card {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .chart-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .chart-filters {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+
+    /* ========== TABLES ========== */
+    .table-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .table-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-outline {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      background: var(--light);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table thead {
+      background: var(--light);
+    }
+
+    .data-table th {
+      padding: 16px 24px;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .data-table td {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .data-table tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    .badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .badge-success { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-icon:hover {
+      transform: scale(1.1);
+    }
+
+    .btn-view { background: #dbeafe; color: #1e40af; }
+    .btn-edit { background: #fef3c7; color: #92400e; }
+    .btn-delete { background: #fee2e2; color: #991b1b; }
+
+    /* ========== MODAL ========== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      max-width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: none;
+      background: var(--light);
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.3s;
+    }
+
+    .modal-close:hover {
+      background: var(--border);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    /* ========== DOCUMENT PREVIEW ========== */
+    .document-preview {
+      width: 100%;
+      min-height: 600px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .document-preview iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+
+    .document-preview img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 1024px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .main-content {
+        margin-left: 0;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a href="{% url 'home' %}" class="sidebar-logo">
+        <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF">
+        <div class="sidebar-logo-text">
+          <h2>ICBF Conecta</h2>
+          <p>Panel Administrativo</p>
+        </div>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item">
+        <a href="{% url 'dashboard_admin' %}" class="nav-link active">
+          <i class="fas fa-chart-line"></i>
+          <span>Dashboard</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'hogares_dashboard' %}" class="nav-link">
+          <i class="fas fa-home"></i>
+          <span>Gestión de Hogares</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_madres' %}" class="nav-link">
+          <i class="fas fa-user-tie"></i>
+          <span>Agentes Educativos</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_ninos' %}" class="nav-link">
+          <i class="fas fa-child"></i>
+          <span>Niños Registrados</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="#" class="nav-link">
+          <i class="fas fa-clipboard-check"></i>
+          <span>Visitas Técnicas</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="#" class="nav-link">
+          <i class="fas fa-map-marked-alt"></i>
+          <span>Mapa de Hogares</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="#" class="nav-link">
+          <i class="fas fa-file-alt"></i>
+          <span>Reportes</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_administradores' %}" class="nav-link">
+          <i class="fas fa-users-cog"></i>
+          <span>Administradores</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'logout' %}" class="nav-link">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="main-content">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>📊 Dashboard Administrativo</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Buscar hogares, niños, agentes..." id="globalSearch">
+        </div>
+        <div class="user-menu">
+          <div class="user-avatar">{{ request.user.nombres.0 }}{{ request.user.apellidos.0 }}</div>
+          <div>
+            <div style="font-weight: 600; font-size: 14px;">{{ request.user.nombres }}</div>
+            <div style="font-size: 12px; color: var(--text-light);">Administrador</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content-wrapper">
+      
+      <!-- STATISTICS CARDS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <i class="fas fa-home"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ stats.total_hogares }}</h3>
+            <p>Hogares Activos</p>
+            <small>+{{ stats.nuevos_hogares_mes }} este mes</small>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <i class="fas fa-user-tie"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ stats.total_agentes }}</h3>
+            <p>Agentes Educativos</p>
+            <small>{{ stats.agentes_activos }} activos</small>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <i class="fas fa-child"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ stats.total_ninos }}</h3>
+            <p>Niños Matriculados</p>
+            <small>Capacidad: {{ stats.capacidad_total }}</small>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon orange">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ stats.solicitudes_pendientes }}</h3>
+            <p>Solicitudes Pendientes</p>
+            <small>Requieren atención</small>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon cyan">
+            <i class="fas fa-calendar-check"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ stats.visitas_proximas }}</h3>
+            <p>Visitas Programadas</p>
+            <small>Próximos 30 días</small>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon red">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ stats.visitas_vencidas }}</h3>
+            <p>Visitas Vencidas</p>
+            <small>Requieren programación</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>📈 Matrículas por Mes</h3>
+            <div class="chart-filters">
+              <button class="filter-btn active">6M</button>
+              <button class="filter-btn">1A</button>
+              <button class="filter-btn">Todo</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartMatriculas"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>🥧 Estados de Hogares</h3>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartEstados"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>📊 Top 10 Hogares - Más Niños</h3>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartTopHogares"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>📉 Solicitudes: Aprobadas vs Rechazadas</h3>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartSolicitudes"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT HOGARES TABLE -->
+      <div class="table-card">
+        <div class="table-header">
+          <h3>🏘️ Hogares Recientes</h3>
+          <div class="table-actions">
+            <button class="btn btn-outline">
+              <i class="fas fa-filter"></i>
+              Filtrar
+            </button>
+            <button class="btn btn-outline">
+              <i class="fas fa-download"></i>
+              Exportar
+            </button>
+            <a href="{% url 'crear_madre' %}" class="btn btn-primary">
+              <i class="fas fa-plus"></i>
+              Nuevo Hogar
+            </a>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Hogar</th>
+              <th>Responsable</th>
+              <th>Localidad</th>
+              <th>Niños</th>
+              <th>Capacidad</th>
+              <th>Estado</th>
+              <th>Última Visita</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for hogar in hogares_recientes %}
+            <tr>
+              <td>
+                <strong>{{ hogar.nombre_hogar }}</strong><br>
+                <small style="color: var(--text-light);">{{ hogar.direccion }}</small>
+              </td>
+              <td>{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}</td>
+              <td>{{ hogar.localidad }}</td>
+              <td>{{ hogar.ninos_count|default:0 }}</td>
+              <td>{{ hogar.capacidad_maxima }}</td>
+              <td>
+                {% if hogar.estado == 'aprobado' %}
+                  <span class="badge badge-success">Aprobado</span>
+                {% elif hogar.estado == 'pendiente_visita' %}
+                  <span class="badge badge-warning">Pendiente Visita</span>
+                {% elif hogar.estado == 'en_revision' %}
+                  <span class="badge badge-info">En Revisión</span>
+                {% else %}
+                  <span class="badge badge-danger">{{ hogar.get_estado_display }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if hogar.ultima_visita %}
+                  {{ hogar.ultima_visita|date:"d/m/Y" }}
+                {% else %}
+                  <span style="color: var(--text-light);">Sin visitas</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-icon btn-view" onclick="verHogar({{ hogar.id }})" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <a href="{% url 'realizar_visita_tecnica' hogar.id %}" class="btn-icon btn-edit" title="Visita técnica">
+                    <i class="fas fa-clipboard-check"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-light);">
+                <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                No hay hogares registrados
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ========== MODAL VER HOGAR ========== -->
+  <div class="modal" id="modalHogar">
+    <div class="modal-content" style="width: 1200px;">
+      <div class="modal-header">
+        <h2>📁 Detalles del Hogar</h2>
+        <button class="modal-close" onclick="cerrarModal('modalHogar')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="hogarDetalles">
+        <div style="text-align: center; padding: 60px;">
+          <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: var(--primary);"></i>
+          <p style="margin-top: 20px; color: var(--text-light);">Cargando información...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script>
+    // ========== CHARTS ==========
+    
+    // Chart Matrículas
+    const ctxMatriculas = document.getElementById('chartMatriculas').getContext('2d');
+    new Chart(ctxMatriculas, {
+      type: 'line',
+      data: {
+        labels: {{ chart_matriculas.labels|safe }},
+        datasets: [{
+          label: 'Matrículas',
+          data: {{ chart_matriculas.data|safe }},
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // Chart Estados
+    const ctxEstados = document.getElementById('chartEstados').getContext('2d');
+    new Chart(ctxEstados, {
+      type: 'doughnut',
+      data: {
+        labels: {{ chart_estados.labels|safe }},
+        datasets: [{
+          data: {{ chart_estados.data|safe }},
+          backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+
+    // Chart Top Hogares
+    const ctxTopHogares = document.getElementById('chartTopHogares').getContext('2d');
+    new Chart(ctxTopHogares, {
+      type: 'bar',
+      data: {
+        labels: {{ chart_top_hogares.labels|safe }},
+        datasets: [{
+          label: 'Niños Matriculados',
+          data: {{ chart_top_hogares.data|safe }},
+          backgroundColor: '#8b5cf6'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+
+    // Chart Solicitudes
+    const ctxSolicitudes = document.getElementById('chartSolicitudes').getContext('2d');
+    new Chart(ctxSolicitudes, {
+      type: 'pie',
+      data: {
+        labels: ['Aprobadas', 'Rechazadas', 'Pendientes'],
+        datasets: [{
+          data: {{ chart_solicitudes.data|safe }},
+          backgroundColor: ['#10b981', '#ef4444', '#f59e0b']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+
+    // ========== MODALS ==========
+    function verHogar(hogarId) {
+      const modal = document.getElementById('modalHogar');
+      modal.classList.add('active');
+      
+      // Cargar datos del hogar via AJAX
+      fetch(`/api/hogares/${hogarId}/detalle/`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('hogarDetalles').innerHTML = generarVistaHogar(data);
+        })
+        .catch(error => {
+          document.getElementById('hogarDetalles').innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--danger);">
+              <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 16px;"></i>
+              <p>Error al cargar la información del hogar</p>
+            </div>
+          `;
+        });
+    }
+
+    function cerrarModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function generarVistaHogar(hogar) {
+      return `
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+          <div>
+            <h3 style="margin-bottom: 20px;">📋 Información General</h3>
+            <div style="background: var(--light); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                  <strong>Nombre del Hogar:</strong><br>
+                  <span>${hogar.nombre_hogar}</span>
+                </div>
+                <div>
+                  <strong>Responsable:</strong><br>
+                  <span>${hogar.responsable}</span>
+                </div>
+                <div>
+                  <strong>Dirección:</strong><br>
+                  <span>${hogar.direccion}</span>
+                </div>
+                <div>
+                  <strong>Localidad:</strong><br>
+                  <span>${hogar.localidad}</span>
+                </div>
+                <div>
+                  <strong>Estado:</strong><br>
+                  <span class="badge badge-success">${hogar.estado}</span>
+                </div>
+                <div>
+                  <strong>Fecha de Creación:</strong><br>
+                  <span>${hogar.fecha_registro}</span>
+                </div>
+              </div>
+            </div>
+
+            <h3 style="margin-bottom: 20px;">👶 Niños del Hogar (${hogar.ninos.length}/${hogar.capacidad_maxima})</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;">
+              ${hogar.ninos.map(nino => `
+                <div class="nino-card" style="background: white; border: 2px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.3s;" onclick="verNino(${nino.id})">
+                  <div style="width: 80px; height: 80px; margin: 0 auto 12px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold;">
+                    ${nino.foto ? `<img src="${nino.foto}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">` : nino.nombres.charAt(0)}
+                  </div>
+                  <strong style="display: block; margin-bottom: 4px;">${nino.nombres}</strong>
+                  <small style="color: var(--text-light);">${nino.edad} años</small>
+                </div>
+              `).join('') || '<p style="color: var(--text-light); text-align: center; padding: 40px;">No hay niños registrados</p>'}
+            </div>
+          </div>
+
+          <div>
+            <h3 style="margin-bottom: 20px;">📊 Estadísticas</h3>
+            <div style="background: var(--light); padding: 20px; border-radius: 8px;">
+              <div style="margin-bottom: 16px;">
+                <strong>Capacidad Utilizada:</strong>
+                <div style="background: white; height: 8px; border-radius: 4px; margin-top: 8px; overflow: hidden;">
+                  <div style="background: #10b981; width: ${(hogar.ninos.length / hogar.capacidad_maxima) * 100}%; height: 100%;"></div>
+                </div>
+                <small style="color: var(--text-light);">${hogar.ninos.length} de ${hogar.capacidad_maxima} niños</small>
+              </div>
+              <div style="margin-bottom: 16px;">
+                <strong>Visitas Realizadas:</strong><br>
+                <span style="font-size: 24px; font-weight: bold; color: var(--primary);">${hogar.total_visitas}</span>
+              </div>
+              <div>
+                <strong>Última Visita:</strong><br>
+                <span>${hogar.ultima_visita || 'Sin visitas'}</span>
+              </div>
+            </div>
+
+            <h3 style="margin: 24px 0 16px;">📄 Documentos</h3>
+            ${hogar.documentos.map(doc => `
+              <div style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <i class="fas fa-file-pdf" style="color: #ef4444; margin-right: 8px;"></i>
+                  <strong>${doc.nombre}</strong>
+                </div>
+                <button class="btn-icon btn-view" onclick="previewDocument('${doc.url}')" title="Vista previa">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            `).join('') || '<p style="color: var(--text-light); text-align: center; padding: 20px;">No hay documentos</p>'}
+          </div>
+        </div>
+      `;
+    }
+
+    function previewDocument(url) {
+      // Implementar preview de documentos
+      alert('Vista previa de documento: ' + url);
+    }
+
+    function verNino(ninoId) {
+      alert('Ver detalles del niño: ' + ninoId);
+    }
+
+    // Global Search
+    document.getElementById('globalSearch').addEventListener('input', function(e) {
+      // Implementar búsqueda global
+      console.log('Buscando:', e.target.value);
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,455 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-header {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    .area-info-box {
+        background: #e7f3ff;
+        border-left: 4px solid #0d6efd;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+    }
+    .area-warning-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+    }
+    .area-danger-box {
+        background: #f8d7da;
+        border-left: 4px solid #dc3545;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+    }
+    .capacity-display {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #0d6efd;
+        text-align: center;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    .photo-preview {
+        max-width: 150px;
+        max-height: 150px;
+        margin: 10px;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+    }
+    .required-label::after {
+        content: " *";
+        color: red;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard_admin' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'lista_hogares_revision' %}">Hogares en Revisión</a></li>
+            <li class="breadcrumb-item active">{{ titulo }}</li>
+        </ol>
+    </nav>
+
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>🏠 {{ titulo }}</h2>
+            <p class="text-muted mb-0">
+                <strong>Dirección:</strong> {{ hogar.direccion }}<br>
+                <strong>Agente Educativo:</strong> {{ hogar.madre.usuario.get_full_name }}<br>
+                <strong>Estado Actual:</strong> 
+                <span class="badge 
+                    {% if hogar.estado == 'pendiente_revision' %}bg-warning
+                    {% elif hogar.estado == 'en_revision' %}bg-info
+                    {% elif hogar.estado == 'aprobado' %}bg-success
+                    {% else %}bg-secondary{% endif %}">
+                    {{ hogar.get_estado_display }}
+                </span>
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'detalle_hogar' hogar.id %}" class="btn btn-outline-secondary">
+                👁️ Ver Detalle Completo
+            </a>
+        </div>
+    </div>
+
+    <!-- Información Importante -->
+    <div class="area-info-box">
+        <h5>📋 Instrucciones para la Visita Técnica</h5>
+        <ul class="mb-0">
+            <li><strong>Área Social Mínima:</strong> 24 m² (OBLIGATORIO)</li>
+            <li><strong>Cálculo de Capacidad:</strong> piso(m² / 2), máximo 15 niños</li>
+            <li><strong>Fotos Requeridas:</strong> Mínimo 3 del interior (sala, baño, habitación) + 1 del exterior</li>
+            <li><strong>Documentos:</strong> Certificado de tenencia (propio, arriendo o comodato)</li>
+        </ul>
+    </div>
+
+    <!-- Formulario -->
+    <form method="post" enctype="multipart/form-data" id="form-visita-tecnica">
+        {% csrf_token %}
+
+        <!-- Sección 1: Características Físicas -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                🏗️ Características Físicas del Inmueble
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label required-label">{{ form.estrato.label }}</label>
+                        {{ form.estrato }}
+                        {% if form.estrato.errors %}
+                            <div class="text-danger">{{ form.estrato.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted">Estrato socioeconómico (1-6)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label required-label">{{ form.num_habitaciones.label }}</label>
+                        {{ form.num_habitaciones }}
+                        {% if form.num_habitaciones.errors %}
+                            <div class="text-danger">{{ form.num_habitaciones.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label required-label">{{ form.num_banos.label }}</label>
+                        {{ form.num_banos }}
+                        {% if form.num_banos.errors %}
+                            <div class="text-danger">{{ form.num_banos.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.material_construccion.label }}</label>
+                        {{ form.material_construccion }}
+                        {% if form.material_construccion.errors %}
+                            <div class="text-danger">{{ form.material_construccion.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted">Ej: Ladrillo, concreto, madera, etc.</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.riesgos_cercanos.label }}</label>
+                        {{ form.riesgos_cercanos }}
+                        {% if form.riesgos_cercanos.errors %}
+                            <div class="text-danger">{{ form.riesgos_cercanos.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted">Ej: Vías principales, zonas de riesgo, etc.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 2: ÁREA SOCIAL (CRÍTICO) -->
+        <div class="card mb-3 border-warning">
+            <div class="card-header bg-warning text-dark">
+                📐 Área Social Disponible (CRÍTICO - Mínimo 24 m²)
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label required-label">{{ form.area_social_m2.label }}</label>
+                        {{ form.area_social_m2 }}
+                        {% if form.area_social_m2.errors %}
+                            <div class="text-danger mt-2">
+                                <strong>{{ form.area_social_m2.errors }}</strong>
+                            </div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-2">
+                            {{ form.area_social_m2.help_text }}
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <div id="capacity-result" class="capacity-display" style="display: none;">
+                            <div>Capacidad Calculada:</div>
+                            <div id="capacity-number">-- niños</div>
+                            <small class="text-muted d-block mt-2">Fórmula: piso(m² / 2), máximo 15</small>
+                        </div>
+                        <div id="area-warning" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Tabla de referencia -->
+                <div class="mt-3">
+                    <h6>📊 Tabla de Referencia de Capacidades</h6>
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Área Social (m²)</th>
+                                <th>Capacidad Calculada</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-danger">
+                                <td>&lt; 24 m²</td>
+                                <td>--</td>
+                                <td>❌ <strong>NO APTO</strong> (no cumple mínimo)</td>
+                            </tr>
+                            <tr>
+                                <td>24 - 25.9 m²</td>
+                                <td>12 niños</td>
+                                <td>✅ Apto para 12-14 niños</td>
+                            </tr>
+                            <tr>
+                                <td>26 - 27.9 m²</td>
+                                <td>13 niños</td>
+                                <td>✅ Apto para 12-14 niños</td>
+                            </tr>
+                            <tr>
+                                <td>28 - 29.9 m²</td>
+                                <td>14 niños</td>
+                                <td>✅ Apto para 12-14 niños</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td>≥ 30 m²</td>
+                                <td>15 niños (máximo)</td>
+                                <td>✅ Apto para 15 niños (capacidad máxima)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 3: Fotos -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                📸 Fotografías del Hogar
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label required-label">{{ form.fotos_interior.label }}</label>
+                        {{ form.fotos_interior }}
+                        {% if form.fotos_interior.errors %}
+                            <div class="text-danger">{{ form.fotos_interior.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-2">
+                            {{ form.fotos_interior.help_text }}
+                        </small>
+                        {% if hogar.fotos_interior %}
+                            <div class="mt-2">
+                                <img src="{{ hogar.fotos_interior.url }}" class="photo-preview" alt="Interior">
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label required-label">{{ form.fotos_exterior.label }}</label>
+                        {{ form.fotos_exterior }}
+                        {% if form.fotos_exterior.errors %}
+                            <div class="text-danger">{{ form.fotos_exterior.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-2">
+                            {{ form.fotos_exterior.help_text }}
+                        </small>
+                        {% if hogar.fotos_exterior %}
+                            <div class="mt-2">
+                                <img src="{{ hogar.fotos_exterior.url }}" class="photo-preview" alt="Exterior">
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <strong>📝 Nota:</strong> Asegúrese de tomar fotos claras que muestren las condiciones del hogar.
+                    Las fotos interiores deben incluir: sala/área social, baño y habitación.
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 4: Tenencia -->
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                📄 Tenencia del Inmueble
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label required-label">{{ form.tipo_tenencia.label }}</label>
+                        {{ form.tipo_tenencia }}
+                        {% if form.tipo_tenencia.errors %}
+                            <div class="text-danger">{{ form.tipo_tenencia.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-2">
+                            {{ form.tipo_tenencia.help_text }}
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.documento_tenencia_pdf.label }}</label>
+                        {{ form.documento_tenencia_pdf }}
+                        {% if form.documento_tenencia_pdf.errors %}
+                            <div class="text-danger">{{ form.documento_tenencia_pdf.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-2">
+                            {{ form.documento_tenencia_pdf.help_text }}
+                        </small>
+                        {% if hogar.documento_tenencia_pdf %}
+                            <div class="mt-2">
+                                <a href="{{ hogar.documento_tenencia_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    📄 Ver Documento Actual
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 5: Geolocalización -->
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                🌍 Geolocalización
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.geolocalizacion_lat.label }}</label>
+                        {{ form.geolocalizacion_lat }}
+                        {% if form.geolocalizacion_lat.errors %}
+                            <div class="text-danger">{{ form.geolocalizacion_lat.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-2">
+                            {{ form.geolocalizacion_lat.help_text }}
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.geolocalizacion_lon.label }}</label>
+                        {{ form.geolocalizacion_lon }}
+                        {% if form.geolocalizacion_lon.errors %}
+                            <div class="text-danger">{{ form.geolocalizacion_lon.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-2">
+                            {{ form.geolocalizacion_lon.help_text }}
+                        </small>
+                    </div>
+                </div>
+                <div class="alert alert-secondary mt-3">
+                    <strong>💡 Ayuda:</strong> Use Google Maps para obtener las coordenadas exactas del hogar.
+                    Haga clic derecho en el mapa → "¿Qué hay aquí?" → Copie las coordenadas.
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{% url 'lista_hogares_revision' %}" class="btn btn-secondary">
+                ← Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-guardar">
+                💾 Guardar Visita Técnica
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const areaInput = document.getElementById('id_area_social_m2');
+    const capacityResult = document.getElementById('capacity-result');
+    const capacityNumber = document.getElementById('capacity-number');
+    const areaWarning = document.getElementById('area-warning');
+    const btnGuardar = document.getElementById('btn-guardar');
+
+    if (areaInput) {
+        // Calcular capacidad en tiempo real
+        areaInput.addEventListener('input', function() {
+            const area = parseFloat(this.value);
+            
+            if (isNaN(area) || area <= 0) {
+                capacityResult.style.display = 'none';
+                areaWarning.style.display = 'none';
+                return;
+            }
+
+            // Calcular capacidad: piso(área / 2), máximo 15
+            let capacidad = Math.floor(area / 2);
+            if (capacidad > 15) capacidad = 15;
+
+            // Mostrar resultado
+            capacityResult.style.display = 'block';
+            capacityNumber.textContent = capacidad + ' niños';
+
+            // Mostrar advertencias según el área
+            areaWarning.style.display = 'block';
+            
+            if (area < 24) {
+                areaWarning.className = 'area-danger-box';
+                areaWarning.innerHTML = `
+                    <strong>⚠️ ÁREA INSUFICIENTE</strong><br>
+                    El área ingresada (${area.toFixed(2)} m²) es inferior al mínimo requerido (24 m²).<br>
+                    <strong>Este hogar NO PUEDE SER APROBADO.</strong>
+                `;
+                capacityResult.style.display = 'none';
+                btnGuardar.classList.remove('btn-primary');
+                btnGuardar.classList.add('btn-danger');
+                btnGuardar.innerHTML = '⚠️ Guardar (Hogar No Apto)';
+            } else if (area >= 24 && area < 30) {
+                areaWarning.className = 'area-warning-box';
+                areaWarning.innerHTML = `
+                    <strong>✅ Área Aceptable</strong><br>
+                    Capacidad autorizada: ${capacidad} niños.<br>
+                    El hogar cumple con el mínimo requerido (24 m²).
+                `;
+                btnGuardar.classList.remove('btn-danger');
+                btnGuardar.classList.add('btn-primary');
+                btnGuardar.innerHTML = '💾 Guardar Visita Técnica';
+            } else {
+                areaWarning.className = 'area-info-box';
+                areaWarning.innerHTML = `
+                    <strong>✅ Área Óptima</strong><br>
+                    Capacidad máxima autorizada: ${capacidad} niños (límite 15).<br>
+                    El hogar cumple ampliamente con los requisitos.
+                `;
+                btnGuardar.classList.remove('btn-danger');
+                btnGuardar.classList.add('btn-primary');
+                btnGuardar.innerHTML = '💾 Guardar Visita Técnica';
+            }
+        });
+
+        // Disparar el cálculo si ya hay un valor
+        if (areaInput.value) {
+            areaInput.dispatchEvent(new Event('input'));
+        }
+    }
+
+    // Validación antes de enviar
+    document.getElementById('form-visita-tecnica').addEventListener('submit', function(e) {
+        const area = parseFloat(areaInput.value);
+        
+        if (isNaN(area) || area <= 0) {
+            e.preventDefault();
+            alert('⚠️ Debe ingresar un área social válida antes de continuar.');
+            areaInput.focus();
+            return false;
+        }
+
+        if (area < 24) {
+            const confirmar = confirm(
+                '⚠️ ADVERTENCIA: El área ingresada (' + area.toFixed(2) + ' m²) es inferior al mínimo requerido (24 m²).\n\n' +
+                'Este hogar NO PODRÁ SER APROBADO.\n\n' +
+                '¿Está seguro de continuar?'
+            );
+            if (!confirmar) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

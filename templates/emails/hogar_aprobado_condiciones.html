@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0}
+    .container{max-width:600px;margin:30px auto;background:white;border-radius:10px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+    .header{background:linear-gradient(135deg,#ffc107,#fd7e14);color:white;padding:30px;text-align:center}
+    .header .icon{font-size:64px;margin-bottom:15px}
+    .header h1{margin:0;font-size:28px}
+    .header p{margin:10px 0 0;opacity:0.9;font-size:14px}
+    .content{padding:30px}
+    .warning-badge{background:#fff3cd;color:#856404;border:2px solid #ffc107;padding:15px 25px;border-radius:10px;text-align:center;font-size:20px;font-weight:bold;margin:20px 0}
+    .info-box{background:#e7f3ff;border-left:4px solid #007bff;padding:15px;margin:20px 0;border-radius:5px}
+    .info-box strong{color:#004080;display:block;margin-bottom:8px}
+    .info-item{margin:10px 0;line-height:1.6}
+    .conditions-box{background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin:20px 0;border-radius:5px}
+    .conditions-list{margin:15px 0;padding-left:20px}
+    .conditions-list li{margin:10px 0;line-height:1.6;color:#856404}
+    .footer{background:#f8f9fa;padding:20px;text-align:center;color:#666;font-size:12px;border-top:1px solid #e0e0e0}
+    .footer p{margin:5px 0}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="icon">⚠️</div>
+      <h1>Aprobación con Condiciones</h1>
+      <p>Resultados de la Visita Técnica</p>
+    </div>
+
+    <div class="content">
+      <p>Estimada <strong>{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}</strong>,</p>
+      
+      <div class="warning-badge">
+        ✓ APROBADO CON CONDICIONES
+      </div>
+
+      <p style="font-size:16px;line-height:1.8">
+        Nos complace informarle que su hogar comunitario <strong>"{{ hogar.nombre_hogar }}"</strong> 
+        ha sido <strong>APROBADO CONDICIONALMENTE</strong> después de la visita técnica realizada el 
+        <strong>{{ acta.visita.fecha_programada|date:"d de F de Y" }}</strong>.
+      </p>
+
+      <p style="line-height:1.8">
+        Esto significa que su hogar cumple con la mayoría de los requisitos, pero es necesario 
+        realizar algunas mejoras o correcciones antes de obtener la aprobación definitiva.
+      </p>
+
+      <div class="info-box">
+        <strong>📊 Resultados de la Evaluación</strong>
+        <div class="info-item">
+          <strong>Estado del Hogar:</strong> <span style="color:#ffc107">⚠ EN EVALUACIÓN</span>
+        </div>
+        <div class="info-item">
+          <strong>Capacidad Recomendada:</strong> {{ acta.capacidad_recomendada }} niños (una vez aprobado)
+        </div>
+        <div class="info-item">
+          <strong>Visitador:</strong> {{ acta.completado_por.nombres }} {{ acta.completado_por.apellidos }}
+        </div>
+        <div class="info-item">
+          <strong>Fecha de Visita:</strong> {{ acta.visita.fecha_programada|date:"d/m/Y H:i" }}
+        </div>
+      </div>
+
+      <div class="conditions-box">
+        <strong style="color:#856404;font-size:16px">📋 Condiciones a Cumplir</strong>
+        <p style="margin:10px 0;color:#856404">
+          Para obtener la aprobación definitiva, deberá cumplir con las siguientes condiciones:
+        </p>
+        <div style="background:white;padding:15px;border-radius:5px;margin-top:10px">
+          {{ acta.condiciones_aprobacion|linebreaks }}
+        </div>
+      </div>
+
+      {% if acta.observaciones_generales %}
+      <div class="info-box">
+        <strong>💬 Observaciones Adicionales</strong>
+        <p style="margin:10px 0 0;line-height:1.6">{{ acta.observaciones_generales }}</p>
+      </div>
+      {% endif %}
+
+      <h3 style="color:#004080;margin-top:30px;">📋 Próximos Pasos</h3>
+      <ol style="line-height:2;color:#333">
+        <li>Realizar las mejoras o correcciones indicadas en las condiciones</li>
+        <li>Documentar con fotos los cambios realizados</li>
+        <li>Notificar al ICBF cuando haya completado las correcciones</li>
+        <li>Agendar una nueva visita de verificación (V2)</li>
+        <li>Una vez aprobada la verificación, recibirá la habilitación definitiva</li>
+      </ol>
+
+      <div style="background:#d1ecf1;border-left:4px solid #0c5460;padding:15px;margin:20px 0;border-radius:5px">
+        <strong style="color:#0c5460">💡 Recomendación:</strong>
+        <p style="margin:10px 0 0;color:#0c5460;line-height:1.6">
+          Le sugerimos completar las correcciones lo antes posible para agilizar el proceso 
+          de habilitación. Nuestro equipo está disponible para orientarla en cualquier duda 
+          que pueda tener sobre las mejoras requeridas.
+        </p>
+      </div>
+
+      <div style="background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin:20px 0;border-radius:5px">
+        <strong style="color:#856404">⏰ Plazo:</strong>
+        <p style="margin:10px 0 0;color:#856404;line-height:1.6">
+          Cuenta con un plazo de <strong>30 días calendario</strong> para realizar las correcciones 
+          solicitadas. Pasado este tiempo sin realizar las mejoras, deberá reiniciar el proceso de postulación.
+        </p>
+      </div>
+
+      <div style="text-align:center;margin-top:30px;">
+        <p style="font-size:18px;color:#ffc107;font-weight:bold">
+          ¡Estamos seguros que logrará cumplir con todos los requisitos!
+        </p>
+        <p style="color:#666;margin-top:10px">
+          El equipo ICBF está aquí para apoyarla en este proceso
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>Instituto Colombiano de Bienestar Familiar - ICBF</strong></p>
+      <p>Programa Hogares Comunitarios de Bienestar</p>
+      <p>Este es un correo automático, por favor no responder a esta dirección</p>
+    </div>
+  </div>
+</body>
+</html>

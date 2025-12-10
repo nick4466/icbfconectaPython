@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hogares en Revisión{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hogar-card {
+        transition: transform 0.2s;
+        border-left: 4px solid #dee2e6;
+    }
+    .hogar-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .hogar-card.pendiente {
+        border-left-color: #ffc107;
+    }
+    .hogar-card.en-revision {
+        border-left-color: #0dcaf0;
+    }
+    .stats-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .tab-content {
+        padding-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>📋 Hogares en Revisión</h2>
+            <p class="text-muted mb-0">Gestión de hogares pendientes de visita técnica y aprobación</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard_admin' %}" class="btn btn-outline-secondary">
+                ← Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-primary">{{ total_hogares }}</h3>
+                    <small class="text-muted">Total Hogares</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-warning">{{ hogares_pendientes }}</h3>
+                    <small class="text-muted">Pendientes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-info">{{ hogares_en_revision }}</h3>
+                    <small class="text-muted">En Revisión</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-success">{{ hogares_aprobados }}</h3>
+                    <small class="text-muted">Aprobados</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-danger">{{ hogares_rechazados }}</h3>
+                    <small class="text-muted">Rechazados</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-secondary">{{ hogares_mantenimiento }}</h3>
+                    <small class="text-muted">Mantenimiento</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas de Visitas -->
+    {% if visitas_proximas > 0 or visitas_vencidas > 0 %}
+    <div class="row mb-4">
+        {% if visitas_proximas > 0 %}
+        <div class="col-md-6">
+            <div class="alert alert-warning">
+                <h5>⚠️ Visitas Próximas</h5>
+                <p class="mb-2"><strong>{{ visitas_proximas }}</strong> visita(s) programada(s) en los próximos 7 días</p>
+                <a href="?alerta=proximas" class="btn btn-sm btn-warning">Ver Visitas Próximas</a>
+            </div>
+        </div>
+        {% endif %}
+        {% if visitas_vencidas > 0 %}
+        <div class="col-md-6">
+            <div class="alert alert-danger">
+                <h5>🚨 Visitas Vencidas</h5>
+                <p class="mb-2"><strong>{{ visitas_vencidas }}</strong> visita(s) vencida(s) que requieren atención</p>
+                <a href="?alerta=vencidas" class="btn btn-sm btn-danger">Ver Visitas Vencidas</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente_revision" {% if estado_filter == 'pendiente_revision' %}selected{% endif %}>
+                            Pendiente de Revisión
+                        </option>
+                        <option value="en_revision" {% if estado_filter == 'en_revision' %}selected{% endif %}>
+                            En Revisión
+                        </option>
+                        <option value="aprobado" {% if estado_filter == 'aprobado' %}selected{% endif %}>
+                            Aprobado
+                        </option>
+                        <option value="rechazado" {% if estado_filter == 'rechazado' %}selected{% endif %}>
+                            Rechazado
+                        </option>
+                        <option value="en_mantenimiento" {% if estado_filter == 'en_mantenimiento' %}selected{% endif %}>
+                            En Mantenimiento
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Regional</label>
+                    <select name="regional" class="form-select">
+                        <option value="">Todas las regionales</option>
+                        {% for regional in regionales %}
+                            <option value="{{ regional.id }}" {% if regional_filter == regional.id|stringformat:'s' %}selected{% endif %}>
+                                {{ regional.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Localidad</label>
+                    <select name="localidad" class="form-select">
+                        <option value="">Todas las localidades</option>
+                        {% for localidad in localidades %}
+                            <option value="{{ localidad.id }}" {% if localidad_filter == localidad.id|stringformat:'s' %}selected{% endif %}>
+                                {{ localidad.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Alertas</label>
+                    <select name="alerta" class="form-select">
+                        <option value="">Sin filtro</option>
+                        <option value="proximas" {% if alerta_filter == 'proximas' %}selected{% endif %}>
+                            Visitas Próximas (7 días)
+                        </option>
+                        <option value="vencidas" {% if alerta_filter == 'vencidas' %}selected{% endif %}>
+                            Visitas Vencidas
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="buscar" class="form-control" 
+                           placeholder="Nombre, dirección, barrio..."
+                           value="{{ buscar }}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">🔍</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Hogares -->
+    {% if hogares %}
+        <div class="row">
+            {% for hogar in hogares %}
+                <div class="col-md-6 mb-3">
+                    <div class="card hogar-card {% if hogar.estado == 'pendiente_revision' %}pendiente{% elif hogar.estado == 'en_revision' %}en-revision{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-2">
+                                        🏠 {{ hogar.nombre_hogar }}
+                                    </h5>
+                                    <p class="text-muted mb-2">
+                                        <small>
+                                            <strong>📍 Dirección:</strong> {{ hogar.direccion }}<br>
+                                            <strong>👤 Agente Educativo:</strong> {{ hogar.madre.usuario.get_full_name }}<br>
+                                            <strong>🏢 Regional:</strong> {{ hogar.regional.nombre }}
+                                            {% if hogar.localidad_bogota %}
+                                                - {{ hogar.localidad_bogota.nombre }}
+                                            {% elif hogar.ciudad %}
+                                                - {{ hogar.ciudad.nombre }}
+                                            {% endif %}
+                                        </small>
+                                    </p>
+                                    
+                                    <!-- Estado y Progreso -->
+                                    <div class="mb-2">
+                                        <span class="badge 
+                                            {% if hogar.estado == 'pendiente_revision' %}bg-warning text-dark
+                                            {% elif hogar.estado == 'en_revision' %}bg-info
+                                            {% elif hogar.estado == 'aprobado' %}bg-success
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ hogar.get_estado_display }}
+                                        </span>
+                                        
+                                        {% if hogar.formulario_completo %}
+                                            <span class="badge bg-success">✅ Formulario Completo</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">⏳ Falta Visita Técnica</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Información de Área y Capacidad (si existe) -->
+                                    {% if hogar.area_social_m2 %}
+                                        <div class="alert alert-sm 
+                                            {% if hogar.area_social_m2 < 24 %}alert-danger
+                                            {% elif hogar.area_social_m2 >= 30 %}alert-success
+                                            {% else %}alert-warning{% endif %} 
+                                            mb-2 py-1 px-2">
+                                            <small>
+                                                <strong>📐 Área:</strong> {{ hogar.area_social_m2 }} m² | 
+                                                <strong>👶 Capacidad:</strong> 
+                                                {% if hogar.capacidad_calculada %}
+                                                    {{ hogar.capacidad_calculada }} niños
+                                                {% else %}
+                                                    No calculada
+                                                {% endif %}
+                                                {% if hogar.area_social_m2 < 24 %}
+                                                    <br><strong class="text-danger">⚠️ NO APTO (área insuficiente)</strong>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Fecha de Visita -->
+                                    {% if hogar.fecha_primera_visita %}
+                                        <p class="mb-0">
+                                            <small>
+                                                <strong>📅 Visita Programada:</strong> {{ hogar.fecha_primera_visita|date:"d/m/Y" }}
+                                                {% if hogar.fecha_primera_visita < hoy and hogar.estado in 'pendiente_revision,en_revision' %}
+                                                    <span class="badge bg-danger ms-2">🚨 VENCIDA</span>
+                                                {% elif hogar.fecha_primera_visita >= hoy and hogar.fecha_primera_visita <= hoy|date:'Y-m-d'|add_days:7 %}
+                                                    <span class="badge bg-warning text-dark ms-2">⚠️ PRÓXIMA ({{ hogar.fecha_primera_visita|timeuntil }})</span>
+                                                {% endif %}
+                                            </small>
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="mt-3 d-flex gap-2 flex-wrap">
+                                <a href="{% url 'detalle_hogar' hogar.id %}" class="btn btn-sm btn-outline-primary">
+                                    👁️ Ver Detalle
+                                </a>
+                                
+                                {% if not hogar.formulario_completo %}
+                                    <a href="{% url 'completar_visita_tecnica' hogar.id %}" class="btn btn-sm btn-warning">
+                                        📝 Completar Visita Técnica
+                                    </a>
+                                {% endif %}
+
+                                {% if hogar.formulario_completo and hogar.estado == 'en_revision' %}
+                                    <a href="{% url 'aprobar_rechazar_hogar' hogar.id %}" class="btn btn-sm btn-success">
+                                        ✅ Aprobar/Rechazar
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if hogares.has_other_pages %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center">
+                    {% if hogares.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ hogares.previous_page_number }}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}{% if regional_filter %}&regional={{ regional_filter }}{% endif %}{% if buscar %}&buscar={{ buscar }}{% endif %}">
+                                Anterior
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in hogares.paginator.page_range %}
+                        {% if hogares.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > hogares.number|add:'-3' and num < hogares.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}{% if regional_filter %}&regional={{ regional_filter }}{% endif %}{% if buscar %}&buscar={{ buscar }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if hogares.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ hogares.next_page_number }}{% if estado_filter %}&estado={{ estado_filter }}{% endif %}{% if regional_filter %}&regional={{ regional_filter }}{% endif %}{% if buscar %}&buscar={{ buscar }}{% endif %}">
+                                Siguiente
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info text-center">
+            <h4>No hay hogares en revisión</h4>
+            <p>No se encontraron hogares con los filtros seleccionados.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

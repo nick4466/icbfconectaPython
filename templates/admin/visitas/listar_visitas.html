@@ -1,0 +1,227 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listado de Visitas Técnicas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Poppins",sans-serif;background:#f3f6fa;color:#333;display:flex;min-height:100vh}
+    .sidebar{width:250px;background:linear-gradient(180deg,#004080,#007bff);color:white;display:flex;flex-direction:column;padding:25px 0}
+    .sidebar img{height:70px;margin:0 auto 20px}
+    .sidebar h2{text-align:center;font-weight:700;margin-bottom:25px;font-size:18px}
+    .sidebar a{color:white;text-decoration:none;padding:14px 25px;display:flex;align-items:center;gap:10px;font-weight:500;transition:background .3s ease}
+    .sidebar a:hover,.sidebar a.active{background:rgba(255,255,255,0.15);border-left:4px solid #fff}
+    .main{flex:1;padding:40px;max-width:1600px;margin:0 auto;width:100%}
+    .main header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+    .main header h1{font-size:28px;color:#004080;font-weight:700}
+    .filters{background:white;padding:25px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);margin-bottom:30px}
+    .filters form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;align-items:end}
+    .filter-group label{display:block;font-weight:600;margin-bottom:5px;font-size:14px;color:#333}
+    .filter-group select{width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-family:"Poppins",sans-serif;font-size:14px}
+    .filter-group select:focus{border-color:#007bff;outline:none}
+    .btn{padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .2s;font-size:14px}
+    .btn-primary{background:#007bff;color:white}
+    .btn-primary:hover{background:#0056b3}
+    .btn-secondary{background:#6c757d;color:white}
+    .btn-secondary:hover{background:#5a6268}
+    .btn-sm{padding:6px 12px;font-size:13px}
+    .table-container{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);overflow:hidden}
+    table{width:100%;border-collapse:collapse}
+    thead{background:linear-gradient(90deg,#004080,#007bff);color:white}
+    thead th{padding:15px 12px;text-align:left;font-weight:600;font-size:14px}
+    tbody tr{border-bottom:1px solid #e0e0e0;transition:background .2s}
+    tbody tr:hover{background:#f8f9fa}
+    tbody td{padding:12px;font-size:14px}
+    .badge{padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap}
+    .badge.agendada{background:#d1ecf1;color:#0c5460}
+    .badge.en-proceso{background:#fff3cd;color:#856404}
+    .badge.completada{background:#d4edda;color:#155724}
+    .badge.cancelada{background:#f8d7da;color:#721c24}
+    .badge.reprogramada{background:#e7e7e7;color:#333}
+    .badge.v1{background:#cfe2ff;color:#084298}
+    .badge.v2{background:#e0cffc;color:#432874}
+    .badge.v3{background:#ffe5d0;color:#984c0c}
+    .actions{display:flex;gap:8px}
+    .pagination{display:flex;justify-content:center;gap:10px;margin-top:20px;padding:20px}
+    .pagination a,.pagination span{padding:8px 12px;background:white;border-radius:6px;text-decoration:none;color:#004080;border:1px solid #ddd}
+    .pagination .current{background:#004080;color:white;border-color:#004080}
+    .empty{text-align:center;padding:60px 20px;color:#999}
+    .empty i{font-size:64px;margin-bottom:20px;display:block;opacity:0.5}
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF">
+    <h2>Panel de Administrador</h2>
+    <a href="{% url 'dashboard_admin' %}"><i class="fas fa-home"></i> Inicio</a>
+    <a href="{% url 'listar_madres' %}"><i class="fas fa-users"></i> Agentes Educativos</a>
+    <a href="{% url 'listar_hogares_pendientes_visita' %}"><i class="fas fa-clipboard-check"></i> Hogares Pendientes</a>
+    <a href="{% url 'listar_visitas_tecnicas' %}" class="active"><i class="fas fa-list"></i> Todas las Visitas</a>
+    <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+  </div>
+
+  <div class="main">
+    <header>
+      <h1><i class="fas fa-clipboard-list"></i> Historial de Visitas Técnicas</h1>
+    </header>
+
+    <!-- Filtros -->
+    <div class="filters">
+      <form method="get">
+        <div class="filter-group">
+          <label for="estado">Estado de Visita</label>
+          <select name="estado" id="estado">
+            <option value="">Todos los estados</option>
+            <option value="agendada" {% if request.GET.estado == 'agendada' %}selected{% endif %}>Agendada</option>
+            <option value="en_proceso" {% if request.GET.estado == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+            <option value="completada" {% if request.GET.estado == 'completada' %}selected{% endif %}>Completada</option>
+            <option value="cancelada" {% if request.GET.estado == 'cancelada' %}selected{% endif %}>Cancelada</option>
+            <option value="reprogramada" {% if request.GET.estado == 'reprogramada' %}selected{% endif %}>Reprogramada</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="tipo">Tipo de Visita</label>
+          <select name="tipo" id="tipo">
+            <option value="">Todos los tipos</option>
+            <option value="V1" {% if request.GET.tipo == 'V1' %}selected{% endif %}>V1 - Primera Visita</option>
+            <option value="V2" {% if request.GET.tipo == 'V2' %}selected{% endif %}>V2 - Seguimiento</option>
+            <option value="V3" {% if request.GET.tipo == 'V3' %}selected{% endif %}>V3 - Verificación</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="visitador">Visitador</label>
+          <select name="visitador" id="visitador">
+            <option value="">Todos los visitadores</option>
+            {% for v in visitadores %}
+            <option value="{{ v.id }}" {% if request.GET.visitador == v.id|stringformat:'s' %}selected{% endif %}>
+              {{ v.nombres }} {{ v.apellidos }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-filter"></i> Filtrar
+          </button>
+          <a href="{% url 'listar_visitas_tecnicas' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Limpiar
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tabla de Visitas -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha Programada</th>
+            <th>Hogar</th>
+            <th>Agente Educativo</th>
+            <th>Visitador</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Acta</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for visita in page_obj %}
+          <tr>
+            <td>
+              <strong>{{ visita.fecha_programada|date:"d/m/Y" }}</strong><br>
+              <small style="color:#666;">{{ visita.fecha_programada|date:"H:i" }}</small>
+            </td>
+            <td>{{ visita.hogar.nombre_hogar }}</td>
+            <td>{{ visita.hogar.madre.usuario.nombres }} {{ visita.hogar.madre.usuario.apellidos }}</td>
+            <td>{{ visita.visitador.nombres }} {{ visita.visitador.apellidos }}</td>
+            <td>
+              <span class="badge v{{ visita.tipo_visita|lower }}">{{ visita.tipo_visita }}</span>
+            </td>
+            <td>
+              <span class="badge {{ visita.estado }}">
+                {% if visita.estado == 'agendada' %}
+                  <i class="fas fa-calendar-check"></i> Agendada
+                {% elif visita.estado == 'en_proceso' %}
+                  <i class="fas fa-spinner"></i> En Proceso
+                {% elif visita.estado == 'completada' %}
+                  <i class="fas fa-check-circle"></i> Completada
+                {% elif visita.estado == 'cancelada' %}
+                  <i class="fas fa-times-circle"></i> Cancelada
+                {% elif visita.estado == 'reprogramada' %}
+                  <i class="fas fa-redo"></i> Reprogramada
+                {% endif %}
+              </span>
+            </td>
+            <td>
+              {% if visita.estado == 'completada' and visita.acta %}
+                <span class="badge completada"><i class="fas fa-file-alt"></i> Creada</span>
+              {% else %}
+                <span style="color:#999;font-size:12px;">Sin acta</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="actions">
+                {% if visita.estado == 'completada' and visita.acta %}
+                  <a href="{% url 'ver_acta_visita' visita.acta.id %}" class="btn btn-primary btn-sm" title="Ver Acta">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="{% url 'descargar_acta_pdf' visita.acta.id %}" class="btn btn-secondary btn-sm" title="Descargar PDF" target="_blank">
+                    <i class="fas fa-download"></i>
+                  </a>
+                {% elif visita.estado == 'agendada' %}
+                  <a href="{% url 'crear_acta_visita' visita.id %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-edit"></i> Crear Acta
+                  </a>
+                {% else %}
+                  <span style="color:#999;font-size:12px;">-</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8">
+              <div class="empty">
+                <i class="fas fa-folder-open"></i>
+                <p>No se encontraron visitas técnicas con los filtros aplicados</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      {% if page_obj.has_other_pages %}
+      <div class="pagination">
+        {% if page_obj.has_previous %}
+          <a href="?page=1{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.visitador %}&visitador={{ request.GET.visitador }}{% endif %}">&laquo; Primera</a>
+          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.visitador %}&visitador={{ request.GET.visitador }}{% endif %}">Anterior</a>
+        {% endif %}
+        
+        <span class="current">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.visitador %}&visitador={{ request.GET.visitador }}{% endif %}">Siguiente</a>
+          <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.visitador %}&visitador={{ request.GET.visitador }}{% endif %}">Última &raquo;</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="margin-top:30px;text-align:center">
+      <a href="{% url 'listar_hogares_pendientes_visita' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver a Hogares Pendientes
+      </a>
+    </div>
+  </div>
+</body>
+</html>

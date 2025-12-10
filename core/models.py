@@ -270,10 +270,11 @@ class MadreComunitaria(models.Model):
     titulo_obtenido = models.CharField(max_length=150, null=True, blank=True)
     institucion = models.CharField(max_length=150, null=True, blank=True)
     experiencia_previa = models.TextField(null=True, blank=True)
+    certificado_laboral = models.FileField(upload_to='madres_documentos/certificados_laborales/', null=True, blank=True)
 
     # Declaraciones
     no_retirado_icbf = models.BooleanField(default=False)
-    disponibilidad_tiempo = models.BooleanField(default=False)
+    carta_disponibilidad = models.FileField(upload_to='madres_documentos/disponibilidad/', null=True, blank=True)
     firma_digital = models.FileField(upload_to='madres_documentos/firmas/', null=True, blank=True)
 
     foto_madre = models.ImageField(upload_to='madres_documentos/fotos/', null=True, blank=True)
@@ -309,23 +310,35 @@ class HogarComunitario(models.Model):
     ciudad = models.ForeignKey(Ciudad, on_delete=models.PROTECT, related_name='hogares')
     nombre_hogar = models.CharField(max_length=100)
     direccion = models.CharField(max_length=200)
-    localidad = models.CharField(max_length=100)
+    localidad = models.CharField(max_length=100, blank=True, default='')  # Mantener para hogares antiguos, se asigna en la vista
+    localidad_bogota = models.ForeignKey('LocalidadBogota', on_delete=models.SET_NULL, null=True, blank=True, related_name='hogares')
     barrio = models.CharField(max_length=100, null=True, blank=True)
     estrato = models.IntegerField(null=True, blank=True)
 
-    # Infraestructura
+    # 🆕 NUEVOS CAMPOS - FORMULARIO 1
+    fecha_primera_visita = models.DateField(null=True, blank=True, help_text="Fecha programada para la primera visita técnica")
+    
+    # 🆕 NUEVOS CAMPOS - FORMULARIO 2 (Visita Técnica)
+    area_social_m2 = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, 
+                                         help_text="Metros cuadrados del área social disponible para los niños")
+    capacidad_calculada = models.IntegerField(null=True, blank=True, 
+                                              help_text="Capacidad calculada según área social (m²/2)")
+    formulario_completo = models.BooleanField(default=False, 
+                                              help_text="Indica si se completó el formulario 2 de visita técnica")
+    
+    # Infraestructura (FORMULARIO 2)
     num_habitaciones = models.IntegerField(null=True, blank=True)
     num_banos = models.IntegerField(null=True, blank=True)
-    material_construccion = models.CharField(max_length=100, null=True, blank=True)
+    material_construccion = models.TextField(null=True, blank=True)
     riesgos_cercanos = models.TextField(null=True, blank=True)
 
-    # Fotos y geolocalización
+    # Fotos y geolocalización (FORMULARIO 2)
     fotos_interior = models.FileField(upload_to='hogares/fotos_interior/', null=True, blank=True)
     fotos_exterior = models.FileField(upload_to='hogares/fotos_exterior/', null=True, blank=True)
     geolocalizacion_lat = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
     geolocalizacion_lon = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
 
-    # Tenencia del inmueble
+    # Tenencia del inmueble (FORMULARIO 2)
     tipo_tenencia = models.CharField(max_length=50, choices=[
         ('Propia', 'Propia'),
         ('Arrendada', 'Arrendada'),
@@ -334,19 +347,28 @@ class HogarComunitario(models.Model):
     documento_tenencia_pdf = models.FileField(upload_to='hogares/documentos_tenencia/', null=True, blank=True)
 
     # Estado y relación
-    capacidad_maxima = models.IntegerField(default=15)
+    capacidad_maxima = models.IntegerField(default=15, help_text="Capacidad máxima aprobada después de visita técnica")
     estado = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=[
-            ('activo', 'activo'),
-            ('inactivo', 'inactivo'),
-            ('en_mantenimiento', 'en_mantenimiento')
+            ('pendiente_revision', 'Pendiente de Revisión'),
+            ('en_revision', 'En Revisión'),
+            ('aprobado', 'Aprobado'),
+            ('rechazado', 'Rechazado'),
+            ('en_mantenimiento', 'En Mantenimiento'),
+            # Legacy states (mantener por compatibilidad)
+            ('pendiente_visita', 'Pendiente de Visita'),
+            ('visita_agendada', 'Visita Agendada'),
+            ('en_evaluacion', 'En Evaluación'),
+            ('activo', 'Activo'),
+            ('inactivo', 'Inactivo'),
         ],
-        default='activo'
+        default='pendiente_revision'
     )
     madre = models.ForeignKey(MadreComunitaria, on_delete=models.PROTECT, related_name='hogares_asignados')
 
     fecha_registro = models.DateTimeField(auto_now_add=True)
+    fecha_habilitacion = models.DateTimeField(null=True, blank=True)  # Cuando pasa a activo/aprobado
 
     class Meta:
         db_table = 'hogares_comunitarios'
@@ -357,17 +379,32 @@ class HogarComunitario(models.Model):
 # Convivientes del Hogar Comunitario
 # ------------------------
 class ConvivienteHogar(models.Model):
+    TIPO_DOCUMENTO_CHOICES = [
+        ('CC', 'Cédula de Ciudadanía'),
+        ('TI', 'Tarjeta de Identidad'),
+        ('CE', 'Cédula de Extranjería'),
+        ('PA', 'Pasaporte'),
+        ('RC', 'Registro Civil'),
+    ]
+    
     hogar = models.ForeignKey(HogarComunitario, on_delete=models.CASCADE, related_name='convivientes')
-    nombre = models.CharField(max_length=100)
-    cedula = models.BigIntegerField()
-    edad = models.IntegerField()
+    tipo_documento = models.CharField(max_length=2, choices=TIPO_DOCUMENTO_CHOICES, default='CC')
+    numero_documento = models.CharField(max_length=20)
+    nombre_completo = models.CharField(max_length=200)
     parentesco = models.CharField(max_length=50)
+    antecedentes_pdf = models.FileField(upload_to='hogares/antecedentes_convivientes/', null=True, blank=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    
+    # Campos legacy (mantener por compatibilidad)
+    nombre = models.CharField(max_length=100, null=True, blank=True)
+    cedula = models.BigIntegerField(null=True, blank=True)
+    edad = models.IntegerField(null=True, blank=True)
 
     class Meta:
         db_table = 'convivientes_hogar'
 
     def __str__(self):
-        return f"{self.nombre} ({self.parentesco}) - Hogar: {self.hogar.nombre_hogar}"
+        return f"{self.nombre_completo} ({self.parentesco}) - Hogar: {self.hogar.nombre_hogar}"
 
 
 # ------------------------
@@ -745,3 +782,341 @@ class HistorialCambio(models.Model):
 
     #def __str__(self):
         return f"{self.title} ({self.level})"
+
+
+# ========================================================================================
+# 🏠 SISTEMA DE VISITAS TÉCNICAS PARA HABILITACIÓN DE HOGARES
+# ========================================================================================
+
+class VisitaTecnica(models.Model):
+    """
+    Modelo para agendar visitas técnicas de habilitación a hogares comunitarios.
+    Primera visita (V1) para evaluar condiciones antes de activar el hogar.
+    """
+    hogar = models.ForeignKey(
+        HogarComunitario, 
+        on_delete=models.CASCADE, 
+        related_name='visitas_tecnicas'
+    )
+    
+    # Información de la visita
+    fecha_programada = models.DateTimeField()
+    visitador = models.ForeignKey(
+        Usuario, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='visitas_realizadas',
+        limit_choices_to={'rol__nombre_rol': 'administrador'}
+    )
+    
+    # Estados de la visita
+    ESTADO_CHOICES = [
+        ('agendada', 'Agendada'),
+        ('en_proceso', 'En Proceso'),
+        ('completada', 'Completada'),
+        ('cancelada', 'Cancelada'),
+        ('reprogramada', 'Reprogramada'),
+    ]
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='agendada')
+    
+    # Tipo de visita
+    TIPO_CHOICES = [
+        ('V1', 'Primera Visita - Habilitación'),
+        ('V2', 'Visita de Seguimiento'),
+        ('V3', 'Visita Extraordinaria'),
+    ]
+    tipo_visita = models.CharField(max_length=3, choices=TIPO_CHOICES, default='V1')
+    
+    # Observaciones y seguimiento
+    observaciones_agenda = models.TextField(null=True, blank=True, help_text="Observaciones al agendar la visita")
+    fecha_realizacion = models.DateTimeField(null=True, blank=True)
+    
+    # Notificaciones
+    correo_enviado = models.BooleanField(default=False)
+    fecha_envio_correo = models.DateTimeField(null=True, blank=True)
+    
+    # Auditoría
+    creado_por = models.ForeignKey(
+        Usuario, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        related_name='visitas_creadas'
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'visitas_tecnicas'
+        verbose_name = 'Visita Técnica'
+        verbose_name_plural = 'Visitas Técnicas'
+        ordering = ['-fecha_programada']
+    
+    def __str__(self):
+        return f"{self.tipo_visita} - {self.hogar.nombre_hogar} - {self.fecha_programada.strftime('%d/%m/%Y')}"
+
+
+class ActaVisitaTecnica(models.Model):
+    """
+    Acta de Visita Técnica (V1) - Registro completo de la evaluación del hogar.
+    Contiene toda la información solicitada para validar la habilitación.
+    """
+    visita = models.OneToOneField(
+        VisitaTecnica, 
+        on_delete=models.CASCADE, 
+        related_name='acta'
+    )
+    
+    # ============================================
+    # A. GEOLOCALIZACIÓN Y CONFIRMACIÓN DE DIRECCIÓN
+    # ============================================
+    geolocalizacion_lat_verificada = models.DecimalField(
+        max_digits=10, decimal_places=7,
+        help_text="Latitud capturada en el momento de la visita"
+    )
+    geolocalizacion_lon_verificada = models.DecimalField(
+        max_digits=10, decimal_places=7,
+        help_text="Longitud capturada en el momento de la visita"
+    )
+    
+    direccion_verificada = models.CharField(max_length=200)
+    direccion_coincide = models.BooleanField(
+        default=False,
+        help_text="¿La dirección verificada coincide con la reportada en el FUR?"
+    )
+    observaciones_direccion = models.TextField(null=True, blank=True)
+    
+    estrato_verificado = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(6)],
+        help_text="Estrato confirmado del recibo de servicio público"
+    )
+    estrato_coincide = models.BooleanField(default=False)
+    foto_recibo_servicio = models.ImageField(
+        upload_to='visitas/recibos/',
+        help_text="Foto del recibo de servicio público para verificar estrato"
+    )
+    
+    # ============================================
+    # B. SERVICIOS Y SEGURIDAD
+    # ============================================
+    # Servicios Básicos
+    tiene_agua_potable = models.BooleanField(default=False)
+    agua_continua = models.BooleanField(default=False, help_text="Suministro continuo")
+    agua_legal = models.BooleanField(default=False, help_text="Conexión legal")
+    
+    tiene_energia = models.BooleanField(default=False)
+    energia_continua = models.BooleanField(default=False)
+    energia_legal = models.BooleanField(default=False)
+    
+    tiene_alcantarillado = models.BooleanField(default=False)
+    manejo_excretas_adecuado = models.BooleanField(
+        default=False, 
+        help_text="Si no hay alcantarillado, ¿hay manejo adecuado de excretas?"
+    )
+    
+    # Infraestructura
+    ESTADO_CHOICES = [
+        ('excelente', 'Excelente'),
+        ('bueno', 'Bueno'),
+        ('regular', 'Regular'),
+        ('malo', 'Malo'),
+        ('muy_malo', 'Muy Malo'),
+    ]
+    
+    estado_pisos = models.CharField(max_length=15, choices=ESTADO_CHOICES)
+    estado_paredes = models.CharField(max_length=15, choices=ESTADO_CHOICES)
+    estado_techos = models.CharField(max_length=15, choices=ESTADO_CHOICES)
+    
+    ventilacion_adecuada = models.BooleanField(default=False)
+    iluminacion_natural_adecuada = models.BooleanField(default=False)
+    
+    observaciones_infraestructura = models.TextField(null=True, blank=True)
+    
+    # Riesgos Ambientales
+    NIVEL_RIESGO_CHOICES = [
+        ('sin_riesgo', 'Sin Riesgo'),
+        ('riesgo_bajo', 'Riesgo Bajo'),
+        ('riesgo_medio', 'Riesgo Medio'),
+        ('riesgo_alto', 'Riesgo Alto'),
+        ('riesgo_critico', 'Riesgo Crítico'),
+    ]
+    
+    proximidad_rios = models.BooleanField(default=False)
+    proximidad_deslizamientos = models.BooleanField(default=False)
+    proximidad_trafico_intenso = models.BooleanField(default=False)
+    proximidad_contaminacion = models.BooleanField(default=False)
+    
+    nivel_riesgo_general = models.CharField(
+        max_length=20, 
+        choices=NIVEL_RIESGO_CHOICES,
+        default='sin_riesgo'
+    )
+    
+    descripcion_riesgos = models.TextField(
+        null=True, blank=True,
+        help_text="Descripción detallada de los riesgos identificados"
+    )
+    
+    # ============================================
+    # C. ESPACIOS ESPECÍFICOS PARA CÁLCULO DE CAPACIDAD
+    # ============================================
+    # Áreas Sociales (Salas de cuidado)
+    area_social_largo = models.DecimalField(
+        max_digits=5, decimal_places=2,
+        help_text="Largo del área social en metros"
+    )
+    area_social_ancho = models.DecimalField(
+        max_digits=5, decimal_places=2,
+        help_text="Ancho del área social en metros"
+    )
+    area_social_total = models.DecimalField(
+        max_digits=7, decimal_places=2,
+        null=True, blank=True,
+        help_text="Área total calculada (largo x ancho)"
+    )
+    foto_area_social_medidas = models.ImageField(
+        upload_to='visitas/areas_sociales/',
+        help_text="Foto del área social mostrando las medidas"
+    )
+    
+    # Patio Cubierto (si aplica)
+    tiene_patio_cubierto = models.BooleanField(default=False)
+    patio_largo = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
+    patio_ancho = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
+    patio_total = models.DecimalField(
+        max_digits=7, decimal_places=2, null=True, blank=True
+    )
+    foto_patio_medidas = models.ImageField(
+        upload_to='visitas/patios/',
+        null=True, blank=True
+    )
+    
+    # Baños
+    num_banos_verificado = models.IntegerField(
+        validators=[MinValueValidator(1)],
+        help_text="Cantidad de baños/baterías sanitarias"
+    )
+    
+    ESTADO_HIGIENE_CHOICES = [
+        ('excelente', 'Excelente'),
+        ('bueno', 'Bueno'),
+        ('aceptable', 'Aceptable'),
+        ('deficiente', 'Deficiente'),
+        ('inaceptable', 'Inaceptable'),
+    ]
+    
+    estado_higiene_banos = models.CharField(
+        max_length=15, 
+        choices=ESTADO_HIGIENE_CHOICES
+    )
+    
+    foto_bano_1 = models.ImageField(
+        upload_to='visitas/banos/',
+        help_text="Foto del baño principal"
+    )
+    foto_bano_2 = models.ImageField(
+        upload_to='visitas/banos/',
+        null=True, blank=True,
+        help_text="Foto de baño adicional (si hay más de uno)"
+    )
+    
+    # Fachada
+    foto_fachada = models.ImageField(
+        upload_to='visitas/fachadas/',
+        help_text="Foto de la fachada de la casa"
+    )
+    foto_fachada_numeracion = models.ImageField(
+        upload_to='visitas/fachadas/',
+        null=True, blank=True,
+        help_text="Foto de la numeración de la casa"
+    )
+    
+    # ============================================
+    # D. CÁLCULO DE CAPACIDAD RECOMENDADA
+    # ============================================
+    capacidad_calculada = models.IntegerField(
+        null=True, blank=True,
+        help_text="Capacidad calculada según el área disponible (1.5m² por niño)"
+    )
+    capacidad_recomendada = models.IntegerField(
+        help_text="Capacidad recomendada por el visitador"
+    )
+    justificacion_capacidad = models.TextField(
+        null=True, blank=True,
+        help_text="Justificación de la capacidad recomendada"
+    )
+    
+    # ============================================
+    # E. RESULTADO Y CONCLUSIÓN
+    # ============================================
+    RESULTADO_CHOICES = [
+        ('aprobado', 'Aprobado'),
+        ('aprobado_condiciones', 'Aprobado con Condiciones'),
+        ('rechazado', 'Rechazado'),
+        ('requiere_segunda_visita', 'Requiere Segunda Visita'),
+    ]
+    
+    resultado_visita = models.CharField(
+        max_length=30,
+        choices=RESULTADO_CHOICES
+    )
+    
+    observaciones_generales = models.TextField(help_text="Observaciones y conclusiones de la visita")
+    recomendaciones = models.TextField(null=True, blank=True)
+    condiciones_aprobacion = models.TextField(
+        null=True, blank=True,
+        help_text="Condiciones que debe cumplir si es aprobado con condiciones"
+    )
+    
+    # Firma del visitador
+    firma_visitador = models.ImageField(
+        upload_to='visitas/firmas/',
+        null=True, blank=True,
+        help_text="Firma digital del visitador"
+    )
+    
+    # Firma de la madre (conformidad)
+    firma_madre = models.ImageField(
+        upload_to='visitas/firmas/',
+        null=True, blank=True,
+        help_text="Firma de la madre comunitaria"
+    )
+    
+    # Auditoría
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    completado_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='actas_completadas'
+    )
+    
+    class Meta:
+        db_table = 'actas_visitas_tecnicas'
+        verbose_name = 'Acta de Visita Técnica'
+        verbose_name_plural = 'Actas de Visitas Técnicas'
+    
+    def __str__(self):
+        return f"Acta {self.visita.tipo_visita} - {self.visita.hogar.nombre_hogar}"
+    
+    def save(self, *args, **kwargs):
+        # Calcular área total automáticamente
+        if self.area_social_largo and self.area_social_ancho:
+            self.area_social_total = self.area_social_largo * self.area_social_ancho
+        
+        if self.tiene_patio_cubierto and self.patio_largo and self.patio_ancho:
+            self.patio_total = self.patio_largo * self.patio_ancho
+        
+        # Calcular capacidad según normativa (1.5m² por niño)
+        if self.area_social_total:
+            area_total = float(self.area_social_total)
+            if self.patio_total:
+                area_total += float(self.patio_total)
+            self.capacidad_calculada = int(area_total / 1.5)
+        
+        super().save(*args, **kwargs)

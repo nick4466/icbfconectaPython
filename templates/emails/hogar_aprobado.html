@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0}
+    .container{max-width:600px;margin:30px auto;background:white;border-radius:10px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+    .header{background:linear-gradient(135deg,#28a745,#20c997);color:white;padding:30px;text-align:center}
+    .header .icon{font-size:64px;margin-bottom:15px}
+    .header h1{margin:0;font-size:28px}
+    .header p{margin:10px 0 0;opacity:0.9;font-size:14px}
+    .content{padding:30px}
+    .success-badge{background:#d4edda;color:#155724;border:2px solid #28a745;padding:15px 25px;border-radius:10px;text-align:center;font-size:20px;font-weight:bold;margin:20px 0}
+    .info-box{background:#e7f3ff;border-left:4px solid #007bff;padding:15px;margin:20px 0;border-radius:5px}
+    .info-box strong{color:#004080;display:block;margin-bottom:8px}
+    .info-item{margin:10px 0;line-height:1.6}
+    .footer{background:#f8f9fa;padding:20px;text-align:center;color:#666;font-size:12px;border-top:1px solid #e0e0e0}
+    .footer p{margin:5px 0}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="icon">🎉</div>
+      <h1>¡Felicitaciones!</h1>
+      <p>Su hogar ha sido aprobado para habilitación</p>
+    </div>
+
+    <div class="content">
+      <p>Estimada <strong>{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}</strong>,</p>
+      
+      <div class="success-badge">
+        ✓ HOGAR APROBADO
+      </div>
+
+      <p style="font-size:16px;line-height:1.8">
+        Nos complace informarle que su hogar comunitario <strong>"{{ hogar.nombre_hogar }}"</strong> 
+        ha sido <strong>APROBADO</strong> después de la visita técnica realizada el 
+        <strong>{{ acta.visita.fecha_programada|date:"d de F de Y" }}</strong>.
+      </p>
+
+      <div class="info-box">
+        <strong>📊 Resultados de la Evaluación</strong>
+        <div class="info-item">
+          <strong>Estado del Hogar:</strong> <span style="color:#28a745">✓ ACTIVO</span>
+        </div>
+        <div class="info-item">
+          <strong>Fecha de Habilitación:</strong> {{ hogar.fecha_habilitacion|date:"d/m/Y" }}
+        </div>
+        <div class="info-item">
+          <strong>Capacidad Autorizada:</strong> {{ hogar.capacidad_maxima }} niños
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>📝 Detalles de la Evaluación</strong>
+        <div class="info-item">
+          <strong>Área Total Evaluada:</strong> {{ acta.area_total_disponible }} m²
+        </div>
+        <div class="info-item">
+          <strong>Visitador:</strong> {{ acta.completado_por.nombres }} {{ acta.completado_por.apellidos }}
+        </div>
+        <div class="info-item">
+          <strong>Fecha de Visita:</strong> {{ acta.visita.fecha_programada|date:"d/m/Y H:i" }}
+        </div>
+      </div>
+
+      {% if acta.observaciones_generales %}
+      <div class="info-box">
+        <strong>💬 Observaciones</strong>
+        <p style="margin:10px 0 0;line-height:1.6">{{ acta.observaciones_generales }}</p>
+      </div>
+      {% endif %}
+
+      <h3 style="color:#004080;margin-top:30px;">📋 Próximos Pasos</h3>
+      <ol style="line-height:2;color:#333">
+        <li>Puede comenzar el proceso de inscripción de niños</li>
+        <li>Deberá cumplir con la capacidad máxima autorizada</li>
+        <li>Mantener las condiciones del hogar que fueron evaluadas</li>
+        <li>Estar atenta a las visitas de seguimiento programadas</li>
+        <li>Reportar cualquier novedad o cambio en las instalaciones</li>
+      </ol>
+
+      <div style="background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin:20px 0;border-radius:5px">
+        <strong style="color:#856404">⚠️ Importante:</strong>
+        <p style="margin:10px 0 0;color:#856404;line-height:1.6">
+          Es fundamental mantener las condiciones del hogar que fueron evaluadas. 
+          Se realizarán visitas de seguimiento periódicas para verificar el cumplimiento 
+          de los estándares de calidad del programa.
+        </p>
+      </div>
+
+      <div style="text-align:center;margin-top:30px;">
+        <p style="font-size:18px;color:#28a745;font-weight:bold">
+          ¡Bienvenida al Programa de Hogares Comunitarios ICBF!
+        </p>
+        <p style="color:#666;margin-top:10px">
+          Gracias por su compromiso con la primera infancia de Colombia
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>Instituto Colombiano de Bienestar Familiar - ICBF</strong></p>
+      <p>Programa Hogares Comunitarios de Bienestar</p>
+      <p>Este es un correo automático, por favor no responder a esta dirección</p>
+    </div>
+  </div>
+</body>
+</html>

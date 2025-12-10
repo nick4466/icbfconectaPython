@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0}
+    .container{max-width:600px;margin:30px auto;background:white;border-radius:10px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.1)}
+    .header{background:linear-gradient(135deg,#004080,#007bff);color:white;padding:30px;text-align:center}
+    .header h1{margin:0;font-size:24px}
+    .header p{margin:10px 0 0;opacity:0.9;font-size:14px}
+    .content{padding:30px}
+    .info-box{background:#f0f8ff;border-left:4px solid #007bff;padding:15px;margin:20px 0;border-radius:5px}
+    .info-box strong{color:#004080;display:block;margin-bottom:8px}
+    .info-item{margin:10px 0;line-height:1.6}
+    .info-item i{color:#007bff;margin-right:8px}
+    .cta-button{display:inline-block;background:#28a745;color:white;padding:15px 30px;text-decoration:none;border-radius:8px;margin:20px 0;font-weight:bold;text-align:center}
+    .cta-button:hover{background:#218838}
+    .footer{background:#f8f9fa;padding:20px;text-align:center;color:#666;font-size:12px;border-top:1px solid #e0e0e0}
+    .footer p{margin:5px 0}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>✓ Visita Técnica Agendada</h1>
+      <p>Postulación a Hogar Comunitario ICBF</p>
+    </div>
+
+    <div class="content">
+      <p>Estimada <strong>{{ visita.hogar.madre.usuario.nombres }} {{ visita.hogar.madre.usuario.apellidos }}</strong>,</p>
+      
+      <p>¡Felicitaciones! Su postulación para el hogar comunitario <strong>"{{ visita.hogar.nombre_hogar }}"</strong> ha sido exitosa.</p>
+      
+      <p>Nos complace informarle que se ha programado la visita técnica para la evaluación y habilitación de su hogar.</p>
+
+      <div class="info-box">
+        <strong>📅 Detalles de la Visita</strong>
+        <div class="info-item">
+          <strong>Fecha:</strong> {{ visita.fecha_programada|date:"l, d de F de Y" }}
+        </div>
+        <div class="info-item">
+          <strong>Hora:</strong> {{ visita.fecha_programada|date:"h:i A" }}
+        </div>
+        <div class="info-item">
+          <strong>Visitador Asignado:</strong> {{ visita.visitador.nombres }} {{ visita.visitador.apellidos }}
+        </div>
+        <div class="info-item">
+          <strong>Tipo de Visita:</strong> V1 - Primera Visita de Habilitación
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>📍 Lugar de la Visita</strong>
+        <div class="info-item">
+          <strong>Dirección:</strong> {{ visita.hogar.direccion }}
+        </div>
+        <div class="info-item">
+          <strong>Ciudad:</strong> {{ visita.hogar.ciudad.nombre }}, {{ visita.hogar.regional.nombre }}
+        </div>
+      </div>
+
+      <h3 style="color:#004080;margin-top:30px;">📋 Recomendaciones para la Visita</h3>
+      <ul style="line-height:1.8;color:#333">
+        <li>Tener disponibles todos los espacios del hogar para la inspección</li>
+        <li>Contar con los recibos de servicios públicos actualizados</li>
+        <li>Asegurar que las áreas estén limpias y organizadas</li>
+        <li>Tener a la mano su documento de identidad</li>
+        <li>Estar presente durante toda la visita</li>
+      </ul>
+
+      {% if visita.observaciones %}
+      <div class="info-box">
+        <strong>💬 Observaciones Adicionales</strong>
+        <p style="margin:10px 0 0;line-height:1.6">{{ visita.observaciones }}</p>
+      </div>
+      {% endif %}
+
+      <p style="margin-top:30px;color:#666;font-size:14px;">
+        Si por algún motivo no puede asistir en el horario programado, por favor comuníquese con nosotros 
+        con al menos 24 horas de anticipación para reprogramar la visita.
+      </p>
+
+      <div style="text-align:center;margin-top:30px;">
+        <p style="font-size:18px;color:#28a745;font-weight:bold">
+          ¡Le deseamos mucho éxito en su proceso de habilitación!
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>Instituto Colombiano de Bienestar Familiar - ICBF</strong></p>
+      <p>Programa Hogares Comunitarios de Bienestar</p>
+      <p>Este es un correo automático, por favor no responder a esta dirección</p>
+    </div>
+  </div>
+</body>
+</html>
