@@ -4938,106 +4938,62 @@ def padre_dashboard_mejorado(request):
 @login_required
 @rol_requerido('administrador')
 def hogares_dashboard(request):
-    """Dashboard para gestionar hogares comunitarios, visitas técnicas y aprobaciones."""
-    from django.db.models import Prefetch, Q, Max, Count
-    from datetime import timedelta
-    
-    # Query base con relaciones pre-cargadas
-    hogares_query = HogarComunitario.objects.select_related(
-        'madre__usuario',
-        'regional',
-        'ciudad'
-    ).prefetch_related(
-        Prefetch('visitastecnicas_hogar', queryset=VisitaTecnica.objects.order_by('-fecha_programada'))
-    ).order_by('-fecha_creacion')
+    """Dashboard para gestionar hogares comunitarios con vista por localidad."""
+    from django.db.models import Q, Count
+    from collections import defaultdict
     
     # Filtros desde GET params
+    filtro_localidad = request.GET.get('localidad', '')
     filtro_estado = request.GET.get('estado', '')
-    busqueda = request.GET.get('search', '').strip()
+    busqueda = request.GET.get('q', '').strip()
     
-    # Aplicar filtro por estado
-    if filtro_estado and filtro_estado != 'todos':
-        if filtro_estado == 'alertas':
-            # Hogares sin visita en el último año
-            fecha_limite = timezone.now().date() - timedelta(days=365)
-            hogares_query = hogares_query.annotate(
-                ultima_visita_fecha=Max('visitastecnicas_hogar__fecha_realizada')
-            ).filter(
-                Q(ultima_visita_fecha__lt=fecha_limite) | Q(ultima_visita_fecha__isnull=True)
-            )
-        else:
-            hogares_query = hogares_query.filter(estado=filtro_estado)
+    # Query base con relaciones pre-cargadas y anotaciones
+    hogares = HogarComunitario.objects.select_related(
+        'madre__usuario', 'regional', 'ciudad'
+    ).annotate(
+        ninos_count=Count('ninos', filter=Q(ninos__estado='activo'))
+    )
     
-    # Aplicar búsqueda
+    # Aplicar filtros
+    if filtro_localidad:
+        hogares = hogares.filter(localidad__icontains=filtro_localidad)
+    
+    if filtro_estado:
+        hogares = hogares.filter(estado=filtro_estado)
+    
     if busqueda:
-        hogares_query = hogares_query.filter(
+        hogares = hogares.filter(
             Q(nombre_hogar__icontains=busqueda) |
             Q(madre__usuario__nombres__icontains=busqueda) |
             Q(madre__usuario__apellidos__icontains=busqueda) |
-            Q(madre__usuario__documento__icontains=busqueda)
+            Q(direccion__icontains=busqueda)
         )
     
-    # Calcular estadísticas
-    total_hogares = HogarComunitario.objects.count()
-    pendientes_count = HogarComunitario.objects.filter(estado='pendiente_visita').count()
-    revision_count = HogarComunitario.objects.filter(estado='en_revision').count()
-    aprobados_count = HogarComunitario.objects.filter(estado='aprobado').count()
+    # Ordenar por fecha de registro
+    hogares = hogares.order_by('-fecha_registro')
     
-    # Calcular alertas (hogares sin visita en 1 año)
-    fecha_limite = timezone.now().date() - timedelta(days=365)
-    alertas_count = HogarComunitario.objects.annotate(
-        ultima_visita_fecha=Max('visitastecnicas_hogar__fecha_realizada')
-    ).filter(
-        Q(ultima_visita_fecha__lt=fecha_limite) | Q(ultima_visita_fecha__isnull=True)
-    ).count()
+    # Obtener todas las localidades únicas para el filtro
+    localidades = HogarComunitario.objects.exclude(
+        localidad__isnull=True
+    ).exclude(
+        localidad=''
+    ).values_list('localidad', flat=True).distinct().order_by('localidad')
     
-    # Preparar datos de hogares con información de visitas
-    hogares_data = []
-    for hogar in hogares_query:
-        # Obtener próxima visita programada
-        proxima_visita = hogar.visitastecnicas_hogar.filter(
-            estado='agendada',
-            fecha_programada__gte=timezone.now().date()
-        ).order_by('fecha_programada').first()
-        
-        # Obtener última visita realizada
-        ultima_visita = hogar.visitastecnicas_hogar.filter(
-            fecha_realizada__isnull=False
-        ).order_by('-fecha_realizada').first()
-        
-        # Determinar si tiene alerta
-        tiene_alerta = False
-        if ultima_visita:
-            dias_desde_visita = (timezone.now().date() - ultima_visita.fecha_realizada).days
-            tiene_alerta = dias_desde_visita > 365
-        elif hogar.fecha_registro:
-            dias_desde_creacion = (timezone.now().date() - hogar.fecha_registro.date()).days
-            tiene_alerta = dias_desde_creacion > 365
-        
-        hogares_data.append({
-            'hogar': hogar,
-            'madre_nombre': f"{hogar.madre.usuario.nombres} {hogar.madre.usuario.apellidos}",
-            'madre_documento': hogar.madre.usuario.documento,
-            'proxima_visita': proxima_visita,
-            'ultima_visita': ultima_visita,
-            'tiene_alerta': tiene_alerta,
-        })
+    # Agrupar hogares por localidad
+    hogares_por_localidad = defaultdict(list)
+    for hogar in hogares:
+        localidad = hogar.localidad if hogar.localidad else 'Sin localidad'
+        hogares_por_localidad[localidad].append(hogar)
     
-    # Paginación
-    paginator = Paginator(hogares_data, 20)  # 20 hogares por página
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Convertir a diccionario normal ordenado
+    hogares_por_localidad = dict(sorted(hogares_por_localidad.items()))
     
     context = {
-        'page_obj': page_obj,
-        'total_hogares': total_hogares,
-        'pendientes_count': pendientes_count,
-        'revision_count': revision_count,
-        'aprobados_count': aprobados_count,
-        'alertas_count': alertas_count,
+        'hogares_por_localidad': hogares_por_localidad,
+        'localidades': localidades,
+        'filtro_localidad': filtro_localidad,
         'filtro_estado': filtro_estado,
         'busqueda': busqueda,
-        'today': timezone.now().date(),
     }
     
     return render(request, 'admin/hogares_dashboard.html', context)
@@ -5054,7 +5010,7 @@ def realizar_visita_tecnica(request, hogar_id):
     hogar = get_object_or_404(HogarComunitario, id=hogar_id)
     
     # Obtener la visita programada
-    visita = hogar.visitastecnicas_hogar.filter(
+    visita = hogar.visitas_tecnicas.filter(
         estado='agendada'
     ).order_by('fecha_programada').first()
     

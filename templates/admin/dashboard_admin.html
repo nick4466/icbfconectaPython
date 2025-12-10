@@ -553,50 +553,50 @@
     <nav class="sidebar-nav">
       <div class="nav-item">
         <a href="{% url 'dashboard_admin' %}" class="nav-link active">
-          <i class="fas fa-chart-line"></i>
-          <span>Dashboard</span>
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Inicio</span>
         </a>
       </div>
       <div class="nav-item">
         <a href="{% url 'hogares_dashboard' %}" class="nav-link">
           <i class="fas fa-home"></i>
-          <span>Gestión de Hogares</span>
+          <span>Dashboard Hogares</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_hogares' %}" class="nav-link">
+          <i class="fas fa-house-user"></i>
+          <span>Gestionar Hogares</span>
         </a>
       </div>
       <div class="nav-item">
         <a href="{% url 'listar_madres' %}" class="nav-link">
-          <i class="fas fa-user-tie"></i>
+          <i class="fas fa-user-group"></i>
           <span>Agentes Educativos</span>
         </a>
       </div>
       <div class="nav-item">
-        <a href="{% url 'listar_ninos' %}" class="nav-link">
-          <i class="fas fa-child"></i>
-          <span>Niños Registrados</span>
+        <a href="{% url 'listar_administradores' %}" class="nav-link">
+          <i class="fas fa-user-shield"></i>
+          <span>Administradores</span>
         </a>
       </div>
       <div class="nav-item">
-        <a href="#" class="nav-link">
-          <i class="fas fa-clipboard-check"></i>
-          <span>Visitas Técnicas</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="#" class="nav-link">
-          <i class="fas fa-map-marked-alt"></i>
-          <span>Mapa de Hogares</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="#" class="nav-link">
-          <i class="fas fa-file-alt"></i>
+        <a href="{% url 'admin_reportes' %}" class="nav-link">
+          <i class="fas fa-chart-line"></i>
           <span>Reportes</span>
         </a>
       </div>
       <div class="nav-item">
-        <a href="{% url 'listar_administradores' %}" class="nav-link">
-          <i class="fas fa-users-cog"></i>
-          <span>Administradores</span>
+        <a href="{% url 'editar_perfil' %}" class="nav-link">
+          <i class="fas fa-user-pen"></i>
+          <span>Editar Perfil</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'cambiar_contrasena' %}" class="nav-link">
+          <i class="fas fa-key"></i>
+          <span>Cambiar Contraseña</span>
         </a>
       </div>
       <div class="nav-item">
