@@ -1386,12 +1386,25 @@
           regionalSelect.dispatchEvent(event);
           // Esperar a que se carguen las ciudades y luego seleccionar la ciudad actual si existe
           setTimeout(() => {
-            if (ciudadSelect.dataset.selectedId) {
-              ciudadSelect.value = ciudadSelect.dataset.selectedId;
+            const selectedCityId = ciudadSelect.dataset.selectedId;
+            if (selectedCityId) {
+              console.log('Seleccionando ciudad previa:', selectedCityId);
+              ciudadSelect.value = selectedCityId;
               ciudadSelect.disabled = false;
               checkBogotaHogar();
+              
+              // Si hay localidad pre-seleccionada, asegurarse de que se muestre
+              {% if modo_edicion and hogar_form.instance.localidad_bogota_id %}
+                const localidadSelect = document.getElementById('id_localidad_hogar');
+                if (localidadSelect) {
+                  setTimeout(() => {
+                    localidadSelect.value = '{{ hogar_form.instance.localidad_bogota_id }}';
+                    console.log('Localidad preseleccionada:', '{{ hogar_form.instance.localidad_bogota_id }}');
+                  }, 100);
+                }
+              {% endif %}
             }
-          }, 500);
+          }, 600);
         }
       }
 
@@ -1472,7 +1485,111 @@
       if (deptSelect && deptSelect.value) {
         deptSelect.dispatchEvent(new Event('change'));
       }
+
+      // ========================================
+      // 📂 CARGAR ARCHIVOS EXISTENTES EN MODO EDICIÓN
+      // ========================================
+      {% if modo_edicion and madre_profile_form.instance %}
+        console.log('Modo edición activado - Cargando archivos existentes...');
+        const fileFields = [
+          { name: 'foto_madre', url: '{% if madre_profile_form.instance.foto_madre %}{{ madre_profile_form.instance.foto_madre.url }}{% endif %}' },
+          { name: 'firma_digital', url: '{% if madre_profile_form.instance.firma_digital %}{{ madre_profile_form.instance.firma_digital.url }}{% endif %}' },
+          { name: 'documento_identidad_pdf', url: '{% if madre_profile_form.instance.documento_identidad_pdf %}{{ madre_profile_form.instance.documento_identidad_pdf.url }}{% endif %}' },
+          { name: 'certificado_escolaridad_pdf', url: '{% if madre_profile_form.instance.certificado_escolaridad_pdf %}{{ madre_profile_form.instance.certificado_escolaridad_pdf.url }}{% endif %}' },
+          { name: 'certificado_antecedentes_pdf', url: '{% if madre_profile_form.instance.certificado_antecedentes_pdf %}{{ madre_profile_form.instance.certificado_antecedentes_pdf.url }}{% endif %}' },
+          { name: 'certificado_medico_pdf', url: '{% if madre_profile_form.instance.certificado_medico_pdf %}{{ madre_profile_form.instance.certificado_medico_pdf.url }}{% endif %}' },
+          { name: 'certificado_residencia_pdf', url: '{% if madre_profile_form.instance.certificado_residencia_pdf %}{{ madre_profile_form.instance.certificado_residencia_pdf.url }}{% endif %}' },
+          { name: 'cartas_recomendacion_pdf', url: '{% if madre_profile_form.instance.cartas_recomendacion_pdf %}{{ madre_profile_form.instance.cartas_recomendacion_pdf.url }}{% endif %}' },
+          { name: 'certificado_laboral', url: '{% if madre_profile_form.instance.certificado_laboral %}{{ madre_profile_form.instance.certificado_laboral.url }}{% endif %}' },
+          { name: 'carta_disponibilidad', url: '{% if madre_profile_form.instance.carta_disponibilidad %}{{ madre_profile_form.instance.carta_disponibilidad.url }}{% endif %}' },
+          { name: 'documento_tenencia_pdf', url: '{% if hogar_form.instance.documento_tenencia_pdf %}{{ hogar_form.instance.documento_tenencia_pdf.url }}{% endif %}' }
+        ];
+
+        fileFields.forEach(field => {
+          if (field.url && field.url.trim() !== '') {
+            console.log(`Cargando archivo: ${field.name} - ${field.url}`);
+            loadExistingFile(field.name, field.url);
+          } else {
+            console.log(`Sin archivo para: ${field.name}`);
+          }
+        });
+        
+        console.log('Archivos cargados completamente');
+      {% endif %}
     });
+
+    // ========================================
+    // 📂 FUNCIÓN PARA CARGAR ARCHIVOS EXISTENTES
+    // ========================================
+    function loadExistingFile(fieldName, fileUrl) {
+      const previewContainer = document.getElementById('preview-' + fieldName);
+      if (!previewContainer) return;
+
+      const previewImage = previewContainer.querySelector('.preview-image');
+      const pdfPreview = previewContainer.querySelector('.pdf-preview');
+      const pdfIcon = pdfPreview ? pdfPreview.querySelector('.pdf-icon') : null;
+      const pdfFrame = pdfPreview ? pdfPreview.querySelector('.pdf-frame') : null;
+      const fileName = pdfPreview ? pdfPreview.querySelector('.file-name') : null;
+
+      // Mostrar contenedor
+      previewContainer.style.display = 'block';
+
+      // Detectar tipo de archivo por extensión
+      const fileExt = fileUrl.split('.').pop().toLowerCase().split('?')[0];
+      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(fileExt);
+      const isPDF = fileExt === 'pdf';
+
+      // Ocultar ambas vistas primero
+      if (previewImage) previewImage.style.display = 'none';
+      if (pdfPreview) pdfPreview.style.display = 'none';
+      if (pdfFrame) pdfFrame.style.display = 'none';
+      if (pdfIcon) pdfIcon.style.display = 'none';
+
+      if (isImage && previewImage) {
+        // Mostrar imagen existente
+        previewImage.src = fileUrl;
+        previewImage.style.display = 'block';
+      } else if (isPDF && pdfPreview) {
+        // Mostrar PDF existente
+        pdfPreview.style.display = 'block';
+        if (fileName) {
+          fileName.textContent = fileUrl.split('/').pop().split('?')[0];
+        }
+        
+        // Mostrar PDF en iframe
+        try {
+          if (pdfFrame) {
+            pdfFrame.src = fileUrl + '#toolbar=0&navpanes=0&scrollbar=0';
+            pdfFrame.style.display = 'block';
+          }
+          if (pdfIcon) {
+            pdfIcon.style.display = 'none';
+          }
+        } catch (e) {
+          // Si falla, mostrar solo el ícono
+          if (pdfIcon) pdfIcon.style.display = 'block';
+          if (pdfFrame) pdfFrame.style.display = 'none';
+        }
+      }
+
+      // Agregar botón para ver archivo en nueva pestaña
+      const existingLink = previewContainer.querySelector('.view-existing-file');
+      if (!existingLink) {
+        const viewLink = document.createElement('a');
+        viewLink.href = fileUrl;
+        viewLink.target = '_blank';
+        viewLink.className = 'view-existing-file';
+        viewLink.style.cssText = 'display:inline-block;margin-top:10px;padding:8px 16px;background:#2563eb;color:white;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;';
+        viewLink.innerHTML = '<i class="fas fa-external-link-alt"></i> Ver archivo completo';
+        
+        const removeBtn = previewContainer.querySelector('.remove-file-btn');
+        if (removeBtn) {
+          previewContainer.insertBefore(viewLink, removeBtn);
+        } else {
+          previewContainer.appendChild(viewLink);
+        }
+      }
+    }
     
     // ========================================
     // 📎 VISTA PREVIA DE ARCHIVOS (Imágenes y PDFs)

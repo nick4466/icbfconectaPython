@@ -2203,6 +2203,19 @@ def detalles_madre_json(request, id):
         else:
             foto_madre_url = ''
 
+        # Documentos adjuntos
+        documentos = {
+            'documento_identidad': madre_perfil.documento_identidad_pdf.url if madre_perfil.documento_identidad_pdf else None,
+            'certificado_escolaridad': madre_perfil.certificado_escolaridad_pdf.url if madre_perfil.certificado_escolaridad_pdf else None,
+            'certificado_antecedentes': madre_perfil.certificado_antecedentes_pdf.url if madre_perfil.certificado_antecedentes_pdf else None,
+            'certificado_medico': madre_perfil.certificado_medico_pdf.url if madre_perfil.certificado_medico_pdf else None,
+            'certificado_residencia': madre_perfil.certificado_residencia_pdf.url if madre_perfil.certificado_residencia_pdf else None,
+            'cartas_recomendacion': madre_perfil.cartas_recomendacion_pdf.url if madre_perfil.cartas_recomendacion_pdf else None,
+            'certificado_laboral': madre_perfil.certificado_laboral.url if madre_perfil.certificado_laboral else None,
+            'carta_disponibilidad': madre_perfil.carta_disponibilidad.url if madre_perfil.carta_disponibilidad else None,
+            'firma_digital': madre_perfil.firma_digital.url if madre_perfil.firma_digital else None,
+        }
+
         data = {
             'usuario': {
                 'nombres': usuario.nombres,
@@ -2216,9 +2229,13 @@ def detalles_madre_json(request, id):
             'perfil': {
                 'nivel_escolaridad': madre_perfil.nivel_escolaridad,
                 'titulo_obtenido': madre_perfil.titulo_obtenido or "No especificado",
+                'institucion': madre_perfil.institucion or "No especificada",
                 'experiencia_previa': madre_perfil.experiencia_previa or "No especificada",
                 'foto_madre_url': foto_madre_url,
+                'no_retirado_icbf': madre_perfil.no_retirado_icbf,
+                'fecha_registro': madre_perfil.fecha_registro.strftime('%d/%m/%Y %H:%M') if madre_perfil.fecha_registro else "N/A",
             },
+            'documentos': documentos,
             'hogar': {
                 'nombre_hogar': hogar.nombre_hogar if hogar else "Sin hogar asignado",
                 'direccion': hogar.direccion if hogar else "N/A",

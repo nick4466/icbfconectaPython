@@ -4,111 +4,404 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lista de Administradores</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <title>Gestión de Administradores - ICBF Conecta</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --secondary: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #06b6d4;
+      --dark: #1f2937;
+      --light: #f9fafb;
+      --border: #e5e7eb;
+      --text: #374151;
+      --text-light: #6b7280;
+    }
+
     body {
-      font-family: "Poppins", sans-serif;
-      background-color: #f3f6fa;
-      color: #333;
+      font-family: 'Inter', sans-serif;
+      background: #f3f4f6;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 100vh;
+      width: 260px;
+      background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+      padding: 20px 0;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar-header {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+    }
+
+    .sidebar-logo {
       display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
+      text-decoration: none;
+    }
+
+    .sidebar-logo img {
+      width: 45px;
+      height: 45px;
+      border-radius: 8px;
+    }
+
+    .sidebar-logo-text h2 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .sidebar-logo-text p {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .sidebar-nav {
+      padding: 0 10px;
+    }
+
+    .nav-item {
+      margin-bottom: 4px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      color: rgba(255,255,255,0.9);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .nav-link:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .nav-link.active {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+
+    .nav-link i {
+      width: 20px;
+      font-size: 18px;
+    }
+
+    /* ========== MAIN CONTENT ========== */
+    .main-content {
+      margin-left: 260px;
       min-height: 100vh;
     }
-    .sidebar {
-      width: 250px;
-      background: linear-gradient(180deg, #004080, #007bff);
-      color: white;
+
+    .topbar {
+      background: white;
+      padding: 16px 32px;
       display: flex;
-      flex-direction: column;
-      padding: 25px 0;
-    }
-    .sidebar img { height: 70px; margin: 0 auto 20px; }
-    .sidebar h2 { text-align: center; font-weight: 700; margin-bottom: 25px; font-size: 18px; }
-    .sidebar a {
-      color: white; text-decoration: none; padding: 14px 25px; display: flex;
-      align-items: center; gap: 10px; font-weight: 500; transition: background 0.3s ease;
-    }
-    .sidebar a:hover, .sidebar a.active {
-      background: rgba(255, 255, 255, 0.15); border-left: 4px solid #ffffff;
-    }
-    /* Estilos para el menú desplegable */
-    .sidebar .dropdown { position: relative; }
-    .sidebar .dropdown .dropdown-menu {
-      display: none;
-      position: absolute;
-      left: 100%;
-      top: 0;
-      background-color: #004080;
-      min-width: 200px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-      z-index: 1;
-      border-radius: 0 8px 8px 0;
-    }
-    .sidebar .dropdown:hover .dropdown-menu { display: block; }
-    .sidebar .dropdown-menu a {
-      padding: 12px 16px;
-      border-left: none !important; /* Quitar borde del estado :hover o .active */
-    }
-    .sidebar .logout { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
-    .main { flex: 1; padding: 40px; } /* Estilo base */
-    .main header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-    .main header h1 { font-size: 28px; color: #004080; font-weight: 700; }
-    .content-container {
-      background-color: white;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-    }
-    .top-bar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
-    .page-actions { margin-top: 32px; /* Alinear con los filtros */ }
-    .filtros-form {
-      display: flex; gap: 15px; margin-bottom: 20px; background-color: #f8f9fa;
-      padding: 20px; border-radius: 12px;
-    }
-    .filtros-form input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-    .filtros-form .form-group { flex: 1; }
-    .filtros-form label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; font-size: 14px; }
-    .filtros-form .actions { display: flex; align-items: flex-end; gap: 10px; }
-    .btn-filtro { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; color: white; }
-    .btn-buscar { background-color: #007bff; }
-    .btn-limpiar { background-color: #6c757d; text-decoration: none; display: inline-block; text-align: center; }
-    .btn-crear {
-      background: linear-gradient(90deg, #007bff, #0056b3); color: white; padding: 10px 20px;
-      border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 16px;
-    }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 14px; text-align: left; border-bottom: 1px solid #e9ecef; }
-    th { background-color: #f8f9fa; color: #003366; font-weight: 600; }
-    td { color: #555; }
-    tbody tr:hover { background-color: #f1f3f5; }
-    .acciones {
-      display: flex; /* 💡 CORRECCIÓN: Usar flexbox para alinear los botones */
-      align-items: center; /* Centrar verticalmente los botones en la celda */
-      gap: 5px; /* Espacio entre botones */
-    }
-    .acciones a, .acciones button {
-      text-decoration: none; color: white; padding: 6px 12px;
-      border-radius: 6px; font-weight: 500; margin-right: 5px;
-      border: 1px solid transparent; cursor: pointer; font-family: "Poppins", sans-serif; font-size: 14px;
-    }
-    .btn-editar { background: linear-gradient(90deg, #007bff, #0056b3); }
-    .btn-eliminar { background: linear-gradient(90deg, #dc3545, #c82333); }
-    .messages { list-style: none; padding: 0; margin: 0 0 20px 0; }
-    .messages li {
-      padding: 15px; border-radius: 8px; color: white;
-      font-weight: 500; display: flex; justify-content: space-between;
+      justify-content: space-between;
       align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .messages li.success { background-color: #28a745; }
-    .messages li.error { background-color: #dc3545; }
-    .close-message { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
-    /* --- ESTILOS DE PAGINACIÓN --- */
+
+    .topbar-left h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+
+    .user-menu:hover {
+      background: var(--light);
+    }
+
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+    }
+
+    .content-wrapper {
+      padding: 32px;
+    }
+
+    /* ========== CONTENT CONTAINER ========== */
+    .content-container {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+
+    /* ========== FILTERS ========== */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      gap: 20px;
+    }
+
+    .filtros-form {
+      display: flex;
+      gap: 16px;
+      flex: 1;
+      background: var(--light);
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .form-group {
+      flex: 1;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .filtros-form .actions {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .btn-filtro {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .btn-buscar {
+      background: var(--primary);
+    }
+
+    .btn-buscar:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-limpiar {
+      background: #6b7280;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-limpiar:hover {
+      background: #4b5563;
+    }
+
+    .page-actions {
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .btn-crear {
+      background: var(--primary);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-crear:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+    }
+
+    /* ========== TABLE ========== */
+    .tabla-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--light);
+      color: var(--dark);
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      color: var(--text);
+    }
+
+    tbody tr {
+      transition: background 0.2s;
+    }
+
+    tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    .acciones {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .acciones a {
+      text-decoration: none;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 13px;
+      transition: all 0.3s;
+    }
+
+    .btn-editar {
+      background: var(--primary);
+    }
+
+    .btn-editar:hover {
+      background: var(--primary-dark);
+    }
+    .btn-editar:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-eliminar {
+      background: var(--danger);
+    }
+
+    .btn-eliminar:hover {
+      background: #dc2626;
+    }
+
+    /* ========== MESSAGES ========== */
+    .messages {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 24px 0;
+    }
+
+    .messages li {
+      padding: 14px 18px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .messages li.success {
+      background: var(--secondary);
+    }
+
+    .messages li.error {
+      background: var(--danger);
+    }
+
+    .close-message {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.3s;
+    }
+
+    .close-message:hover {
+      opacity: 1;
+    }
+
+    /* ========== PAGINATION ========== */
     .pagination {
       display: flex;
       justify-content: center;
@@ -116,185 +409,263 @@
       margin-top: 30px;
       gap: 8px;
     }
+
     .pagination a, .pagination span {
-      color: #007bff;
+      color: var(--primary);
       padding: 8px 14px;
       text-decoration: none;
-      transition: background-color .3s;
-      border: 1px solid #ddd;
+      transition: background-color 0.3s;
+      border: 1px solid var(--border);
       border-radius: 6px;
+      font-size: 14px;
     }
-    .pagination a:hover { background-color: #f1f1f1; }
-    .pagination .current { background-color: #007bff; color: white; border-color: #007bff; }
-    .pagination .disabled { color: #ccc; border-color: #ddd; }
-    /* --- FIN ESTILOS DE PAGINACIÓN --- */
 
-    /* --- ESTILOS RESPONSIVOS --- */
+    .pagination a:hover {
+      background: var(--light);
+    }
+
+    .pagination .current {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .pagination .disabled {
+      color: #cbd5e1;
+      border-color: var(--border);
+    }
+
+    /* ========== RESPONSIVE ========== */
     @media (max-width: 992px) {
-      body {
-        flex-direction: column;
-      }
       .sidebar {
         width: 100%;
         height: auto;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
+        position: relative;
       }
-      .sidebar h2, .sidebar img {
-        display: none; /* Ocultar elementos no esenciales */
+
+      .main-content {
+        margin-left: 0;
       }
-      .sidebar a {
-        border-left: none;
-        border-bottom: 4px solid transparent;
-      }
-      .sidebar a:hover, .sidebar a.active {
-        border-left: none;
-        border-bottom: 4px solid #ffffff;
-      }
-      .main {
-        padding: 20px;
-      }
-      .top-bar, .filtros-form, .filtros-form .actions {
+
+      .top-bar {
         flex-direction: column;
-        align-items: stretch;
       }
+
+      .filtros-form {
+        flex-direction: column;
+      }
+
       .tabla-wrapper {
-        overflow-x: auto; /* Permite el desplazamiento horizontal de la tabla */
-      }
-      .pagination {
-        flex-wrap: wrap;
-        justify-content: center;
+        overflow-x: auto;
       }
     }
   </style>
 </head>
 <body>
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <img src="{% static 'img/logoSinFondo.png' %}" alt="Logo ICBF" />
-    <h2>ICBF Conecta</h2>
-    <a href="{% url 'dashboard_admin' %}"><i class="fa-solid fa-tachometer-alt"></i> Panel Principal</a>
-    <a href="{% url 'listar_hogares' %}"><i class="fa-solid fa-house"></i> Hogares</a>
-    <a href="{% url 'listar_madres' %}"><i class="fa-solid fa-user-group"></i> Agentes Educativos</a>
-    <a href="{% url 'listar_administradores' %}" class="active"><i class="fa-solid fa-user-shield"></i> Administradores</a>
-    <a href="{% url 'admin_reportes' %}" ><i class="fa-solid fa-chart-line"></i> Reportes</a>
-    <div class="dropdown">
-      <a href="#"><i class="fa-solid fa-cog"></i> Ajustes</a>
-      <div class="dropdown-menu">
-        <a href="{% url 'editar_perfil' %}"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-        <a href="{% url 'cambiar_contrasena' %}"><i class="fa-solid fa-key"></i> Cambiar Contraseña</a>
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a href="{% url 'home' %}" class="sidebar-logo">
+        <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF">
+        <div class="sidebar-logo-text">
+          <h2>ICBF Conecta</h2>
+          <p>Panel Administrativo</p>
+        </div>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item">
+        <a href="{% url 'dashboard_admin' %}" class="nav-link">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Inicio</span>
+        </a>
       </div>
-    </div>
-    <div class="logout">
-        <form method="post" action="{% url 'logout' %}" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit" style="background: none; border: none; color: white; cursor: pointer; padding: 14px 25px; display: flex; align-items: center; gap: 10px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 500; width: 100%; text-align: left;">
-                <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
-            </button>
-        </form>
-    </div>
-  </div>
+      <div class="nav-item">
+        <a href="{% url 'hogares_dashboard' %}" class="nav-link">
+          <i class="fas fa-home"></i>
+          <span>Dashboard Hogares</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_hogares' %}" class="nav-link">
+          <i class="fas fa-house-user"></i>
+          <span>Gestionar Hogares</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_madres' %}" class="nav-link">
+          <i class="fas fa-user-group"></i>
+          <span>Agentes Educativos</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_administradores' %}" class="nav-link active">
+          <i class="fas fa-user-shield"></i>
+          <span>Administradores</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'admin_reportes' %}" class="nav-link">
+          <i class="fas fa-chart-line"></i>
+          <span>Reportes</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'editar_perfil' %}" class="nav-link">
+          <i class="fas fa-user-pen"></i>
+          <span>Editar Perfil</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'cambiar_contrasena' %}" class="nav-link">
+          <i class="fas fa-key"></i>
+          <span>Cambiar Contraseña</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'logout' %}" class="nav-link">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </nav>
+  </aside>
 
-  <!-- MAIN -->
-  <div class="main">
-    <header>
-      <h1>Gestión de Administradores</h1>
-    </header>
-
-    {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-        <li class="{{ message.tags }}">
-            {{ message }}
-            <button class="close-message" onclick="this.parentElement.style.display='none';">&times;</button>
-        </li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-
-    <div class="content-container">
-      <div class="top-bar">
-        <form method="get" action="{% url 'listar_administradores' %}" class="filtros-form">
-          <div class="form-group">
-            <label for="nombre">Buscar por Nombre</label>
-            <input type="text" name="nombre" id="nombre" value="{{ filtros.nombre|default:'' }}" placeholder="Nombre o Apellido">
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="main-content">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>👥 Gestión de Administradores</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="user-menu">
+          <div class="user-avatar">
+            {{ request.user.nombres.0|upper }}{{ request.user.apellidos.0|upper }}
           </div>
-          <div class="form-group">
-            <label for="documento">Buscar por Documento</label>
-            <input type="text" name="documento" id="documento" value="{{ filtros.documento|default:'' }}" placeholder="Número de documento">
+          <div>
+            <div style="font-weight: 600; font-size: 14px;">{{ request.user.nombres }}</div>
+            <div style="font-size: 12px; color: var(--text-light);">Administrador</div>
           </div>
-          <div class="actions">
-            <button type="submit" class="btn-filtro btn-buscar">Buscar</button>
-            <a href="{% url 'listar_administradores' %}" class="btn-filtro btn-limpiar">Limpiar</a>
-          </div>
-        </form>
-        <div class="page-actions">
-          <a href="{% url 'crear_administrador' %}" class="btn-crear"><i class="fas fa-plus" style="margin-right: 8px;"></i> Nuevo Administrador</a>
         </div>
       </div>
+    </div>
 
-      <div class="tabla-wrapper"><table>
-        <thead>
-          <tr>
-            <th>Foto</th>
-            <th>Nombre</th>
-            <th>Apellidos</th>
-            <th>Documento</th>
-            <th>Correo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for admin in administradores %}
-          <tr>
-            <td>
-              {% if admin.foto_admin %}
-                <img src="{{ admin.foto_admin.url }}" alt="Foto de {{ admin.nombres }}" style="width:48px; height:48px; object-fit:cover; border-radius:50%; border:2px solid #007bff; background:#f8f9fa;" />
-              {% else %}
-                <i class="fa-solid fa-user fa-2x" style="color:#ccc;"></i>
-              {% endif %}
-            </td>
-            <td>{{ admin.nombres|default:"N/A" }}</td>
-            <td>{{ admin.apellidos|default:"N/A" }}</td>
-            <td>{{ admin.documento }}</td>
-            <td>{{ admin.correo }}</td>
-            <td class="acciones">
-              <a href="{% url 'editar_administrador' admin.id %}" class="btn-editar">Editar</a>
-              <a href="{% url 'eliminar_administrador' admin.id %}" class="btn-eliminar" onclick="return confirm('¿Eliminar este administrador?');">Eliminar</a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="6" style="text-align:center; color:#888;">No hay administradores registrados.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table></div>
+    <!-- CONTENT -->
+    <div class="content-wrapper">
+      {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+        <li class="{{ message.tags }}">
+          {{ message }}
+          <button class="close-message" onclick="this.parentElement.style.display='none';">&times;</button>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
 
-      <!-- Controles de Paginación -->
-      <div class="pagination">
-        {% if administradores.has_previous %}
-          <a href="?page=1{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">&laquo; Primera</a>
-          <a href="?page={{ administradores.previous_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">Anterior</a>
-        {% else %}
-          <span class="disabled">&laquo; Primera</span>
-          <span class="disabled">Anterior</span>
-        {% endif %}
+      <div class="content-container">
+      <div class="content-container">
+        <div class="top-bar">
+          <form method="get" action="{% url 'listar_administradores' %}" class="filtros-form">
+            <div class="form-group">
+              <label for="nombre">Buscar por Nombre</label>
+              <input type="text" name="nombre" id="nombre" value="{{ filtros.nombre|default:'' }}" placeholder="Nombre o Apellido">
+            </div>
+            <div class="form-group">
+              <label for="documento">Buscar por Documento</label>
+              <input type="text" name="documento" id="documento" value="{{ filtros.documento|default:'' }}" placeholder="Número de documento">
+            </div>
+            <div class="actions">
+              <button type="submit" class="btn-filtro btn-buscar">
+                <i class="fas fa-search"></i> Buscar
+              </button>
+              <a href="{% url 'listar_administradores' %}" class="btn-filtro btn-limpiar">
+                <i class="fas fa-eraser"></i> Limpiar
+              </a>
+            </div>
+          </form>
+          <div class="page-actions">
+            <a href="{% url 'crear_administrador' %}" class="btn-crear">
+              <i class="fas fa-plus"></i> Nuevo Administrador
+            </a>
+          </div>
+        </div>
 
-        <span class="current">
-          Página {{ administradores.number }} de {{ administradores.paginator.num_pages }}.
-        </span>
+        <div class="tabla-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Foto</th>
+                <th>Nombre</th>
+                <th>Apellidos</th>
+                <th>Documento</th>
+                <th>Correo</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for admin in administradores %}
+              <tr>
+                <td>
+                  {% if admin.foto_admin %}
+                    <img src="{{ admin.foto_admin.url }}" alt="Foto de {{ admin.nombres }}" style="width:48px; height:48px; object-fit:cover; border-radius:50%; border:2px solid var(--primary); background:var(--light);" />
+                  {% else %}
+                    <div style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; background:var(--light); border-radius:50%; color:var(--text-light);">
+                      <i class="fa-solid fa-user fa-lg"></i>
+                    </div>
+                  {% endif %}
+                </td>
+                <td>{{ admin.nombres|default:"N/A" }}</td>
+                <td>{{ admin.apellidos|default:"N/A" }}</td>
+                <td>{{ admin.documento }}</td>
+                <td>{{ admin.correo }}</td>
+                <td class="acciones">
+                  <a href="{% url 'editar_administrador' admin.id %}" class="btn-editar">
+                    <i class="fas fa-edit"></i> Editar
+                  </a>
+                  <a href="{% url 'eliminar_administrador' admin.id %}" class="btn-eliminar" onclick="return confirm('¿Está seguro de eliminar este administrador?');">
+                    <i class="fas fa-trash"></i> Eliminar
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" style="text-align:center; color:var(--text-light); padding:40px;">
+                  <i class="fas fa-inbox fa-3x" style="color:var(--border); margin-bottom:16px;"></i>
+                  <div>No hay administradores registrados.</div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
-        {% if administradores.has_next %}
-          <a href="?page={{ administradores.next_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">Siguiente</a>
-          <a href="?page={{ administradores.paginator.num_pages }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">Última &raquo;</a>
-        {% else %}
-          <span class="disabled">Siguiente</span>
-          <span class="disabled">Última &raquo;</span>
-        {% endif %}
+        <!-- Controles de Paginación -->
+        <div class="pagination">
+          {% if administradores.has_previous %}
+            <a href="?page=1{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">&laquo; Primera</a>
+            <a href="?page={{ administradores.previous_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">Anterior</a>
+          {% else %}
+            <span class="disabled">&laquo; Primera</span>
+            <span class="disabled">Anterior</span>
+          {% endif %}
+
+          <span class="current">
+            Página {{ administradores.number }} de {{ administradores.paginator.num_pages }}
+          </span>
+
+          {% if administradores.has_next %}
+            <a href="?page={{ administradores.next_page_number }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">Siguiente</a>
+            <a href="?page={{ administradores.paginator.num_pages }}{% for key, value in filtros.items %}&{{ key }}={{ value }}{% endfor %}">Última &raquo;</a>
+          {% else %}
+            <span class="disabled">Siguiente</span>
+            <span class="disabled">Última &raquo;</span>
+          {% endif %}
+        </div>
       </div>
     </div>
-  </div>
+  </main>
 </body>
 </html>
