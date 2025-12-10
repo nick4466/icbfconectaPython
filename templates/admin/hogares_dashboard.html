@@ -101,6 +101,11 @@
       background: rgba(255,255,255,0.1);
       color: white;
     }
+    
+    /* Estilo para botón de logout que es un <button> */
+    button.nav-link:hover {
+      background: rgba(255,255,255,0.1);
+    }
 
     .nav-link.active {
       background: rgba(255,255,255,0.2);
@@ -400,6 +405,7 @@
     .badge-warning { background: #fef3c7; color: #92400e; }
     .badge-danger { background: #fee2e2; color: #991b1b; }
     .badge-info { background: #dbeafe; color: #1e40af; }
+    .badge-secondary { background: #e5e7eb; color: #374151; }
 
     .hogar-info {
       margin-bottom: 16px;
@@ -452,6 +458,21 @@
       0%, 100% { transform: translateX(0); }
       25% { transform: translateX(-2px); }
       75% { transform: translateX(2px); }
+    }
+
+    @keyframes pulse-glow {
+      0% {
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.8), 0 0 30px rgba(16, 185, 129, 0.4);
+        transform: scale(1.02);
+      }
+      100% {
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+        transform: scale(1);
+      }
     }
 
     .hogar-stats {
@@ -871,10 +892,13 @@
           </a>
         </div>
         <div class="nav-item">
-          <a href="{% url 'logout' %}" class="nav-link">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Cerrar Sesión</span>
-          </a>
+          <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+            {% csrf_token %}
+            <button type="submit" class="nav-link" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; font: inherit; color: white; padding: 12px 20px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Cerrar Sesión</span>
+            </button>
+          </form>
         </div>
       </nav>
     </aside>
@@ -912,7 +936,7 @@
                 <select name="localidad" class="form-control">
                   <option value="">Todas</option>
                   {% for loc in localidades %}
-                  <option value="{{ loc }}" {% if loc == filtro_localidad %}selected{% endif %}>{{ loc }}</option>
+                  <option value="{{ loc.nombre }}" {% if loc.nombre == filtro_localidad %}selected{% endif %}>{{ loc.numero }}. {{ loc.nombre }}</option>
                   {% endfor %}
                 </select>
               </div>
@@ -976,14 +1000,18 @@
                     </div>
                   </div>
                   <div>
-                    {% if hogar.estado == 'aprobado' %}
+                    {% if hogar.estado == 'activo' %}
+                      <span class="badge badge-success">✅ Activo y Apto</span>
+                    {% elif hogar.estado == 'aprobado' %}
                       <span class="badge badge-success">✓ Aprobado</span>
                     {% elif hogar.estado == 'pendiente_visita' %}
-                      <span class="badge badge-warning">⏱ Pendiente</span>
+                      <span class="badge badge-warning">⏱ Pendiente Visita</span>
                     {% elif hogar.estado == 'en_revision' %}
-                      <span class="badge badge-info">🔄 Revisión</span>
-                    {% else %}
+                      <span class="badge badge-info">🔄 En Revisión</span>
+                    {% elif hogar.estado == 'rechazado' %}
                       <span class="badge badge-danger">✗ Rechazado</span>
+                    {% else %}
+                      <span class="badge badge-secondary">⚪ {{ hogar.estado|title }}</span>
                     {% endif %}
                   </div>
                 </div>
@@ -1030,10 +1058,46 @@
                     <i class="fas fa-edit"></i>
                     Editar
                   </a>
-                  <button class="btn btn-warning btn-small" onclick="abrirModalVisita({{ hogar.id }}, '{{ hogar.nombre_hogar|escapejs }}', '{{ hogar.ultima_visita|date:"Y-m-d"|default:"" }}', '{{ hogar.proxima_visita|date:"Y-m-d"|default:"" }}', '{{ hogar.estado_aptitud }}', '{{ hogar.observaciones_visita|escapejs }}')">
-                    <i class="fas fa-calendar-check"></i>
-                    Visita
-                  </button>
+                  
+                  {# 🆕 Botón de Activación/Visita - Siempre disponible #}
+                  {% if hogar.estado == 'activo' or hogar.estado == 'aprobado' %}
+                    {# Hogar YA ACTIVO - Botón para visitas de seguimiento #}
+                    <a href="{% url 'registrar_visita' hogar.id %}" class="btn btn-warning btn-small">
+                      <i class="fas fa-calendar-check"></i>
+                      Registrar Visita
+                    </a>
+                  {% else %}
+                    {# Hogar NO ACTIVO - Botón para primera activación #}
+                    {% if hogar.fecha_primera_visita %}
+                      {# Hogar CON fecha programada #}
+                      {% now "Y-m-d" as fecha_hoy %}
+                      {% if hogar.fecha_primera_visita|date:"Y-m-d" == fecha_hoy %}
+                        <a href="{% url 'activar_hogar' hogar.id %}" class="btn btn-success btn-small" style="background: linear-gradient(90deg, #10b981, #059669); animation: pulse-glow 2s infinite;">
+                          <i class="fas fa-check-circle"></i>
+                          Activar Hogar
+                        </a>
+                      {% else %}
+                        {# Permitir activación antes de la fecha programada si el administrador lo decide #}
+                        <a href="{% url 'activar_hogar' hogar.id %}" 
+                           class="btn btn-small" 
+                           style="background: linear-gradient(90deg, #10b981, #059669); color: white;"
+                           onclick="return confirm('📅 Visita programada para: {{ hogar.fecha_primera_visita|date:"d/m/Y" }}\n\n¿Deseas realizar la evaluación de activación ahora?\n\nPuedes completar el formulario en cualquier momento desde ahora hasta la fecha programada.');">
+                          <i class="fas fa-check-circle"></i>
+                          Activar Hogar
+                        </a>
+                      {% endif %}
+                    {% else %}
+                      {# Hogar SIN fecha programada - Activación directa #}
+                      <a href="{% url 'activar_hogar' hogar.id %}" 
+                         class="btn btn-small" 
+                         style="background: linear-gradient(90deg, #10b981, #059669); color: white; animation: pulse-glow 2s infinite;"
+                         onclick="return confirm('⚠️ Este hogar NO tiene visita programada.\n\n¿Deseas realizar la evaluación de activación AHORA?\n\nSe registrará la fecha de hoy como fecha de visita.');">
+                        <i class="fas fa-clipboard-check"></i>
+                        Activar Ya
+                      </a>
+                    {% endif %}
+                  {% endif %}
+                  
                   <button class="btn btn-primary btn-small" onclick="verHogarDetalle({{ hogar.id }})">
                     <i class="fas fa-folder-open"></i>
                     Ver Carpeta
@@ -1376,6 +1440,28 @@
       const ultimaVisita = document.getElementById('visitaUltimaFecha').value;
       const proximaVisita = document.getElementById('visitaProximaFecha').value;
       const observaciones = document.getElementById('visitaObservaciones').value;
+      
+      // Validar fechas
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      
+      if (proximaVisita) {
+        const fechaProxima = new Date(proximaVisita);
+        const unMesDespues = new Date();
+        unMesDespues.setMonth(unMesDespues.getMonth() + 1);
+        
+        // Validar que no sea fecha pasada
+        if (fechaProxima < hoy) {
+          alert('❌ Error: No se puede programar una visita en una fecha pasada.');
+          return;
+        }
+        
+        // Validar que no sea más de 1 mes
+        if (fechaProxima > unMesDespues) {
+          alert('❌ Error: No se puede programar una visita con más de 1 mes de anticipación.');
+          return;
+        }
+      }
       
       // Enviar datos al servidor
       fetch(`/api/hogares/${hogarId}/actualizar-visitas/`, {

@@ -82,6 +82,8 @@ urlpatterns = [
     # --- Visitas Técnicas y Gestión de Hogares ---
     path('hogares/<int:hogar_id>/realizar-visita/', views.realizar_visita_tecnica, name='realizar_visita_tecnica'),
     path('hogares/<int:hogar_id>/programar-visita/', views.programar_visita, name='programar_visita'),
+    path('hogares/<int:hogar_id>/activar/', views.activar_hogar, name='activar_hogar'),  # 🆕 Formulario de activación
+    path('hogares/<int:hogar_id>/registrar-visita/', views.registrar_visita, name='registrar_visita'),  # 🆕 Visitas de seguimiento
     
     # 🆕 API para Sistema de Gestión de Visitas
     path('api/hogares/<int:hogar_id>/actualizar-visitas/', views.actualizar_visitas_hogar, name='actualizar_visitas_hogar'),

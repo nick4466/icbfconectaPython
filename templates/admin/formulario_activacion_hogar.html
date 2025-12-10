@@ -1,0 +1,355 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Formulario de Activación del Hogar</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #3b82f6;
+      --secondary: #10b981;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --light: #f8fafc;
+      --dark: #0f172a;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --sidebar-width: 260px;
+      --topbar-height: 70px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--text); min-height: 100vh; }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh; background: linear-gradient(180deg, var(--primary) 0%, #1e40af 100%); color: white; display: flex; flex-direction: column; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+    .sidebar-header { padding: 1.5rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: white; }
+    .sidebar-logo img { width: 45px; height: 45px; object-fit: contain; }
+    .sidebar-logo-text h2 { font-size: 18px; font-weight: 700; margin: 0; }
+    .sidebar-logo-text p { font-size: 11px; opacity: 0.9; margin: 0; }
+    .sidebar-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
+    .nav-item { margin-bottom: 0.25rem; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: rgba(255,255,255,0.9); text-decoration: none; transition: all 0.2s; font-size: 14px; font-weight: 500; border-left: 3px solid transparent; }
+    .nav-link:hover { background: rgba(255,255,255,0.1); border-left-color: white; }
+    .nav-link.active { background: rgba(255,255,255,0.15); border-left-color: white; color: white; }
+    .nav-link i { width: 20px; text-align: center; font-size: 16px; }
+
+    /* ========== MAIN CONTENT ========== */
+    .main-content { margin-left: var(--sidebar-width); min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar { height: var(--topbar-height); background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .topbar h1 { font-size: 24px; font-weight: 700; color: var(--primary); margin: 0; }
+    .breadcrumb { font-size: 14px; color: var(--text-light); }
+    .breadcrumb a { color: var(--primary); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .content-wrapper { flex: 1; padding: 2rem; }
+    
+    /* Contenedor de formulario */
+    .form-container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    .form-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; margin-bottom: 30px; }
+    .form-header.seguimiento { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .form-header h2 { font-size: 24px; font-weight: 700; margin: 0 0 10px 0; }
+    .form-header p { font-size: 14px; opacity: 0.95; margin: 0; }
+    
+    .form-group { margin-bottom: 24px; }
+    label { font-weight: 600; color: #555; margin-bottom: 8px; font-size: 14px; display: block; }
+    input, select, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-family: "Inter", sans-serif; font-size: 15px; transition: all 0.3s; }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(59,130,246,0.15); outline: none; }
+    
+    .section-title { color: var(--primary); margin: 30px 0 15px; font-size: 18px; border-left: 4px solid var(--primary-light); padding-left: 12px; font-weight: 700; }
+    
+    .checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .checkbox-label { cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    
+    .row { display: flex; gap: 20px; }
+    .row .form-group { flex: 1; }
+    
+    .form-actions { margin-top: 40px; padding-top: 20px; border-top: 2px solid #dee2e6; display: flex; gap: 15px; justify-content: flex-end; }
+    .btn { padding: 12px 32px; border: none; border-radius: 8px; color: white; font-weight: 600; font-size: 16px; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background: linear-gradient(90deg, var(--success), #059669); }
+    .btn-primary:hover { background: #059669; }
+    .btn-secondary { background: #6c757d; }
+    .btn-secondary:hover { background: #495057; }
+    
+    .alert { padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; }
+    .alert-info { background: #cfe2ff; color: #084298; border: 1px solid #b6d4fe; }
+    .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .alert-danger { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a href="{% url 'dashboard_admin' %}" class="sidebar-logo">
+        <img src="{% static 'images/logo.png' %}" alt="Logo ICBF">
+        <div class="sidebar-logo-text">
+          <h2>ICBF Conecta</h2>
+          <p>Sistema de Gestión</p>
+        </div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item">
+        <a href="{% url 'dashboard_admin' %}" class="nav-link">
+          <i class="fas fa-home"></i>
+          <span>Inicio</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'hogares_dashboard' %}" class="nav-link active">
+          <i class="fas fa-calendar-check"></i>
+          <span>Gestión de Visitas</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_hogares' %}" class="nav-link">
+          <i class="fas fa-home"></i>
+          <span>Hogares</span>
+        </a>
+      </div>
+      <div class="nav-item">
+        <a href="{% url 'listar_madres' %}" class="nav-link">
+          <i class="fas fa-user-group"></i>
+          <span>Agentes Educativos</span>
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="main-content">
+    <div class="topbar">
+      <div>
+        <h1><i class="fas fa-clipboard-check"></i> Formulario de Activación del Hogar</h1>
+        <div class="breadcrumb">
+          <a href="{% url 'dashboard_admin' %}">Dashboard</a>
+          <span>/</span>
+          <a href="{% url 'hogares_dashboard' %}">Gestión de Visitas</a>
+          <span>/</span>
+          <span>Activación de Hogar</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="form-container">
+        <div class="form-header {% if es_seguimiento %}seguimiento{% endif %}">
+          {% if es_seguimiento %}
+            <h2><i class="fas fa-calendar-check"></i> Registro de Visita de Seguimiento</h2>
+          {% else %}
+            <h2><i class="fas fa-check-circle"></i> Evaluación de Primera Visita Técnica</h2>
+          {% endif %}
+          <p><strong>Hogar:</strong> {{ hogar.nombre_hogar }} | <strong>Agente Educativo:</strong> {{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}</p>
+          <p><strong>Dirección:</strong> {{ hogar.direccion }}</p>
+          {% if es_seguimiento %}
+            <p><strong>Última visita:</strong> {{ hogar.ultima_visita|date:"d/m/Y"|default:"No registrada" }} | <strong>Próxima visita:</strong> {{ hogar.proxima_visita|date:"d/m/Y"|default:"No programada" }}</p>
+          {% endif %}
+        </div>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <h3 class="section-title"><i class="fas fa-home"></i> Tipo y Características de la Vivienda</h3>
+          
+          <div class="row">
+            <div class="form-group">
+              <label>Tipo de Vivienda <span style="color: var(--danger);">*</span></label>
+              <select name="tipo_vivienda" required>
+                <option value="">-- Seleccione --</option>
+                <option value="casa">Casa</option>
+                <option value="apartamento">Apartamento</option>
+                <option value="casa_lote">Casa-Lote</option>
+                <option value="finca">Finca</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Ubicación <span style="color: var(--danger);">*</span></label>
+              <select name="ubicacion" required>
+                <option value="">-- Seleccione --</option>
+                <option value="urbana">Urbana</option>
+                <option value="rural">Rural</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>¿Fuera de zonas de riesgo? <span style="color: var(--danger);">*</span></label>
+              <select name="sin_riesgo" required>
+                <option value="">-- Seleccione --</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+          </div>
+
+          <h3 class="section-title"><i class="fas fa-plug"></i> Servicios Públicos</h3>
+          <div class="checkbox-grid">
+            <label class="checkbox-label"><input type="checkbox" name="servicio_acueducto" value="1"> Acueducto</label>
+            <label class="checkbox-label"><input type="checkbox" name="servicio_alcantarillado" value="1"> Alcantarillado</label>
+            <label class="checkbox-label"><input type="checkbox" name="servicio_energia" value="1"> Energía Eléctrica</label>
+            <label class="checkbox-label"><input type="checkbox" name="servicio_gas" value="1"> Gas Natural</label>
+            <label class="checkbox-label"><input type="checkbox" name="servicio_internet" value="1"> Internet</label>
+            <label class="checkbox-label"><input type="checkbox" name="servicio_telefono" value="1"> Teléfono</label>
+          </div>
+
+          <h3 class="section-title"><i class="fas fa-door-open"></i> Espacios de la Vivienda</h3>
+          <div class="checkbox-grid">
+            <label class="checkbox-label"><input type="checkbox" name="espacio_sala" value="1"> Sala</label>
+            <label class="checkbox-label"><input type="checkbox" name="espacio_comedor" value="1"> Comedor</label>
+            <label class="checkbox-label"><input type="checkbox" name="espacio_cocina" value="1"> Cocina</label>
+            <label class="checkbox-label"><input type="checkbox" name="espacio_patio" value="1"> Patio</label>
+          </div>
+
+          <div class="form-group">
+            <label>¿Hay espacio suficiente para los niños? <span style="color: var(--danger);">*</span></label>
+            <select name="espacio_suficiente" required>
+              <option value="">-- Seleccione --</option>
+              <option value="si">Sí</option>
+              <option value="no">No</option>
+              <option value="parcial">Parcialmente</option>
+            </select>
+          </div>
+
+          <h3 class="section-title"><i class="fas fa-tasks"></i> Condiciones Generales</h3>
+          <div class="row">
+            <div class="form-group">
+              <label>Higiene <span style="color: var(--danger);">*</span></label>
+              <select name="higiene" required>
+                <option value="">-- Seleccione --</option>
+                <option value="excelente">Excelente</option>
+                <option value="buena">Buena</option>
+                <option value="regular">Regular</option>
+                <option value="mala">Mala</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Orden <span style="color: var(--danger);">*</span></label>
+              <select name="orden" required>
+                <option value="">-- Seleccione --</option>
+                <option value="excelente">Excelente</option>
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Estado de la vivienda <span style="color: var(--danger);">*</span></label>
+              <select name="estado_vivienda" required>
+                <option value="">-- Seleccione --</option>
+                <option value="acabada">Acabada</option>
+                <option value="buen_estado">Buen estado</option>
+                <option value="deteriorada">Deteriorada</option>
+                <option value="obra_negra">Obra negra</option>
+              </select>
+            </div>
+          </div>
+
+          <h3 class="section-title"><i class="fas fa-wind"></i> Condiciones Ambientales</h3>
+          <div class="row">
+            <div class="form-group">
+              <label>Ventilación <span style="color: var(--danger);">*</span></label>
+              <select name="ventilacion" required>
+                <option value="">-- Seleccione --</option>
+                <option value="excelente">Excelente</option>
+                <option value="buena">Buena</option>
+                <option value="regular">Regular</option>
+                <option value="mala">Mala</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Iluminación Natural <span style="color: var(--danger);">*</span></label>
+              <select name="iluminacion" required>
+                <option value="">-- Seleccione --</option>
+                <option value="excelente">Excelente</option>
+                <option value="buena">Buena</option>
+                <option value="regular">Regular</option>
+                <option value="mala">Mala</option>
+              </select>
+            </div>
+          </div>
+
+          <h3 class="section-title"><i class="fas fa-users"></i> Aspectos Familiares y Convivencia</h3>
+          <div class="form-group">
+            <label>¿Los integrantes del hogar están de acuerdo? <span style="color: var(--danger);">*</span></label>
+            <select name="familia_acuerdo" required>
+              <option value="">-- Seleccione --</option>
+              <option value="si_todos">Sí, todos</option>
+              <option value="mayoria">La mayoría</option>
+              <option value="algunos">Algunos</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Dinámica Familiar</label>
+            <textarea name="dinamica_familiar" rows="4" placeholder="Describa la dinámica familiar, relaciones, manejo de conflictos, etc."></textarea>
+          </div>
+
+          <h3 class="section-title"><i class="fas fa-clipboard"></i> Observaciones y Conclusiones</h3>
+          <div class="form-group">
+            <label>Observaciones Generales de la Visita</label>
+            <textarea name="observaciones_generales" rows="5" placeholder="Registre cualquier observación relevante sobre la visita técnica..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Capacidad Máxima Calculada <span style="color: var(--danger);">*</span></label>
+            <select name="capacidad_calculada" required style="font-size: 16px; font-weight: 600;">
+              <option value="">-- Seleccione cantidad de niños --</option>
+              <option value="12">12 niños</option>
+              <option value="13">13 niños</option>
+              <option value="14">14 niños</option>
+              <option value="15">15 niños</option>
+            </select>
+            <small style="color: #666;">
+              <i class="fas fa-info-circle"></i> 
+              <strong>Capacidad permitida:</strong> Mínimo 12 y máximo 15 niños según normativa ICBF
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Recomendación Final <span style="color: var(--danger);">*</span></label>
+            <select name="recomendacion" required>
+              <option value="">-- Seleccione --</option>
+              <option value="aprobado">Aprobado - Hogar APTO</option>
+              <option value="aprobado_condiciones">Aprobado con Condiciones</option>
+              <option value="no_aprobado">No Aprobado - NO APTO</option>
+              <option value="requiere_nueva_visita">Requiere Nueva Visita</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <a href="{% url 'hogares_dashboard' %}" class="btn btn-secondary">
+              <i class="fas fa-times"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-check-circle"></i> Guardar y Activar Hogar
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

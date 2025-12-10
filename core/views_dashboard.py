@@ -34,9 +34,9 @@ def dashboard_admin(request):
     hace_30_dias = hoy - timedelta(days=30)
     primer_dia_mes = hoy.replace(day=1)
     
-    # Total de hogares activos (aprobados y en revisión)
+    # Total de hogares activos (estado 'activo')
     total_hogares = HogarComunitario.objects.filter(
-        estado__in=['aprobado', 'en_revision', 'pendiente_visita']
+        estado='activo'
     ).count()
     
     # Nuevos hogares este mes
@@ -47,17 +47,17 @@ def dashboard_admin(request):
     # Total de agentes educativos
     total_agentes = MadreComunitaria.objects.count()
     agentes_activos = MadreComunitaria.objects.filter(
-        hogares_asignados__estado='aprobado'
+        hogares_asignados__estado='activo'
     ).distinct().count()
     
     # Total de niños matriculados
     total_ninos = Nino.objects.filter(estado='activo').count()
     
-    # Capacidad total del sistema
+    # Capacidad total del sistema (usar campo capacidad real, no promedio fijo)
+    from django.db.models import Sum
     capacidad_total = HogarComunitario.objects.filter(
-        estado='aprobado'
-    ).aggregate(total=Count('id'))['total'] or 0
-    capacidad_total = capacidad_total * 15  # Promedio por hogar
+        estado='activo'
+    ).aggregate(total=Sum('capacidad'))['total'] or 0
     
     # Solicitudes pendientes (si existe el modelo)
     try:
@@ -182,10 +182,11 @@ def generar_chart_estados():
     Genera datos para gráfica de estados de hogares
     """
     estados_map = {
-        'aprobado': 'Aprobados',
+        'activo': 'Activos',
         'pendiente_visita': 'Pendiente Visita',
         'en_revision': 'En Revisión',
-        'rechazado': 'Rechazados'
+        'rechazado': 'Rechazados',
+        'aprobado': 'Aprobados'
     }
     
     labels = []

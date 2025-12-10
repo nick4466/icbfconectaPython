@@ -360,8 +360,9 @@ class HogarComunitario(models.Model):
     ], null=True, blank=True)
     documento_tenencia_pdf = models.FileField(upload_to='hogares/documentos_tenencia/', null=True, blank=True)
 
-    # Estado y relación
-    capacidad_maxima = models.IntegerField(default=15, help_text="Capacidad máxima aprobada después de visita técnica")
+    # Capacidad del hogar (UNIFICADO)
+    capacidad = models.IntegerField(null=True, blank=True, help_text="Capacidad aprobada del hogar (entre 12 y 15 niños según normativa ICBF)")
+    capacidad_maxima = models.IntegerField(default=15, help_text="Capacidad máxima permitida (15 niños según normativa)")
     estado = models.CharField(
         max_length=30,
         choices=[

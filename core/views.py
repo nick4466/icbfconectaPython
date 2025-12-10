@@ -28,6 +28,8 @@ from django.http import JsonResponse
 from datetime import date, datetime, timedelta
 import calendar
 from datetime import date
+from django.core.mail import send_mail  # 🆕 Para envío de emails
+from django.conf import settings  # 🆕 Para configuración de email
 
 # Importar vistas del dashboard mejorado
 from .views_dashboard import *
@@ -688,8 +690,21 @@ def crear_madre(request):
                     # Guardar fecha de primera visita si está disponible
                     fecha_primera_visita = request.POST.get('fecha_primera_visita')
                     if fecha_primera_visita:
-                        from datetime import datetime
-                        hogar.fecha_primera_visita = datetime.strptime(fecha_primera_visita, '%Y-%m-%d').date()
+                        from datetime import datetime, date
+                        fecha_visita_obj = datetime.strptime(fecha_primera_visita, '%Y-%m-%d').date()
+                        
+                        # ✅ Validar que no sea en el pasado
+                        if fecha_visita_obj < date.today():
+                            messages.error(request, '❌ La fecha de primera visita no puede ser en el pasado.')
+                            return render(request, 'admin/madres_form.html', {
+                                'usuario_form': usuario_form, 
+                                'madre_profile_form': madre_profile_form, 
+                                'hogar_form': hogar_form,
+                                'initial_step': 3, 
+                                'regionales': regionales
+                            })
+                        
+                        hogar.fecha_primera_visita = fecha_visita_obj
                     
                     hogar.save()
 
@@ -778,10 +793,13 @@ def crear_madre(request):
                                 antecedentes_pdf=antecedentes
                             )
 
-                mensaje_exito = '¡Agente educativo y hogar registrados exitosamente! '
+                # Mensaje de éxito informativo
+                mensaje_exito = '✅ ¡Agente educativo y hogar creados exitosamente! '
                 if fecha_primera_visita:
-                    mensaje_exito += f'Primera visita técnica programada para el {fecha_visita_dt.strftime("%d de %B de %Y")}. Se ha enviado un correo de confirmación. '
-                mensaje_exito += 'Contraseña temporal: 123456'
+                    mensaje_exito += f'📅 Visita técnica programada para el {fecha_visita_dt.strftime("%d de %B de %Y")}. '
+                    mensaje_exito += f'📧 Se ha enviado un correo de confirmación. '
+                mensaje_exito += '⚠️ El hogar permanecerá en estado "Pendiente de Visita" hasta completar la evaluación técnica. '
+                mensaje_exito += '🔑 Contraseña temporal: 123456'
                 
                 messages.success(request, mensaje_exito)
                 return redirect('listar_madres')
@@ -4966,14 +4984,14 @@ def hogares_dashboard(request):
     
     # Query base con relaciones pre-cargadas y anotaciones
     hogares = HogarComunitario.objects.select_related(
-        'madre__usuario', 'regional', 'ciudad'
+        'madre__usuario', 'regional', 'ciudad', 'localidad_bogota'
     ).annotate(
         ninos_count=Count('ninos', filter=Q(ninos__estado='activo'))
     )
     
     # Aplicar filtros
     if filtro_localidad:
-        hogares = hogares.filter(localidad__icontains=filtro_localidad)
+        hogares = hogares.filter(localidad_bogota__nombre__icontains=filtro_localidad)
     
     if filtro_estado:
         hogares = hogares.filter(estado=filtro_estado)
@@ -4986,21 +5004,26 @@ def hogares_dashboard(request):
             Q(direccion__icontains=busqueda)
         )
     
-    # Ordenar por fecha de registro
-    hogares = hogares.order_by('-fecha_registro')
+    # Ordenar por localidad y fecha de registro
+    hogares = hogares.order_by('localidad_bogota__numero', '-fecha_registro')
     
-    # Obtener todas las localidades únicas para el filtro
-    localidades = HogarComunitario.objects.exclude(
-        localidad__isnull=True
-    ).exclude(
-        localidad=''
-    ).values_list('localidad', flat=True).distinct().order_by('localidad')
+    # Obtener todas las localidades de Bogotá para el filtro
+    from core.models import LocalidadBogota
+    localidades = LocalidadBogota.objects.all().order_by('numero')
     
     # Agrupar hogares por localidad
     hogares_por_localidad = defaultdict(list)
     for hogar in hogares:
-        localidad = hogar.localidad if hogar.localidad else 'Sin localidad'
-        hogares_por_localidad[localidad].append(hogar)
+        if hogar.localidad_bogota:
+            # Usar formato "Ciudad - Localidad" para hogares en Bogotá
+            clave_localidad = f"{hogar.ciudad.nombre} - {hogar.localidad_bogota.nombre}"
+        elif hogar.ciudad:
+            # Para hogares sin localidad asignada
+            clave_localidad = hogar.ciudad.nombre
+        else:
+            clave_localidad = 'Sin ubicación'
+        
+        hogares_por_localidad[clave_localidad].append(hogar)
     
     # Convertir a diccionario normal ordenado
     hogares_por_localidad = dict(sorted(hogares_por_localidad.items()))
@@ -5292,10 +5315,25 @@ def programar_visita(request, hogar_id):
         observaciones = request.POST.get('observaciones', '')
         
         try:
+            from datetime import datetime
+            fecha_visita_dt = datetime.strptime(fecha_programada, '%Y-%m-%d')
+            fecha_visita_date = fecha_visita_dt.date()
+            
+            # Validar que la fecha no sea en el pasado
+            from datetime import date
+            if fecha_visita_date < date.today():
+                messages.error(request, '❌ La fecha de visita no puede ser en el pasado.')
+                return redirect('hogares_dashboard')
+            
+            # Actualizar fecha_primera_visita si no existe (hogar sin visita programada)
+            if not hogar.fecha_primera_visita:
+                hogar.fecha_primera_visita = fecha_visita_date
+                hogar.save()
+            
             # Crear la visita
             visita = VisitaTecnica.objects.create(
                 hogar=hogar,
-                fecha_programada=fecha_programada,
+                fecha_programada=fecha_visita_dt,
                 tipo_visita=tipo_visita,
                 estado='agendada',
                 creado_por=request.user,
@@ -5429,6 +5467,22 @@ def actualizar_visitas_hogar(request, hogar_id):
         if proxima_visita_str:
             try:
                 proxima_visita = datetime.strptime(proxima_visita_str, '%Y-%m-%d').date()
+                
+                # Validar que la próxima visita no sea en el pasado
+                if proxima_visita < date.today():
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'La próxima visita no puede ser programada en el pasado'
+                    }, status=400)
+                
+                # Validar que no sea más de 1 mes en el futuro
+                un_mes_despues = date.today() + timedelta(days=30)
+                if proxima_visita > un_mes_despues:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'La próxima visita no puede ser programada con más de 1 mes de anticipación'
+                    }, status=400)
+                
                 hogar.proxima_visita = proxima_visita
             except ValueError:
                 return JsonResponse({
@@ -5527,4 +5581,444 @@ def calcular_proxima_visita(fecha_base):
             break
     
     return proxima
+
+
+@login_required
+@rol_requerido('administrador')
+def activar_hogar(request, hogar_id):
+    """
+    Vista para activar un hogar después de la primera visita técnica.
+    Solo disponible el día programado de la visita.
+    
+    Procesa el formulario de evaluación y determina:
+    - Si el hogar es APTO (aprobado) → estado 'activo'
+    - Si el hogar es NO APTO → estado 'pendiente_visita'
+    - Envía email de notificación si es activado
+    """
+    hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+    fecha_hoy = date.today()
+    
+    # Permitir activación de hogares que NO estén ya activos o aprobados
+    # Incluye: pendiente_visita, rechazado, en_revision, etc.
+    if hogar.estado in ['activo', 'aprobado']:
+        messages.warning(request, 'Este hogar ya está activo y aprobado.')
+        return redirect('hogares_dashboard')
+    
+    # Manejar diferentes escenarios de fecha
+    if not hogar.fecha_primera_visita:
+        # Hogar SIN fecha programada - Activación directa
+        messages.info(request, 
+            f'📋 Este hogar NO tenía visita programada. '
+            f'Se registrará la fecha de hoy ({fecha_hoy.strftime("%d de %B de %Y")}) como fecha de visita.'
+        )
+    elif fecha_hoy < hogar.fecha_primera_visita:
+        # Activación ANTICIPADA
+        messages.info(request, 
+            f'📅 Visita programada para: {hogar.fecha_primera_visita.strftime("%d de %B de %Y")}. '
+            f'Estás realizando la evaluación de forma anticipada.'
+        )
+    elif fecha_hoy > hogar.fecha_primera_visita:
+        # Activación CON RETRASO
+        messages.warning(request, 
+            f'⚠️ La fecha programada era: {hogar.fecha_primera_visita.strftime("%d de %B de %Y")}. '
+            f'Estás realizando la evaluación con retraso.'
+        )
+    # Si fecha_hoy == fecha_primera_visita, no mostrar mensaje (es el día correcto)
+    
+    if request.method == 'POST':
+        try:
+            # Capturar datos del formulario
+            tipo_vivienda = request.POST.get('tipo_vivienda')
+            ubicacion = request.POST.get('ubicacion')
+            sin_riesgo = request.POST.get('sin_riesgo')
+            
+            # Servicios públicos (checkboxes)
+            servicios = {
+                'acueducto': request.POST.get('servicio_acueducto') == '1',
+                'alcantarillado': request.POST.get('servicio_alcantarillado') == '1',
+                'energia': request.POST.get('servicio_energia') == '1',
+                'gas': request.POST.get('servicio_gas') == '1',
+                'internet': request.POST.get('servicio_internet') == '1',
+                'telefono': request.POST.get('servicio_telefono') == '1',
+            }
+            
+            # Espacios
+            espacios = {
+                'sala': request.POST.get('espacio_sala') == '1',
+                'comedor': request.POST.get('espacio_comedor') == '1',
+                'cocina': request.POST.get('espacio_cocina') == '1',
+                'patio': request.POST.get('espacio_patio') == '1',
+            }
+            espacio_suficiente = request.POST.get('espacio_suficiente')
+            
+            # Condiciones
+            higiene = request.POST.get('higiene')
+            orden = request.POST.get('orden')
+            estado_vivienda = request.POST.get('estado_vivienda')
+            ventilacion = request.POST.get('ventilacion')
+            iluminacion = request.POST.get('iluminacion')
+            
+            # Aspectos familiares
+            familia_acuerdo = request.POST.get('familia_acuerdo')
+            dinamica_familiar = request.POST.get('dinamica_familiar', '')
+            
+            # Observaciones y recomendación
+            observaciones_generales = request.POST.get('observaciones_generales', '')
+            capacidad_calculada = int(request.POST.get('capacidad_calculada', 0))
+            recomendacion = request.POST.get('recomendacion')
+            
+            # ✅ Validar capacidad permitida (12-15 niños según normativa ICBF)
+            if capacidad_calculada < 12 or capacidad_calculada > 15:
+                messages.error(request, 
+                    f'❌ Error: La capacidad debe estar entre 12 y 15 niños. '
+                    f'Valor ingresado: {capacidad_calculada}. '
+                    f'Verifica el formulario y selecciona una capacidad válida.'
+                )
+                return redirect('activar_hogar', hogar_id=hogar.id)
+            
+            # Construir observaciones completas
+            observaciones_completas = f"""
+=== EVALUACIÓN DE PRIMERA VISITA TÉCNICA ===
+Fecha: {fecha_hoy.strftime('%d/%m/%Y')}
+
+VIVIENDA:
+- Tipo: {tipo_vivienda}
+- Ubicación: {ubicacion}
+- Sin zonas de riesgo: {sin_riesgo}
+- Estado: {estado_vivienda}
+
+SERVICIOS PÚBLICOS:
+- Acueducto: {'✓' if servicios['acueducto'] else '✗'}
+- Alcantarillado: {'✓' if servicios['alcantarillado'] else '✗'}
+- Energía: {'✓' if servicios['energia'] else '✗'}
+- Gas: {'✓' if servicios['gas'] else '✗'}
+- Internet: {'✓' if servicios['internet'] else '✗'}
+- Teléfono: {'✓' if servicios['telefono'] else '✗'}
+
+ESPACIOS:
+- Sala: {'✓' if espacios['sala'] else '✗'}
+- Comedor: {'✓' if espacios['comedor'] else '✗'}
+- Cocina: {'✓' if espacios['cocina'] else '✗'}
+- Patio: {'✓' if espacios['patio'] else '✗'}
+- Espacio suficiente: {espacio_suficiente}
+
+CONDICIONES:
+- Higiene: {higiene}
+- Orden: {orden}
+- Ventilación: {ventilacion}
+- Iluminación: {iluminacion}
+
+FAMILIA:
+- Acuerdo familiar: {familia_acuerdo}
+- Dinámica: {dinamica_familiar}
+
+CAPACIDAD CALCULADA: {capacidad_calculada} niños
+
+OBSERVACIONES:
+{observaciones_generales}
+
+RECOMENDACIÓN: {recomendacion.upper()}
+"""
+            
+            # Actualizar campos del hogar
+            hogar.ultima_visita = fecha_hoy
+            hogar.observaciones_visita = observaciones_completas
+            hogar.capacidad = capacidad_calculada
+            
+            # Si no tenía fecha_primera_visita, asignar la de hoy
+            if not hogar.fecha_primera_visita:
+                hogar.fecha_primera_visita = fecha_hoy
+            
+            # Determinar estado según recomendación
+            if recomendacion == 'aprobado':
+                hogar.estado_aptitud = 'apto'
+                hogar.estado = 'activo'
+                hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
+                
+                # Guardar cambios
+                hogar.save()
+                
+                # Enviar email de activación
+                enviar_email_activacion(hogar)
+                
+                messages.success(request, 
+                    f'✅ ¡Hogar ACTIVADO exitosamente! '
+                    f'El hogar "{hogar.nombre_hogar}" ahora está en estado ACTIVO. '
+                    f'Se ha enviado un correo de notificación al agente educativo.'
+                )
+                
+            elif recomendacion == 'aprobado_condiciones':
+                hogar.estado_aptitud = 'apto'
+                hogar.estado = 'activo'
+                hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
+                hogar.save()
+                
+                messages.warning(request, 
+                    f'⚠️ Hogar activado CON CONDICIONES. '
+                    f'Revisar observaciones: {observaciones_generales[:100]}...'
+                )
+                
+            elif recomendacion == 'no_aprobado':
+                hogar.estado_aptitud = 'no_apto'
+                hogar.estado = 'pendiente_visita'
+                hogar.save()
+                
+                messages.error(request, 
+                    f'❌ Hogar NO APROBADO. '
+                    f'El hogar permanece en estado "Pendiente de Visita". '
+                    f'Se requiere corregir las deficiencias antes de programar nueva visita.'
+                )
+                
+            elif recomendacion == 'requiere_nueva_visita':
+                hogar.estado_aptitud = 'no_apto'
+                hogar.estado = 'pendiente_visita'
+                hogar.fecha_primera_visita = None  # Permitir reprogramación
+                hogar.save()
+                
+                messages.info(request, 
+                    f'🔄 Se requiere NUEVA VISITA. '
+                    f'Puede programar una nueva fecha desde el dashboard.'
+                )
+            
+            return redirect('hogares_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error al procesar el formulario: {str(e)}')
+            return redirect('activar_hogar', hogar_id=hogar.id)
+    
+    # GET: Mostrar formulario
+    context = {
+        'hogar': hogar,
+        'fecha_hoy': fecha_hoy,
+        'es_administrador': request.user.rol.nombre_rol == 'administrador',
+    }
+    
+    return render(request, 'admin/formulario_activacion_hogar.html', context)
+
+
+@login_required
+@rol_requerido('administrador')
+def registrar_visita(request, hogar_id):
+    """
+    Vista para registrar visitas de seguimiento en hogares YA ACTIVOS.
+    Usa el mismo formulario de evaluación que la activación.
+    """
+    hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+    fecha_hoy = date.today()
+    
+    # Verificar que el hogar esté activo
+    if hogar.estado not in ['activo', 'aprobado']:
+        messages.warning(request, 'Solo puedes registrar visitas en hogares activos.')
+        return redirect('hogares_dashboard')
+    
+    if request.method == 'POST':
+        try:
+            # Capturar datos del formulario (mismo código que activar_hogar)
+            tipo_vivienda = request.POST.get('tipo_vivienda')
+            ubicacion = request.POST.get('ubicacion')
+            sin_riesgo = request.POST.get('sin_riesgo')
+            
+            servicios = {
+                'acueducto': request.POST.get('servicio_acueducto') == '1',
+                'alcantarillado': request.POST.get('servicio_alcantarillado') == '1',
+                'energia': request.POST.get('servicio_energia') == '1',
+                'gas': request.POST.get('servicio_gas') == '1',
+                'internet': request.POST.get('servicio_internet') == '1',
+                'telefono': request.POST.get('servicio_telefono') == '1',
+            }
+            
+            espacios = {
+                'sala': request.POST.get('espacio_sala') == '1',
+                'comedor': request.POST.get('espacio_comedor') == '1',
+                'cocina': request.POST.get('espacio_cocina') == '1',
+                'patio': request.POST.get('espacio_patio') == '1',
+            }
+            espacio_suficiente = request.POST.get('espacio_suficiente')
+            
+            higiene = request.POST.get('higiene')
+            orden = request.POST.get('orden')
+            estado_vivienda = request.POST.get('estado_vivienda')
+            ventilacion = request.POST.get('ventilacion')
+            iluminacion = request.POST.get('iluminacion')
+            
+            familia_acuerdo = request.POST.get('familia_acuerdo')
+            dinamica_familiar = request.POST.get('dinamica_familiar', '')
+            
+            observaciones_generales = request.POST.get('observaciones_generales', '')
+            capacidad_calculada = int(request.POST.get('capacidad_calculada', hogar.capacidad))
+            recomendacion = request.POST.get('recomendacion')
+            
+            # Validar capacidad
+            if capacidad_calculada < 12 or capacidad_calculada > 15:
+                messages.error(request, 
+                    f'❌ Error: La capacidad debe estar entre 12 y 15 niños. '
+                    f'Valor ingresado: {capacidad_calculada}.'
+                )
+                return redirect('registrar_visita', hogar_id=hogar.id)
+            
+            # Construir observaciones
+            observaciones_completas = f"""
+=== VISITA DE SEGUIMIENTO ===
+Fecha: {fecha_hoy.strftime('%d/%m/%Y')}
+
+VIVIENDA:
+- Tipo: {tipo_vivienda}
+- Ubicación: {ubicacion}
+- Sin zonas de riesgo: {sin_riesgo}
+- Estado: {estado_vivienda}
+
+SERVICIOS PÚBLICOS:
+- Acueducto: {'✓' if servicios['acueducto'] else '✗'}
+- Alcantarillado: {'✓' if servicios['alcantarillado'] else '✗'}
+- Energía: {'✓' if servicios['energia'] else '✗'}
+- Gas: {'✓' if servicios['gas'] else '✗'}
+- Internet: {'✓' if servicios['internet'] else '✗'}
+- Teléfono: {'✓' if servicios['telefono'] else '✗'}
+
+ESPACIOS:
+- Sala: {'✓' if espacios['sala'] else '✗'}
+- Comedor: {'✓' if espacios['comedor'] else '✗'}
+- Cocina: {'✓' if espacios['cocina'] else '✗'}
+- Patio: {'✓' if espacios['patio'] else '✗'}
+- Espacio suficiente: {espacio_suficiente}
+
+CONDICIONES:
+- Higiene: {higiene}
+- Orden: {orden}
+- Ventilación: {ventilacion}
+- Iluminación: {iluminacion}
+
+FAMILIA:
+- Acuerdo familiar: {familia_acuerdo}
+- Dinámica: {dinamica_familiar}
+
+CAPACIDAD: {capacidad_calculada} niños
+
+OBSERVACIONES:
+{observaciones_generales}
+
+RESULTADO: {recomendacion.upper()}
+"""
+            
+            # Actualizar hogar
+            hogar.ultima_visita = fecha_hoy
+            hogar.observaciones_visita = observaciones_completas
+            hogar.capacidad = capacidad_calculada
+            
+            # Determinar acción según recomendación
+            if recomendacion == 'aprobado':
+                hogar.estado_aptitud = 'apto'
+                hogar.estado = 'activo'
+                hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
+                hogar.save()
+                
+                messages.success(request, 
+                    f'✅ Visita registrada exitosamente. '
+                    f'El hogar continúa ACTIVO. '
+                    f'Próxima visita: {hogar.proxima_visita.strftime("%d/%m/%Y")}'
+                )
+                
+            elif recomendacion == 'aprobado_condiciones':
+                hogar.estado_aptitud = 'apto'
+                hogar.estado = 'activo'
+                hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
+                hogar.save()
+                
+                messages.warning(request, 
+                    f'⚠️ Visita registrada CON CONDICIONES. '
+                    f'Revisar observaciones: {observaciones_generales[:100]}...'
+                )
+                
+            elif recomendacion == 'no_aprobado':
+                hogar.estado_aptitud = 'no_apto'
+                hogar.estado = 'rechazado'
+                hogar.save()
+                
+                messages.error(request, 
+                    f'❌ Hogar NO APTO. '
+                    f'El estado ha cambiado a "Rechazado". '
+                    f'Se requiere corrección antes de próxima visita.'
+                )
+                
+            elif recomendacion == 'requiere_nueva_visita':
+                hogar.estado_aptitud = 'apto'
+                hogar.estado = 'activo'
+                # Programar visita más próxima (30 días)
+                hogar.proxima_visita = fecha_hoy + timedelta(days=30)
+                hogar.save()
+                
+                messages.info(request, 
+                    f'🔄 Se requiere NUEVA VISITA en 30 días. '
+                    f'Próxima visita: {hogar.proxima_visita.strftime("%d/%m/%Y")}'
+                )
+            
+            return redirect('hogares_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error al procesar el formulario: {str(e)}')
+            return redirect('registrar_visita', hogar_id=hogar.id)
+    
+    # GET: Mostrar formulario
+    context = {
+        'hogar': hogar,
+        'fecha_hoy': fecha_hoy,
+        'es_administrador': request.user.rol.nombre_rol == 'administrador',
+        'es_seguimiento': True,  # 🆕 Flag para indicar que es visita de seguimiento
+    }
+    
+    return render(request, 'admin/formulario_activacion_hogar.html', context)
+
+
+def enviar_email_activacion(hogar):
+    """
+    Envía email de notificación cuando un hogar es activado.
+    """
+    try:
+        madre = hogar.madre
+        usuario = madre.usuario
+        
+        asunto = f'✅ Hogar Activado - ICBF Conecta'
+        
+        mensaje = f"""
+¡Hola {usuario.nombres}!
+
+Nos complace informarte que tu Hogar Comunitario ha sido ACTIVADO exitosamente.
+
+📋 DETALLES DEL HOGAR:
+- Nombre: {hogar.nombre_hogar}
+- Dirección: {hogar.direccion}
+- Estado: ACTIVO
+- Capacidad aprobada: {hogar.capacidad} niños
+- Fecha de activación: {date.today().strftime('%d de %B de %Y')}
+
+🔐 ACCESO AL SISTEMA:
+Ahora puedes acceder al sistema ICBF Conecta con tus credenciales:
+
+- Usuario: {usuario.numero_documento}
+- Contraseña temporal: 123456
+
+Por favor, cambia tu contraseña en tu primer inicio de sesión.
+
+📅 PRÓXIMA VISITA TÉCNICA:
+Tu próxima visita está programada para: {hogar.proxima_visita.strftime('%d de %B de %Y')}
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+¡Felicidades y bienvenida al programa ICBF Conecta!
+
+---
+Sistema ICBF Conecta
+Este es un correo automático, por favor no responder.
+"""
+        
+        send_mail(
+            asunto,
+            mensaje,
+            settings.EMAIL_HOST_USER,
+            [usuario.correo],
+            fail_silently=False,
+        )
+        
+    except Exception as e:
+        print(f"Error al enviar email de activación: {str(e)}")
 
