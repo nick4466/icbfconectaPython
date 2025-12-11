@@ -298,6 +298,140 @@
             from { opacity: 0; transform: translateY(-4px); }
             to { opacity: 1; transform: translateY(0); }
         }
+      /* ============================================================
+   RESPONSIVE — AJUSTES PARA TABLET Y CELULAR
+   ============================================================ */
+
+/* -- Ancho máximo 1024px (tablets) -- */
+@media (max-width: 1024px) {
+
+    .contenedor {
+        grid-template-columns: 1fr;
+        width: 95%;
+    }
+
+    .fila {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .main-title1 {
+        width: 95%;
+        font-size: 22px;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    nav ul {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+/* -- Ancho máximo 768px (celulares grandes) -- */
+@media (max-width: 768px) {
+
+    /* TITULOS */
+    .main-title1 {
+        font-size: 20px;
+        padding: 15px;
+    }
+
+    /* NAVBAR */
+    nav ul {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    nav ul li {
+        width: 100%;
+        text-align: center;
+    }
+
+    nav ul li a, nav ul li button {
+        font-size: 15px;
+        padding: 10px;
+        display: block;
+    }
+
+    /* CARDS */
+    .card {
+        padding: 18px;
+        border-radius: 12px;
+    }
+
+    .card h2 {
+        font-size: 18px;
+        text-align: center;
+    }
+
+    /* CAMPOS */
+    input, textarea, select {
+        font-size: 15px;
+        padding: 12px;
+    }
+
+    .fila {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* BOTONES */
+    .acciones {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 90%;
+        margin: 25px auto;
+    }
+
+    .btn-guardar {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+    }
+
+    .btn-volver {
+        width: 100%;
+        text-align: center;
+        padding: 14px;
+    }
+}
+
+/* -- Ancho máximo 480px (celulares pequeños) -- */
+@media (max-width: 480px) {
+
+    header img {
+        height: 45px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+    .card h2 {
+        font-size: 17px;
+    }
+
+    label {
+        font-size: 14px;
+    }
+
+    input, textarea, select {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .btn-guardar, .btn-volver {
+        font-size: 15px;
+        padding: 12px;
+    }
+}
 
 
     </style>

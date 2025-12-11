@@ -305,6 +305,132 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ======================= RESPONSIVE ======================= */
+
+@media(max-width: 992px) {
+    .main-title1 { width: 90%; font-size: 24px; }
+
+    nav ul {
+        flex-wrap: wrap; 
+        gap: 10px;
+        justify-content: center;
+    }
+}
+
+@media(max-width: 768px) {
+
+    header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 15px;
+    }
+
+    header img {
+        height: 50px;
+    }
+
+    .main-title1 {
+        font-size: 22px;
+        width: 95%;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 10px;
+    }
+
+    .documentos img {
+        max-width: 100%;
+    }
+}
+
+@media(max-width: 480px) {
+
+    nav ul {
+        flex-direction: column;
+        width: 100%;
+        text-align: center;
+        gap: 6px;
+    }
+
+    .main-title1 {
+        font-size: 20px;
+    }
+
+    .card p {
+        font-size: 14px;
+    }
+
+    th {
+        font-size: 13px;
+    }
+
+    td p {
+        font-size: 13px;
+    }
+
+    .btn-volver {
+        width: 90%;
+        padding: 10px;
+        font-size: 15px;
+    }
+}
+
+/* ======== TABLA RESPONSIVE EN COLUMNAS VERTICALES ======== */
+@media (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+    }
+
+    thead {
+        display: none; /* escondemos encabezados en móvil */
+    }
+
+    tr {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.85);
+        padding: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    td {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        padding: 12px 10px;
+        border: none;
+        border-bottom: 1px solid #eee;
+    }
+
+    td:last-child {
+        border-bottom: none;
+    }
+
+    /* etiqueta simulando el th */
+    td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        color: #7a3eb1;
+        margin-bottom: 6px;
+        font-size: 14px;
+    }
+
+    /* imágenes más grandes y centradas */
+    .documentos {
+        justify-content: center;
+    }
+
+    .documentos img {
+        max-width: 90%;
+    }
+}
+
 </style>
 </head>
 
@@ -374,15 +500,15 @@
             </tr>
         </thead>
 
-        <tbody>
+                <tbody>
             <tr>
-                <td><p>{{ planeacion.materiales_utilizar }}</p></td>
-                <td><p>{{ planeacion.ambiente_educativo }}</p></td>
-                <td><p>{{ planeacion.experiencia_inicio }}</p></td>
-                <td><p>{{ planeacion.experiencia_pedagogica }}</p></td>
-                <td><p>{{ planeacion.cierre_experiencia }}</p></td>
-                <td><p>{{ planeacion.situaciones_presentadas }}</p></td>
-                <td>
+                <td data-label="Materiales"><p>{{ planeacion.materiales_utilizar }}</p></td>
+                <td data-label="Ambiente"><p>{{ planeacion.ambiente_educativo }}</p></td>
+                <td data-label="Inicio"><p>{{ planeacion.experiencia_inicio }}</p></td>
+                <td data-label="Desarrollo"><p>{{ planeacion.experiencia_pedagogica }}</p></td>
+                <td data-label="Cierre"><p>{{ planeacion.cierre_experiencia }}</p></td>
+                <td data-label="Observaciones"><p>{{ planeacion.situaciones_presentadas }}</p></td>
+                <td data-label="Documentación">
                     <div class="documentos">
                         {% if documentos %}
                             {% for doc in documentos %}
@@ -395,6 +521,7 @@
                 </td>
             </tr>
         </tbody>
+
     </table>
 </div>
 

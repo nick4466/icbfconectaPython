@@ -211,7 +211,27 @@ tbody tr:hover {
 
 .btn-verde { background: #28a745; }
 .btn-azul { background: var(--primary); }
-.btn-rojo { background: #dc3545; }
+
+/* BOTÓN ELIMINACIÓN MASIVA */
+.btn-eliminar-seleccionados {
+    background: #fb5959;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    transition: all 0.25s ease;
+}
+
+.btn-eliminar-seleccionados:hover {
+    background: #b71c1c;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+}
 
 /* PAGINACIÓN */
 .pagination {
@@ -241,27 +261,159 @@ tbody tr:hover {
     border-color: var(--secondary);
 }
 
-/* BOTÓN ELIMINACIÓN MASIVA */
-.btn-eliminar-seleccionados {
-    background: #fb5959;
-    color: white;
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border: none;
-    cursor: pointer;
-    display: inline-block;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    transition: all 0.25s ease;
+/* ==========================================================
+   ESTILO RESPONSIVE MEJORADO
+   ========================================================== */
+
+/* Tablets */
+@media (max-width: 992px) {
+    .contenedor-tabla {
+        padding: 20px;
+        margin: 15px;
+        background-color: #fdfdfd;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+        font-size: 26px;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    table thead th {
+        font-size: 13px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        color: #555;
+    }
+
+    tbody td {
+        padding: 12px;
+        font-size: 14px;
+        color: #333;
+    }
 }
 
-.btn-eliminar-seleccionados:hover {
-    background: #b71c1c;
-    transform: translateY(-2px);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+/* Celulares y tablets */
+@media (max-width: 768px) {
+    table thead {
+        display: none;
+    }
+
+    table,
+    tbody,
+    tr,
+    td {
+        display: block;
+        width: 100%;
+    }
+
+    tbody tr {
+        background: #ffffff;
+        padding: 16px;
+        margin-bottom: 16px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        border-left: 4px solid #6a4bc8;
+    }
+
+    tbody td {
+        padding: 6px 0;
+        font-size: 15px;
+        border: none;
+    }
+
+    tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6a4bc8;
+        display: block;
+        margin-bottom: 4px;
+        font-size: 13px;
+    }
+
+    tbody td[data-label="Sel"] {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    tbody td[data-label="#"] {
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    tbody td[data-label="Actividad"],
+    tbody td[data-label="Intencionalidad"],
+    tbody td[data-label="Fecha"] {
+        margin-bottom: 12px;
+        line-height: 1.4;
+        color: #444;
+    }
+
+    .acciones {
+        display: flex !important;
+        justify-content: flex-start !important;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .acciones a {
+        padding: 8px 12px;
+        font-size: 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: white;
+    }
+
+    .btn-verde {
+        background-color: #2ecc71;
+    }
+
+    .btn-azul {
+        background-color: #3498db;
+    }
+
+    .acciones a:hover {
+        opacity: 0.9;
+    }
+
+    .btn-eliminar-seleccionados {
+        width: 100%;
+        margin-bottom: 15px;
+        text-align: center;
+        padding: 10px;
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .btn-eliminar-seleccionados:hover {
+        background-color: #c0392b;
+    }
 }
 
+/* Celulares muy pequeños */
+@media (max-width: 480px) {
+    tbody tr {
+        padding: 14px;
+    }
+
+    tbody td {
+        font-size: 14px;
+    }
+
+    .acciones a {
+        padding: 7px 10px;
+        font-size: 13px;
+    }
+}
 </style>
 </head>
 
@@ -273,11 +425,9 @@ tbody tr:hover {
 
     <h1>Planeaciones Pedagógicas</h1>
 
-    <!-- MENSAJE DE ÉXITO -->
-   <div id="alerta-exito" class="alerta-js" style="display:none;"></div>
+    <div id="alerta-exito" class="alerta-js" style="display:none;"></div>
 
-
-    <form method="get" class="acciones-superiores" style="width:100%; flex-wrap:wrap; gap:20px;">
+    <form method="get" class="acciones-superiores">
 
         <a href="{% url 'planeaciones:registrar_planeacion' %}" class="btn-nuevo">
             <i class="fas fa-plus"></i> Nueva Planeación
@@ -323,12 +473,12 @@ tbody tr:hover {
             {% if planeaciones %}
                 {% for p in planeaciones %}
                 <tr>
-                    <td><input type="checkbox" name="planeaciones_ids" value="{{ p.id }}" class="fila-check"></td>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ p.fecha }}</td>
-                    <td>{{ p.nombre_experiencia }}</td>
-                    <td>{{ p.intencionalidad_pedagogica }}</td>
-                    <td class="acciones">
+                    <td data-label="Sel"><input type="checkbox" name="planeaciones_ids" value="{{ p.id }}" class="fila-check"></td>
+                    <td data-label="#">{{ forloop.counter }}</td>
+                    <td data-label="Fecha">{{ p.fecha }}</td>
+                    <td data-label="Actividad">{{ p.nombre_experiencia }}</td>
+                    <td data-label="Intencionalidad">{{ p.intencionalidad_pedagogica }}</td>
+                    <td data-label="Acciones" class="acciones">
                         <a href="{% url 'planeaciones:detalle_planeacion' p.id %}" class="btn-accion btn-verde">
                             <i class="fas fa-eye"></i>
                         </a>
@@ -380,7 +530,7 @@ document.getElementById("select-all").addEventListener("change", function() {
 });
 </script>
 
-<!-- ALERTA DE ÉXITO (CORRECTA Y FUNCIONAL) -->
+<!-- ALERTA DE ÉXITO -->
 {% if messages %}
     {% for m in messages %}
         {% if 'success' in m.tags %}
@@ -400,7 +550,6 @@ document.getElementById("select-all").addEventListener("change", function() {
         {% endif %}
     {% endfor %}
 {% endif %}
-
 
 <!-- ELIMINACIÓN MASIVA -->
 <script>
