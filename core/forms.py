@@ -118,6 +118,14 @@ class UsuarioMadreForm(forms.ModelForm):
             self.fields['ciudad_residencia'].queryset = Municipio.objects.filter(
                 departamento=self.instance.departamento_residencia
             ).order_by('nombre')
+        
+        # Agregar data-selected-id para ciudad_residencia en modo edición
+        if self.instance.pk and self.instance.ciudad_residencia:
+            self.fields['ciudad_residencia'].widget.attrs['data-selected-id'] = self.instance.ciudad_residencia.id
+        
+        # Agregar data-selected-id para localidad_bogota en modo edición
+        if self.instance.pk and self.instance.localidad_bogota:
+            self.fields['localidad_bogota'].widget.attrs['data-selected-id'] = self.instance.localidad_bogota.id
 
 # --- Formulario del Perfil MadreComunitaria ---
 class MadreProfileForm(forms.ModelForm):
@@ -401,6 +409,12 @@ class PadrePerfilForm(forms.ModelForm):
 # 👶 FORMULARIO DE NIÑOS (Expandido)
 # ----------------------------------------------------
 class NinoForm(forms.ModelForm):
+    tipo_documento = forms.ChoiceField(
+        choices=Nino.TIPO_DOCUMENTO_CHOICES,
+        label="Tipo de Documento",
+        required=True,
+        initial='RC'
+    )
     foto = forms.ImageField(
         label="Foto del Niño",
         required=False,
@@ -454,7 +468,7 @@ class NinoForm(forms.ModelForm):
     class Meta:
         model = Nino
         fields = [
-            'nombres', 'apellidos', 'documento', 'fecha_nacimiento', 'genero', 'nacionalidad', 'otro_pais',
+            'nombres', 'apellidos', 'tipo_documento', 'documento', 'fecha_nacimiento', 'genero', 'nacionalidad', 'otro_pais',
             'tipo_sangre', 'parentesco', 'tiene_discapacidad', 'tipos_discapacidad', 'otra_discapacidad',
             'foto', 'carnet_vacunacion', 'certificado_eps', 'registro_civil_img'
         ]
@@ -666,6 +680,12 @@ class PadreForm(forms.ModelForm):
 
 class NinoSoloForm(forms.ModelForm):
     """Formulario solo para el niño cuando se asigna a un padre existente"""
+    tipo_documento = forms.ChoiceField(
+        choices=Nino.TIPO_DOCUMENTO_CHOICES,
+        label="Tipo de Documento",
+        required=True,
+        initial='RC'
+    )
     foto = forms.ImageField(
         label="Foto del Niño",
         required=False,
@@ -719,7 +739,7 @@ class NinoSoloForm(forms.ModelForm):
     class Meta:
         model = Nino
         fields = [
-            'nombres', 'apellidos', 'documento', 'fecha_nacimiento', 'genero', 'nacionalidad', 'otro_pais',
+            'nombres', 'apellidos', 'tipo_documento', 'documento', 'fecha_nacimiento', 'genero', 'nacionalidad', 'otro_pais',
             'tipo_sangre', 'parentesco', 'tiene_discapacidad', 'tipos_discapacidad', 'otra_discapacidad',
             'foto', 'carnet_vacunacion', 'certificado_eps', 'registro_civil_img'
         ]
@@ -1016,10 +1036,13 @@ class HogarFormulario1Form(forms.ModelForm):
     Solo incluye campos básicos para crear el registro y programar la visita técnica.
     
     Campos incluidos:
-    - Ubicación: Regional, Ciudad, Localidad (Bogotá), Dirección, Barrio
+    - Ubicación: Regional (solo Bogotá), Ciudad, Localidad (Bogotá), Dirección
     - Identificación: Nombre del hogar
     - Visita: Fecha programada para la primera visita técnica
     - Estado: Siempre "pendiente_revision"
+    
+    Validaciones:
+    - Solo permite registrar hogares en la regional de Bogotá
     """
     
     regional = forms.ModelChoiceField(
@@ -1047,13 +1070,12 @@ class HogarFormulario1Form(forms.ModelForm):
     class Meta:
         model = HogarComunitario
         fields = [
-            'regional', 'ciudad', 'localidad_bogota', 'direccion', 'barrio',
+            'regional', 'ciudad', 'localidad_bogota', 'direccion',
             'nombre_hogar', 'fecha_primera_visita'
         ]
         labels = {
             'nombre_hogar': 'Nombre del Hogar Comunitario',
             'direccion': 'Dirección Completa',
-            'barrio': 'Barrio',
             'fecha_primera_visita': 'Fecha Programada para Primera Visita Técnica',
         }
         widgets = {
@@ -1064,10 +1086,6 @@ class HogarFormulario1Form(forms.ModelForm):
             'direccion': forms.TextInput(attrs={
                 'placeholder': 'Ej: Cra 97#135a-30 SUBA',
                 'id': 'id_direccion_hogar',
-                'class': 'form-control'
-            }),
-            'barrio': forms.TextInput(attrs={
-                'placeholder': 'Ej: El Poblado, Chapinero, etc.',
                 'class': 'form-control'
             }),
             'fecha_primera_visita': forms.DateInput(attrs={
@@ -1103,8 +1121,16 @@ class HogarFormulario1Form(forms.ModelForm):
     
     def clean(self):
         cleaned_data = super().clean()
+        regional = cleaned_data.get('regional')
         ciudad = cleaned_data.get('ciudad')
         localidad_bogota = cleaned_data.get('localidad_bogota')
+        
+        # Validar que solo se permita Bogotá como regional
+        if regional and regional.nombre.upper() != 'BOGOTÁ':
+            self.add_error(
+                'regional',
+                'Por el momento solo se pueden registrar hogares en Bogotá. Por favor, seleccione la regional de Bogotá.'
+            )
         
         # Si la ciudad es Bogotá, validar que se seleccione una localidad
         if ciudad and ciudad.nombre.upper() == 'BOGOTÁ':

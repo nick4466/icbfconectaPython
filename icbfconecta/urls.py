@@ -75,6 +75,7 @@ urlpatterns = [
     
     # --- 🆕 APIs del Dashboard Mejorado ---
     path('api/hogares/<int:hogar_id>/detalle/', views.hogar_detalle_api, name='hogar_detalle_api'),
+    path('api/hogares/<int:hogar_id>/historial-visitas/', views.hogar_historial_visitas_api, name='hogar_historial_visitas_api'),
     path('api/ninos/<int:nino_id>/detalle/', views.nino_detalle_api, name='nino_detalle_api'),
     path('preview/<str:tipo>/<int:id>/<str:campo>/', views.preview_document, name='preview_document'),
     path('ninos/<int:nino_id>/carpeta/', views.nino_carpeta_view, name='nino_carpeta'),
@@ -143,6 +144,10 @@ urlpatterns = [
 
     # --- URLs Sistema de Invitaciones de Matriculación ---
     path('solicitudes/enviar-invitacion/', views.enviar_invitacion_matricula, name='enviar_invitacion_matricula'),
+    # 🆕 Nuevas URLs para solicitudes iniciadas por padre
+    path('padre/solicitar-matricula/', views.padre_solicitar_matricula, name='padre_solicitar_matricula'),
+    path('solicitudes/enviar-formulario/', views.enviar_formulario_a_padre, name='enviar_formulario_a_padre'),
+    # URLs existentes
     path('solicitudes/panel-revision/', views.panel_revision_solicitudes, name='panel_revision_solicitudes'),
     path('solicitudes/pendientes/', views.listar_solicitudes_matricula, name='listar_solicitudes_matricula'),
     path('solicitudes/<int:solicitud_id>/detalle/', views.detalle_solicitud_matricula, name='detalle_solicitud_matricula'),

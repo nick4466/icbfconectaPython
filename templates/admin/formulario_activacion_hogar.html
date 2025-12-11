@@ -87,43 +87,7 @@
 <body>
 
   <!-- ========== SIDEBAR ========== -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <a href="{% url 'dashboard_admin' %}" class="sidebar-logo">
-        <img src="{% static 'images/logo.png' %}" alt="Logo ICBF">
-        <div class="sidebar-logo-text">
-          <h2>ICBF Conecta</h2>
-          <p>Sistema de Gestión</p>
-        </div>
-      </a>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="nav-item">
-        <a href="{% url 'dashboard_admin' %}" class="nav-link">
-          <i class="fas fa-home"></i>
-          <span>Inicio</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'hogares_dashboard' %}" class="nav-link active">
-          <i class="fas fa-calendar-check"></i>
-          <span>Gestión de Visitas</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'listar_hogares' %}" class="nav-link">
-          <i class="fas fa-home"></i>
-          <span>Hogares</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'listar_madres' %}" class="nav-link">
-          <i class="fas fa-user-group"></i>
-          <span>Agentes Educativos</span>
-        </a>
-      </div>
-    </nav>
-  </aside>
+  {% include 'admin/components/admin_sidebar.html' %}
 
   <!-- ========== MAIN CONTENT ========== -->
   <main class="main-content">

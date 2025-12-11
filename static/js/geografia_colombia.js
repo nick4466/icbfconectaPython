@@ -145,7 +145,11 @@ function initGeografiaColombia(config = {}) {
                         
                         // Si hay un valor seleccionado previamente, seleccionarlo
                         if (localidadSelect.dataset.selectedId) {
-                            localidadSelect.value = localidadSelect.dataset.selectedId;
+                            console.log('Preseleccionando localidad:', localidadSelect.dataset.selectedId);
+                            setTimeout(() => {
+                                localidadSelect.value = localidadSelect.dataset.selectedId;
+                                console.log('Localidad seleccionada:', localidadSelect.value);
+                            }, 100);
                         }
                     } else {
                         console.log('No es Bogotá, ocultando localidades');

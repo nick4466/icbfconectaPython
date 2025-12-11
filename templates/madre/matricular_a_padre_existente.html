@@ -406,39 +406,37 @@
 
           <div class="form-row">
             <div class="form-group">
+              <label for="{{ nino_form.tipo_documento.id_for_label }}">{{ nino_form.tipo_documento.label }}</label>
+              {{ nino_form.tipo_documento }}
+            </div>
+            <div class="form-group">
               <label for="{{ nino_form.documento.id_for_label }}">{{ nino_form.documento.label }}</label>
               {{ nino_form.documento }}
             </div>
+          </div>
+
+          <div class="form-row">
             <div class="form-group">
               <label for="{{ nino_form.fecha_nacimiento.id_for_label }}">{{ nino_form.fecha_nacimiento.label }}</label>
               {{ nino_form.fecha_nacimiento }}
               <div id="mensaje-edad-nino" style="margin-top: 8px; font-weight: 500; font-size: 14px;"></div>
             </div>
-          </div>
-
-          <div class="form-row">
             <div class="form-group">
               <label for="{{ nino_form.genero.id_for_label }}">{{ nino_form.genero.label }}</label>
               {{ nino_form.genero }}
             </div>
-            <div class="form-group">
-              <label for="{{ nino_form.nacionalidad.id_for_label }}">{{ nino_form.nacionalidad.label }}</label>
-              {{ nino_form.nacionalidad }}
-            </div>
-          </div>
-
-          <div class="form-row" id="otro-pais-container" style="display: none;">
-            <div class="form-group">
-              <label for="{{ nino_form.otro_pais.id_for_label }}">{{ nino_form.otro_pais.label }}</label>
-              {{ nino_form.otro_pais }}
-            </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
+              <label for="{{ nino_form.nacionalidad.id_for_label }}">{{ nino_form.nacionalidad.label }}</label>
+              {{ nino_form.nacionalidad }}
+            </div>
+            <div class="form-group">
               <label for="{{ nino_form.tipo_sangre.id_for_label }}">{{ nino_form.tipo_sangre.label }}</label>
               {{ nino_form.tipo_sangre }}
             </div>
+          </div>
             <div class="form-group">
               <label for="{{ nino_form.parentesco.id_for_label }}">{{ nino_form.parentesco.label }}</label>
               {{ nino_form.parentesco }}

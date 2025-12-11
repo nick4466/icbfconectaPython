@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Solicitud de Matrícula</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">📬 Nueva Solicitud de Matrícula</h1>
+    </div>
+    
+    <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e0e0e0;">
+        <h2 style="color: #667eea; margin-top: 0;">Hola, {{ hogar.madre.usuario.nombres }}</h2>
+        
+        <p>Has recibido una nueva solicitud de matrícula para el hogar <strong>{{ hogar.nombre_hogar }}</strong>.</p>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+            <h3 style="margin-top: 0; color: #667eea;">👶 Información del Niño/a</h3>
+            <p style="margin: 5px 0;"><strong>Nombres:</strong> {{ nino_nombres }}</p>
+            <p style="margin: 5px 0;"><strong>Apellidos:</strong> {{ nino_apellidos }}</p>
+        </div>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #764ba2;">
+            <h3 style="margin-top: 0; color: #764ba2;">👨‍👩‍👧 Datos del Padre/Tutor</h3>
+            <p style="margin: 5px 0;"><strong>Nombres:</strong> {{ padre.nombres }} {{ padre.apellidos }}</p>
+            <p style="margin: 5px 0;"><strong>Documento:</strong> {{ padre.documento }}</p>
+            <p style="margin: 5px 0;"><strong>Correo:</strong> {{ padre.correo }}</p>
+            <p style="margin: 5px 0;"><strong>Teléfono:</strong> {{ padre.telefono }}</p>
+        </div>
+        
+        {% if tiene_cupos %}
+        <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+            <p style="margin: 0; color: #155724;"><strong>✅ {{ mensaje_cupos }}</strong></p>
+            <p style="margin: 10px 0 0 0; color: #155724; font-size: 14px;">
+                Puedes revisar la solicitud en tu panel de administración y enviar el formulario completo al padre para que complete los datos del niño y suba los documentos requeridos.
+            </p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'panel_revision_solicitudes' %}" 
+               style="display: inline-block; padding: 15px 40px; background: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                🔍 Revisar Solicitud
+            </a>
+        </div>
+        {% else %}
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+            <p style="margin: 0; color: #856404;"><strong>⚠️ {{ mensaje_cupos }}</strong></p>
+            <p style="margin: 10px 0 0 0; color: #856404; font-size: 14px;">
+                Actualmente no hay cupos disponibles. Puedes revisar la solicitud y tomar una decisión en tu panel de administración.
+            </p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'panel_revision_solicitudes' %}" 
+               style="display: inline-block; padding: 15px 40px; background: #ffc107; color: #333; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                🔍 Revisar Solicitud
+            </a>
+        </div>
+        {% endif %}
+        
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+        
+        <p style="color: #666; font-size: 14px; text-align: center; margin-bottom: 0;">
+            Este es un mensaje automático del sistema ICBF Conecta.
+            <br>Por favor no responda a este correo.
+        </p>
+    </div>
+</body>
+</html>

@@ -145,77 +145,7 @@
 </head>
 <body>
     <!-- ========== SIDEBAR ========== -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <a href="{% url 'home' %}" class="sidebar-logo">
-        <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF">
-        <div class="sidebar-logo-text">
-          <h2>ICBF Conecta</h2>
-          <p>Panel Administrativo</p>
-        </div>
-      </a>
-    </div>
-
-    <nav class="sidebar-nav">
-      <div class="nav-item">
-        <a href="{% url 'dashboard_admin' %}" class="nav-link">
-          <i class="fas fa-tachometer-alt"></i>
-          <span>Inicio</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'hogares_dashboard' %}" class="nav-link">
-          <i class="fas fa-calendar-check"></i>
-          <span>Gestión de Visitas</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'listar_hogares' %}" class="nav-link">
-          <i class="fas fa-home"></i>
-          <span>Hogares</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'listar_madres' %}" class="nav-link">
-          <i class="fas fa-user-group"></i>
-          <span>Agentes Educativos</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'listar_administradores' %}" class="nav-link">
-          <i class="fas fa-user-shield"></i>
-          <span>Administradores</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'admin_reportes' %}" class="nav-link">
-          <i class="fas fa-chart-line"></i>
-          <span>Reportes</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'editar_perfil' %}" class="nav-link">
-          <i class="fas fa-user-pen"></i>
-          <span>Editar Perfil</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'cambiar_contrasena' %}" class="nav-link">
-          <i class="fas fa-key"></i>
-          <span>Cambiar Contraseña</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <form method="post" action="{% url 'logout' %}" style="margin: 0;">
-          {% csrf_token %}
-          <button type="submit" class="nav-link" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; font: inherit; color: white; padding: 12px 20px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Cerrar Sesión</span>
-          </button>
-        </form>
-      </div>
-    </nav>
-  </aside>
+  {% include 'admin/components/admin_sidebar.html' %}
 
   <!-- ========== MAIN CONTENT ========== -->
   <main class="main-content">
@@ -742,12 +672,6 @@
               </div>
               {% for error in hogar_form.direccion.errors %}<span class="error">{{ error }}</span>{% endfor %}
             </div>
-
-            <div class="form-group">
-              <label for="{{ hogar_form.barrio.id_for_label }}"><i class="fas fa-home"></i> Barrio</label>
-              {{ hogar_form.barrio }}
-              {% for error in hogar_form.barrio.errors %}<span class="error">{{ error }}</span>{% endfor %}
-            </div>
           </div>
           
           <!-- COLUMNA DERECHA: DATOS BÁSICOS Y CARACTERÍSTICAS -->
@@ -1081,6 +1005,38 @@
 
         regionalSelect.addEventListener('change', function() {
           const regionalId = this.value;
+          const regionalNombre = this.options[this.selectedIndex].text;
+          
+          // Validar que solo sea Bogotá
+          const validationDiv = document.getElementById('regional-validation');
+          if (!validationDiv) {
+            const newDiv = document.createElement('div');
+            newDiv.id = 'regional-validation';
+            newDiv.style.cssText = 'margin-top:10px;padding:12px;border-radius:6px;font-size:14px;';
+            regionalSelect.parentElement.appendChild(newDiv);
+          }
+          
+          const validDiv = document.getElementById('regional-validation');
+          
+          if (regionalNombre && !regionalNombre.includes('Seleccione') && regionalNombre.toUpperCase() !== 'BOGOTÁ') {
+            validDiv.style.display = 'block';
+            validDiv.style.backgroundColor = '#f8d7da';
+            validDiv.style.color = '#721c24';
+            validDiv.style.border = '2px solid #f5c6cb';
+            validDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> Por el momento solo se pueden matricular hogares en Bogotá. Por favor, seleccione la regional de Bogotá.';
+            regionalSelect.style.borderColor = 'var(--danger)';
+            regionalSelect.style.borderWidth = '2px';
+            
+            // Deshabilitar ciudad
+            ciudadSelect.disabled = true;
+            ciudadSelect.innerHTML = '<option value="">-- Seleccione una Ciudad --</option>';
+            return;
+          } else {
+            validDiv.style.display = 'none';
+            regionalSelect.style.borderColor = '';
+            regionalSelect.style.borderWidth = '';
+          }
+          
           ciudadSelect.innerHTML = '<option value="">Cargando...</option>';
           ciudadSelect.disabled = true;
           

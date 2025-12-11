@@ -501,6 +501,13 @@
           <br>
           <strong style="color: #856404;">Intentos restantes: {{ intentos_restantes }}/3</strong>
         </div>
+      {% elif mostrar_solo_nino %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i>
+          <strong>✅ Tu solicitud fue pre-aprobada.</strong> Solo necesitas completar los datos del niño/a y subir los documentos requeridos.
+          <br>
+          <small>Tus datos como acudiente ya están registrados en el sistema.</small>
+        </div>
       {% else %}
         <div class="alert alert-info">
           <i class="fas fa-info-circle"></i>
@@ -678,6 +685,8 @@
         </div>
 
         <!-- SECCIÓN: DATOS DEL ACUDIENTE -->
+        <!-- 🆕 Solo mostrar si NO es solicitud iniciada por padre -->
+        {% if not mostrar_solo_nino %}
         <div class="section">
           <div class="section-title">
             <i class="fas fa-user-tie"></i>
@@ -846,8 +855,12 @@
             </div>
           </div>
         </div>
+        {% endif %}
+        <!-- FIN SECCIÓN DATOS DEL ACUDIENTE -->
 
         <!-- SECCIÓN: CREDENCIALES DE ACCESO -->
+        <!-- 🆕 Solo mostrar si NO es solicitud iniciada por padre -->
+        {% if not mostrar_solo_nino %}
         <div class="section">
           <div class="section-title">
             <i class="fas fa-key"></i>
@@ -881,6 +894,8 @@
             </div>
           </div>
         </div>
+        {% endif %}
+        <!-- FIN SECCIÓN CREDENCIALES -->
 
         <!-- SECCIÓN: DOCUMENTOS -->
         <div class="section">
@@ -1009,6 +1024,8 @@
               {% endif %}
             </div>
 
+            <!-- 🆕 Documentos del Padre: Solo mostrar si NO es solicitud iniciada por padre -->
+            {% if not mostrar_solo_nino %}
             <!-- Documento Identidad Padre -->
             <div class="form-group">
               <label>
@@ -1066,6 +1083,8 @@
               </div>
               {% endif %}
             </div>
+            {% endif %}
+            <!-- FIN Documentos del Padre -->
           </div>
         </div>
 

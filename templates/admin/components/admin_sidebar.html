@@ -1,0 +1,74 @@
+{% load static %}
+
+<!-- ========== SIDEBAR ADMINISTRATIVO REUTILIZABLE ========== -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <a href="{% url 'home' %}" class="sidebar-logo">
+      <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF">
+      <div class="sidebar-logo-text">
+        <h2>ICBF Conecta</h2>
+        <p>Panel Administrativo</p>
+      </div>
+    </a>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-item">
+      <a href="{% url 'dashboard_admin' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Inicio</span>
+      </a>
+    </div>
+    <div class="nav-item">
+      <a href="{% url 'hogares_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'hogares_dashboard' %}active{% endif %}">
+        <i class="fas fa-calendar-check"></i>
+        <span>Gestión de Visitas</span>
+      </a>
+    </div>
+    <div class="nav-item">
+      <a href="{% url 'listar_hogares' %}" class="nav-link {% if request.resolver_match.url_name == 'listar_hogares' or request.resolver_match.url_name == 'detalle_hogar' %}active{% endif %}">
+        <i class="fas fa-home"></i>
+        <span>Hogares</span>
+      </a>
+    </div>
+    <div class="nav-item">
+      <a href="{% url 'listar_madres' %}" class="nav-link {% if request.resolver_match.url_name == 'listar_madres' or request.resolver_match.url_name == 'crear_madre' or request.resolver_match.url_name == 'editar_madre' %}active{% endif %}">
+        <i class="fas fa-user-group"></i>
+        <span>Agentes Educativos</span>
+      </a>
+    </div>
+    <div class="nav-item">
+      <a href="{% url 'listar_administradores' %}" class="nav-link {% if request.resolver_match.url_name == 'listar_administradores' or request.resolver_match.url_name == 'crear_administrador' or request.resolver_match.url_name == 'editar_administrador' %}active{% endif %}">
+        <i class="fas fa-user-shield"></i>
+        <span>Administradores</span>
+      </a>
+    </div>
+    <div class="nav-item">
+      <a href="{% url 'admin_reportes' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_reportes' %}active{% endif %}">
+        <i class="fas fa-chart-line"></i>
+        <span>Reportes</span>
+      </a>
+    </div>
+    <div class="nav-item">
+      <a href="{% url 'editar_perfil' %}" class="nav-link {% if request.resolver_match.url_name == 'editar_perfil' %}active{% endif %}">
+        <i class="fas fa-user-pen"></i>
+        <span>Editar Perfil</span>
+      </a>
+    </div>
+    <div class="nav-item">
+      <a href="{% url 'cambiar_contrasena' %}" class="nav-link {% if request.resolver_match.url_name == 'cambiar_contrasena' %}active{% endif %}">
+        <i class="fas fa-key"></i>
+        <span>Cambiar Contraseña</span>
+      </a>
+    </div>
+    <div class="nav-item">
+      <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+        {% csrf_token %}
+        <button type="submit" class="nav-link" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; font: inherit; color: rgba(255,255,255,0.9); padding: 12px 16px; display: flex; align-items: center; gap: 12px; border-radius: 8px; transition: all 0.3s ease; font-weight: 500; font-size: 14px;">
+          <i class="fas fa-sign-out-alt" style="width: 20px; font-size: 18px;"></i>
+          <span>Cerrar Sesión</span>
+        </button>
+      </form>
+    </div>
+  </nav>
+</aside>

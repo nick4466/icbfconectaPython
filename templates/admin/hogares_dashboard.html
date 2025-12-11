@@ -834,74 +834,7 @@
 
   <div class="dashboard-container">
     <!-- ========== SIDEBAR ========== -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-logo">
-          <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF">
-          <h2>ICBF Conecta</h2>
-        </div>
-      </div>
-
-      <nav class="sidebar-nav">
-        <div class="nav-item">
-          <a href="{% url 'dashboard_admin' %}" class="nav-link">
-            <i class="fas fa-tachometer-alt"></i>
-            <span>Inicio</span>
-          </a>
-        </div>
-        <div class="nav-item">
-          <a href="{% url 'hogares_dashboard' %}" class="nav-link active">
-            <i class="fas fa-calendar-check"></i>
-            <span>Gestión de Visitas</span>
-          </a>
-        </div>
-        <div class="nav-item">
-          <a href="{% url 'listar_hogares' %}" class="nav-link">
-            <i class="fas fa-home"></i>
-            <span>Hogares</span>
-          </a>
-        </div>
-        <div class="nav-item">
-          <a href="{% url 'listar_madres' %}" class="nav-link">
-            <i class="fas fa-user-group"></i>
-            <span>Agentes Educativos</span>
-          </a>
-        </div>
-        <div class="nav-item">
-          <a href="{% url 'listar_administradores' %}" class="nav-link">
-            <i class="fas fa-user-shield"></i>
-            <span>Administradores</span>
-          </a>
-        </div>
-        <div class="nav-item">
-          <a href="{% url 'admin_reportes' %}" class="nav-link">
-            <i class="fas fa-chart-line"></i>
-            <span>Reportes</span>
-          </a>
-        </div>
-        <div class="nav-item">
-          <a href="{% url 'editar_perfil' %}" class="nav-link">
-            <i class="fas fa-user-pen"></i>
-            <span>Editar Perfil</span>
-          </a>
-        </div>
-        <div class="nav-item">
-          <a href="{% url 'cambiar_contrasena' %}" class="nav-link">
-            <i class="fas fa-key"></i>
-            <span>Cambiar Contraseña</span>
-          </a>
-        </div>
-        <div class="nav-item">
-          <form method="post" action="{% url 'logout' %}" style="margin: 0;">
-            {% csrf_token %}
-            <button type="submit" class="nav-link" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; font: inherit; color: white; padding: 12px 20px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
-              <i class="fas fa-sign-out-alt"></i>
-              <span>Cerrar Sesión</span>
-            </button>
-          </form>
-        </div>
-      </nav>
-    </aside>
+    {% include 'admin/components/admin_sidebar.html' %}
 
     <!-- ========== MAIN CONTENT ========== -->
     <main class="main-content">
@@ -990,8 +923,8 @@
             
             <div class="hogares-grid">
               {% for hogar in hogares_loc %}
-              <div class="hogar-card" onclick="verHogarDetalle({{ hogar.id }})">
-                <div class="hogar-header">
+              <div class="hogar-card">
+                <div class="hogar-header" onclick="verHogarDetalle({{ hogar.id }})" style="cursor: pointer;">
                   <div>
                     <div class="hogar-name">{{ hogar.nombre_hogar }}</div>
                     <div class="hogar-responsable">
@@ -1081,7 +1014,7 @@
                         <a href="{% url 'activar_hogar' hogar.id %}" 
                            class="btn btn-small" 
                            style="background: linear-gradient(90deg, #10b981, #059669); color: white;"
-                           onclick="return confirm('📅 Visita programada para: {{ hogar.fecha_primera_visita|date:"d/m/Y" }}\n\n¿Deseas realizar la evaluación de activación ahora?\n\nPuedes completar el formulario en cualquier momento desde ahora hasta la fecha programada.');">
+                           onclick="event.stopPropagation(); return confirm('📅 Visita programada para: {{ hogar.fecha_primera_visita|date:"d/m/Y" }}\n\n¿Deseas realizar la evaluación de activación ahora?\n\nPuedes completar el formulario en cualquier momento desde ahora hasta la fecha programada.');">
                           <i class="fas fa-check-circle"></i>
                           Activar Hogar
                         </a>
@@ -1091,14 +1024,14 @@
                       <a href="{% url 'activar_hogar' hogar.id %}" 
                          class="btn btn-small" 
                          style="background: linear-gradient(90deg, #10b981, #059669); color: white; animation: pulse-glow 2s infinite;"
-                         onclick="return confirm('⚠️ Este hogar NO tiene visita programada.\n\n¿Deseas realizar la evaluación de activación AHORA?\n\nSe registrará la fecha de hoy como fecha de visita.');">
+                         onclick="event.stopPropagation(); return confirm('⚠️ Este hogar NO tiene visita programada.\n\n¿Deseas realizar la evaluación de activación AHORA?\n\nSe registrará la fecha de hoy como fecha de visita.');">
                         <i class="fas fa-clipboard-check"></i>
                         Activar Ya
                       </a>
                     {% endif %}
                   {% endif %}
                   
-                  <button class="btn btn-primary btn-small" onclick="verHogarDetalle({{ hogar.id }})">
+                  <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); verHogarDetalle({{ hogar.id }})">
                     <i class="fas fa-folder-open"></i>
                     Ver Carpeta
                   </button>
@@ -1196,6 +1129,27 @@
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MODAL HISTORIAL DE VISITAS ========== -->
+  <div class="modal" id="modalHistorialVisitas">
+    <div class="modal-content" style="max-width: 1200px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i class="fas fa-history"></i>
+          Historial de Visitas Técnicas
+        </h2>
+        <button class="modal-close" onclick="cerrarModalHistorial()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="contenidoHistorialVisitas">
+        <div style="text-align: center; padding: 40px;">
+          <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: var(--primary);"></i>
+          <p style="margin-top: 16px; color: var(--text-light);">Cargando historial de visitas...</p>
         </div>
       </div>
     </div>
@@ -1308,15 +1262,21 @@
               </div>
             </div>
 
-            <div style="display: flex; gap: 8px;">
-              <a href="/madres/editar/${hogar.id}/" class="btn btn-primary" style="flex: 1;">
-                <i class="fas fa-edit"></i>
-                Editar Hogar
-              </a>
-              <a href="/hogares/${hogar.id}/realizar-visita/" class="btn btn-outline">
-                <i class="fas fa-clipboard-check"></i>
-                Nueva Visita
-              </a>
+            <div style="display: flex; gap: 8px; flex-direction: column;">
+              <div style="display: flex; gap: 8px;">
+                <a href="/madres/editar/${hogar.id}/" class="btn btn-primary" style="flex: 1;" onclick="event.stopPropagation();">
+                  <i class="fas fa-edit"></i>
+                  Editar Hogar
+                </a>
+                <a href="/hogares/${hogar.id}/realizar-visita/" class="btn btn-outline" style="flex: 1;" onclick="event.stopPropagation();">
+                  <i class="fas fa-clipboard-check"></i>
+                  Nueva Visita
+                </a>
+              </div>
+              <button onclick="event.stopPropagation(); cerrarModal(); abrirHistorialVisitas(${hogar.id}, \`${hogar.nombre_hogar}\`)" class="btn btn-secondary" style="width: 100%;">
+                <i class="fas fa-history"></i>
+                Ver Historial de Visitas (${hogar.total_visitas})
+              </button>
             </div>
           </div>
         </div>
@@ -1325,6 +1285,10 @@
 
     function cerrarModal() {
       document.getElementById('modalHogarDetalle').classList.remove('active');
+    }
+
+    function cerrarModalHistorial() {
+      document.getElementById('modalHistorialVisitas').classList.remove('active');
     }
 
     function verNinoCarpeta(ninoId) {
@@ -1499,6 +1463,49 @@
       }
     });
 
+    // Cerrar modal de historial al hacer clic fuera
+    document.getElementById('modalHistorialVisitas').addEventListener('click', function(e) {
+      if (e.target === this) {
+        cerrarModalHistorial();
+      }
+    });
+
+    // ========== FUNCIÓN PARA ABRIR HISTORIAL DE VISITAS ==========
+    async function abrirHistorialVisitas(hogarId, nombreHogar) {
+      const modal = document.getElementById('modalHistorialVisitas');
+      const contenido = document.getElementById('contenidoHistorialVisitas');
+      
+      // Mostrar loading
+      contenido.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin" style="font-size: 48px; color: var(--primary);"></i><p style="margin-top: 16px; color: var(--text-light);">Cargando historial de visitas...</p></div>';
+      modal.classList.add('active');
+      
+      try {
+        const response = await fetch(`/api/hogares/${hogarId}/historial-visitas/`);
+        const data = await response.json();
+        
+        if (data.visitas && data.visitas.length > 0) {
+          contenido.innerHTML = generarHTMLHistorial(data.visitas, nombreHogar);
+        } else {
+          contenido.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px;">
+              <i class="fas fa-calendar-times" style="font-size: 64px; color: var(--text-light); opacity: 0.5;"></i>
+              <h3 style="margin-top: 20px; color: var(--text-light);">Sin visitas registradas</h3>
+              <p style="color: var(--text-light); margin-top: 8px;">Aún no se han realizado visitas técnicas a este hogar.</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error al cargar historial:', error);
+        contenido.innerHTML = `
+          <div style="text-align: center; padding: 60px 20px;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: var(--danger); opacity: 0.7;"></i>
+            <h3 style="margin-top: 20px; color: var(--danger);">Error al cargar el historial</h3>
+            <p style="color: var(--text-light); margin-top: 8px;">No se pudo obtener la información de las visitas.</p>
+          </div>
+        `;
+      }
+    }
+
     // Función auxiliar para obtener cookie CSRF
     function getCookie(name) {
       let cookieValue = null;
@@ -1515,6 +1522,9 @@
       return cookieValue;
     }
   </script>
+
+  <!-- Script de funciones de historial de visitas -->
+  <script src="{% static 'js/historial_visitas.js' %}"></script>
 
 </body>
 </html>

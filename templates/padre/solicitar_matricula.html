@@ -1,0 +1,389 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Matrícula - ICBF Conecta</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .info-box {
+            background: #e8f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+        }
+        
+        .info-box ul li {
+            margin: 5px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .required {
+            color: #dc3545;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .hogar-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .hogar-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+        
+        .hogar-card.selected {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .hogar-card h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .hogar-card p {
+            color: #666;
+            font-size: 14px;
+            margin: 3px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-baby"></i> Solicitar Matrícula para Nuevo Niño/a</h1>
+            <p>Completa el formulario para solicitar un cupo en un hogar comunitario</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box">
+                <h3><i class="fas fa-info-circle"></i> ¿Cómo funciona?</h3>
+                <ul>
+                    {% if hogar_padre %}
+                    <li>La solicitud se enviará al hogar donde ya tienes hijos registrados</li>
+                    {% else %}
+                    <li>Selecciona el hogar comunitario de tu interés</li>
+                    {% endif %}
+                    <li>Ingresa los datos básicos del niño/a</li>
+                    <li>El sistema verificará si hay cupos disponibles</li>
+                    <li>La madre comunitaria revisará tu solicitud</li>
+                    <li>Si hay cupos, recibirás un formulario completo por correo</li>
+                    <li>Completa el formulario y sube los documentos requeridos</li>
+                </ul>
+            </div>
+            
+            {% if error %}
+            <div style="background: #fee; border-left: 4px solid #dc3545; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <p style="color: #dc3545; margin: 0;"><i class="fas fa-exclamation-triangle"></i> {{ error }}</p>
+            </div>
+            {% endif %}
+            
+            <form id="formSolicitud" method="post">
+                {% csrf_token %}
+                
+                {% if hogar_padre %}
+                <!-- Mostrar solo el hogar donde ya tiene hijos -->
+                <div class="form-group">
+                    <label>Hogar Comunitario <span class="required">*</span></label>
+                    <input type="hidden" name="hogar_id" value="{{ hogar_padre.id }}">
+                    <div class="hogar-card selected" style="cursor: default;">
+                        <h4>{{ hogar_padre.nombre_hogar }}</h4>
+                        <p><i class="fas fa-map-marker-alt"></i> {{ hogar_padre.direccion }}</p>
+                        <p><i class="fas fa-user"></i> Madre: {{ hogar_padre.madre.usuario.nombres }} {{ hogar_padre.madre.usuario.apellidos }}</p>
+                        {% if hogar_padre.capacidad_calculada %}
+                        <p><i class="fas fa-users"></i> Capacidad: {{ hogar_padre.capacidad_calculada }} niños</p>
+                        {% endif %}
+                        <p style="color: #667eea; margin-top: 10px; font-weight: 600;">
+                            <i class="fas fa-info-circle"></i> Este es el hogar donde ya tienes hijos registrados
+                        </p>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Padre nuevo: mostrar todos los hogares disponibles -->
+                <div class="form-group">
+                    <label>Selecciona el Hogar Comunitario <span class="required">*</span></label>
+                    <div id="hogaresContainer">
+                        {% for hogar in hogares_disponibles %}
+                        <div class="hogar-card" data-hogar-id="{{ hogar.id }}">
+                            <input type="radio" name="hogar_id" value="{{ hogar.id }}" style="display:none;">
+                            <h4>{{ hogar.nombre_hogar }}</h4>
+                            <p><i class="fas fa-map-marker-alt"></i> {{ hogar.direccion }}</p>
+                            <p><i class="fas fa-user"></i> Madre: {{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}</p>
+                            {% if hogar.capacidad_calculada %}
+                            <p><i class="fas fa-users"></i> Capacidad: {{ hogar.capacidad_calculada }} niños</p>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <p style="text-align: center; color: #999;">No hay hogares comunitarios disponibles en este momento.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <h3 style="color: #667eea; margin: 30px 0 20px 0;"><i class="fas fa-baby"></i> Datos Básicos del Niño/a</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombres_nino">Nombres <span class="required">*</span></label>
+                        <input type="text" id="nombres_nino" name="nombres_nino" required 
+                               placeholder="Ej: Juan Carlos">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="apellidos_nino">Apellidos <span class="required">*</span></label>
+                        <input type="text" id="apellidos_nino" name="apellidos_nino" required
+                               placeholder="Ej: Pérez González">
+                    </div>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fecha_nacimiento">Fecha de Nacimiento <span class="required">*</span></label>
+                        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="genero">Género <span class="required">*</span></label>
+                        <select id="genero" name="genero" required>
+                            <option value="">Selecciona...</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <a href="{% url 'padre_dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Enviar Solicitud
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Manejo de selección de hogar
+        document.querySelectorAll('.hogar-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Remover selección anterior
+                document.querySelectorAll('.hogar-card').forEach(c => c.classList.remove('selected'));
+                
+                // Marcar como seleccionado
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
+        });
+        
+        // Manejo del formulario
+        document.getElementById('formSolicitud').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            // Validar que se haya seleccionado un hogar (solo si no hay hogar_padre predefinido)
+            {% if not hogar_padre %}
+            if (!formData.get('hogar_id')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Hogar no seleccionado',
+                    text: 'Por favor selecciona un hogar comunitario',
+                });
+                return;
+            }
+            {% endif %}
+            
+            try {
+                const response = await fetch('{% url "padre_solicitar_matricula" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Solicitud Enviada!',
+                        html: data.mensaje,
+                        confirmButtonColor: '#667eea'
+                    });
+                    
+                    window.location.href = '{% url "padre_dashboard" %}';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.mensaje || 'Hubo un problema al enviar la solicitud',
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al procesar la solicitud. Por favor intenta nuevamente.',
+                });
+            }
+        });
+    </script>
+</body>
+</html>

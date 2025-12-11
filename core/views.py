@@ -30,6 +30,10 @@ import calendar
 from datetime import date
 from django.core.mail import send_mail  # 🆕 Para envío de emails
 from django.conf import settings  # 🆕 Para configuración de email
+from functools import wraps
+
+# Importar decoradores
+from .decorators import rol_requerido
 
 # Importar vistas del dashboard mejorado
 from .views_dashboard import *
@@ -303,19 +307,6 @@ from xhtml2pdf import pisa
 # 💡 DECORADOR: Restringir acceso por Rol
 # ----------------------------------------------------
 from functools import wraps
-
-def rol_requerido(nombre_rol):
-    """Decorador que verifica si el usuario tiene un rol específico."""
-    def decorator(view_func):
-        @wraps(view_func)
-        def _wrapped_view(request, *args, **kwargs):
-            # Asegurarse de que el usuario esté autenticado y tenga el rol correcto
-            if not request.user.is_authenticated or not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != nombre_rol:
-                messages.error(request, 'Acceso denegado. No tienes los permisos necesarios.')
-                return redirect('home')  # Redirigir a una página de inicio o de error
-            return view_func(request, *args, **kwargs)
-        return _wrapped_view
-    return decorator
 
 @login_required
 def buscar_padre_por_documento(request):
@@ -2656,6 +2647,206 @@ def subir_documentos_nino(request):
 # SISTEMA DE INVITACIONES DE MATRICULACIÓN
 # ============================================
 
+# 🆕 NUEVA FUNCIONALIDAD: SOLICITUD INICIADA POR PADRE
+@login_required
+def padre_solicitar_matricula(request):
+    """
+    Permite al padre/tutor iniciar una solicitud de matrícula para un nuevo niño.
+    Paso 1: El padre envía información básica del niño.
+    Paso 2: El sistema valida cupos y crea una pre-solicitud.
+    Paso 3: La madre recibe notificación y puede enviar formulario completo o rechazar.
+    """
+    if request.method == 'POST':
+        try:
+            # Verificar que sea padre
+            if not hasattr(request.user, 'rol') or request.user.rol.nombre_rol != 'padre':
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'Solo los padres/tutores pueden crear solicitudes de matrícula.'
+                }, status=403)
+            
+            # Obtener perfil del padre
+            try:
+                padre_profile = request.user.padre_profile
+            except Padre.DoesNotExist:
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'No se encontró el perfil de padre asociado.'
+                }, status=400)
+            
+            # Obtener datos básicos del formulario
+            hogar_id = request.POST.get('hogar_id')
+            nombres_nino = request.POST.get('nombres_nino', '').strip()
+            apellidos_nino = request.POST.get('apellidos_nino', '').strip()
+            fecha_nacimiento = request.POST.get('fecha_nacimiento', '').strip()
+            genero = request.POST.get('genero', '').strip()
+            
+            # Validaciones básicas
+            if not all([hogar_id, nombres_nino, apellidos_nino, fecha_nacimiento, genero]):
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'Todos los campos son obligatorios (Nombres, Apellidos, Fecha de Nacimiento, Género).'
+                }, status=400)
+            
+            # 🔍 VALIDAR QUE EL HOGAR SEA EL MISMO DONDE TIENE HIJOS
+            ninos_padre = Nino.objects.filter(padre=padre_profile, estado='activo').select_related('hogar')
+            
+            if ninos_padre.exists():
+                # El padre ya tiene hijos, debe solicitar al mismo hogar
+                hogar_correcto = ninos_padre.first().hogar
+                
+                if str(hogar_correcto.id) != str(hogar_id):
+                    return JsonResponse({
+                        'status': 'error',
+                        'mensaje': f'Solo puedes solicitar matrícula para el hogar donde ya tienes hijos registrados: {hogar_correcto.nombre_hogar}'
+                    }, status=400)
+                
+                hogar = hogar_correcto
+            else:
+                # Padre nuevo sin hijos, puede seleccionar cualquier hogar
+                try:
+                    hogar = HogarComunitario.objects.get(id=hogar_id, estado='aprobado')
+                except HogarComunitario.DoesNotExist:
+                    return JsonResponse({
+                        'status': 'error',
+                        'mensaje': 'El hogar comunitario seleccionado no existe o no está activo.'
+                    }, status=404)
+            
+            # Validar que el padre no tenga ya una solicitud pendiente para este hogar
+            solicitud_existente = SolicitudMatriculacion.objects.filter(
+                padre_solicitante=padre_profile,
+                hogar=hogar,
+                estado__in=['pendiente', 'correccion']
+            ).first()
+            
+            if solicitud_existente:
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': f'Ya tienes una solicitud pendiente para el hogar {hogar.nombre_hogar}. Por favor espera la respuesta.'
+                }, status=400)
+            
+            # Generar token único
+            token = str(uuid.uuid4())
+            
+            # Crear pre-solicitud con información básica
+            solicitud = SolicitudMatriculacion.objects.create(
+                hogar=hogar,
+                email_acudiente=request.user.correo,
+                token=token,
+                fecha_expiracion=timezone.now() + timedelta(hours=48),  # Se ajustará después
+                estado='pendiente',
+                tipo_solicitud='solicitud_padre',
+                padre_solicitante=padre_profile,
+                # Datos básicos del niño
+                nombres_nino=nombres_nino,
+                apellidos_nino=apellidos_nino,
+                fecha_nacimiento_nino=fecha_nacimiento,
+                genero_nino=genero,
+                # Datos del padre (heredados del usuario)
+                tipo_documento_padre=request.user.tipo_documento,
+                documento_padre=request.user.documento,
+                nombres_padre=request.user.nombres,
+                apellidos_padre=request.user.apellidos,
+                correo_padre=request.user.correo,
+                telefono_padre=request.user.telefono,
+                direccion_padre=request.user.direccion,
+                barrio_padre=request.user.barrio,
+                nivel_educativo_padre=request.user.nivel_educativo,
+                ocupacion_padre=padre_profile.ocupacion,
+                departamento_padre=request.user.departamento_residencia,
+                ciudad_padre=request.user.ciudad_residencia,
+                localidad_bogota_padre=request.user.localidad_bogota,
+            )
+            
+            # VALIDAR CUPOS DISPONIBLES
+            tiene_cupos, mensaje_cupos, cupos_disponibles = solicitud.validar_cupos_disponibles()
+            
+            # Enviar notificación a la madre comunitaria
+            try:
+                from django.core.mail import send_mail
+                from django.template.loader import render_to_string
+                from django.conf import settings
+                
+                madre_email = hogar.madre.usuario.correo
+                asunto = f'Nueva Solicitud de Matrícula - {hogar.nombre_hogar}'
+                
+                mensaje_html = render_to_string('emails/nueva_solicitud_padre.html', {
+                    'hogar': hogar,
+                    'padre': request.user,
+                    'nino_nombres': nombres_nino,
+                    'nino_apellidos': apellidos_nino,
+                    'tiene_cupos': tiene_cupos,
+                    'mensaje_cupos': mensaje_cupos,
+                    'solicitud': solicitud,
+                })
+                
+                send_mail(
+                    asunto,
+                    '',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [madre_email],
+                    fail_silently=True,
+                    html_message=mensaje_html
+                )
+            except Exception as e:
+                print(f"Error al enviar email a la madre: {e}")
+            
+            # Respuesta diferenciada según disponibilidad de cupos
+            if tiene_cupos:
+                mensaje = (
+                    f'Tu solicitud ha sido enviada exitosamente al hogar {hogar.nombre_hogar}. '
+                    f'Hay {cupos_disponibles} cupo(s) disponible(s). '
+                    f'La madre comunitaria revisará tu solicitud y te enviará el formulario completo por correo.'
+                )
+            else:
+                mensaje = (
+                    f'Tu solicitud ha sido recibida, pero actualmente el hogar {hogar.nombre_hogar} '
+                    f'no tiene cupos disponibles. La madre comunitaria revisará tu caso.'
+                )
+            
+            return JsonResponse({
+                'status': 'ok',
+                'mensaje': mensaje,
+                'tiene_cupos': tiene_cupos,
+                'cupos_disponibles': cupos_disponibles,
+                'solicitud_id': solicitud.id
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Error al crear la solicitud: {str(e)}'
+            }, status=500)
+    
+    # GET: Mostrar formulario de solicitud
+    # Obtener perfil del padre
+    try:
+        padre_profile = request.user.padre_profile
+    except Padre.DoesNotExist:
+        return render(request, 'padre/solicitar_matricula.html', {
+            'error': 'No se encontró tu perfil de padre. Contacta al administrador.'
+        })
+    
+    # 🔍 OBTENER EL HOGAR DONDE EL PADRE YA TIENE HIJOS
+    hogar_padre = None
+    ninos_en_hogar = Nino.objects.filter(padre=padre_profile, estado='activo').select_related('hogar')
+    
+    if ninos_en_hogar.exists():
+        # Tomar el hogar del primer hijo (todos deberían estar en el mismo hogar)
+        hogar_padre = ninos_en_hogar.first().hogar
+        hogares_disponibles = None
+    else:
+        # Padre nuevo sin hijos: mostrar todos los hogares disponibles
+        hogares_disponibles = HogarComunitario.objects.filter(estado='aprobado').select_related('madre__usuario')
+    
+    return render(request, 'padre/solicitar_matricula.html', {
+        'hogar_padre': hogar_padre,
+        'hogares_disponibles': hogares_disponibles,
+    })
+
+
 @login_required
 def enviar_invitacion_matricula(request):
     """
@@ -2762,6 +2953,106 @@ def enviar_invitacion_matricula(request):
     return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
 
 
+# 🆕 NUEVA FUNCIONALIDAD: Enviar formulario completo a padre
+@login_required
+def enviar_formulario_a_padre(request):
+    """
+    Permite a la madre enviar el formulario completo al padre cuando:
+    1. La solicitud fue iniciada por el padre (tipo_solicitud='solicitud_padre')
+    2. Hay cupos disponibles
+    
+    Este endpoint actualiza el token y envía el email con el enlace al formulario.
+    """
+    if request.method == 'POST':
+        try:
+            # Verificar que sea madre comunitaria
+            if request.user.rol.nombre_rol != 'madre_comunitaria':
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'No tienes permisos para realizar esta acción.'
+                }, status=403)
+            
+            # Obtener el hogar de la madre
+            hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
+            if not hogar_madre:
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'No tienes un hogar asignado.'
+                }, status=400)
+            
+            # Obtener ID de la solicitud
+            solicitud_id = request.POST.get('solicitud_id')
+            if not solicitud_id:
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'ID de solicitud no proporcionado.'
+                }, status=400)
+            
+            # Obtener la solicitud
+            solicitud = get_object_or_404(
+                SolicitudMatriculacion,
+                id=solicitud_id,
+                hogar=hogar_madre,
+                tipo_solicitud='solicitud_padre'
+            )
+            
+            # Validar que tenga cupos disponibles
+            if not solicitud.tiene_cupos_disponibles:
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': 'No hay cupos disponibles para enviar el formulario. Solo puedes rechazar la solicitud.'
+                }, status=400)
+            
+            # Renovar token y fecha de expiración
+            solicitud.token = str(uuid.uuid4())
+            solicitud.fecha_expiracion = timezone.now() + timedelta(hours=48)
+            solicitud.save()
+            
+            # Construir link del formulario
+            protocolo = 'https' if request.is_secure() else 'http'
+            dominio = request.get_host()
+            link_formulario = f"{protocolo}://{dominio}/matricula/publico/{solicitud.token}/"
+            
+            # Enviar email al padre
+            from django.core.mail import send_mail
+            from django.template.loader import render_to_string
+            from django.conf import settings
+            
+            asunto = f'Formulario de Matrícula - {hogar_madre.nombre_hogar}'
+            mensaje_html = render_to_string('emails/formulario_solicitud_padre.html', {
+                'hogar': hogar_madre,
+                'link': link_formulario,
+                'fecha_expiracion': solicitud.fecha_expiracion,
+                'padre': solicitud.padre_solicitante.usuario if solicitud.padre_solicitante else None,
+                'nino_nombres': solicitud.nombres_nino,
+                'nino_apellidos': solicitud.apellidos_nino,
+            })
+            
+            send_mail(
+                asunto,
+                '',
+                settings.DEFAULT_FROM_EMAIL,
+                [solicitud.email_acudiente],
+                fail_silently=False,
+                html_message=mensaje_html
+            )
+            
+            return JsonResponse({
+                'status': 'ok',
+                'mensaje': f'Formulario enviado exitosamente a {solicitud.email_acudiente}. El enlace es válido por 48 horas.'
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Error al enviar el formulario: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
+
+
 @login_required
 def listar_solicitudes_matricula(request):
     """
@@ -2794,6 +3085,11 @@ def listar_solicitudes_matricula(request):
                 'fecha_envio': s.fecha_creacion.strftime('%d/%m/%Y %H:%M') if s.fecha_creacion else '',
                 'estado': s.estado,
                 'tiene_datos': bool(s.nombres_nino),  # True si ya llenó el formulario
+                # 🆕 Nuevos campos para solicitudes de padre
+                'tipo_solicitud': s.tipo_solicitud,
+                'cupos_validados': s.cupos_validados,
+                'tiene_cupos_disponibles': s.tiene_cupos_disponibles,
+                'padre_solicitante': s.padre_solicitante.usuario.get_full_name() if s.padre_solicitante else None,
             })
         
         return JsonResponse({'success': True, 'solicitudes': datos})
@@ -2836,6 +3132,16 @@ def detalle_solicitud_matricula(request, solicitud_id):
             'estado': solicitud.estado,
             'fecha_creacion': solicitud.fecha_creacion.strftime('%d/%m/%Y %H:%M') if solicitud.fecha_creacion else '',
             'fecha_expiracion': solicitud.fecha_expiracion.strftime('%d/%m/%Y %H:%M') if solicitud.fecha_expiracion else '',
+            
+            # 🆕 Nuevos campos
+            'tipo_solicitud': solicitud.tipo_solicitud,
+            'cupos_validados': solicitud.cupos_validados,
+            'tiene_cupos_disponibles': solicitud.tiene_cupos_disponibles,
+            'padre_solicitante': {
+                'nombres': solicitud.padre_solicitante.usuario.nombres if solicitud.padre_solicitante else '',
+                'apellidos': solicitud.padre_solicitante.usuario.apellidos if solicitud.padre_solicitante else '',
+                'documento': solicitud.padre_solicitante.usuario.documento if solicitud.padre_solicitante else '',
+            } if solicitud.padre_solicitante else None,
             
             # Datos del niño
             'nino': {
@@ -2931,65 +3237,78 @@ def aprobar_solicitud_matricula(request):
             
             # Usar transacción para crear padre y niño
             with transaction.atomic():
-                # Obtener o crear el rol de padre
-                rol_padre, _ = Rol.objects.get_or_create(nombre_rol='padre')
-                
-                # VALIDACIÓN 2: Verificar si ya existe un usuario con ese documento o correo
-                usuario_padre = Usuario.objects.filter(documento=solicitud.documento_padre).first()
-                usuario_correo = Usuario.objects.filter(correo=solicitud.correo_padre).first()
-                
-                # Si existe usuario con ese correo pero diferente documento, es un error
-                if usuario_correo and usuario_correo.documento != solicitud.documento_padre:
-                    return JsonResponse({
-                        'status': 'error',
-                        'mensaje': f'El correo {solicitud.correo_padre} ya está registrado con otro documento.'
-                    }, status=400)
-                
-                if usuario_padre:
-                    # Si el usuario ya existe, verificar si tiene perfil de padre
-                    padre = Padre.objects.filter(usuario=usuario_padre).first()
-                    if not padre:
-                        # Crear perfil de padre si no existe
+                # 🆕 LÓGICA DIFERENCIADA SEGÚN TIPO DE SOLICITUD
+                if solicitud.tipo_solicitud == 'solicitud_padre':
+                    # SOLICITUD INICIADA POR PADRE: El padre ya existe, solo crear el niño
+                    if not solicitud.padre_solicitante:
+                        return JsonResponse({
+                            'status': 'error',
+                            'mensaje': 'Error: No se encontró el padre solicitante en la solicitud.'
+                        }, status=400)
+                    
+                    padre = solicitud.padre_solicitante
+                    
+                else:
+                    # INVITACIÓN DE MADRE: Crear o buscar padre (lógica original)
+                    # Obtener o crear el rol de padre
+                    rol_padre, _ = Rol.objects.get_or_create(nombre_rol='padre')
+                    
+                    # VALIDACIÓN 2: Verificar si ya existe un usuario con ese documento o correo
+                    usuario_padre = Usuario.objects.filter(documento=solicitud.documento_padre).first()
+                    usuario_correo = Usuario.objects.filter(correo=solicitud.correo_padre).first()
+                    
+                    # Si existe usuario con ese correo pero diferente documento, es un error
+                    if usuario_correo and usuario_correo.documento != solicitud.documento_padre:
+                        return JsonResponse({
+                            'status': 'error',
+                            'mensaje': f'El correo {solicitud.correo_padre} ya está registrado con otro documento.'
+                        }, status=400)
+                    
+                    if usuario_padre:
+                        # Si el usuario ya existe, verificar si tiene perfil de padre
+                        padre = Padre.objects.filter(usuario=usuario_padre).first()
+                        if not padre:
+                            # Crear perfil de padre si no existe
+                            padre = Padre.objects.create(
+                                usuario=usuario_padre,
+                                ocupacion=solicitud.ocupacion_padre or '',
+                                documento_identidad_img=solicitud.documento_identidad_padre,
+                                clasificacion_sisben=solicitud.clasificacion_sisben_padre,
+                            )
+                    else:
+                        # Crear nuevo usuario para el padre
+                        usuario_padre = Usuario.objects.create(
+                            documento=solicitud.documento_padre,
+                            tipo_documento=solicitud.tipo_documento_padre or 'CC',
+                            nombres=solicitud.nombres_padre,
+                            apellidos=solicitud.apellidos_padre,
+                            telefono=solicitud.telefono_padre,
+                            correo=solicitud.correo_padre,
+                            # 🆕 Datos geográficos
+                            departamento_residencia=solicitud.departamento_padre,
+                            ciudad_residencia=solicitud.ciudad_padre,
+                            localidad_bogota=solicitud.localidad_bogota_padre,
+                            direccion=solicitud.direccion_padre or '',
+                            barrio=solicitud.barrio_padre or '',
+                            nivel_educativo=solicitud.nivel_educativo_padre or '',
+                            rol=rol_padre,
+                            is_active=True,
+                        )
+                        
+                        # Establecer contraseña hasheada
+                        if solicitud.password_padre:
+                            usuario_padre.password = solicitud.password_padre
+                            usuario_padre.save()
+                        
+                        # Crear perfil de padre
                         padre = Padre.objects.create(
                             usuario=usuario_padre,
                             ocupacion=solicitud.ocupacion_padre or '',
                             documento_identidad_img=solicitud.documento_identidad_padre,
                             clasificacion_sisben=solicitud.clasificacion_sisben_padre,
                         )
-                else:
-                    # Crear nuevo usuario para el padre
-                    usuario_padre = Usuario.objects.create(
-                        documento=solicitud.documento_padre,
-                        tipo_documento=solicitud.tipo_documento_padre or 'CC',
-                        nombres=solicitud.nombres_padre,
-                        apellidos=solicitud.apellidos_padre,
-                        telefono=solicitud.telefono_padre,
-                        correo=solicitud.correo_padre,
-                        # 🆕 Datos geográficos
-                        departamento_residencia=solicitud.departamento_padre,
-                        ciudad_residencia=solicitud.ciudad_padre,
-                        localidad_bogota=solicitud.localidad_bogota_padre,
-                        direccion=solicitud.direccion_padre or '',
-                        barrio=solicitud.barrio_padre or '',
-                        nivel_educativo=solicitud.nivel_educativo_padre or '',
-                        rol=rol_padre,
-                        is_active=True,
-                    )
-                    
-                    # Establecer contraseña hasheada
-                    if solicitud.password_padre:
-                        usuario_padre.password = solicitud.password_padre
-                        usuario_padre.save()
-                    
-                    # Crear perfil de padre
-                    padre = Padre.objects.create(
-                        usuario=usuario_padre,
-                        ocupacion=solicitud.ocupacion_padre or '',
-                        documento_identidad_img=solicitud.documento_identidad_padre,
-                        clasificacion_sisben=solicitud.clasificacion_sisben_padre,
-                    )
                 
-                # Crear niño
+                # Crear niño (mismo proceso para ambos tipos de solicitud)
                 nino = Nino.objects.create(
                     padre=padre,
                     hogar=hogar_madre,
@@ -3523,6 +3842,9 @@ def formulario_matricula_publico(request, token):
         from core.models import Departamento
         departamentos = Departamento.objects.all().order_by('nombre')
         
+        # 🆕 Detectar si es solicitud iniciada por padre
+        es_solicitud_padre = solicitud.tipo_solicitud == 'solicitud_padre'
+        
         return render(request, 'public/formulario_matricula_publico.html', {
             'token_valido': True,
             'solicitud': solicitud,
@@ -3530,7 +3852,10 @@ def formulario_matricula_publico(request, token):
             'campos_corregir': solicitud.campos_corregir or [],
             'intentos_restantes': 3 - solicitud.intentos_correccion if solicitud.estado == 'correccion' else 3,
             'discapacidades': discapacidades,
-            'departamentos': departamentos,  # 🆕
+            'departamentos': departamentos,
+            # 🆕 Nuevos contextos
+            'es_solicitud_padre': es_solicitud_padre,
+            'mostrar_solo_nino': es_solicitud_padre,  # Si es solicitud de padre, solo mostrar campos del niño
         })
     
     # POST: Procesar formulario
@@ -3582,67 +3907,76 @@ def formulario_matricula_publico(request, token):
                 solicitud.tipos_discapacidad = None
                 solicitud.otra_discapacidad = None
             
-            # Datos del padre
-            solicitud.tipo_documento_padre = request.POST.get('tipo_documento_padre', '')
-            solicitud.documento_padre = request.POST.get('documento_padre', '').strip()
-            solicitud.nombres_padre = request.POST.get('nombres_padre', '').strip()
-            solicitud.apellidos_padre = request.POST.get('apellidos_padre', '').strip()
-            solicitud.telefono_padre = request.POST.get('telefono_padre', '')
-            solicitud.correo_padre = request.POST.get('correo_padre', '').strip()
+            # 🆕 LÓGICA DIFERENCIADA: Datos del padre
+            # Si es solicitud de padre, los datos del padre ya están pre-llenados y NO se editan
+            es_solicitud_padre = solicitud.tipo_solicitud == 'solicitud_padre'
             
-            # VALIDACIÓN 5: Verificar que el correo del padre no esté ya registrado con otro documento
-            if solicitud.correo_padre:
-                usuario_con_correo = Usuario.objects.filter(correo=solicitud.correo_padre).first()
-                if usuario_con_correo and usuario_con_correo.documento != solicitud.documento_padre:
+            if not es_solicitud_padre:
+                # INVITACIÓN DE MADRE: Procesar datos del padre normalmente
+                solicitud.tipo_documento_padre = request.POST.get('tipo_documento_padre', '')
+                solicitud.documento_padre = request.POST.get('documento_padre', '').strip()
+                solicitud.nombres_padre = request.POST.get('nombres_padre', '').strip()
+                solicitud.apellidos_padre = request.POST.get('apellidos_padre', '').strip()
+                solicitud.telefono_padre = request.POST.get('telefono_padre', '')
+                solicitud.correo_padre = request.POST.get('correo_padre', '').strip()
+            
+                # VALIDACIÓN 5: Verificar que el correo del padre no esté ya registrado con otro documento
+                if solicitud.correo_padre:
+                    usuario_con_correo = Usuario.objects.filter(correo=solicitud.correo_padre).first()
+                    if usuario_con_correo and usuario_con_correo.documento != solicitud.documento_padre:
+                        return JsonResponse({
+                            'success': False,
+                            'error': f'El correo {solicitud.correo_padre} ya está registrado con otro documento. Si ya tienes cuenta, usa el mismo documento.'
+                        }, status=400)
+                
+                # 🆕 Datos geográficos del padre
+                departamento_id = request.POST.get('departamento_padre', '').strip()
+                ciudad_id = request.POST.get('ciudad_padre', '').strip()
+                localidad_id = request.POST.get('localidad_bogota_padre', '').strip()
+                
+                if departamento_id:
+                    from core.models import Departamento
+                    solicitud.departamento_padre_id = departamento_id
+                if ciudad_id:
+                    from core.models import Municipio
+                    solicitud.ciudad_padre_id = ciudad_id
+                if localidad_id:
+                    from core.models import LocalidadBogota
+                    solicitud.localidad_bogota_padre_id = localidad_id
+                
+                solicitud.direccion_padre = request.POST.get('direccion_padre', '')
+                solicitud.barrio_padre = request.POST.get('barrio_padre', '')
+                solicitud.ocupacion_padre = request.POST.get('ocupacion_padre', '')
+                solicitud.nivel_educativo_padre = request.POST.get('nivel_educativo_padre', '')
+                
+                # Contraseña (hashear) - Solo para invitaciones de madre
+                password = request.POST.get('password_padre', '').strip()
+                password_confirm = request.POST.get('password_confirm', '').strip()
+                
+                # La contraseña es requerida siempre (no se almacena hasta aprobar)
+                if not password:
                     return JsonResponse({
                         'success': False,
-                        'error': f'El correo {solicitud.correo_padre} ya está registrado con otro documento. Si ya tienes cuenta, usa el mismo documento.'
+                        'error': 'La contraseña es obligatoria.'
                     }, status=400)
-            
-            # 🆕 Datos geográficos del padre
-            departamento_id = request.POST.get('departamento_padre', '').strip()
-            ciudad_id = request.POST.get('ciudad_padre', '').strip()
-            localidad_id = request.POST.get('localidad_bogota_padre', '').strip()
-            
-            if departamento_id:
-                from core.models import Departamento
-                solicitud.departamento_padre_id = departamento_id
-            if ciudad_id:
-                from core.models import Municipio
-                solicitud.ciudad_padre_id = ciudad_id
-            if localidad_id:
-                from core.models import LocalidadBogota
-                solicitud.localidad_bogota_padre_id = localidad_id
-            
-            solicitud.direccion_padre = request.POST.get('direccion_padre', '')
-            solicitud.barrio_padre = request.POST.get('barrio_padre', '')
-            solicitud.ocupacion_padre = request.POST.get('ocupacion_padre', '')
-            solicitud.nivel_educativo_padre = request.POST.get('nivel_educativo_padre', '')
-            
-            # Contraseña (hashear)
-            password = request.POST.get('password_padre', '').strip()
-            password_confirm = request.POST.get('password_confirm', '').strip()
-            
-            # La contraseña es requerida siempre (no se almacena hasta aprobar)
-            if not password:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'La contraseña es obligatoria.'
-                }, status=400)
-            
-            if password != password_confirm:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Las contraseñas no coinciden.'
-                }, status=400)
-            
-            if len(password) < 8:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'La contraseña debe tener al menos 8 caracteres.'
-                }, status=400)
-            
-            solicitud.password_padre = make_password(password)
+                
+                if password != password_confirm:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Las contraseñas no coinciden.'
+                    }, status=400)
+                
+                if len(password) < 8:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'La contraseña debe tener al menos 8 caracteres.'
+                    }, status=400)
+                
+                solicitud.password_padre = make_password(password)
+            else:
+                # SOLICITUD DE PADRE: Los datos del padre ya están pre-llenados, no se procesan
+                # Solo se permite actualizar documentos si se están corrigiendo
+                pass
             
             # Documentos (archivos)
             if 'foto_nino' in request.FILES:
@@ -3688,14 +4022,23 @@ def formulario_matricula_publico(request, token):
                             }, status=400)
             
             # Validar documentos obligatorios (solo si no es corrección o si es un documento a corregir)
-            documentos_obligatorios = [
-                ('foto_nino', 'Foto del niño'),
-                ('carnet_vacunacion_nino', 'Carnet de vacunación'),
-                ('certificado_eps_nino', 'Certificado EPS'),
-                ('registro_civil_nino', 'Registro civil'),
-                ('documento_identidad_padre', 'Documento de identidad del acudiente'),
-                ('clasificacion_sisben_padre', 'Clasificación SISBEN'),
-            ]
+            # 🆕 Para solicitudes de padre, solo validar documentos del niño
+            if es_solicitud_padre:
+                documentos_obligatorios = [
+                    ('foto_nino', 'Foto del niño'),
+                    ('carnet_vacunacion_nino', 'Carnet de vacunación'),
+                    ('certificado_eps_nino', 'Certificado EPS'),
+                    ('registro_civil_nino', 'Registro civil'),
+                ]
+            else:
+                documentos_obligatorios = [
+                    ('foto_nino', 'Foto del niño'),
+                    ('carnet_vacunacion_nino', 'Carnet de vacunación'),
+                    ('certificado_eps_nino', 'Certificado EPS'),
+                    ('registro_civil_nino', 'Registro civil'),
+                    ('documento_identidad_padre', 'Documento de identidad del acudiente'),
+                    ('clasificacion_sisben_padre', 'Clasificación SISBEN'),
+                ]
             
             for campo, nombre in documentos_obligatorios:
                 if not getattr(solicitud, campo):

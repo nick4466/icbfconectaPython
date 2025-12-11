@@ -435,11 +435,20 @@ class Nino(models.Model):
         ('abuelo', 'Abuelo/a'), ('tio', 'Tío/a'), ('hermano', 'Hermano/a'),
         ('otro', 'Otro')
     ]
+    TIPO_DOCUMENTO_CHOICES = [
+        ('RC', 'Registro Civil'),
+        ('TI', 'Tarjeta de Identidad'),
+        ('CV', 'Carné de Vacunación'),
+        ('AN', 'Acta de Nacimiento'),
+        ('CE', 'Cédula de Extranjería'),
+        ('PA', 'Pasaporte'),
+    ]
 
     nombres = models.CharField(max_length=50)
     apellidos = models.CharField(max_length=50)
     fecha_nacimiento = models.DateField()
-    documento = models.BigIntegerField(null=True, blank=True)
+    tipo_documento = models.CharField(max_length=2, choices=TIPO_DOCUMENTO_CHOICES, default='RC', verbose_name='Tipo de Documento')
+    documento = models.BigIntegerField(null=True, blank=True, verbose_name='Número de Documento')
     genero = models.CharField(
         max_length=20,
         null=True,
@@ -582,12 +591,41 @@ class SolicitudMatriculacion(models.Model):
         ('token_usado', 'Token Usado'),
     ]
     
+    TIPO_SOLICITUD_CHOICES = [
+        ('invitacion_madre', 'Invitación de Madre Comunitaria'),
+        ('solicitud_padre', 'Solicitud Iniciada por Padre/Tutor'),
+    ]
+    
     hogar = models.ForeignKey(HogarComunitario, on_delete=models.CASCADE, related_name='solicitudes_matricula')
     email_acudiente = models.EmailField(max_length=100)
     token = models.CharField(max_length=100, unique=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_expiracion = models.DateTimeField()
     estado = models.CharField(max_length=30, choices=ESTADO_CHOICES, default='pendiente')
+    
+    # 🆕 NUEVOS CAMPOS PARA SOLICITUD INICIADA POR PADRE
+    tipo_solicitud = models.CharField(
+        max_length=30, 
+        choices=TIPO_SOLICITUD_CHOICES, 
+        default='invitacion_madre',
+        help_text='Tipo de flujo: invitación de madre o solicitud de padre'
+    )
+    padre_solicitante = models.ForeignKey(
+        'Padre', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        related_name='solicitudes_matricula',
+        help_text='Padre que inició la solicitud (solo para tipo_solicitud=solicitud_padre)'
+    )
+    cupos_validados = models.BooleanField(
+        default=False,
+        help_text='Indica si se validaron los cupos disponibles'
+    )
+    tiene_cupos_disponibles = models.BooleanField(
+        default=False,
+        help_text='Resultado de la validación de cupos'
+    )
     
     # Datos del niño
     nombres_nino = models.CharField(max_length=100, null=True, blank=True)
@@ -691,6 +729,37 @@ class SolicitudMatriculacion(models.Model):
             self.save()
             return True
         return False
+    
+    def validar_cupos_disponibles(self):
+        """
+        Valida si hay cupos disponibles en el hogar comunitario.
+        Retorna: (tiene_cupos: bool, mensaje: str, cupos_disponibles: int)
+        """
+        if not self.hogar:
+            return False, "No hay hogar asignado", 0
+        
+        # Obtener capacidad del hogar
+        capacidad_total = self.hogar.capacidad_calculada or 0
+        
+        # Contar niños activos actualmente matriculados
+        from core.models import Nino
+        ninos_activos = Nino.objects.filter(
+            hogar=self.hogar,
+            estado='activo'
+        ).count()
+        
+        # Calcular cupos disponibles
+        cupos_disponibles = capacidad_total - ninos_activos
+        tiene_cupos = cupos_disponibles > 0
+        
+        mensaje = f"{cupos_disponibles} cupo(s) disponible(s) de {capacidad_total}" if tiene_cupos else "No hay cupos disponibles"
+        
+        # Guardar resultado de validación
+        self.cupos_validados = True
+        self.tiene_cupos_disponibles = tiene_cupos
+        self.save()
+        
+        return tiene_cupos, mensaje, cupos_disponibles
     
     def delete(self, *args, **kwargs):
         """Elimina archivos asociados antes de borrar la solicitud"""

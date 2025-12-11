@@ -18,8 +18,10 @@ from .models import (
     Nino, 
     Usuario,
     VisitaTecnica,
+    ActaVisitaTecnica,
     SolicitudMatriculacion
 )
+from .decorators import rol_requerido
 
 
 @login_required
@@ -350,6 +352,123 @@ def hogar_detalle_api(request, hogar_id):
     
     # Documentos del hogar (si existen)
     # Aquí agregar lógica para obtener documentos asociados
+    
+    return JsonResponse(data)
+
+
+@login_required
+@rol_requerido('administrador')
+def hogar_historial_visitas_api(request, hogar_id):
+    """
+    API para obtener el historial completo de visitas técnicas de un hogar
+    Incluye toda la información del acta de visita
+    """
+    hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+    
+    # Obtener todas las visitas del hogar ordenadas por fecha
+    # select_related se usa para OneToOneField y ForeignKey
+    visitas = VisitaTecnica.objects.filter(hogar=hogar).select_related(
+        'visitador', 'creado_por'
+    ).order_by('-fecha_programada')
+    
+    data = {
+        'hogar_id': hogar.id,
+        'nombre_hogar': hogar.nombre_hogar,
+        'visitas': []
+    }
+    
+    for visita in visitas:
+        visita_data = {
+            'id': visita.id,
+            'tipo_visita': visita.tipo_visita,
+            'tipo_visita_display': visita.get_tipo_visita_display(),
+            'estado': visita.estado,
+            'fecha_programada': visita.fecha_programada.strftime('%d/%m/%Y %H:%M'),
+            'fecha_realizacion': visita.fecha_realizacion.strftime('%d/%m/%Y %H:%M') if visita.fecha_realizacion else None,
+            'visitador': f"{visita.visitador.nombres} {visita.visitador.apellidos}" if visita.visitador else 'No asignado',
+            'creado_por': f"{visita.creado_por.nombres} {visita.creado_por.apellidos}" if visita.creado_por else 'Sistema',
+            'observaciones_agenda': visita.observaciones_agenda or '',
+            'observaciones_visita': hogar.observaciones_visita or '',  # Observaciones del formulario de activación
+            'fecha_creacion': visita.fecha_creacion.strftime('%d/%m/%Y %H:%M'),
+            'acta': None
+        }
+        
+        # Si tiene acta completada, agregar toda la información
+        try:
+            acta = visita.acta
+            visita_data['acta'] = {
+                # Geolocalización
+                'geolocalizacion_lat_verificada': str(acta.geolocalizacion_lat_verificada),
+                'geolocalizacion_lon_verificada': str(acta.geolocalizacion_lon_verificada),
+                'direccion_verificada': acta.direccion_verificada,
+                'direccion_coincide': acta.direccion_coincide,
+                'observaciones_direccion': acta.observaciones_direccion or '',
+                'estrato_verificado': acta.estrato_verificado,
+                'estrato_coincide': acta.estrato_coincide,
+                
+                # Servicios públicos
+                'tiene_agua_potable': acta.tiene_agua_potable,
+                'agua_continua': acta.agua_continua,
+                'agua_legal': acta.agua_legal,
+                'tiene_energia': acta.tiene_energia,
+                'energia_continua': acta.energia_continua,
+                'energia_legal': acta.energia_legal,
+                'tiene_alcantarillado': acta.tiene_alcantarillado,
+                'manejo_excretas_adecuado': acta.manejo_excretas_adecuado,
+                
+                # Infraestructura
+                'estado_pisos': acta.estado_pisos,
+                'estado_pisos_display': acta.get_estado_pisos_display(),
+                'estado_paredes': acta.estado_paredes,
+                'estado_paredes_display': acta.get_estado_paredes_display(),
+                'estado_techos': acta.estado_techos,
+                'estado_techos_display': acta.get_estado_techos_display(),
+                'ventilacion_adecuada': acta.ventilacion_adecuada,
+                'iluminacion_natural_adecuada': acta.iluminacion_natural_adecuada,
+                'observaciones_infraestructura': acta.observaciones_infraestructura or '',
+                
+                # Riesgos
+                'proximidad_rios': acta.proximidad_rios,
+                'proximidad_deslizamientos': acta.proximidad_deslizamientos,
+                'proximidad_trafico_intenso': acta.proximidad_trafico_intenso,
+                'proximidad_contaminacion': acta.proximidad_contaminacion,
+                'nivel_riesgo_general': acta.nivel_riesgo_general,
+                'nivel_riesgo_general_display': acta.get_nivel_riesgo_general_display(),
+                'descripcion_riesgos': acta.descripcion_riesgos or '',
+                
+                # Áreas y capacidad
+                'area_social_largo': str(acta.area_social_largo),
+                'area_social_ancho': str(acta.area_social_ancho),
+                'area_social_total': str(acta.area_social_total),
+                'tiene_patio_cubierto': acta.tiene_patio_cubierto,
+                'patio_largo': str(acta.patio_largo) if acta.patio_largo else None,
+                'patio_ancho': str(acta.patio_ancho) if acta.patio_ancho else None,
+                'patio_total': str(acta.patio_total) if acta.patio_total else None,
+                'capacidad_calculada': acta.capacidad_calculada,
+                'capacidad_recomendada': acta.capacidad_recomendada,
+                'justificacion_capacidad': acta.justificacion_capacidad or '',
+                
+                # Baños
+                'num_banos_verificado': acta.num_banos_verificado,
+                'estado_higiene_banos': acta.estado_higiene_banos,
+                'estado_higiene_banos_display': acta.get_estado_higiene_banos_display(),
+                
+                # Resultado
+                'resultado_visita': acta.resultado_visita,
+                'resultado_visita_display': acta.get_resultado_visita_display(),
+                'observaciones_generales': acta.observaciones_generales,
+                'recomendaciones': acta.recomendaciones or '',
+                'condiciones_aprobacion': acta.condiciones_aprobacion or '',
+                
+                # Fechas
+                'fecha_creacion': acta.fecha_creacion.strftime('%d/%m/%Y %H:%M'),
+                'completado_por': f"{acta.completado_por.nombres} {acta.completado_por.apellidos}" if acta.completado_por else 'Sistema'
+            }
+        except ActaVisitaTecnica.DoesNotExist:
+            # Si no tiene acta, visita_data['acta'] ya está en None
+            pass
+        
+        data['visitas'].append(visita_data)
     
     return JsonResponse(data)
 

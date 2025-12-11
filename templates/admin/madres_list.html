@@ -841,77 +841,7 @@
   <body>
 
   <!-- ========== SIDEBAR ========== -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <a href="{% url 'home' %}" class="sidebar-logo">
-        <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF">
-        <div class="sidebar-logo-text">
-          <h2>ICBF Conecta</h2>
-          <p>Panel Administrativo</p>
-        </div>
-      </a>
-    </div>
-
-    <nav class="sidebar-nav">
-      <div class="nav-item">
-        <a href="{% url 'dashboard_admin' %}" class="nav-link">
-          <i class="fas fa-tachometer-alt"></i>
-          <span>Inicio</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'hogares_dashboard' %}" class="nav-link">
-          <i class="fas fa-calendar-check"></i>
-          <span>Gestión de Visitas</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'listar_hogares' %}" class="nav-link">
-          <i class="fas fa-home"></i>
-          <span>Hogares</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'listar_madres' %}" class="nav-link active">
-          <i class="fas fa-user-group"></i>
-          <span>Agentes Educativos</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'listar_administradores' %}" class="nav-link">
-          <i class="fas fa-user-shield"></i>
-          <span>Administradores</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'admin_reportes' %}" class="nav-link">
-          <i class="fas fa-chart-line"></i>
-          <span>Reportes</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'editar_perfil' %}" class="nav-link">
-          <i class="fas fa-user-pen"></i>
-          <span>Editar Perfil</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <a href="{% url 'cambiar_contrasena' %}" class="nav-link">
-          <i class="fas fa-key"></i>
-          <span>Cambiar Contraseña</span>
-        </a>
-      </div>
-      <div class="nav-item">
-        <form method="post" action="{% url 'logout' %}" style="margin: 0;">
-          {% csrf_token %}
-          <button type="submit" class="nav-link" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer; font: inherit; color: white; padding: 12px 20px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Cerrar Sesión</span>
-          </button>
-        </form>
-      </div>
-    </nav>
-  </aside>
+  {% include 'admin/components/admin_sidebar.html' %}
 
   <!-- ========== MAIN CONTENT ========== -->
   <main class="main-content">

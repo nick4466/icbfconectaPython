@@ -552,6 +552,18 @@
             {% endfor %}
           </div>
 
+          <!-- Tipo de Documento -->
+          <div class="form-group">
+            <label for="{{ nino_form.tipo_documento.id_for_label }}">
+              Tipo de Documento
+              {% if nino_form.tipo_documento.field.required %}<span class="required">*</span>{% endif %}
+            </label>
+            {{ nino_form.tipo_documento }}
+            {% for error in nino_form.tipo_documento.errors %}
+              <div class="error-list">{{ error }}</div>
+            {% endfor %}
+          </div>
+
           <!-- Documento -->
           <div class="form-group">
             <label for="{{ nino_form.documento.id_for_label }}">
