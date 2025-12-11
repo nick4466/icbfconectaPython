@@ -1,0 +1,402 @@
+{% extends 'padre/navbar_padre.html' %}
+{% load static %}
+
+{% block title %}Corregir Solicitud - ICBF Conecta{% endblock %}
+
+{% block content %}
+<style>
+    .form-correccion-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .header-correccion {
+        background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+    
+    .header-correccion h1 {
+        margin: 0;
+        font-size: 28px;
+    }
+    
+    .header-correccion p {
+        margin: 10px 0 0 0;
+        opacity: 0.95;
+    }
+    
+    .intentos-restantes {
+        background: #FFF3CD;
+        border-left: 4px solid #FFC107;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .intentos-restantes strong {
+        color: #856404;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        color: #495057;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    
+    .form-group.campo-requerido label::after {
+        content: " *";
+        color: #E53935;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #DEE2E6;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: 'Roboto', sans-serif;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #4DB6FF;
+    }
+    
+    .campo-destacado {
+        background: #FFF8E1;
+        border-left: 4px solid #FF6B35;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .campo-destacado .form-control {
+        border-color: #FF6B35;
+    }
+    
+    .helper-text {
+        font-size: 12px;
+        color: #6C757D;
+        margin-top: 5px;
+    }
+    
+    .file-input-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+    }
+    
+    .file-input-wrapper input[type=file] {
+        position: absolute;
+        left: -9999px;
+    }
+    
+    .file-input-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        background: #F8F9FA;
+        border: 2px dashed #DEE2E6;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .file-input-label:hover {
+        background: #E9ECEF;
+        border-color: #4DB6FF;
+    }
+    
+    .file-input-label i {
+        margin-right: 10px;
+        font-size: 20px;
+        color: #4DB6FF;
+    }
+    
+    .file-name-display {
+        margin-top: 10px;
+        padding: 8px 12px;
+        background: #E3F2FD;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #1976D2;
+    }
+    
+    .btn {
+        padding: 14px 28px;
+        border-radius: 8px;
+        border: none;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        margin: 5px;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4DB6FF 0%, #3DA1E8 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(77, 182, 255, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #6C757D;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #5A6268;
+    }
+    
+    .form-actions {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 2px solid #DEE2E6;
+    }
+</style>
+
+<div class="form-correccion-container">
+    <div class="header-correccion">
+        <h1><i class="fas fa-edit"></i> Corregir Solicitud de Matrícula</h1>
+        <p>Hogar Comunitario: {{ solicitud.hogar.nombre_hogar }}</p>
+        <p>Niño/a: {{ solicitud.nombres_nino }} {{ solicitud.apellidos_nino }}</p>
+    </div>
+    
+    <div class="intentos-restantes">
+        <i class="fas fa-info-circle"></i>
+        <strong>Intentos restantes:</strong> {{ intentos_restantes }} de 3
+        {% if intentos_restantes == 1 %}
+            <br><span style="color: #E53935;">⚠️ Este es tu último intento. Asegúrate de cargar toda la información correctamente.</span>
+        {% endif %}
+    </div>
+    
+    <form method="post" enctype="multipart/form-data" id="formCorreccion">
+        {% csrf_token %}
+        
+        <p style="margin-bottom: 30px; color: #495057;">
+            <i class="fas fa-exclamation-circle" style="color: #FF6B35;"></i>
+            Solo necesitas corregir los campos marcados a continuación. Los demás datos permanecerán sin cambios.
+        </p>
+        
+        {% for campo in campos_corregir %}
+            {% if campo == 'nombres_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label for="nombres_nino">
+                        <i class="fas fa-user"></i> Nombres del Niño
+                    </label>
+                    <input 
+                        type="text" 
+                        id="nombres_nino" 
+                        name="nombres_nino" 
+                        class="form-control" 
+                        value="{{ solicitud.nombres_nino }}"
+                        required
+                    >
+                    <div class="helper-text">Ingresa los nombres completos del niño/a</div>
+                </div>
+            
+            {% elif campo == 'apellidos_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label for="apellidos_nino">
+                        <i class="fas fa-user"></i> Apellidos del Niño
+                    </label>
+                    <input 
+                        type="text" 
+                        id="apellidos_nino" 
+                        name="apellidos_nino" 
+                        class="form-control" 
+                        value="{{ solicitud.apellidos_nino }}"
+                        required
+                    >
+                    <div class="helper-text">Ingresa los apellidos completos del niño/a</div>
+                </div>
+            
+            {% elif campo == 'documento_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label for="documento_nino">
+                        <i class="fas fa-id-card"></i> Documento del Niño
+                    </label>
+                    <input 
+                        type="text" 
+                        id="documento_nino" 
+                        name="documento_nino" 
+                        class="form-control" 
+                        value="{{ solicitud.documento_nino }}"
+                        required
+                    >
+                    <div class="helper-text">Número de identificación o registro civil</div>
+                </div>
+            
+            {% elif campo == 'fecha_nacimiento_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label for="fecha_nacimiento_nino">
+                        <i class="fas fa-calendar"></i> Fecha de Nacimiento
+                    </label>
+                    <input 
+                        type="date" 
+                        id="fecha_nacimiento_nino" 
+                        name="fecha_nacimiento_nino" 
+                        class="form-control" 
+                        value="{{ solicitud.fecha_nacimiento_nino|date:'Y-m-d' }}"
+                        required
+                    >
+                </div>
+            
+            {% elif campo == 'genero_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label for="genero_nino">
+                        <i class="fas fa-venus-mars"></i> Género
+                    </label>
+                    <select id="genero_nino" name="genero_nino" class="form-control" required>
+                        <option value="">-- Seleccionar --</option>
+                        <option value="M" {% if solicitud.genero_nino == 'M' %}selected{% endif %}>Masculino</option>
+                        <option value="F" {% if solicitud.genero_nino == 'F' %}selected{% endif %}>Femenino</option>
+                    </select>
+                </div>
+            
+            {% elif campo == 'tipo_sangre_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label for="tipo_sangre_nino">
+                        <i class="fas fa-tint"></i> Tipo de Sangre
+                    </label>
+                    <select id="tipo_sangre_nino" name="tipo_sangre_nino" class="form-control" required>
+                        <option value="">-- Seleccionar --</option>
+                        <option value="A+" {% if solicitud.tipo_sangre_nino == 'A+' %}selected{% endif %}>A+</option>
+                        <option value="A-" {% if solicitud.tipo_sangre_nino == 'A-' %}selected{% endif %}>A-</option>
+                        <option value="B+" {% if solicitud.tipo_sangre_nino == 'B+' %}selected{% endif %}>B+</option>
+                        <option value="B-" {% if solicitud.tipo_sangre_nino == 'B-' %}selected{% endif %}>B-</option>
+                        <option value="AB+" {% if solicitud.tipo_sangre_nino == 'AB+' %}selected{% endif %}>AB+</option>
+                        <option value="AB-" {% if solicitud.tipo_sangre_nino == 'AB-' %}selected{% endif %}>AB-</option>
+                        <option value="O+" {% if solicitud.tipo_sangre_nino == 'O+' %}selected{% endif %}>O+</option>
+                        <option value="O-" {% if solicitud.tipo_sangre_nino == 'O-' %}selected{% endif %}>O-</option>
+                    </select>
+                </div>
+            
+            {% elif campo == 'foto_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label><i class="fas fa-camera"></i> Foto del Niño</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="foto_nino" name="foto_nino" accept="image/*" required>
+                        <label for="foto_nino" class="file-input-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Seleccionar Nueva Foto</span>
+                        </label>
+                    </div>
+                    <div class="helper-text">⚠️ Debes cargar una nueva foto para reemplazar la anterior</div>
+                    <div id="foto_nino_name" class="file-name-display" style="display: none;"></div>
+                </div>
+            
+            {% elif campo == 'carnet_vacunacion_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label><i class="fas fa-syringe"></i> Carnet de Vacunación</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="carnet_vacunacion_nino" name="carnet_vacunacion_nino" accept=".pdf,image/*" required>
+                        <label for="carnet_vacunacion_nino" class="file-input-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Seleccionar Nuevo Carnet</span>
+                        </label>
+                    </div>
+                    <div class="helper-text">⚠️ Debes cargar un nuevo documento</div>
+                    <div id="carnet_vacunacion_nino_name" class="file-name-display" style="display: none;"></div>
+                </div>
+            
+            {% elif campo == 'certificado_eps_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label><i class="fas fa-hospital"></i> Certificado EPS</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="certificado_eps_nino" name="certificado_eps_nino" accept=".pdf,image/*" required>
+                        <label for="certificado_eps_nino" class="file-input-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Seleccionar Nuevo Certificado</span>
+                        </label>
+                    </div>
+                    <div class="helper-text">⚠️ Debes cargar un nuevo documento</div>
+                    <div id="certificado_eps_nino_name" class="file-name-display" style="display: none;"></div>
+                </div>
+            
+            {% elif campo == 'registro_civil_nino' %}
+                <div class="form-group campo-destacado campo-requerido">
+                    <label><i class="fas fa-file-alt"></i> Registro Civil</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="registro_civil_nino" name="registro_civil_nino" accept=".pdf,image/*" required>
+                        <label for="registro_civil_nino" class="file-input-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Seleccionar Nuevo Registro Civil</span>
+                        </label>
+                    </div>
+                    <div class="helper-text">⚠️ Debes cargar un nuevo documento</div>
+                    <div id="registro_civil_nino_name" class="file-name-display" style="display: none;"></div>
+                </div>
+            {% endif %}
+        {% endfor %}
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i> Enviar Correcciones
+            </button>
+            <a href="{% url 'padre_dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Mostrar nombre del archivo seleccionado
+document.querySelectorAll('input[type="file"]').forEach(input => {
+    input.addEventListener('change', function() {
+        const displayId = this.id + '_name';
+        const display = document.getElementById(displayId);
+        if (this.files.length > 0) {
+            display.textContent = '📄 ' + this.files[0].name;
+            display.style.display = 'block';
+        } else {
+            display.style.display = 'none';
+        }
+    });
+});
+
+// Validación antes de enviar
+document.getElementById('formCorreccion').addEventListener('submit', function(e) {
+    const requiredFields = this.querySelectorAll('[required]');
+    let allValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value || (field.type === 'file' && field.files.length === 0)) {
+            allValid = false;
+            field.style.borderColor = '#E53935';
+        } else {
+            field.style.borderColor = '#28A745';
+        }
+    });
+    
+    if (!allValid) {
+        e.preventDefault();
+        alert('Por favor completa todos los campos marcados con * antes de enviar.');
+    }
+});
+</script>
+{% endblock %}

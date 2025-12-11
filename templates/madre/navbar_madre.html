@@ -55,8 +55,8 @@
                         {% for notification in notifications %}
                         <div class="notification-item {% if not notification.read %}unread{% endif %}" 
                              data-level="{{ notification.level }}"
-                             {% if notification.object_id %}
-                             onclick="irASolicitud({{ notification.object_id }}, {{ notification.id }}, '{{ notification.title }}')"
+                             {% if notification.content_type %}
+                             onclick="window.location.href='{% url 'notifications:ver_notificacion' notification.id %}'"
                              style="cursor: pointer;"
                              {% endif %}>
                             <div class="notification-icon">

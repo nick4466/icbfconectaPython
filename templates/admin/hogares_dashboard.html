@@ -1182,86 +1182,228 @@
     }
 
     function generarVistaHogarCompleta(hogar) {
-      const porcentajeCapacidad = (hogar.ninos.length / hogar.capacidad_maxima) * 100;
+      const porcentajeCapacidad = (hogar.estadisticas_ninos.activos / hogar.capacidad_maxima) * 100;
       
       return `
-        <div class="hogar-detalle-grid">
-          <div>
+        <div class="hogar-detalle-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            
+            <!-- INFORMACIÓN GENERAL DEL HOGAR -->
             <div class="info-card">
-              <h3><i class="fas fa-info-circle"></i> Información General</h3>
+              <h3><i class="fas fa-home"></i> Información General del Hogar</h3>
               <div class="info-grid">
                 <div class="info-item">
                   <strong>Nombre del Hogar</strong>
                   <span>${hogar.nombre_hogar}</span>
                 </div>
                 <div class="info-item">
-                  <strong>Responsable</strong>
-                  <span>${hogar.responsable}</span>
+                  <strong>Fecha de Creación</strong>
+                  <span>${hogar.fecha_creacion}</span>
                 </div>
                 <div class="info-item">
                   <strong>Dirección</strong>
                   <span>${hogar.direccion}</span>
                 </div>
                 <div class="info-item">
+                  <strong>Barrio</strong>
+                  <span>${hogar.barrio}</span>
+                </div>
+                <div class="info-item">
                   <strong>Localidad</strong>
                   <span>${hogar.localidad}</span>
+                </div>
+                <div class="info-item">
+                  <strong>Estrato</strong>
+                  <span>${hogar.estrato}</span>
+                </div>
+                <div class="info-item">
+                  <strong>Tipo de Tenencia</strong>
+                  <span>${hogar.tipo_tenencia}</span>
                 </div>
                 <div class="info-item">
                   <strong>Estado</strong>
                   <span class="badge badge-success">${hogar.estado}</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- INFORMACIÓN DE LA MADRE COMUNITARIA -->
+            <div class="info-card">
+              <h3><i class="fas fa-user-nurse"></i> Información de la Madre Comunitaria</h3>
+              <div style="display: flex; gap: 16px; align-items: start; margin-bottom: 16px;">
+                ${hogar.madre.foto ? 
+                  `<img src="${hogar.madre.foto}" alt="Foto" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">` :
+                  `<div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold;">${hogar.madre.nombres.charAt(0)}</div>`
+                }
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 8px 0; font-size: 18px; color: var(--primary);">${hogar.madre.nombres} ${hogar.madre.apellidos}</h4>
+                  <div style="font-size: 14px; color: var(--text-light);">
+                    <div><strong>Documento:</strong> ${hogar.madre.documento}</div>
+                    <div><strong>Teléfono:</strong> ${hogar.madre.telefono}</div>
+                    <div><strong>Email:</strong> ${hogar.madre.email}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="info-grid">
                 <div class="info-item">
-                  <strong>Fecha de Creación</strong>
-                  <span>${hogar.fecha_registro}</span>
+                  <strong>Nivel de Escolaridad</strong>
+                  <span>${hogar.madre.nivel_escolaridad}</span>
+                </div>
+                <div class="info-item">
+                  <strong>Título Obtenido</strong>
+                  <span>${hogar.madre.titulo_obtenido}</span>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                  <strong>Institución</strong>
+                  <span>${hogar.madre.institucion}</span>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                  <strong>Experiencia Previa</strong>
+                  <span style="white-space: pre-wrap; font-size: 13px;">${hogar.madre.experiencia_previa}</span>
                 </div>
               </div>
             </div>
 
+            <!-- INFRAESTRUCTURA -->
             <div class="info-card">
-              <h3><i class="fas fa-child"></i> Niños del Hogar (${hogar.ninos.length}/${hogar.capacidad_maxima})</h3>
-              <div class="ninos-carpetas">
-                ${hogar.ninos.map(nino => `
-                  <div class="nino-carpeta" onclick="verNinoCarpeta(${nino.id})">
-                    <div class="nino-estado-indicator"></div>
-                    <div class="nino-avatar">
-                      ${nino.foto ? 
-                        `<img src="${nino.foto}" alt="${nino.nombres}">` : 
-                        nino.nombres.charAt(0).toUpperCase()
-                      }
+              <h3><i class="fas fa-building"></i> Infraestructura</h3>
+              <div class="info-grid">
+                <div class="info-item">
+                  <strong>Área Social</strong>
+                  <span>${hogar.area_social_m2} m²</span>
+                </div>
+                <div class="info-item">
+                  <strong>Capacidad Calculada</strong>
+                  <span>${hogar.capacidad_calculada || 'No calculada'} niños</span>
+                </div>
+                <div class="info-item">
+                  <strong>Habitaciones</strong>
+                  <span>${hogar.infraestructura.num_habitaciones}</span>
+                </div>
+                <div class="info-item">
+                  <strong>Baños</strong>
+                  <span>${hogar.infraestructura.num_banos}</span>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                  <strong>Material de Construcción</strong>
+                  <span>${hogar.infraestructura.material_construccion}</span>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                  <strong>Riesgos Cercanos</strong>
+                  <span>${hogar.infraestructura.riesgos_cercanos}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- FOTOS DEL HOGAR CON PREVIEW -->
+            <div class="info-card">
+              <h3><i class="fas fa-camera"></i> Fotos del Hogar</h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                ${hogar.fotos.interior ? `
+                  <div style="position: relative; cursor: pointer; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb;" onclick="verFotoCompleta('${hogar.fotos.interior}', 'Foto Interior del Hogar')">
+                    <img src="${hogar.fotos.interior}" alt="Interior" style="width: 100%; height: 150px; object-fit: cover;">
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 8px; color: white; text-align: center; font-size: 12px; font-weight: 600;">
+                      <i class="fas fa-search-plus"></i> Interior
                     </div>
-                    <div class="nino-nombre">${nino.nombres}</div>
-                    <div class="nino-edad">${nino.edad} años</div>
                   </div>
-                `).join('') || '<p style="color: var(--text-light); text-align: center; padding: 40px; grid-column: 1/-1;">No hay niños registrados en este hogar</p>'}
+                ` : `
+                  <div style="height: 150px; background: #f3f4f6; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; border: 2px dashed #d1d5db;">
+                    <i class="fas fa-image" style="font-size: 32px; margin-bottom: 8px;"></i>
+                    <span style="font-size: 12px;">Sin foto interior</span>
+                  </div>
+                `}
+                
+                ${hogar.fotos.exterior ? `
+                  <div style="position: relative; cursor: pointer; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb;" onclick="verFotoCompleta('${hogar.fotos.exterior}', 'Foto Exterior del Hogar')">
+                    <img src="${hogar.fotos.exterior}" alt="Exterior" style="width: 100%; height: 150px; object-fit: cover;">
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 8px; color: white; text-align: center; font-size: 12px; font-weight: 600;">
+                      <i class="fas fa-search-plus"></i> Exterior
+                    </div>
+                  </div>
+                ` : `
+                  <div style="height: 150px; background: #f3f4f6; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; border: 2px dashed #d1d5db;">
+                    <i class="fas fa-image" style="font-size: 32px; margin-bottom: 8px;"></i>
+                    <span style="font-size: 12px;">Sin foto exterior</span>
+                  </div>
+                `}
               </div>
             </div>
           </div>
 
-          <div>
+          <!-- COLUMNA DERECHA -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            
+            <!-- ESTADÍSTICAS DE NIÑOS -->
             <div class="info-card">
               <h3><i class="fas fa-chart-pie"></i> Estadísticas</h3>
+              
+              <!-- Capacidad -->
               <div style="margin-bottom: 20px;">
                 <strong style="display: block; margin-bottom: 8px;">Capacidad Utilizada</strong>
                 <div class="progress-bar">
                   <div class="progress-fill" style="width: ${porcentajeCapacidad}%"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; color: var(--text-light);">
-                  <span>${hogar.ninos.length} niños</span>
+                  <span>${hogar.estadisticas_ninos.activos} / ${hogar.capacidad_maxima} niños</span>
                   <span>${Math.round(porcentajeCapacidad)}%</span>
                 </div>
               </div>
               
-              <div style="text-align: center; padding: 16px; background: white; border-radius: 8px; margin-bottom: 12px;">
-                <div style="font-size: 32px; font-weight: 700; color: var(--primary);">${hogar.total_visitas}</div>
-                <div style="font-size: 13px; color: var(--text-light); margin-top: 4px;">Visitas Realizadas</div>
+              <!-- Grid de estadísticas -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px;">
+                <div style="text-align: center; padding: 16px; background: #ecfdf5; border-radius: 8px; border: 2px solid #10b981;">
+                  <div style="font-size: 28px; font-weight: 700; color: #10b981;">${hogar.estadisticas_ninos.activos}</div>
+                  <div style="font-size: 12px; color: #059669; margin-top: 4px; font-weight: 600;">Niños Activos</div>
+                </div>
+                <div style="text-align: center; padding: 16px; background: #fee2e2; border-radius: 8px; border: 2px solid #ef4444;">
+                  <div style="font-size: 28px; font-weight: 700; color: #ef4444;">${hogar.estadisticas_ninos.eliminados}</div>
+                  <div style="font-size: 12px; color: #dc2626; margin-top: 4px; font-weight: 600;">Eliminados</div>
+                </div>
+                <div style="text-align: center; padding: 16px; background: #dbeafe; border-radius: 8px; border: 2px solid #3b82f6;">
+                  <div style="font-size: 28px; font-weight: 700; color: #3b82f6;">${hogar.estadisticas_ninos.total_matriculados}</div>
+                  <div style="font-size: 12px; color: #2563eb; margin-top: 4px; font-weight: 600;">Total Matriculados</div>
+                </div>
               </div>
               
-              <div style="padding: 12px; background: white; border-radius: 8px;">
-                <strong style="display: block; font-size: 13px; color: var(--text-light); margin-bottom: 4px;">ÚLTIMA VISITA</strong>
-                <span style="font-size: 16px; font-weight: 600;">${hogar.ultima_visita || 'Sin visitas'}</span>
+              <!-- Visitas -->
+              <div style="margin-top: 16px; padding: 16px; background: white; border-radius: 8px; border: 2px solid var(--primary);">
+                <div style="text-align: center;">
+                  <div style="font-size: 32px; font-weight: 700; color: var(--primary);">${hogar.total_visitas}</div>
+                  <div style="font-size: 13px; color: var(--text-light); margin-top: 4px;">Visitas Realizadas</div>
+                </div>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                  <strong style="display: block; font-size: 12px; color: var(--text-light); margin-bottom: 4px;">ÚLTIMA VISITA</strong>
+                  <span style="font-size: 15px; font-weight: 600;">${hogar.ultima_visita || 'Sin visitas'}</span>
+                </div>
+                ${hogar.proxima_visita ? `
+                  <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                    <strong style="display: block; font-size: 12px; color: var(--text-light); margin-bottom: 4px;">PRÓXIMA VISITA</strong>
+                    <span style="font-size: 15px; font-weight: 600; color: var(--secondary);">${hogar.proxima_visita}</span>
+                  </div>
+                ` : ''}
               </div>
             </div>
 
+            <!-- NIÑOS DEL HOGAR -->
+            <div class="info-card">
+              <h3><i class="fas fa-child"></i> Niños del Hogar (${hogar.estadisticas_ninos.activos})</h3>
+              <div class="ninos-carpetas" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; max-height: 300px; overflow-y: auto;">
+                ${hogar.ninos.map(nino => `
+                  <div class="nino-carpeta" onclick="verNinoCarpeta(${nino.id})" style="cursor: pointer; padding: 12px; background: white; border-radius: 8px; border: 2px solid #e5e7eb; text-align: center; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)';">
+                    <div style="width: 60px; height: 60px; margin: 0 auto 8px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary);">
+                      ${nino.foto ? 
+                        `<img src="${nino.foto}" alt="${nino.nombres}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+                        `<div style="width: 100%; height: 100%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">${nino.nombres.charAt(0)}</div>`
+                      }
+                    </div>
+                    <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px;">${nino.nombres}</div>
+                    <div style="font-size: 11px; color: var(--text-light);">${nino.edad} años</div>
+                  </div>
+                `).join('') || '<p style="color: var(--text-light); text-align: center; padding: 40px;">No hay niños activos en este hogar</p>'}
+              </div>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN -->
             <div style="display: flex; gap: 8px; flex-direction: column;">
               <div style="display: flex; gap: 8px;">
                 <a href="/madres/editar/${hogar.id}/" class="btn btn-primary" style="flex: 1;" onclick="event.stopPropagation();">
@@ -1520,6 +1662,73 @@
         }
       }
       return cookieValue;
+    }
+
+    // ========== FUNCIÓN PARA PREVIEW DE FOTOS ==========
+    function verFotoCompleta(urlFoto, titulo) {
+      // Crear modal dinámicamente
+      const modalId = 'modalPreviewFoto';
+      let modal = document.getElementById(modalId);
+      
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal';
+        modal.style.cssText = 'z-index: 10000;';
+        document.body.appendChild(modal);
+      }
+      
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 90vw; max-height: 90vh; padding: 0; background: #000;">
+          <div style="background: #1f2937; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 18px;">
+              <i class="fas fa-image"></i> ${titulo}
+            </h3>
+            <button onclick="cerrarPreviewFoto()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='none'">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div style="padding: 20px; display: flex; align-items: center; justify-content: center; min-height: 400px; max-height: calc(90vh - 100px); overflow: auto;">
+            <img src="${urlFoto}" alt="${titulo}" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">
+          </div>
+          <div style="background: #1f2937; color: white; padding: 12px 24px; display: flex; justify-content: center; gap: 12px;">
+            <a href="${urlFoto}" download class="btn btn-primary" style="background: #3b82f6; border: none; color: white;">
+              <i class="fas fa-download"></i> Descargar
+            </a>
+            <a href="${urlFoto}" target="_blank" class="btn btn-outline" style="border-color: white; color: white;">
+              <i class="fas fa-external-link-alt"></i> Abrir en Nueva Pestaña
+            </a>
+            <button onclick="cerrarPreviewFoto()" class="btn btn-outline" style="border-color: white; color: white;">
+              <i class="fas fa-times"></i> Cerrar
+            </button>
+          </div>
+        </div>
+      `;
+      
+      modal.classList.add('active');
+      
+      // Cerrar con ESC
+      const handleEsc = (e) => {
+        if (e.key === 'Escape') {
+          cerrarPreviewFoto();
+          document.removeEventListener('keydown', handleEsc);
+        }
+      };
+      document.addEventListener('keydown', handleEsc);
+      
+      // Cerrar al hacer clic fuera
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          cerrarPreviewFoto();
+        }
+      });
+    }
+
+    function cerrarPreviewFoto() {
+      const modal = document.getElementById('modalPreviewFoto');
+      if (modal) {
+        modal.classList.remove('active');
+      }
     }
   </script>
 

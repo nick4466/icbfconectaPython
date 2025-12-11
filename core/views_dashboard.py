@@ -311,49 +311,123 @@ def hogar_detalle_api(request, hogar_id):
     API para obtener detalles completos de un hogar (JSON)
     Usado por el modal de vista de hogar
     """
-    hogar = get_object_or_404(HogarComunitario, id=hogar_id)
-    
-    # Información del hogar
-    data = {
-        'id': hogar.id,
-        'nombre_hogar': hogar.nombre_hogar,
-        'responsable': f"{hogar.madre.usuario.nombres} {hogar.madre.usuario.apellidos}",
-        'direccion': hogar.direccion,
-        'localidad': hogar.localidad,
-        'estado': hogar.get_estado_display(),
-        'fecha_registro': hogar.fecha_registro.strftime('%d/%m/%Y'),
-        'capacidad_maxima': hogar.capacidad_maxima,
-        'ninos': [],
-        'documentos': [],
-        'total_visitas': 0,
-        'ultima_visita': None,
-    }
-    
-    # Niños del hogar
-    ninos = Nino.objects.filter(hogar=hogar, estado='activo')
-    for nino in ninos:
-        data['ninos'].append({
-            'id': nino.id,
-            'nombres': nino.nombres,
-            'apellidos': nino.apellidos,
-            'edad': calcular_edad(nino.fecha_nacimiento),
-            'foto': nino.foto.url if nino.foto else None,
-        })
-    
-    # Visitas técnicas
     try:
-        visitas = VisitaTecnica.objects.filter(hogar=hogar)
-        data['total_visitas'] = visitas.count()
-        ultima = visitas.order_by('-fecha_visita').first()
-        if ultima:
-            data['ultima_visita'] = ultima.fecha_visita.strftime('%d/%m/%Y')
-    except:
-        pass
-    
-    # Documentos del hogar (si existen)
-    # Aquí agregar lógica para obtener documentos asociados
-    
-    return JsonResponse(data)
+        hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+        madre = hogar.madre
+        usuario_madre = madre.usuario
+        
+        # Contar niños totales (activos y eliminados)
+        ninos_activos = Nino.objects.filter(hogar=hogar, estado='activo')
+        ninos_eliminados = Nino.objects.filter(hogar=hogar, estado='eliminado')
+        ninos_total_matriculados = Nino.objects.filter(hogar=hogar).count()
+        
+        # Formatear fechas en español de manera segura
+        meses_espanol = {
+            'January': 'enero', 'February': 'febrero', 'March': 'marzo',
+            'April': 'abril', 'May': 'mayo', 'June': 'junio',
+            'July': 'julio', 'August': 'agosto', 'September': 'septiembre',
+            'October': 'octubre', 'November': 'noviembre', 'December': 'diciembre'
+        }
+        
+        fecha_str = hogar.fecha_registro.strftime('%d de %B de %Y')
+        for eng, esp in meses_espanol.items():
+            fecha_str = fecha_str.replace(eng, esp)
+        
+        # Información del hogar
+        data = {
+            'id': hogar.id,
+            'nombre_hogar': hogar.nombre_hogar,
+            'responsable': f"{usuario_madre.nombres} {usuario_madre.apellidos}",
+            'direccion': hogar.direccion,
+            'localidad': hogar.localidad_bogota.nombre if hogar.localidad_bogota else (hogar.localidad or 'No especificado'),
+            'barrio': hogar.barrio or 'No especificado',
+            'estrato': str(hogar.estrato) if hogar.estrato else 'No especificado',
+            'estado': hogar.get_estado_display(),
+            'fecha_registro': hogar.fecha_registro.strftime('%d/%m/%Y %H:%M'),
+            'fecha_creacion': fecha_str,
+            'capacidad_maxima': hogar.capacidad_maxima,
+            'capacidad_calculada': hogar.capacidad_calculada or 'No calculada',
+            'area_social_m2': str(hogar.area_social_m2) if hogar.area_social_m2 else 'No especificado',
+            'tipo_tenencia': hogar.get_tipo_tenencia_display() if hogar.tipo_tenencia else 'No especificado',
+            
+            # Información de la madre comunitaria
+            'madre': {
+                'nombres': usuario_madre.nombres,
+                'apellidos': usuario_madre.apellidos,
+                'documento': usuario_madre.documento,
+                'email': usuario_madre.correo or 'No especificado',
+                'telefono': usuario_madre.telefono or 'No especificado',
+                'nivel_escolaridad': madre.nivel_escolaridad or 'No especificado',
+                'titulo_obtenido': madre.titulo_obtenido or 'No especificado',
+                'institucion': madre.institucion or 'No especificado',
+                'experiencia_previa': madre.experiencia_previa or 'Sin experiencia previa registrada',
+                'foto': madre.foto_madre.url if madre.foto_madre else (usuario_madre.foto_admin.url if usuario_madre.foto_admin else None),
+            },
+            
+            # Estadísticas de niños
+            'estadisticas_ninos': {
+                'activos': ninos_activos.count(),
+                'eliminados': ninos_eliminados.count(),
+                'total_matriculados': ninos_total_matriculados,
+            },
+            
+            # Fotos del hogar
+            'fotos': {
+                'interior': hogar.fotos_interior.url if hogar.fotos_interior else None,
+                'exterior': hogar.fotos_exterior.url if hogar.fotos_exterior else None,
+            },
+            
+            # Infraestructura
+            'infraestructura': {
+                'num_habitaciones': str(hogar.num_habitaciones) if hogar.num_habitaciones else 'No especificado',
+                'num_banos': str(hogar.num_banos) if hogar.num_banos else 'No especificado',
+                'material_construccion': hogar.material_construccion or 'No especificado',
+                'riesgos_cercanos': hogar.riesgos_cercanos or 'Ninguno registrado',
+            },
+            
+            'ninos': [],
+            'total_visitas': 0,
+            'ultima_visita': None,
+            'proxima_visita': None,
+        }
+        
+        # Niños del hogar
+        for nino in ninos_activos:
+            data['ninos'].append({
+                'id': nino.id,
+                'nombres': nino.nombres,
+                'apellidos': nino.apellidos,
+                'edad': calcular_edad(nino.fecha_nacimiento),
+                'foto': nino.foto.url if nino.foto else None,
+            })
+        
+        # Visitas técnicas
+        try:
+            visitas = VisitaTecnica.objects.filter(hogar=hogar, estado='completada')
+            data['total_visitas'] = visitas.count()
+            ultima = visitas.order_by('-fecha_realizacion').first()
+            if ultima and ultima.fecha_realizacion:
+                data['ultima_visita'] = ultima.fecha_realizacion.strftime('%d/%m/%Y')
+        except Exception as e:
+            # En caso de error, mantener valores por defecto
+            print(f"Error al cargar visitas: {e}")
+        
+        # Próxima visita programada
+        if hogar.proxima_visita:
+            data['proxima_visita'] = hogar.proxima_visita.strftime('%d/%m/%Y')
+        
+        return JsonResponse(data)
+        
+    except Exception as e:
+        # Capturar cualquier error y retornar un JSON con el error
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error en hogar_detalle_api: {error_trace}")
+        return JsonResponse({
+            'error': True,
+            'mensaje': str(e),
+            'detalle': error_trace
+        }, status=500)
 
 
 @login_required

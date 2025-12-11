@@ -772,25 +772,8 @@
             </div>
 
             <div class="solicitud-actions">
-              ${esSolicitudPadre && !tieneDatos ? `
-                <!-- Solicitud de padre sin formulario completado -->
-                ${tieneCupos ? `
-                  <button class="btn-action btn-aprobar" onclick="enviarFormularioAPadre(${solicitud.id})" title="Enviar formulario completo al padre">
-                    <i class="fas fa-paper-plane"></i> Enviar Formulario
-                  </button>
-                  <button class="btn-action btn-rechazar" onclick="toggleMotivo(${solicitud.id})">
-                    <i class="fas fa-times"></i> Rechazar
-                  </button>
-                ` : `
-                  <button class="btn-action btn-rechazar" onclick="rechazarPorSinCupos(${solicitud.id})">
-                    <i class="fas fa-times"></i> Rechazar (Sin Cupos)
-                  </button>
-                `}
-                <button class="btn-action btn-eliminar" onclick="eliminarSolicitud(${solicitud.id})">
-                  <i class="fas fa-trash-alt"></i> Eliminar
-                </button>
-              ` : tieneDatos ? `
-                <!-- Solicitud con datos completos (normal o de padre con formulario) -->
+              ${tieneDatos ? `
+                <!-- Solicitud con datos completos -->
                 <button class="btn-action btn-ver" onclick="verFormulario(${solicitud.id})">
                   <i class="fas fa-eye"></i> Ver Formulario
                 </button>
@@ -1258,105 +1241,7 @@
       }
     }
 
-    // 🆕 NUEVAS FUNCIONES PARA SOLICITUDES DE PADRE
-    async function enviarFormularioAPadre(solicitudId) {
-      const result = await Swal.fire({
-        title: 'Enviar Formulario Completo',
-        html: `
-          <p>Se enviará un correo al padre con el enlace para completar los datos del niño y subir documentos.</p>
-          <p style="color: #667eea; margin-top: 10px;">El enlace será válido por 48 horas.</p>
-        `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#667eea',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, Enviar',
-        cancelButtonText: 'Cancelar'
-      });
 
-      if (!result.isConfirmed) return;
-
-      try {
-        const formData = new FormData();
-        formData.append('solicitud_id', solicitudId);
-
-        const response = await fetch('{% url "enviar_formulario_a_padre" %}', {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
-          },
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.status === 'ok') {
-          Swal.fire({
-            icon: 'success',
-            title: '¡Formulario Enviado!',
-            text: data.mensaje,
-            confirmButtonColor: '#667eea'
-          }).then(() => {
-            cargarSolicitudes();
-          });
-        } else {
-          Swal.fire('Error', data.mensaje || 'No se pudo enviar el formulario', 'error');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
-      }
-    }
-
-    async function rechazarPorSinCupos(solicitudId) {
-      const result = await Swal.fire({
-        title: 'Rechazar por Falta de Cupos',
-        html: `
-          <p>No hay cupos disponibles en este momento.</p>
-          <p style="color: #dc3545; margin-top: 10px;">El padre recibirá un correo de notificación.</p>
-        `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, Rechazar',
-        cancelButtonText: 'Cancelar'
-      });
-
-      if (!result.isConfirmed) return;
-
-      try {
-        const formData = new FormData();
-        formData.append('solicitud_id', solicitudId);
-        formData.append('motivo_rechazo', 'No hay cupos disponibles en este momento.');
-
-        const response = await fetch('{% url "rechazar_solicitud_matricula" %}', {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
-          },
-          body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.status === 'ok') {
-          Swal.fire({
-            icon: 'success',
-            title: 'Solicitud Rechazada',
-            text: data.mensaje,
-            confirmButtonColor: '#28a745'
-          }).then(() => {
-            cargarSolicitudes();
-          });
-        } else {
-          Swal.fire('Error', data.mensaje || 'No se pudo rechazar la solicitud', 'error');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
-      }
-    }
 
     async function verHistorial(solicitudId) {
       try {

@@ -1,43 +1,59 @@
 {% load static %}
-<!-- Use shared navbar styles used by madre for consistent header -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<link rel="stylesheet" href="{% static 'css/navbar_madre.css' %}">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ICBF Conecta - Padre{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/navbar_madre.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="borde2"></div>
+    <header class="navbar-madre">
+        <div class="header-left">
+            <a href="{% url 'padre_dashboard' %}" class="logo-link">
+                <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF Conecta" class="navbar-logo">
+                <h1>ICBF Conecta</h1>
+            </a>
+        </div>
 
-<div class="borde2"></div>
-<header class="navbar-madre">
-    <div class="header-left">
-        <a href="{% url 'padre_dashboard' %}" class="logo-link">
-            <img src="{% static 'img/logoSinFondo.png' %}" alt="ICBF Conecta" class="navbar-logo">
-            <h1>ICBF Conecta</h1>
-        </a>
-    </div>
+        <nav class="navbar-menu">
+          <ul>
+            <li><a href="{% url 'padre_dashboard' %}" class="btn-inicio"><i class="fas fa-home"></i> Inicio</a></li>
+            <li><a href="{% url 'calendario_padres' %}" class="btn-planeaciones"><i class="fas fa-calendar"></i> Calendario</a></li>
+          </ul>
+        </nav>
 
-    <nav class="navbar-menu">
-      <ul>
-        <li><a href="{% url 'padre_dashboard' %}" class="btn-inicio"><i class="fas fa-home"></i> Inicio</a></li>
-        <li><a href="{% url 'calendario_padres' %}" class="btn-planeaciones"><i class="fas fa-calendar"></i> Calendario</a></li>
-      </ul>
-    </nav>
+        <div class="header-right">
+            <span class="navbar-user-name">{{ user.nombres }}</span>
 
-    <div class="header-right">
-        <span class="navbar-user-name">{{ user.nombres }}</span>
+            <div class="user-menu-dropdown">
+                <button class="user-menu-button nav-btn" aria-haspopup="true" aria-expanded="false">
+                    <img src="{% if user.foto_admin %}{{ user.foto_admin.url }}{% else %}{% static 'img/default_user.png' %}{% endif %}" alt="Foto" class="nav-profile-img">
+                </button>
 
-        <div class="user-menu-dropdown">
-            <button class="user-menu-button nav-btn" aria-haspopup="true" aria-expanded="false">
-                <img src="{% if user.foto_admin %}{{ user.foto_admin.url }}{% else %}{% static 'img/default_user.png' %}{% endif %}" alt="Foto" class="nav-profile-img">
-            </button>
-
-            <div class="user-menu-content">
-                <div class="user-info">
-                    <img src="{% if user.foto_admin %}{{ user.foto_admin.url }}{% else %}{% static 'img/default_user.png' %}{% endif %}" alt="Foto" class="profile-picture">
-                    <span class="user-name">{{ user.get_full_name }}</span>
+                <div class="user-menu-content">
+                    <div class="user-info">
+                        <img src="{% if user.foto_admin %}{{ user.foto_admin.url }}{% else %}{% static 'img/default_user.png' %}{% endif %}" alt="Foto" class="profile-picture">
+                        <span class="user-name">{{ user.get_full_name }}</span>
+                    </div>
+                    <a href="{% url 'editar_perfil' %}"><i class="fas fa-user-pen"></i> Editar Perfil</a>
+                    <a href="{% url 'cambiar_contrasena' %}"><i class="fas fa-key"></i> Cambiar Contraseña</a>
+                    <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+                        <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+                    </form>
                 </div>
-                <a href="{% url 'editar_perfil' %}"><i class="fas fa-user-pen"></i> Editar Perfil</a>
-                <a href="{% url 'cambiar_contrasena' %}"><i class="fas fa-key"></i> Cambiar Contraseña</a>
-                <form method="post" action="{% url 'logout' %}">{% csrf_token %}
-                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
-                </form>
             </div>
         </div>
-    </div>
-</header>
+    </header>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

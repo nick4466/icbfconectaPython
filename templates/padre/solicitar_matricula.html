@@ -22,7 +22,7 @@
         }
         
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -42,39 +42,35 @@
             margin-bottom: 10px;
         }
         
-        .header p {
-            opacity: 0.9;
-            font-size: 16px;
-        }
-        
         .content {
             padding: 40px;
         }
         
-        .info-box {
-            background: #e8f4ff;
-            border-left: 4px solid #667eea;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
-        
-        .info-box h3 {
+        .section-title {
             color: #667eea;
-            margin-bottom: 10px;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .info-box ul {
-            margin-left: 20px;
-            color: #555;
-        }
-        
-        .info-box ul li {
-            margin: 5px 0;
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
         }
         
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
         }
         
         .form-group label {
@@ -100,55 +96,117 @@
         }
         
         .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
+        .form-group select:focus {
             outline: none;
             border-color: #667eea;
         }
         
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        .form-group input.error,
+        .form-group select.error {
+            border-color: #dc3545;
+            background-color: #fff5f5;
         }
         
-        .btn {
-            padding: 15px 40px;
-            border: none;
+        .error-message {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .error-message.active {
+            display: block;
+        }
+        
+        .file-upload {
+            border: 2px dashed #667eea;
             border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 20px;
+            text-align: center;
             cursor: pointer;
             transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
         }
         
-        .btn-primary {
-            background: #667eea;
-            color: white;
+        .file-upload:hover {
+            background: #f8f9ff;
         }
         
-        .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        .file-upload input[type="file"] {
+            display: none;
         }
         
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
+        .file-upload-label {
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
         }
         
-        .btn-secondary:hover {
-            background: #5a6268;
+        .file-preview {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
         }
         
-        .actions {
+        .image-preview {
+            margin-top: 15px;
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            display: none;
+            object-fit: contain;
+        }
+        
+        .image-preview.active {
+            display: block;
+        }
+        
+        .pdf-preview {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            text-align: center;
+        }
+        
+        .pdf-preview.active {
+            display: block;
+        }
+        
+        .pdf-preview i {
+            font-size: 40px;
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
+        
+        .checkbox-group {
             display: flex;
-            gap: 15px;
-            justify-content: space-between;
-            margin-top: 30px;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        
+        .discapacidad-options {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .discapacidad-options.active {
+            display: block;
+        }
+        
+        .checkbox-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
         
         .hogar-card {
@@ -182,17 +240,54 @@
             margin: 3px 0;
         }
         
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
         @media (max-width: 768px) {
             .form-grid {
                 grid-template-columns: 1fr;
             }
             
-            .container {
-                margin: 10px;
-            }
-            
-            .content {
-                padding: 20px;
+            .checkbox-list {
+                grid-template-columns: 1fr;
             }
             
             .actions {
@@ -205,37 +300,21 @@
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-baby"></i> Solicitar Matrícula para Nuevo Niño/a</h1>
-            <p>Completa el formulario para solicitar un cupo en un hogar comunitario</p>
+            <p>Completa todos los datos y adjunta los documentos requeridos</p>
         </div>
         
         <div class="content">
-            <div class="info-box">
-                <h3><i class="fas fa-info-circle"></i> ¿Cómo funciona?</h3>
-                <ul>
-                    {% if hogar_padre %}
-                    <li>La solicitud se enviará al hogar donde ya tienes hijos registrados</li>
-                    {% else %}
-                    <li>Selecciona el hogar comunitario de tu interés</li>
-                    {% endif %}
-                    <li>Ingresa los datos básicos del niño/a</li>
-                    <li>El sistema verificará si hay cupos disponibles</li>
-                    <li>La madre comunitaria revisará tu solicitud</li>
-                    <li>Si hay cupos, recibirás un formulario completo por correo</li>
-                    <li>Completa el formulario y sube los documentos requeridos</li>
-                </ul>
-            </div>
-            
             {% if error %}
             <div style="background: #fee; border-left: 4px solid #dc3545; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
                 <p style="color: #dc3545; margin: 0;"><i class="fas fa-exclamation-triangle"></i> {{ error }}</p>
             </div>
             {% endif %}
             
-            <form id="formSolicitud" method="post">
+            <form id="formSolicitud" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 
+                <!-- HOGAR COMUNITARIO -->
                 {% if hogar_padre %}
-                <!-- Mostrar solo el hogar donde ya tiene hijos -->
                 <div class="form-group">
                     <label>Hogar Comunitario <span class="required">*</span></label>
                     <input type="hidden" name="hogar_id" value="{{ hogar_padre.id }}">
@@ -252,7 +331,6 @@
                     </div>
                 </div>
                 {% else %}
-                <!-- Padre nuevo: mostrar todos los hogares disponibles -->
                 <div class="form-group">
                     <label>Selecciona el Hogar Comunitario <span class="required">*</span></label>
                     <div id="hogaresContainer">
@@ -267,25 +345,42 @@
                             {% endif %}
                         </div>
                         {% empty %}
-                        <p style="text-align: center; color: #999;">No hay hogares comunitarios disponibles en este momento.</p>
+                        <p style="text-align: center; color: #999;">No hay hogares comunitarios disponibles.</p>
                         {% endfor %}
                     </div>
                 </div>
                 {% endif %}
                 
-                <h3 style="color: #667eea; margin: 30px 0 20px 0;"><i class="fas fa-baby"></i> Datos Básicos del Niño/a</h3>
+                <!-- DATOS DEL NIÑO -->
+                <h3 class="section-title"><i class="fas fa-baby"></i> Datos del Niño/a</h3>
                 
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="nombres_nino">Nombres <span class="required">*</span></label>
-                        <input type="text" id="nombres_nino" name="nombres_nino" required 
-                               placeholder="Ej: Juan Carlos">
+                        <input type="text" id="nombres_nino" name="nombres_nino" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="apellidos_nino">Apellidos <span class="required">*</span></label>
-                        <input type="text" id="apellidos_nino" name="apellidos_nino" required
-                               placeholder="Ej: Pérez González">
+                        <input type="text" id="apellidos_nino" name="apellidos_nino" required>
+                    </div>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="tipo_documento_nino">Tipo de Documento <span class="required">*</span></label>
+                        <select id="tipo_documento_nino" name="tipo_documento_nino" required>
+                            <option value="">Selecciona...</option>
+                            <option value="RC">Registro Civil</option>
+                            <option value="TI">Tarjeta de Identidad</option>
+                            <option value="CE">Cédula de Extranjería</option>
+                            <option value="PEP">Permiso Especial de Permanencia</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="documento_nino">Número de Documento</label>
+                        <input type="text" id="documento_nino" name="documento_nino">
                     </div>
                 </div>
                 
@@ -293,6 +388,7 @@
                     <div class="form-group">
                         <label for="fecha_nacimiento">Fecha de Nacimiento <span class="required">*</span></label>
                         <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                        <div id="edad_error" class="error-message">La fecha seleccionada no cumple con los requisitos para la matrícula. Los hogares comunitarios solo admiten niños entre 1 y 5 años de edad.</div>
                     </div>
                     
                     <div class="form-group">
@@ -305,12 +401,118 @@
                     </div>
                 </div>
                 
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="pais_nacimiento">¿En qué país nació?</label>
+                        <select id="pais_nacimiento" name="pais_nacimiento">
+                            <option value="">Selecciona...</option>
+                            {% for value, label in paises %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipo_sangre">Tipo de Sangre (RH)</label>
+                        <select id="tipo_sangre" name="tipo_sangre">
+                            <option value="">Selecciona...</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="tiene_discapacidad" name="tiene_discapacidad">
+                        <label for="tiene_discapacidad" style="margin: 0;">¿Tiene alguna discapacidad?</label>
+                    </div>
+                    
+                    <div id="discapacidad-options" class="discapacidad-options">
+                        <label style="margin-bottom: 10px; display: block;">Selecciona el/los tipo(s) de discapacidad:</label>
+                        <div class="checkbox-list">
+                            {% for disc in discapacidades %}
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="tipos_discapacidad" value="{{ disc.id }}" id="disc_{{ disc.id }}">
+                                <label for="disc_{{ disc.id }}" style="margin: 0; font-weight: normal;">{{ disc.nombre }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <input type="text" name="otra_discapacidad" placeholder="Otra (especificar)" style="margin-top: 10px;">
+                    </div>
+                </div>
+                
+                <!-- DOCUMENTOS DEL NIÑO -->
+                <h3 class="section-title"><i class="fas fa-file-upload"></i> Documentos del Niño/a</h3>
+                
+                <div class="info-box">
+                    <strong><i class="fas fa-info-circle"></i> Importante:</strong> Todos los documentos son obligatorios. Formatos permitidos: JPG, PNG, PDF (máx 5MB cada uno)
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Foto del Niño/a <span class="required">*</span></label>
+                        <div class="file-upload" onclick="document.getElementById('foto_nino').click()">
+                            <i class="fas fa-camera" id="icon_foto" style="font-size: 30px; color: #667eea; margin-bottom: 10px;"></i>
+                            <p class="file-upload-label" id="label_foto">Click para subir foto</p>
+                            <input type="file" id="foto_nino" name="foto_nino" accept="image/*" required onchange="mostrarPreview(this, 'preview_foto', 'img_foto', 'pdf_foto', 'icon_foto', 'label_foto')">
+                            <p id="preview_foto" class="file-preview"></p>
+                            <img id="img_foto" class="image-preview" />
+                            <div id="pdf_foto" class="pdf-preview"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Carné de Vacunación <span class="required">*</span></label>
+                        <div class="file-upload" onclick="document.getElementById('carnet_vacunacion_nino').click()">
+                            <i class="fas fa-syringe" id="icon_vacuna" style="font-size: 30px; color: #667eea; margin-bottom: 10px;"></i>
+                            <p class="file-upload-label" id="label_vacuna">Click para subir carné</p>
+                            <input type="file" id="carnet_vacunacion_nino" name="carnet_vacunacion_nino" accept="image/*,application/pdf" required onchange="mostrarPreview(this, 'preview_vacuna', 'img_vacuna', 'pdf_vacuna', 'icon_vacuna', 'label_vacuna')">
+                            <p id="preview_vacuna" class="file-preview"></p>
+                            <img id="img_vacuna" class="image-preview" />
+                            <div id="pdf_vacuna" class="pdf-preview"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Certificado EPS/Afiliación <span class="required">*</span></label>
+                        <div class="file-upload" onclick="document.getElementById('certificado_eps_nino').click()">
+                            <i class="fas fa-hospital" id="icon_eps" style="font-size: 30px; color: #667eea; margin-bottom: 10px;"></i>
+                            <p class="file-upload-label" id="label_eps">Click para subir certificado</p>
+                            <input type="file" id="certificado_eps_nino" name="certificado_eps_nino" accept="image/*,application/pdf" required onchange="mostrarPreview(this, 'preview_eps', 'img_eps', 'pdf_eps', 'icon_eps', 'label_eps')">
+                            <p id="preview_eps" class="file-preview"></p>
+                            <img id="img_eps" class="image-preview" />
+                            <div id="pdf_eps" class="pdf-preview"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Foto Registro Civil <span class="required">*</span></label>
+                        <div class="file-upload" onclick="document.getElementById('registro_civil_nino').click()">
+                            <i class="fas fa-id-card" id="icon_civil" style="font-size: 30px; color: #667eea; margin-bottom: 10px;"></i>
+                            <p class="file-upload-label" id="label_civil">Click para subir registro</p>
+                            <input type="file" id="registro_civil_nino" name="registro_civil_nino" accept="image/*,application/pdf" required onchange="mostrarPreview(this, 'preview_civil', 'img_civil', 'pdf_civil', 'icon_civil', 'label_civil')">
+                            <p id="preview_civil" class="file-preview"></p>
+                            <img id="img_civil" class="image-preview" />
+                            <div id="pdf_civil" class="pdf-preview"></div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="actions">
                     <a href="{% url 'padre_dashboard' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver
+                        <i class="fas fa-arrow-left"></i> Cancelar
                     </a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> Enviar Solicitud
+                        <i class="fas fa-paper-plane"></i> Enviar Solicitud Completa
                     </button>
                 </div>
             </form>
@@ -318,25 +520,117 @@
     </div>
     
     <script>
+        // Validación de edad en tiempo real
+        document.getElementById('fecha_nacimiento').addEventListener('change', function() {
+            const fechaInput = this;
+            const errorDiv = document.getElementById('edad_error');
+            const fechaNacimiento = new Date(this.value);
+            const hoy = new Date();
+            
+            // Calcular edad en años
+            let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+            const mesActual = hoy.getMonth();
+            const mesNacimiento = fechaNacimiento.getMonth();
+            
+            // Ajustar si aún no ha cumplido años este año
+            if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < fechaNacimiento.getDate())) {
+                edad--;
+            }
+            
+            // Validar rango de edad (1 a 5 años)
+            if (edad < 1) {
+                fechaInput.classList.add('error');
+                errorDiv.classList.add('active');
+                errorDiv.textContent = '⚠️ El niño debe tener al menos 1 año de edad para ser matriculado.';
+            } else if (edad > 5) {
+                fechaInput.classList.add('error');
+                errorDiv.classList.add('active');
+                errorDiv.textContent = '⚠️ El niño no puede tener más de 5 años de edad. Los hogares comunitarios solo admiten niños entre 1 y 5 años.';
+            } else {
+                fechaInput.classList.remove('error');
+                errorDiv.classList.remove('active');
+            }
+        });
+        
         // Manejo de selección de hogar
-        document.querySelectorAll('.hogar-card').forEach(card => {
+        document.querySelectorAll('.hogar-card[data-hogar-id]').forEach(card => {
             card.addEventListener('click', function() {
-                // Remover selección anterior
                 document.querySelectorAll('.hogar-card').forEach(c => c.classList.remove('selected'));
-                
-                // Marcar como seleccionado
                 this.classList.add('selected');
                 this.querySelector('input[type="radio"]').checked = true;
             });
         });
         
-        // Manejo del formulario
+        // Mostrar/ocultar opciones de discapacidad
+        document.getElementById('tiene_discapacidad').addEventListener('change', function() {
+            document.getElementById('discapacidad-options').classList.toggle('active', this.checked);
+        });
+        
+        // Preview de archivos
+        function mostrarPreview(input, previewId, imgPreviewId, pdfPreviewId, iconId, labelId) {
+            const preview = document.getElementById(previewId);
+            const imgPreview = document.getElementById(imgPreviewId);
+            const pdfPreview = document.getElementById(pdfPreviewId);
+            const icon = document.getElementById(iconId);
+            const label = document.getElementById(labelId);
+            
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const fileName = file.name;
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                const fileType = file.type;
+                
+                // Mostrar nombre y tamaño del archivo
+                preview.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i> ${fileName} (${fileSize} MB)`;
+                
+                // Ocultar icono y label originales
+                icon.style.display = 'none';
+                label.style.display = 'none';
+                
+                // Si es una imagen, mostrar preview
+                if (fileType.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imgPreview.src = e.target.result;
+                        imgPreview.classList.add('active');
+                        pdfPreview.classList.remove('active');
+                    };
+                    reader.readAsDataURL(file);
+                }
+                // Si es un PDF, mostrar indicador de PDF
+                else if (fileType === 'application/pdf') {
+                    pdfPreview.innerHTML = `
+                        <i class="fas fa-file-pdf"></i>
+                        <p style="margin: 5px 0; font-weight: 600; color: #667eea;">Archivo PDF</p>
+                        <p style="font-size: 12px; color: #666;">${fileName}</p>
+                    `;
+                    pdfPreview.classList.add('active');
+                    imgPreview.classList.remove('active');
+                }
+            }
+        }
+        
+        // Envío del formulario
         document.getElementById('formSolicitud').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Validar edad antes de enviar
+            const fechaInput = document.getElementById('fecha_nacimiento');
+            const errorDiv = document.getElementById('edad_error');
+            
+            if (fechaInput.classList.contains('error')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Edad no válida',
+                    text: 'La fecha de nacimiento ingresada no cumple con los requisitos. Los niños deben tener entre 1 y 5 años.',
+                    confirmButtonColor: '#dc3545'
+                });
+                fechaInput.focus();
+                return;
+            }
+            
             const formData = new FormData(this);
             
-            // Validar que se haya seleccionado un hogar (solo si no hay hogar_padre predefinido)
             {% if not hogar_padre %}
             if (!formData.get('hogar_id')) {
                 Swal.fire({
@@ -347,6 +641,16 @@
                 return;
             }
             {% endif %}
+            
+            // Mostrar loading
+            Swal.fire({
+                title: 'Enviando solicitud...',
+                html: 'Por favor espera mientras procesamos tu solicitud',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
             
             try {
                 const response = await fetch('{% url "padre_solicitar_matricula" %}', {
@@ -360,27 +664,27 @@
                 const data = await response.json();
                 
                 if (data.status === 'ok') {
-                    await Swal.fire({
+                    Swal.fire({
                         icon: 'success',
                         title: '¡Solicitud Enviada!',
                         html: data.mensaje,
                         confirmButtonColor: '#667eea'
+                    }).then(() => {
+                        window.location.href = '{% url "padre_dashboard" %}';
                     });
-                    
-                    window.location.href = '{% url "padre_dashboard" %}';
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: data.mensaje || 'Hubo un problema al enviar la solicitud',
+                        text: data.mensaje
                     });
                 }
             } catch (error) {
                 console.error('Error:', error);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Error',
-                    text: 'Error al procesar la solicitud. Por favor intenta nuevamente.',
+                    title: 'Error de conexión',
+                    text: 'No se pudo conectar con el servidor. Intenta nuevamente.'
                 });
             }
         });

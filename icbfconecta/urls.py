@@ -144,9 +144,10 @@ urlpatterns = [
 
     # --- URLs Sistema de Invitaciones de Matriculación ---
     path('solicitudes/enviar-invitacion/', views.enviar_invitacion_matricula, name='enviar_invitacion_matricula'),
-    # 🆕 Nuevas URLs para solicitudes iniciadas por padre
     path('padre/solicitar-matricula/', views.padre_solicitar_matricula, name='padre_solicitar_matricula'),
-    path('solicitudes/enviar-formulario/', views.enviar_formulario_a_padre, name='enviar_formulario_a_padre'),
+    # 🆕 URLs para que el padre gestione sus solicitudes desde el dashboard
+    path('padre/solicitudes/<int:solicitud_id>/', views.padre_ver_solicitud_matricula, name='padre_ver_solicitud'),
+    path('padre/solicitudes/<int:solicitud_id>/corregir/', views.padre_corregir_solicitud, name='padre_corregir_solicitud'),
     # URLs existentes
     path('solicitudes/panel-revision/', views.panel_revision_solicitudes, name='panel_revision_solicitudes'),
     path('solicitudes/pendientes/', views.listar_solicitudes_matricula, name='listar_solicitudes_matricula'),

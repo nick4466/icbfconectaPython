@@ -1735,9 +1735,31 @@ def padre_dashboard(request):
                 'ultimo_desarrollo': ultimo_desarrollo,
                 'ultima_novedad': ultima_novedad
             })
+        
+        # 🆕 Obtener solicitudes de matrícula del padre (pendientes, en corrección, rechazadas recientes)
+        solicitudes_activas = SolicitudMatriculacion.objects.filter(
+            padre_solicitante=padre,
+            estado__in=['pendiente', 'correccion']
+        ).order_by('-fecha_creacion')
+        
+        # Agregar intentos_restantes a cada solicitud
+        solicitudes_con_intentos = []
+        for solicitud in solicitudes_activas:
+            solicitud.intentos_restantes = 3 - solicitud.intentos_correccion
+            solicitudes_con_intentos.append(solicitud)
+        
+        # Solicitudes rechazadas de los últimos 30 días (para mostrar feedback)
+        hace_30_dias = timezone.now() - timedelta(days=30)
+        solicitudes_rechazadas = SolicitudMatriculacion.objects.filter(
+            padre_solicitante=padre,
+            estado='rechazado',
+            fecha_rechazo__gte=hace_30_dias
+        ).order_by('-fecha_rechazo')[:3]  # Máximo 3 más recientes
 
         return render(request, 'padre/dashboard.html', {
             'ninos_data': ninos_data,
+            'solicitudes_activas': solicitudes_con_intentos,
+            'solicitudes_rechazadas': solicitudes_rechazadas,
         })
     except Padre.DoesNotExist:
         # Manejar el caso donde el padre no tiene un hijo asignado
@@ -2647,15 +2669,225 @@ def subir_documentos_nino(request):
 # SISTEMA DE INVITACIONES DE MATRICULACIÓN
 # ============================================
 
-# 🆕 NUEVA FUNCIONALIDAD: SOLICITUD INICIADA POR PADRE
+@login_required
+def padre_ver_solicitud_matricula(request, solicitud_id):
+    """
+    Vista para que el padre vea el detalle de su solicitud de matrícula desde el dashboard.
+    Solo puede ver sus propias solicitudes.
+    """
+    if request.user.rol.nombre_rol != 'padre':
+        return redirect('role_redirect')
+    
+    try:
+        padre = Padre.objects.get(usuario=request.user)
+        solicitud = get_object_or_404(
+            SolicitudMatriculacion,
+            id=solicitud_id,
+            padre_solicitante=padre
+        )
+        
+        # Calcular intentos restantes
+        solicitud.intentos_restantes = 3 - solicitud.intentos_correccion
+        
+        return render(request, 'padre/solicitud_detalle.html', {
+            'solicitud': solicitud,
+        })
+        
+    except Padre.DoesNotExist:
+        messages.error(request, 'No tienes un perfil de padre asignado.')
+        return redirect('padre_dashboard')
+
+
+@login_required
+def padre_corregir_solicitud(request, solicitud_id):
+    """
+    Vista para que el padre corrija su solicitud de matrícula directamente desde el dashboard.
+    Solo muestra y permite editar los campos que la madre marcó para corrección.
+    """
+    if request.user.rol.nombre_rol != 'padre':
+        return redirect('role_redirect')
+    
+    try:
+        padre = Padre.objects.get(usuario=request.user)
+        solicitud = get_object_or_404(
+            SolicitudMatriculacion,
+            id=solicitud_id,
+            padre_solicitante=padre,
+            estado='correccion'
+        )
+        
+        # Verificar que no haya excedido el límite de intentos
+        if solicitud.intentos_correccion >= 3:
+            messages.error(
+                request,
+                'Has excedido el límite de 3 intentos de corrección. '
+                'Esta solicitud será rechazada automáticamente. Por favor, envía una nueva solicitud.'
+            )
+            return redirect('padre_dashboard')
+        
+        if request.method == 'POST':
+            try:
+                from core.models import Discapacidad
+                from django.contrib.contenttypes.models import ContentType
+                from notifications.models import Notification
+                
+                # Solo procesar campos que están en campos_corregir
+                campos_corregir = solicitud.campos_corregir or []
+                
+                if not campos_corregir:
+                    messages.warning(request, 'No hay campos para corregir en esta solicitud.')
+                    return redirect('padre_dashboard')
+                
+                # Actualizar solo los campos marcados para corrección
+                campos_texto = [
+                    'nombres_nino', 'apellidos_nino', 'documento_nino',
+                    'genero_nino', 'tipo_sangre_nino', 'parentesco', 'observaciones_nino'
+                ]
+                
+                campos_archivos = [
+                    'foto_nino', 'carnet_vacunacion_nino', 'certificado_eps_nino', 'registro_civil_nino'
+                ]
+                
+                # Actualizar campos de texto
+                for campo in campos_corregir:
+                    if campo in campos_texto:
+                        valor = request.POST.get(campo, '').strip()
+                        if valor:
+                            setattr(solicitud, campo, valor)
+                        else:
+                            messages.error(request, f'El campo {campo} es obligatorio.')
+                            return redirect('padre_corregir_solicitud', solicitud_id=solicitud_id)
+                
+                # Actualizar fecha de nacimiento si está en corrección
+                if 'fecha_nacimiento_nino' in campos_corregir:
+                    fecha_nac = request.POST.get('fecha_nacimiento_nino')
+                    if fecha_nac:
+                        from datetime import datetime
+                        solicitud.fecha_nacimiento_nino = datetime.strptime(fecha_nac, '%Y-%m-%d').date()
+                    else:
+                        messages.error(request, 'La fecha de nacimiento es obligatoria.')
+                        return redirect('padre_corregir_solicitud', solicitud_id=solicitud_id)
+                
+                # Actualizar archivos (documentos)
+                for campo in campos_corregir:
+                    if campo in campos_archivos:
+                        if campo in request.FILES:
+                            setattr(solicitud, campo, request.FILES[campo])
+                        else:
+                            # Si es un archivo marcado para corrección, DEBE cargarse uno nuevo
+                            campos_nombres = {
+                                'foto_nino': 'Foto del niño',
+                                'carnet_vacunacion_nino': 'Carnet de vacunación',
+                                'certificado_eps_nino': 'Certificado EPS',
+                                'registro_civil_nino': 'Registro civil'
+                            }
+                            messages.error(
+                                request,
+                                f'Debe cargar un archivo nuevo para: {campos_nombres.get(campo, campo)}'
+                            )
+                            return redirect('padre_corregir_solicitud', solicitud_id=solicitud_id)
+                
+                # Manejar discapacidad si está en corrección
+                if 'tiene_discapacidad' in campos_corregir or 'tipos_discapacidad' in campos_corregir:
+                    tiene_discapacidad = request.POST.get('tiene_discapacidad', 'false')
+                    solicitud.tiene_discapacidad = tiene_discapacidad == 'true'
+                    
+                    if solicitud.tiene_discapacidad:
+                        tipos_ids = request.POST.getlist('tipos_discapacidad')
+                        solicitud.tipos_discapacidad = [int(id) for id in tipos_ids if id.isdigit()]
+                        solicitud.otra_discapacidad = request.POST.get('otra_discapacidad', '').strip()
+                    else:
+                        solicitud.tipos_discapacidad = None
+                        solicitud.otra_discapacidad = None
+                
+                # Cambiar estado a pendiente y limpiar campos de corrección
+                solicitud.estado = 'pendiente'
+                solicitud.campos_corregir = None
+                solicitud.save()
+                
+                # Crear notificación para la madre comunitaria
+                content_type = ContentType.objects.get_for_model(SolicitudMatriculacion)
+                Notification.objects.create(
+                    recipient=solicitud.hogar.madre.usuario,
+                    title=f"Correcciones Realizadas: {solicitud.nombres_nino}",
+                    message=f"El padre {padre.usuario.get_full_name()} ha realizado las correcciones solicitadas.",
+                    level='info',
+                    content_type=content_type,
+                    object_id=solicitud.id
+                )
+                
+                # Enviar email informativo a la madre
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    asunto = f'Correcciones Realizadas - {solicitud.hogar.nombre_hogar}'
+                    mensaje_html = f"""
+                    <html>
+                    <body style="font-family: Arial, sans-serif; padding: 20px;">
+                        <h2 style="color: #28a745;">Correcciones Realizadas</h2>
+                        <p>Estimada madre comunitaria,</p>
+                        <p>El padre <strong>{padre.usuario.get_full_name()}</strong> ha realizado las correcciones solicitadas para la matrícula de <strong>{solicitud.nombres_nino}</strong>.</p>
+                        <p>Por favor, revisa nuevamente la solicitud en tu panel de revisión.</p>
+                        <br>
+                        <p>Saludos cordiales,<br><strong>Sistema ICBF Conecta</strong></p>
+                    </body>
+                    </html>
+                    """
+                    
+                    send_mail(
+                        asunto,
+                        '',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [solicitud.hogar.madre.usuario.correo],
+                        fail_silently=True,
+                        html_message=mensaje_html
+                    )
+                except Exception as e:
+                    print(f"Error al enviar email a madre: {e}")
+                
+                messages.success(
+                    request,
+                    f'¡Correcciones enviadas exitosamente! La solicitud de {solicitud.nombres_nino} está nuevamente en revisión.'
+                )
+                return redirect('padre_dashboard')
+                
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                messages.error(request, f'Error al procesar las correcciones: {str(e)}')
+                return redirect('padre_corregir_solicitud', solicitud_id=solicitud_id)
+        
+        # GET: Mostrar formulario de corrección
+        from core.models import Discapacidad
+        discapacidades = Discapacidad.objects.all()
+        
+        # Calcular intentos restantes
+        intentos_restantes = 3 - solicitud.intentos_correccion
+        
+        return render(request, 'padre/solicitud_corregir.html', {
+            'solicitud': solicitud,
+            'campos_corregir': solicitud.campos_corregir or [],
+            'intentos_restantes': intentos_restantes,
+            'discapacidades': discapacidades,
+        })
+        
+    except Padre.DoesNotExist:
+        messages.error(request, 'No tienes un perfil de padre asignado.')
+        return redirect('padre_dashboard')
+
+
+# 🆕 NUEVA FUNCIONALIDAD: SOLICITUD INICIADA POR PADRE (FORMULARIO COMPLETO)
 @login_required
 def padre_solicitar_matricula(request):
     """
-    Permite al padre/tutor iniciar una solicitud de matrícula para un nuevo niño.
-    Paso 1: El padre envía información básica del niño.
-    Paso 2: El sistema valida cupos y crea una pre-solicitud.
-    Paso 3: La madre recibe notificación y puede enviar formulario completo o rechazar.
+    Permite al padre/tutor crear una solicitud de matrícula COMPLETA.
+    El padre llena TODOS los datos del niño + sube documentos en un solo paso.
+    Sistema valida cupos ANTES de guardar.
     """
+    # Importar modelos necesarios al inicio
+    from core.models import Nino, Discapacidad
+    
     if request.method == 'POST':
         try:
             # Verificar que sea padre
@@ -2674,36 +2906,81 @@ def padre_solicitar_matricula(request):
                     'mensaje': 'No se encontró el perfil de padre asociado.'
                 }, status=400)
             
-            # Obtener datos básicos del formulario
+            # ========== OBTENER DATOS DEL FORMULARIO ==========
             hogar_id = request.POST.get('hogar_id')
+            
+            # Datos básicos del niño
             nombres_nino = request.POST.get('nombres_nino', '').strip()
             apellidos_nino = request.POST.get('apellidos_nino', '').strip()
+            tipo_documento_nino = request.POST.get('tipo_documento_nino', '').strip()  # Guardará en observaciones por ahora
+            documento_nino = request.POST.get('documento_nino', '').strip()
             fecha_nacimiento = request.POST.get('fecha_nacimiento', '').strip()
             genero = request.POST.get('genero', '').strip()
+            pais_nacimiento_id = request.POST.get('pais_nacimiento', '').strip()  # Guardará en observaciones por ahora
+            tipo_sangre = request.POST.get('tipo_sangre', '').strip()
             
-            # Validaciones básicas
+            # Discapacidad
+            tiene_discapacidad = request.POST.get('tiene_discapacidad') == 'on'
+            tipos_discapacidad_ids = request.POST.getlist('tipos_discapacidad[]') if tiene_discapacidad else []
+            otra_discapacidad = request.POST.get('otra_discapacidad', '').strip() if tiene_discapacidad else ''
+            
+            # Documentos
+            foto_nino = request.FILES.get('foto_nino')
+            carnet_vacunacion = request.FILES.get('carnet_vacunacion_nino')
+            certificado_eps = request.FILES.get('certificado_eps_nino')
+            registro_civil = request.FILES.get('registro_civil_nino')
+            
+            # ========== VALIDACIONES ==========
+            errores = []
+            
             if not all([hogar_id, nombres_nino, apellidos_nino, fecha_nacimiento, genero]):
+                errores.append('Todos los campos obligatorios deben ser completados.')
+            
+            if not tipo_documento_nino:
+                errores.append('El tipo de documento es obligatorio.')
+            
+            # Validar edad del niño (entre 1 y 5 años)
+            if fecha_nacimiento:
+                try:
+                    fecha_nac_obj = datetime.strptime(fecha_nacimiento, '%Y-%m-%d').date()
+                    hoy = timezone.now().date()
+                    edad_dias = (hoy - fecha_nac_obj).days
+                    edad_anios = edad_dias / 365.25
+                    
+                    if edad_anios < 1:
+                        errores.append('El niño debe tener al menos 1 año de edad para ser matriculado.')
+                    elif edad_anios > 5:
+                        errores.append('El niño no puede tener más de 5 años de edad. Los hogares comunitarios solo admiten niños entre 1 y 5 años.')
+                except ValueError:
+                    errores.append('La fecha de nacimiento no tiene un formato válido.')
+            
+            if not foto_nino:
+                errores.append('La foto del niño es obligatoria.')
+            if not carnet_vacunacion:
+                errores.append('El carné de vacunación es obligatorio.')
+            if not certificado_eps:
+                errores.append('El certificado de EPS es obligatorio.')
+            if not registro_civil:
+                errores.append('El registro civil es obligatorio.')
+            
+            if errores:
                 return JsonResponse({
                     'status': 'error',
-                    'mensaje': 'Todos los campos son obligatorios (Nombres, Apellidos, Fecha de Nacimiento, Género).'
+                    'mensaje': ' '.join(errores)
                 }, status=400)
             
-            # 🔍 VALIDAR QUE EL HOGAR SEA EL MISMO DONDE TIENE HIJOS
+            # 🔍 VALIDAR HOGAR
             ninos_padre = Nino.objects.filter(padre=padre_profile, estado='activo').select_related('hogar')
             
             if ninos_padre.exists():
-                # El padre ya tiene hijos, debe solicitar al mismo hogar
                 hogar_correcto = ninos_padre.first().hogar
-                
                 if str(hogar_correcto.id) != str(hogar_id):
                     return JsonResponse({
                         'status': 'error',
                         'mensaje': f'Solo puedes solicitar matrícula para el hogar donde ya tienes hijos registrados: {hogar_correcto.nombre_hogar}'
                     }, status=400)
-                
                 hogar = hogar_correcto
             else:
-                # Padre nuevo sin hijos, puede seleccionar cualquier hogar
                 try:
                     hogar = HogarComunitario.objects.get(id=hogar_id, estado='aprobado')
                 except HogarComunitario.DoesNotExist:
@@ -2712,7 +2989,33 @@ def padre_solicitar_matricula(request):
                         'mensaje': 'El hogar comunitario seleccionado no existe o no está activo.'
                     }, status=404)
             
-            # Validar que el padre no tenga ya una solicitud pendiente para este hogar
+            # 🚨 VALIDAR CUPOS ANTES DE CREAR LA SOLICITUD
+            # Buscar capacidad en múltiples campos (por compatibilidad con diferentes flujos)
+            capacidad_total = hogar.capacidad or hogar.capacidad_calculada or hogar.capacidad_maxima or 0
+            ninos_activos = Nino.objects.filter(hogar=hogar, estado='activo').count()
+            cupos_disponibles = capacidad_total - ninos_activos
+            
+            if cupos_disponibles <= 0:
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': f'Lo sentimos, el hogar {hogar.nombre_hogar} no tiene cupos disponibles en este momento. Capacidad: {capacidad_total}, Niños activos: {ninos_activos}.'
+                }, status=400)
+            
+            # 🆕 VALIDAR QUE NO EXISTA UN NIÑO YA MATRICULADO CON ESE DOCUMENTO EN EL HOGAR
+            if documento_nino:
+                nino_existente = Nino.objects.filter(
+                    documento=documento_nino,
+                    hogar=hogar,
+                    estado='activo'
+                ).first()
+                
+                if nino_existente:
+                    return JsonResponse({
+                        'status': 'error',
+                        'mensaje': f'Ya existe un niño matriculado con el documento {documento_nino} en el hogar {hogar.nombre_hogar}.'
+                    }, status=400)
+            
+            # Validar solicitudes duplicadas
             solicitud_existente = SolicitudMatriculacion.objects.filter(
                 padre_solicitante=padre_profile,
                 hogar=hogar,
@@ -2725,24 +3028,50 @@ def padre_solicitar_matricula(request):
                     'mensaje': f'Ya tienes una solicitud pendiente para el hogar {hogar.nombre_hogar}. Por favor espera la respuesta.'
                 }, status=400)
             
-            # Generar token único
+            # ========== CREAR SOLICITUD COMPLETA ==========
             token = str(uuid.uuid4())
             
-            # Crear pre-solicitud con información básica
+            # Preparar observaciones adicionales con info de tipo_documento y país
+            observaciones_extra = []
+            if tipo_documento_nino:
+                observaciones_extra.append(f"Tipo Documento: {tipo_documento_nino}")
+            if pais_nacimiento_id:
+                # Buscar el nombre del país en las CHOICES (Nino ya importado al inicio)
+                pais_nombre = dict(Nino.PAIS_NACIMIENTO_CHOICES).get(pais_nacimiento_id, pais_nacimiento_id)
+                observaciones_extra.append(f"País de Nacimiento: {pais_nombre}")
+            
+            observaciones_completas = " | ".join(observaciones_extra) if observaciones_extra else ""
+            
             solicitud = SolicitudMatriculacion.objects.create(
                 hogar=hogar,
                 email_acudiente=request.user.correo,
                 token=token,
-                fecha_expiracion=timezone.now() + timedelta(hours=48),  # Se ajustará después
+                fecha_expiracion=timezone.now() + timedelta(hours=48),
                 estado='pendiente',
                 tipo_solicitud='solicitud_padre',
                 padre_solicitante=padre_profile,
-                # Datos básicos del niño
+                
+                # Datos del niño
                 nombres_nino=nombres_nino,
                 apellidos_nino=apellidos_nino,
+                documento_nino=documento_nino,
                 fecha_nacimiento_nino=fecha_nacimiento,
                 genero_nino=genero,
-                # Datos del padre (heredados del usuario)
+                tipo_sangre_nino=tipo_sangre,
+                observaciones_nino=observaciones_completas,
+                
+                # Discapacidad
+                tiene_discapacidad=tiene_discapacidad,
+                tipos_discapacidad=tipos_discapacidad_ids if tiene_discapacidad else None,
+                otra_discapacidad=otra_discapacidad,
+                
+                # Documentos
+                foto_nino=foto_nino,
+                carnet_vacunacion_nino=carnet_vacunacion,
+                certificado_eps_nino=certificado_eps,
+                registro_civil_nino=registro_civil,
+                
+                # Datos del padre (heredados)
                 tipo_documento_padre=request.user.tipo_documento,
                 documento_padre=request.user.documento,
                 nombres_padre=request.user.nombres,
@@ -2758,57 +3087,39 @@ def padre_solicitar_matricula(request):
                 localidad_bogota_padre=request.user.localidad_bogota,
             )
             
-            # VALIDAR CUPOS DISPONIBLES
-            tiene_cupos, mensaje_cupos, cupos_disponibles = solicitud.validar_cupos_disponibles()
+            # Marcar cupos como validados
+            solicitud.cupos_validados = True
+            solicitud.tiene_cupos_disponibles = True
+            solicitud.save()
             
-            # Enviar notificación a la madre comunitaria
+            # 🔔 CREAR NOTIFICACIÓN para la madre
             try:
-                from django.core.mail import send_mail
-                from django.template.loader import render_to_string
-                from django.conf import settings
+                from notifications.models import Notification
+                from django.contrib.contenttypes.models import ContentType
                 
-                madre_email = hogar.madre.usuario.correo
-                asunto = f'Nueva Solicitud de Matrícula - {hogar.nombre_hogar}'
+                titulo = f'🆕 Nueva Solicitud de Matrícula Completa'
+                mensaje_notif = (
+                    f'{request.user.get_full_name()} ha enviado una solicitud completa de matrícula para {nombres_nino} {apellidos_nino}. '
+                    f'✅ Todos los datos y documentos están incluidos. '
+                    f'Quedan {cupos_disponibles - 1} cupo(s) disponible(s).'
+                )
                 
-                mensaje_html = render_to_string('emails/nueva_solicitud_padre.html', {
-                    'hogar': hogar,
-                    'padre': request.user,
-                    'nino_nombres': nombres_nino,
-                    'nino_apellidos': apellidos_nino,
-                    'tiene_cupos': tiene_cupos,
-                    'mensaje_cupos': mensaje_cupos,
-                    'solicitud': solicitud,
-                })
+                content_type = ContentType.objects.get_for_model(SolicitudMatriculacion)
                 
-                send_mail(
-                    asunto,
-                    '',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [madre_email],
-                    fail_silently=True,
-                    html_message=mensaje_html
+                Notification.objects.create(
+                    recipient=hogar.madre.usuario,
+                    title=titulo,
+                    message=mensaje_notif,
+                    level='info',
+                    content_type=content_type,
+                    object_id=solicitud.id
                 )
             except Exception as e:
-                print(f"Error al enviar email a la madre: {e}")
-            
-            # Respuesta diferenciada según disponibilidad de cupos
-            if tiene_cupos:
-                mensaje = (
-                    f'Tu solicitud ha sido enviada exitosamente al hogar {hogar.nombre_hogar}. '
-                    f'Hay {cupos_disponibles} cupo(s) disponible(s). '
-                    f'La madre comunitaria revisará tu solicitud y te enviará el formulario completo por correo.'
-                )
-            else:
-                mensaje = (
-                    f'Tu solicitud ha sido recibida, pero actualmente el hogar {hogar.nombre_hogar} '
-                    f'no tiene cupos disponibles. La madre comunitaria revisará tu caso.'
-                )
+                print(f"Error al crear notificación: {e}")
             
             return JsonResponse({
                 'status': 'ok',
-                'mensaje': mensaje,
-                'tiene_cupos': tiene_cupos,
-                'cupos_disponibles': cupos_disponibles,
+                'mensaje': f'¡Solicitud enviada exitosamente! La madre comunitaria del hogar {hogar.nombre_hogar} revisará tu solicitud. Quedan {cupos_disponibles - 1} cupo(s) disponible(s).',
                 'solicitud_id': solicitud.id
             })
             
@@ -2820,8 +3131,7 @@ def padre_solicitar_matricula(request):
                 'mensaje': f'Error al crear la solicitud: {str(e)}'
             }, status=500)
     
-    # GET: Mostrar formulario de solicitud
-    # Obtener perfil del padre
+    # GET: Mostrar formulario completo
     try:
         padre_profile = request.user.padre_profile
     except Padre.DoesNotExist:
@@ -2829,21 +3139,25 @@ def padre_solicitar_matricula(request):
             'error': 'No se encontró tu perfil de padre. Contacta al administrador.'
         })
     
-    # 🔍 OBTENER EL HOGAR DONDE EL PADRE YA TIENE HIJOS
+    # Obtener hogar del padre
     hogar_padre = None
     ninos_en_hogar = Nino.objects.filter(padre=padre_profile, estado='activo').select_related('hogar')
     
     if ninos_en_hogar.exists():
-        # Tomar el hogar del primer hijo (todos deberían estar en el mismo hogar)
         hogar_padre = ninos_en_hogar.first().hogar
         hogares_disponibles = None
     else:
-        # Padre nuevo sin hijos: mostrar todos los hogares disponibles
         hogares_disponibles = HogarComunitario.objects.filter(estado='aprobado').select_related('madre__usuario')
+    
+    # Obtener países (desde CHOICES del modelo Nino) y discapacidades
+    paises = Nino.PAIS_NACIMIENTO_CHOICES[1:]  # Excluir la opción vacía
+    discapacidades = Discapacidad.objects.all().order_by('nombre')
     
     return render(request, 'padre/solicitar_matricula.html', {
         'hogar_padre': hogar_padre,
         'hogares_disponibles': hogares_disponibles,
+        'paises': paises,
+        'discapacidades': discapacidades,
     })
 
 
@@ -2948,106 +3262,6 @@ def enviar_invitacion_matricula(request):
             return JsonResponse({
                 'status': 'error',
                 'mensaje': f'Error al enviar la invitación: {str(e)}'
-            }, status=500)
-    
-    return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
-
-
-# 🆕 NUEVA FUNCIONALIDAD: Enviar formulario completo a padre
-@login_required
-def enviar_formulario_a_padre(request):
-    """
-    Permite a la madre enviar el formulario completo al padre cuando:
-    1. La solicitud fue iniciada por el padre (tipo_solicitud='solicitud_padre')
-    2. Hay cupos disponibles
-    
-    Este endpoint actualiza el token y envía el email con el enlace al formulario.
-    """
-    if request.method == 'POST':
-        try:
-            # Verificar que sea madre comunitaria
-            if request.user.rol.nombre_rol != 'madre_comunitaria':
-                return JsonResponse({
-                    'status': 'error',
-                    'mensaje': 'No tienes permisos para realizar esta acción.'
-                }, status=403)
-            
-            # Obtener el hogar de la madre
-            hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
-            if not hogar_madre:
-                return JsonResponse({
-                    'status': 'error',
-                    'mensaje': 'No tienes un hogar asignado.'
-                }, status=400)
-            
-            # Obtener ID de la solicitud
-            solicitud_id = request.POST.get('solicitud_id')
-            if not solicitud_id:
-                return JsonResponse({
-                    'status': 'error',
-                    'mensaje': 'ID de solicitud no proporcionado.'
-                }, status=400)
-            
-            # Obtener la solicitud
-            solicitud = get_object_or_404(
-                SolicitudMatriculacion,
-                id=solicitud_id,
-                hogar=hogar_madre,
-                tipo_solicitud='solicitud_padre'
-            )
-            
-            # Validar que tenga cupos disponibles
-            if not solicitud.tiene_cupos_disponibles:
-                return JsonResponse({
-                    'status': 'error',
-                    'mensaje': 'No hay cupos disponibles para enviar el formulario. Solo puedes rechazar la solicitud.'
-                }, status=400)
-            
-            # Renovar token y fecha de expiración
-            solicitud.token = str(uuid.uuid4())
-            solicitud.fecha_expiracion = timezone.now() + timedelta(hours=48)
-            solicitud.save()
-            
-            # Construir link del formulario
-            protocolo = 'https' if request.is_secure() else 'http'
-            dominio = request.get_host()
-            link_formulario = f"{protocolo}://{dominio}/matricula/publico/{solicitud.token}/"
-            
-            # Enviar email al padre
-            from django.core.mail import send_mail
-            from django.template.loader import render_to_string
-            from django.conf import settings
-            
-            asunto = f'Formulario de Matrícula - {hogar_madre.nombre_hogar}'
-            mensaje_html = render_to_string('emails/formulario_solicitud_padre.html', {
-                'hogar': hogar_madre,
-                'link': link_formulario,
-                'fecha_expiracion': solicitud.fecha_expiracion,
-                'padre': solicitud.padre_solicitante.usuario if solicitud.padre_solicitante else None,
-                'nino_nombres': solicitud.nombres_nino,
-                'nino_apellidos': solicitud.apellidos_nino,
-            })
-            
-            send_mail(
-                asunto,
-                '',
-                settings.DEFAULT_FROM_EMAIL,
-                [solicitud.email_acudiente],
-                fail_silently=False,
-                html_message=mensaje_html
-            )
-            
-            return JsonResponse({
-                'status': 'ok',
-                'mensaje': f'Formulario enviado exitosamente a {solicitud.email_acudiente}. El enlace es válido por 48 horas.'
-            })
-            
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({
-                'status': 'error',
-                'mensaje': f'Error al enviar el formulario: {str(e)}'
             }, status=500)
     
     return JsonResponse({'status': 'error', 'mensaje': 'Método no permitido.'}, status=405)
@@ -3341,21 +3555,63 @@ def aprobar_solicitud_matricula(request):
                 from django.core.mail import send_mail
                 from django.conf import settings
                 
-                asunto = f'Solicitud de Matriculación Aprobada - {hogar_madre.nombre_hogar}'
-                mensaje_html = render_to_string('emails/solicitud_aprobada.html', {
-                    'hogar': hogar_madre,
-                    'nombre_nino': solicitud.nombres_nino,
-                    'documento_padre': solicitud.documento_padre,
-                })
-                
-                send_mail(
-                    asunto,
-                    '',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [solicitud.email_acudiente],
-                    fail_silently=True,
-                    html_message=mensaje_html
-                )
+                # 🆕 LÓGICA DIFERENCIADA PARA EMAILS
+                if solicitud.tipo_solicitud == 'solicitud_padre':
+                    # Email informativo para padre autenticado
+                    asunto = f'Solicitud Aprobada - {hogar_madre.nombre_hogar}'
+                    mensaje_html = f"""
+                    <html>
+                    <body style="font-family: Arial, sans-serif; padding: 20px; background-color: #f5f5f5;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <h2 style="color: #28A745; border-bottom: 3px solid #28A745; padding-bottom: 10px;">¡Solicitud Aprobada!</h2>
+                            <p>Estimado <strong>{solicitud.padre_solicitante.usuario.get_full_name()}</strong>,</p>
+                            <p>Nos complace informarte que tu solicitud de matrícula para <strong>{solicitud.nombres_nino} {solicitud.apellidos_nino}</strong> ha sido <strong style="color: #28A745;">APROBADA</strong>.</p>
+                            
+                            <div style="background-color: #D4EDDA; border-left: 4px solid #28A745; padding: 15px; margin: 20px 0;">
+                                <h3 style="margin-top: 0; color: #155724;">Detalles de la Matrícula</h3>
+                                <p style="margin: 5px 0;"><strong>Hogar Comunitario:</strong> {hogar_madre.nombre_hogar}</p>
+                                <p style="margin: 5px 0;"><strong>Niño/a:</strong> {solicitud.nombres_nino} {solicitud.apellidos_nino}</p>
+                                <p style="margin: 5px 0;"><strong>Documento:</strong> {solicitud.documento_nino}</p>
+                            </div>
+                            
+                            <p><strong>Próximos pasos:</strong></p>
+                            <ul>
+                                <li>Ya puedes ver a tu hijo/a en tu dashboard</li>
+                                <li>Podrás consultar asistencias, desarrollo y novedades</li>
+                                <li>La madre comunitaria se pondrá en contacto contigo para coordinar el ingreso</li>
+                            </ul>
+                            
+                            <p style="margin-top: 30px;">Saludos cordiales,<br><strong>{hogar_madre.nombre_hogar}</strong></p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    
+                    send_mail(
+                        asunto,
+                        '',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [solicitud.padre_solicitante.usuario.correo],
+                        fail_silently=True,
+                        html_message=mensaje_html
+                    )
+                else:
+                    # Email original para invitacion_madre
+                    asunto = f'Solicitud de Matriculación Aprobada - {hogar_madre.nombre_hogar}'
+                    mensaje_html = render_to_string('emails/solicitud_aprobada.html', {
+                        'hogar': hogar_madre,
+                        'nombre_nino': solicitud.nombres_nino,
+                        'documento_padre': solicitud.documento_padre,
+                    })
+                    
+                    send_mail(
+                        asunto,
+                        '',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [solicitud.email_acudiente],
+                        fail_silently=True,
+                        html_message=mensaje_html
+                    )
             except Exception as e:
                 print(f"Error al enviar email de aprobación: {e}")
             
@@ -3418,20 +3674,62 @@ def rechazar_solicitud_matricula(request):
                 from django.core.mail import send_mail
                 from django.conf import settings
                 
-                asunto = f'Solicitud de Matriculación Rechazada - {hogar_madre.nombre_hogar}'
-                mensaje_html = render_to_string('emails/solicitud_rechazada.html', {
-                    'hogar': hogar_madre,
-                    'motivo': motivo_rechazo,
-                })
-                
-                send_mail(
-                    asunto,
-                    '',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [solicitud.email_acudiente],
-                    fail_silently=True,
-                    html_message=mensaje_html
-                )
+                # 🆕 LÓGICA DIFERENCIADA PARA EMAILS
+                if solicitud.tipo_solicitud == 'solicitud_padre':
+                    # Email informativo para padre autenticado
+                    asunto = f'Solicitud Rechazada - {hogar_madre.nombre_hogar}'
+                    mensaje_html = f"""
+                    <html>
+                    <body style="font-family: Arial, sans-serif; padding: 20px; background-color: #f5f5f5;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <h2 style="color: #E53935; border-bottom: 3px solid #E53935; padding-bottom: 10px;">Solicitud Rechazada</h2>
+                            <p>Estimado <strong>{solicitud.padre_solicitante.usuario.get_full_name()}</strong>,</p>
+                            <p>Lamentamos informarte que tu solicitud de matrícula para <strong>{solicitud.nombres_nino} {solicitud.apellidos_nino}</strong> ha sido rechazada.</p>
+                            
+                            <div style="background-color: #FFEBEE; border-left: 4px solid #E53935; padding: 15px; margin: 20px 0;">
+                                <h3 style="margin-top: 0; color: #C62828;">Motivo del Rechazo</h3>
+                                <p style="margin: 0;">{motivo_rechazo}</p>
+                            </div>
+                            
+                            <p><strong>¿Qué puedes hacer?</strong></p>
+                            <ul>
+                                <li>Contacta con el hogar comunitario para más detalles</li>
+                                <li>Puedes enviar una nueva solicitud si corriges los problemas señalados</li>
+                                <li>También puedes buscar otros hogares comunitarios disponibles</li>
+                            </ul>
+                            
+                            <p>Puedes ver el detalle completo del rechazo en tu dashboard.</p>
+                            
+                            <p style="margin-top: 30px;">Saludos cordiales,<br><strong>{hogar_madre.nombre_hogar}</strong></p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    
+                    send_mail(
+                        asunto,
+                        '',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [solicitud.padre_solicitante.usuario.correo],
+                        fail_silently=True,
+                        html_message=mensaje_html
+                    )
+                else:
+                    # Email original para invitacion_madre
+                    asunto = f'Solicitud de Matriculación Rechazada - {hogar_madre.nombre_hogar}'
+                    mensaje_html = render_to_string('emails/solicitud_rechazada.html', {
+                        'hogar': hogar_madre,
+                        'motivo': motivo_rechazo,
+                    })
+                    
+                    send_mail(
+                        asunto,
+                        '',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [solicitud.email_acudiente],
+                        fail_silently=True,
+                        html_message=mensaje_html
+                    )
             except Exception as e:
                 print(f"Error al enviar email de rechazo: {e}")
             
@@ -3504,37 +3802,122 @@ def devolver_correccion_matricula(request):
             solicitud.campos_corregir = campos_corregir
             solicitud.save()
             
-            # Enviar email de notificación
-            try:
-                from django.template.loader import render_to_string
-                from django.core.mail import send_mail
-                from django.conf import settings
+            # 🆕 LÓGICA DIFERENCIADA SEGÚN TIPO DE SOLICITUD
+            if solicitud.tipo_solicitud == 'solicitud_padre':
+                # SOLICITUD DE PADRE: Solo notificación in-app + email informativo (sin formulario)
+                try:
+                    from notifications.models import Notification
+                    from django.contrib.contenttypes.models import ContentType
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    # Crear notificación in-app
+                    content_type = ContentType.objects.get_for_model(SolicitudMatriculacion)
+                    Notification.objects.create(
+                        recipient=solicitud.padre_solicitante.usuario,
+                        title=f"Correcciones solicitadas: {solicitud.nombres_nino or 'Solicitud de matrícula'}",
+                        message=f"La madre comunitaria ha solicitado correcciones en {len(campos_corregir)} campo(s). Revisa tu dashboard para realizar los cambios.",
+                        level='warning',
+                        content_type=content_type,
+                        object_id=solicitud.id
+                    )
+                    
+                    # Enviar email INFORMATIVO (sin link a formulario, solo aviso)
+                    campos_nombres = {
+                        'foto_nino': 'Foto del niño',
+                        'carnet_vacunacion_nino': 'Carnet de vacunación',
+                        'certificado_eps_nino': 'Certificado EPS',
+                        'registro_civil_nino': 'Registro civil',
+                        'nombres_nino': 'Nombres del niño',
+                        'apellidos_nino': 'Apellidos del niño',
+                        'documento_nino': 'Documento del niño',
+                        'fecha_nacimiento_nino': 'Fecha de nacimiento',
+                        'genero_nino': 'Género',
+                        'tipo_sangre_nino': 'Tipo de sangre',
+                        'parentesco': 'Parentesco',
+                        'observaciones_nino': 'Observaciones médicas'
+                    }
+                    
+                    campos_legibles = [campos_nombres.get(campo, campo) for campo in campos_corregir]
+                    
+                    asunto = f'Correcciones Solicitadas - {hogar_madre.nombre_hogar}'
+                    mensaje_html = f"""
+                    <html>
+                    <body style="font-family: Arial, sans-serif; padding: 20px; background-color: #f5f5f5;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <h2 style="color: #FF6B35; border-bottom: 3px solid #FF6B35; padding-bottom: 10px;">Correcciones Solicitadas</h2>
+                            <p>Estimado <strong>{solicitud.padre_solicitante.usuario.get_full_name()}</strong>,</p>
+                            <p>La madre comunitaria de <strong>{hogar_madre.nombre_hogar}</strong> ha revisado su solicitud de matrícula para <strong>{solicitud.nombres_nino or 'su hijo/a'}</strong> y requiere que corrija la siguiente información:</p>
+                            
+                            <div style="background-color: #FFF3E0; border-left: 4px solid #FF6B35; padding: 15px; margin: 20px 0;">
+                                <h3 style="margin-top: 0; color: #E65100;">Campos a corregir:</h3>
+                                <ul style="margin-bottom: 0;">
+                                    {''.join([f'<li><strong>{campo}</strong></li>' for campo in campos_legibles])}
+                                </ul>
+                            </div>
+                            
+                            <div style="background-color: #E3F2FD; border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0;">
+                                <p style="margin: 0;"><strong>📝 ¿Cómo corregir?</strong></p>
+                                <p style="margin: 10px 0 0 0;">Ingresa a tu <strong>dashboard</strong> en la plataforma ICBF Conecta. Allí encontrarás tu solicitud pendiente con los campos que debes actualizar.</p>
+                            </div>
+                            
+                            <p style="color: #666; font-size: 14px; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+                                Intentos restantes: <strong>{intentos_restantes} de 3</strong><br>
+                                Si excede el límite de intentos, deberá enviar una nueva solicitud.
+                            </p>
+                            
+                            <p style="margin-top: 30px;">Saludos cordiales,<br><strong>{hogar_madre.nombre_hogar}</strong></p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    
+                    send_mail(
+                        asunto,
+                        '',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [solicitud.padre_solicitante.usuario.correo],
+                        fail_silently=True,
+                        html_message=mensaje_html
+                    )
+                    
+                except Exception as e:
+                    print(f"Error al enviar notificación para solicitud de padre: {e}")
+                    import traceback
+                    traceback.print_exc()
                 
-                asunto = f'Solicitud de Matriculación - Correcciones Requeridas - {hogar_madre.nombre_hogar}'
-                
-                # Generar link para volver al formulario
-                protocolo = 'https' if request.is_secure() else 'http'
-                dominio = request.get_host()
-                link_formulario = f"{protocolo}://{dominio}/matricula/publico/{solicitud.token}/"
-                
-                mensaje_html = render_to_string('emails/solicitud_correccion.html', {
-                    'hogar': hogar_madre,
-                    'campos': campos_corregir,
-                    'link': link_formulario,
-                    'intentos_usados': solicitud.intentos_correccion,
-                    'intentos_restantes': intentos_restantes,
-                })
-                
-                send_mail(
-                    asunto,
-                    '',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [solicitud.email_acudiente],
-                    fail_silently=True,
-                    html_message=mensaje_html
-                )
-            except Exception as e:
-                print(f"Error al enviar email de corrección: {e}")
+            else:
+                # INVITACIÓN DE MADRE: Email con link al formulario público (flujo original)
+                try:
+                    from django.template.loader import render_to_string
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    asunto = f'Solicitud de Matriculación - Correcciones Requeridas - {hogar_madre.nombre_hogar}'
+                    
+                    # Generar link para volver al formulario
+                    protocolo = 'https' if request.is_secure() else 'http'
+                    dominio = request.get_host()
+                    link_formulario = f"{protocolo}://{dominio}/matricula/publico/{solicitud.token}/"
+                    
+                    mensaje_html = render_to_string('emails/solicitud_correccion.html', {
+                        'hogar': hogar_madre,
+                        'campos': campos_corregir,
+                        'link': link_formulario,
+                        'intentos_usados': solicitud.intentos_correccion,
+                        'intentos_restantes': intentos_restantes,
+                    })
+                    
+                    send_mail(
+                        asunto,
+                        '',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [solicitud.email_acudiente],
+                        fail_silently=True,
+                        html_message=mensaje_html
+                    )
+                except Exception as e:
+                    print(f"Error al enviar email de corrección: {e}")
             
             return JsonResponse({
                 'status': 'ok',
@@ -5494,9 +5877,12 @@ def realizar_visita_tecnica(request, hogar_id):
                 
                 # Actualizar el hogar según la recomendación
                 recomendacion = request.POST.get('recomendacion_habilitacion')
+                capacidad_recomendada = int(request.POST.get('capacidad_recomendada'))
                 if recomendacion == 'aprobado':
                     hogar.estado = 'aprobado'
-                    hogar.capacidad_maxima = int(request.POST.get('capacidad_recomendada'))
+                    hogar.capacidad_maxima = capacidad_recomendada
+                    hogar.capacidad_calculada = capacidad_recomendada  # Sincronizar
+                    hogar.capacidad = capacidad_recomendada  # Sincronizar
                     hogar.fecha_habilitacion = timezone.now()
                     hogar.formulario_completo = True
                     
@@ -5505,7 +5891,9 @@ def realizar_visita_tecnica(request, hogar_id):
                     
                 elif recomendacion == 'aprobado_condicional' or recomendacion == 'aprobado_condiciones':
                     hogar.estado = 'en_revision'
-                    hogar.capacidad_maxima = int(request.POST.get('capacidad_recomendada'))
+                    hogar.capacidad_maxima = capacidad_recomendada
+                    hogar.capacidad_calculada = capacidad_recomendada  # Sincronizar
+                    hogar.capacidad = capacidad_recomendada  # Sincronizar
                     
                 else:  # rechazado
                     hogar.estado = 'rechazado'
@@ -6067,6 +6455,7 @@ RECOMENDACIÓN: {recomendacion.upper()}
             hogar.ultima_visita = fecha_hoy
             hogar.observaciones_visita = observaciones_completas
             hogar.capacidad = capacidad_calculada
+            hogar.capacidad_calculada = capacidad_calculada  # Sincronizar ambos campos
             
             # Si no tenía fecha_primera_visita, asignar la de hoy
             if not hogar.fecha_primera_visita:
@@ -6247,6 +6636,7 @@ RESULTADO: {recomendacion.upper()}
             hogar.ultima_visita = fecha_hoy
             hogar.observaciones_visita = observaciones_completas
             hogar.capacidad = capacidad_calculada
+            hogar.capacidad_calculada = capacidad_calculada  # Sincronizar ambos campos
             
             # Determinar acción según recomendación
             if recomendacion == 'aprobado':

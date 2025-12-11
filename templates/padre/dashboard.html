@@ -376,6 +376,92 @@
       </a>
     </div>
 
+    <!-- 🆕 SECCIÓN DE SOLICITUDES ACTIVAS -->
+    {% if solicitudes_activas %}
+    <div style="background: white; border-radius: 15px; padding: 25px; margin-bottom: 30px; border-left: 5px solid #FF6B35; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+      <h2 style="color: #FF6B35; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-file-alt"></i> Solicitudes de Matrícula en Proceso
+      </h2>
+      {% for solicitud in solicitudes_activas %}
+        <div style="background: #F8F9FA; border-radius: 10px; padding: 20px; margin-bottom: 15px; border-left: 4px solid {% if solicitud.estado == 'correccion' %}#E53935{% else %}#FFC107{% endif %};">
+          <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 15px;">
+            <div style="flex-grow: 1;">
+              <h3 style="margin: 0 0 10px 0; color: #333;">
+                {{ solicitud.nombres_nino }} {{ solicitud.apellidos_nino }}
+              </h3>
+              <p style="margin: 5px 0; color: #666;">
+                <i class="fas fa-home"></i> <strong>Hogar:</strong> {{ solicitud.hogar.nombre_hogar }}
+              </p>
+              <p style="margin: 5px 0; color: #666;">
+                <i class="fas fa-calendar"></i> <strong>Fecha:</strong> {{ solicitud.fecha_creacion|date:"d/m/Y H:i" }}
+              </p>
+              <p style="margin: 10px 0 0 0;">
+                <span style="display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold;
+                             {% if solicitud.estado == 'pendiente' %}background: #FFF3CD; color: #856404;
+                             {% elif solicitud.estado == 'correccion' %}background: #FFE5E5; color: #C62828;{% endif %}">
+                  {% if solicitud.estado == 'pendiente' %}
+                    <i class="fas fa-clock"></i> En Revisión
+                  {% elif solicitud.estado == 'correccion' %}
+                    <i class="fas fa-exclamation-triangle"></i> Requiere Correcciones ({{ solicitud.intentos_restantes }} intentos restantes)
+                  {% endif %}
+                </span>
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <a href="{% url 'padre_ver_solicitud' solicitud.id %}" 
+                 style="display: inline-block; background: #4DB6FF; color: white; padding: 10px 20px; 
+                        border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;
+                        transition: all 0.3s;">
+                <i class="fas fa-eye"></i> Ver Detalle
+              </a>
+              {% if solicitud.estado == 'correccion' %}
+                <a href="{% url 'padre_corregir_solicitud' solicitud.id %}" 
+                   style="display: inline-block; background: #FF6B35; color: white; padding: 10px 20px; 
+                          border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;
+                          transition: all 0.3s; animation: pulse 2s infinite;">
+                  <i class="fas fa-edit"></i> Corregir Ahora
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 🆕 SECCIÓN DE SOLICITUDES RECHAZADAS RECIENTES -->
+    {% if solicitudes_rechazadas %}
+    <div style="background: #FFEBEE; border-radius: 15px; padding: 25px; margin-bottom: 30px; border-left: 5px solid #E53935;">
+      <h2 style="color: #E53935; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-times-circle"></i> Solicitudes Rechazadas Recientes
+      </h2>
+      {% for solicitud in solicitudes_rechazadas %}
+        <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 15px;">
+          <h3 style="margin: 0 0 10px 0; color: #333;">
+            {{ solicitud.nombres_nino }} {{ solicitud.apellidos_nino }}
+          </h3>
+          <p style="margin: 5px 0; color: #666;">
+            <strong>Motivo:</strong> {{ solicitud.motivo_rechazo|truncatewords:30 }}
+          </p>
+          <p style="margin: 5px 0; color: #999; font-size: 13px;">
+            Rechazada el {{ solicitud.fecha_rechazo|date:"d/m/Y" }}
+          </p>
+          <a href="{% url 'padre_ver_solicitud' solicitud.id %}" 
+             style="display: inline-block; margin-top: 10px; color: #4DB6FF; text-decoration: none; font-weight: bold;">
+            Ver detalles completos <i class="fas fa-arrow-right"></i>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <style>
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+    </style>
+
     <div class="grid-container">
 
       {% for data in ninos_data %}

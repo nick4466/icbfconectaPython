@@ -1,0 +1,300 @@
+{% extends 'padre/navbar_padre.html' %}
+{% load static %}
+
+{% block title %}Detalle de Solicitud - ICBF Conecta{% endblock %}
+
+{% block content %}
+<style>
+    .solicitud-detalle-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .estado-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 14px;
+        margin: 10px 0;
+    }
+    
+    .estado-pendiente {
+        background: #FFF3CD;
+        color: #856404;
+    }
+    
+    .estado-correccion {
+        background: #FFE5E5;
+        color: #C62828;
+    }
+    
+    .estado-aprobado {
+        background: #D4EDDA;
+        color: #155724;
+    }
+    
+    .estado-rechazado {
+        background: #F8D7DA;
+        color: #721C24;
+    }
+    
+    .datos-section {
+        margin: 30px 0;
+        padding: 20px;
+        background: #F8F9FA;
+        border-left: 4px solid #4DB6FF;
+        border-radius: 8px;
+    }
+    
+    .datos-section h3 {
+        color: #4DB6FF;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+    
+    .dato-item {
+        display: flex;
+        padding: 10px 0;
+        border-bottom: 1px solid #DEE2E6;
+    }
+    
+    .dato-item:last-child {
+        border-bottom: none;
+    }
+    
+    .dato-label {
+        font-weight: bold;
+        color: #495057;
+        width: 200px;
+        flex-shrink: 0;
+    }
+    
+    .dato-valor {
+        color: #212529;
+        flex-grow: 1;
+    }
+    
+    .documento-preview {
+        margin-top: 10px;
+    }
+    
+    .documento-preview img {
+        max-width: 200px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        margin: 5px;
+    }
+    
+    .btn-primary {
+        background: #4DB6FF;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #3DA1E8;
+    }
+    
+    .btn-secondary {
+        background: #6C757D;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #5A6268;
+    }
+    
+    .alerta-correcciones {
+        background: #FFE5E5;
+        border-left: 4px solid #E53935;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .alerta-correcciones h4 {
+        color: #E53935;
+        margin-top: 0;
+    }
+    
+    .campo-corregir {
+        background: white;
+        padding: 10px 15px;
+        margin: 5px 0;
+        border-radius: 6px;
+        border-left: 3px solid #FF6B35;
+    }
+</style>
+
+<div class="solicitud-detalle-container">
+    <h1>Detalle de Solicitud de Matrícula</h1>
+    
+    {% if solicitud.estado == 'pendiente' %}
+        <span class="estado-badge estado-pendiente">
+            <i class="fas fa-clock"></i> En Revisión
+        </span>
+    {% elif solicitud.estado == 'correccion' %}
+        <span class="estado-badge estado-correccion">
+            <i class="fas fa-exclamation-triangle"></i> Requiere Correcciones
+        </span>
+    {% elif solicitud.estado == 'aprobado' %}
+        <span class="estado-badge estado-aprobado">
+            <i class="fas fa-check-circle"></i> Aprobada
+        </span>
+    {% elif solicitud.estado == 'rechazado' %}
+        <span class="estado-badge estado-rechazado">
+            <i class="fas fa-times-circle"></i> Rechazada
+        </span>
+    {% endif %}
+    
+    <div class="datos-section">
+        <h3><i class="fas fa-info-circle"></i> Información General</h3>
+        <div class="dato-item">
+            <span class="dato-label">Hogar Comunitario:</span>
+            <span class="dato-valor">{{ solicitud.hogar.nombre_hogar }}</span>
+        </div>
+        <div class="dato-item">
+            <span class="dato-label">Fecha de Solicitud:</span>
+            <span class="dato-valor">{{ solicitud.fecha_creacion|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div class="dato-item">
+            <span class="dato-label">Estado:</span>
+            <span class="dato-valor">{{ solicitud.get_estado_display }}</span>
+        </div>
+    </div>
+    
+    {% if solicitud.estado == 'correccion' %}
+        <div class="alerta-correcciones">
+            <h4><i class="fas fa-exclamation-circle"></i> Se Requieren Correcciones</h4>
+            <p>La madre comunitaria ha solicitado que corrijas los siguientes campos:</p>
+            {% for campo in solicitud.campos_corregir %}
+                <div class="campo-corregir">
+                    <i class="fas fa-arrow-right"></i> 
+                    {% if campo == 'foto_nino' %}Foto del niño
+                    {% elif campo == 'carnet_vacunacion_nino' %}Carnet de vacunación
+                    {% elif campo == 'certificado_eps_nino' %}Certificado EPS
+                    {% elif campo == 'registro_civil_nino' %}Registro civil
+                    {% elif campo == 'nombres_nino' %}Nombres del niño
+                    {% elif campo == 'apellidos_nino' %}Apellidos del niño
+                    {% elif campo == 'documento_nino' %}Documento del niño
+                    {% else %}{{ campo }}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <p style="margin-top: 15px; color: #666;">
+                <strong>Intentos restantes:</strong> {{ solicitud.intentos_restantes }} de 3
+            </p>
+            <a href="{% url 'padre_corregir_solicitud' solicitud.id %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Corregir Ahora
+            </a>
+        </div>
+    {% endif %}
+    
+    {% if solicitud.motivo_rechazo %}
+        <div class="alerta-correcciones">
+            <h4><i class="fas fa-times-circle"></i> Motivo de Rechazo</h4>
+            <p>{{ solicitud.motivo_rechazo }}</p>
+        </div>
+    {% endif %}
+    
+    <div class="datos-section">
+        <h3><i class="fas fa-child"></i> Datos del Niño</h3>
+        <div class="dato-item">
+            <span class="dato-label">Nombres:</span>
+            <span class="dato-valor">{{ solicitud.nombres_nino }}</span>
+        </div>
+        <div class="dato-item">
+            <span class="dato-label">Apellidos:</span>
+            <span class="dato-valor">{{ solicitud.apellidos_nino }}</span>
+        </div>
+        <div class="dato-item">
+            <span class="dato-label">Documento:</span>
+            <span class="dato-valor">{{ solicitud.documento_nino }}</span>
+        </div>
+        <div class="dato-item">
+            <span class="dato-label">Fecha de Nacimiento:</span>
+            <span class="dato-valor">{{ solicitud.fecha_nacimiento_nino|date:"d/m/Y" }}</span>
+        </div>
+        <div class="dato-item">
+            <span class="dato-label">Género:</span>
+            <span class="dato-valor">{{ solicitud.get_genero_nino_display }}</span>
+        </div>
+        <div class="dato-item">
+            <span class="dato-label">Tipo de Sangre:</span>
+            <span class="dato-valor">{{ solicitud.tipo_sangre_nino }}</span>
+        </div>
+        <div class="dato-item">
+            <span class="dato-label">Parentesco:</span>
+            <span class="dato-valor">{{ solicitud.get_parentesco_display }}</span>
+        </div>
+    </div>
+    
+    <div class="datos-section">
+        <h3><i class="fas fa-file-alt"></i> Documentos</h3>
+        {% if solicitud.foto_nino %}
+            <div class="dato-item">
+                <span class="dato-label">Foto del Niño:</span>
+                <div class="dato-valor">
+                    <a href="{{ solicitud.foto_nino.url }}" target="_blank" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-eye"></i> Ver Documento
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        
+        {% if solicitud.registro_civil_nino %}
+            <div class="dato-item">
+                <span class="dato-label">Registro Civil:</span>
+                <div class="dato-valor">
+                    <a href="{{ solicitud.registro_civil_nino.url }}" target="_blank" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-eye"></i> Ver Documento
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        
+        {% if solicitud.carnet_vacunacion_nino %}
+            <div class="dato-item">
+                <span class="dato-label">Carnet de Vacunación:</span>
+                <div class="dato-valor">
+                    <a href="{{ solicitud.carnet_vacunacion_nino.url }}" target="_blank" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-eye"></i> Ver Documento
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+        
+        {% if solicitud.certificado_eps_nino %}
+            <div class="dato-item">
+                <span class="dato-label">Certificado EPS:</span>
+                <div class="dato-valor">
+                    <a href="{{ solicitud.certificado_eps_nino.url }}" target="_blank" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-eye"></i> Ver Documento
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{% url 'padre_dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
