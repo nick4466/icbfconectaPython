@@ -601,9 +601,31 @@ def crear_madre(request):
         print(f"Dirección: {request.POST.get('direccion')}")
         print("=" * 80)
         
+
         usuario_form = UsuarioMadreForm(request.POST, request.FILES)
         madre_profile_form = MadreProfileForm(request.POST, request.FILES)
-        hogar_form = HogarForm(request.POST)  # ¡Esta es la línea que faltaba!
+        # Inicializar el formulario de hogar SIN datos de residencia, solo con los campos que sí se piden en el template
+        # Extraer solo los datos relevantes para el hogar
+        hogar_data = request.POST.copy()
+        # Rellenar automáticamente los campos requeridos del hogar con los datos de la madre
+        if 'nombre_hogar' not in hogar_data or not hogar_data.get('nombre_hogar'):
+            nombres = request.POST.get('nombres', '')
+            hogar_data['nombre_hogar'] = f"Hogar de {nombres.split(' ')[0]}" if nombres else ''
+        if 'direccion' not in hogar_data or not hogar_data.get('direccion'):
+            hogar_data['direccion'] = request.POST.get('direccion', '')
+        if 'localidad_bogota' not in hogar_data or not hogar_data.get('localidad_bogota'):
+            hogar_data['localidad_bogota'] = request.POST.get('localidad_bogota', '')
+        if 'ciudad' not in hogar_data or not hogar_data.get('ciudad'):
+            hogar_data['ciudad'] = request.POST.get('ciudad_residencia', '')
+        if 'departamento' not in hogar_data or not hogar_data.get('departamento'):
+            hogar_data['departamento'] = request.POST.get('departamento_residencia', '')
+        # El campo regional debe venir del POST, pero si no, dejarlo vacío
+        if 'regional' not in hogar_data:
+            hogar_data['regional'] = request.POST.get('regional', '')
+        # Estado se maneja en el form Hogar, pero si no, ponerlo explícito
+        if 'estado' not in hogar_data:
+            hogar_data['estado'] = 'pendiente_visita'
+        hogar_form = HogarForm(hogar_data, request.FILES)
         error_step = 1
 
         # DEBUG: Imprimir errores de cada formulario
@@ -622,14 +644,15 @@ def crear_madre(request):
 
         if usuario_form.is_valid() and madre_profile_form.is_valid() and hogar_form.is_valid():
             documento = usuario_form.cleaned_data.get('documento')
-            # 💡 CORRECCIÓN: Priorizar el nombre del hogar del formulario. Si está vacío, generar uno.
-            nombre_hogar = hogar_form.cleaned_data.get('nombre_hogar')
-            if not nombre_hogar:
-                nombre_hogar = "Hogar de " + usuario_form.cleaned_data.get('nombres', '').split(' ')[0]
+            # El nombre del hogar se genera automáticamente con el nombre de la madre
+            nombre_hogar = "Hogar de " + usuario_form.cleaned_data.get('nombres', '').split(' ')[0]
 
-            direccion_hogar = hogar_form.cleaned_data.get('direccion')
-            localidad_bogota = hogar_form.cleaned_data.get('localidad_bogota')
-            ciudad = hogar_form.cleaned_data.get('ciudad')
+
+            # Heredar datos de residencia de la madre
+            direccion_hogar = usuario_form.cleaned_data.get('direccion')
+            localidad_bogota = usuario_form.cleaned_data.get('localidad_bogota')
+            ciudad = usuario_form.cleaned_data.get('ciudad_residencia')
+            departamento = usuario_form.cleaned_data.get('departamento_residencia')
 
             # Validación de documento duplicado
             if Usuario.objects.filter(documento=documento).exists():
@@ -658,6 +681,7 @@ def crear_madre(request):
                 # Usar transacción atómica para asegurar que todo se crea o nada
                 with transaction.atomic():
                     # 1️⃣ Crear usuario
+
                     usuario = usuario_form.save(commit=False)
                     usuario.rol = rol_madre
                     # La contraseña se establece aquí, puedes cambiarla si es necesario
@@ -670,10 +694,15 @@ def crear_madre(request):
                     madre_profile.usuario = usuario
                     madre_profile.save()
 
+
                     # 3️⃣ Crear hogar comunitario asociado a la madre
                     hogar = hogar_form.save(commit=False)
                     hogar.madre = madre_profile
                     hogar.nombre_hogar = nombre_hogar
+                    # Heredar datos de residencia de la madre
+                    hogar.direccion = direccion_hogar
+                    hogar.localidad_bogota = localidad_bogota
+                    hogar.ciudad = ciudad
                     # Mantener compatibilidad: guardar nombre de localidad en campo texto
                     if localidad_bogota:
                         hogar.localidad = localidad_bogota.nombre
@@ -806,23 +835,64 @@ def crear_madre(request):
                 messages.error(request, f"Ocurrió un error al guardar los datos: {str(e)}")
 
         else:
+            # Construir mensaje de error detallado
+            errores_detallados = []
+            
             if usuario_form.errors:
                 error_step = 1
-            elif madre_profile_form.errors:
-                error_step = 2
-            elif hogar_form.errors:
-                error_step = 3
-            messages.error(request, 'Error en los datos suministrados. Revise el paso marcado en azul.')
+                errores_detallados.append('📝 <strong>Sección 1 - Información Personal:</strong>')
+                for field, errors in usuario_form.errors.items():
+                    field_label = usuario_form.fields[field].label if field in usuario_form.fields else field
+                    for error in errors:
+                        errores_detallados.append(f'   • <strong>{field_label}:</strong> {error}')
+            
+            if madre_profile_form.errors:
+                if error_step == 1:  # Si ya había errores en paso 1
+                    error_step = 1  # Mantener paso 1
+                else:
+                    error_step = 2
+                errores_detallados.append('📚 <strong>Sección 2 - Información Académica y Documentos:</strong>')
+                for field, errors in madre_profile_form.errors.items():
+                    field_label = madre_profile_form.fields[field].label if field in madre_profile_form.fields else field
+                    for error in errors:
+                        errores_detallados.append(f'   • <strong>{field_label}:</strong> {error}')
+            
+            if hogar_form.errors:
+                if error_step == 1:  # Si había errores anteriores
+                    error_step = 1  # Priorizar primer error
+                elif error_step == 2:
+                    error_step = 2
+                else:
+                    error_step = 3
+                errores_detallados.append('🏠 <strong>Sección 3 - Información del Hogar:</strong>')
+                for field, errors in hogar_form.errors.items():
+                    field_label = hogar_form.fields[field].label if field in hogar_form.fields else field
+                    for error in errors:
+                        errores_detallados.append(f'   • <strong>{field_label}:</strong> {error}')
+            
+            # Construir mensaje HTML con todos los errores
+            if errores_detallados:
+                from django.utils.safestring import mark_safe
+                mensaje_html = '<div style="text-align:left;">'
+                mensaje_html += '<strong>❌ Errores encontrados en el formulario:</strong><br><br>'
+                mensaje_html += '<br>'.join(errores_detallados)
+                mensaje_html += '<br><br><em>Por favor corrija los campos marcados en rojo.</em>'
+                mensaje_html += '</div>'
+                messages.error(request, mark_safe(mensaje_html))
 
         from .models import LocalidadBogota
         localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
+        # Si hay errores, mantener los archivos y datos cargados en los formularios
+        # Django ya mantiene los archivos en los campos FileField si se pasan request.FILES
+        # Pero para mostrar previews, asegurarse de que el template renderice los valores actuales
         return render(request, 'admin/madres_form.html', {
             'usuario_form': usuario_form,
             'madre_profile_form': madre_profile_form,
             'hogar_form': hogar_form,
             'initial_step': error_step, # Para saber en qué paso del formulario mostrar el error
             'regionales': regionales,
-            'localidades_bogota': localidades_bogota
+            'localidades_bogota': localidades_bogota,
+            'modo_edicion': False, # Asegura que el template sepa que es modo creación y no limpie campos
         })
 
     # GET
@@ -6341,14 +6411,26 @@ def activar_hogar(request, hogar_id):
     - Si el hogar es APTO (aprobado) → estado 'activo'
     - Si el hogar es NO APTO → estado 'pendiente_visita'
     - Envía email de notificación si es activado
+    
+    IMPORTANTE: Esta vista SOLO cambia el estado a 'activo' si el formulario
+    es completado exitosamente. No permite atajos ni activación sin evaluación.
     """
     hogar = get_object_or_404(HogarComunitario, id=hogar_id)
     fecha_hoy = date.today()
     
-    # Permitir activación de hogares que NO estén ya activos o aprobados
-    # Incluye: pendiente_visita, rechazado, en_revision, etc.
+    # ✅ VALIDACIÓN CRÍTICA: Verificar si ya está activo Y tiene visita registrada
     if hogar.estado in ['activo', 'aprobado']:
-        messages.warning(request, 'Este hogar ya está activo y aprobado.')
+        # Si está activo pero NO tiene visita registrada, es un ERROR de datos
+        if not hogar.ultima_visita:
+            messages.error(request, 
+                '⚠️ ERROR: Este hogar está marcado como activo pero NO tiene registro de visita de activación. '
+                'Esto es inconsistente. Contacte al administrador del sistema.'
+            )
+        else:
+            messages.warning(request, 
+                f'Este hogar ya está activo y aprobado desde {hogar.ultima_visita.strftime("%d/%m/%Y")}. '
+                f'Para visitas de seguimiento, use "Registrar Visita".'
+            )
         return redirect('hogares_dashboard')
     
     # Manejar diferentes escenarios de fecha
@@ -6467,6 +6549,9 @@ OBSERVACIONES:
 RECOMENDACIÓN: {recomendacion.upper()}
 """
             
+            # ✅ VALIDACIÓN CRÍTICA: Solo activar si se completó el formulario de evaluación
+            # Este bloque se ejecuta SOLO cuando el formulario POST es válido
+            
             # Actualizar campos del hogar
             hogar.ultima_visita = fecha_hoy
             hogar.observaciones_visita = observaciones_completas
@@ -6480,10 +6565,10 @@ RECOMENDACIÓN: {recomendacion.upper()}
             # Determinar estado según recomendación
             if recomendacion == 'aprobado':
                 hogar.estado_aptitud = 'apto'
-                hogar.estado = 'activo'
+                hogar.estado = 'activo'  # ✅ ÚNICA forma legítima de activar
                 hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
                 
-                # Guardar cambios
+                # Guardar cambios (ultima_visita ya fue seteada arriba)
                 hogar.save()
                 
                 # Enviar email de activación
@@ -6501,9 +6586,13 @@ RECOMENDACIÓN: {recomendacion.upper()}
                 hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
                 hogar.save()
                 
+                # Enviar email de activación
+                enviar_email_activacion(hogar)
+                
                 messages.warning(request, 
                     f'⚠️ Hogar activado CON CONDICIONES. '
-                    f'Revisar observaciones: {observaciones_generales[:100]}...'
+                    f'Revisar observaciones: {observaciones_generales[:100]}... '
+                    f'Se ha enviado un correo de notificación al agente educativo.'
                 )
                 
             elif recomendacion == 'no_aprobado':
@@ -6723,51 +6812,343 @@ def enviar_email_activacion(hogar):
     Envía email de notificación cuando un hogar es activado.
     """
     try:
+        from django.utils.html import strip_tags
+        
         madre = hogar.madre
         usuario = madre.usuario
         
-        asunto = f'✅ Hogar Activado - ICBF Conecta'
+        # Formatear fecha en español
+        meses = {
+            1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
+            5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
+            9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
+        }
         
-        mensaje = f"""
-¡Hola {usuario.nombres}!
-
-Nos complace informarte que tu Hogar Comunitario ha sido ACTIVADO exitosamente.
-
-📋 DETALLES DEL HOGAR:
-- Nombre: {hogar.nombre_hogar}
-- Dirección: {hogar.direccion}
-- Estado: ACTIVO
-- Capacidad aprobada: {hogar.capacidad} niños
-- Fecha de activación: {date.today().strftime('%d de %B de %Y')}
-
-🔐 ACCESO AL SISTEMA:
-Ahora puedes acceder al sistema ICBF Conecta con tus credenciales:
-
-- Usuario: {usuario.numero_documento}
-- Contraseña temporal: 123456
-
-Por favor, cambia tu contraseña en tu primer inicio de sesión.
-
-📅 PRÓXIMA VISITA TÉCNICA:
-Tu próxima visita está programada para: {hogar.proxima_visita.strftime('%d de %B de %Y')}
-
-Si tienes alguna pregunta, no dudes en contactarnos.
-
-¡Felicidades y bienvenida al programa ICBF Conecta!
-
----
-Sistema ICBF Conecta
-Este es un correo automático, por favor no responder.
-"""
+        fecha_hoy = date.today()
+        fecha_activacion = f"{fecha_hoy.day} de {meses[fecha_hoy.month]} de {fecha_hoy.year}"
+        
+        if hogar.proxima_visita:
+            fecha_proxima = f"{hogar.proxima_visita.day} de {meses[hogar.proxima_visita.month]} de {hogar.proxima_visita.year}"
+        else:
+            fecha_proxima = "Por programar"
+        
+        asunto = f'✅ Hogar Activado - {hogar.nombre_hogar}'
+        
+        # Mensaje HTML
+        mensaje_html = f"""
+        <html>
+        <head>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 10px 10px 0 0;
+                }}
+                .content {{
+                    background: #f9f9f9;
+                    padding: 30px;
+                    border-radius: 0 0 10px 10px;
+                }}
+                .info-box {{
+                    background: white;
+                    border-left: 4px solid #667eea;
+                    padding: 15px;
+                    margin: 20px 0;
+                    border-radius: 5px;
+                }}
+                .credentials {{
+                    background: #fff3cd;
+                    border: 1px solid #ffc107;
+                    padding: 15px;
+                    margin: 20px 0;
+                    border-radius: 5px;
+                }}
+                .footer {{
+                    text-align: center;
+                    color: #666;
+                    font-size: 12px;
+                    margin-top: 30px;
+                    padding-top: 20px;
+                    border-top: 1px solid #ddd;
+                }}
+                h2 {{
+                    color: #667eea;
+                    margin-top: 0;
+                }}
+                .success-icon {{
+                    font-size: 48px;
+                    margin-bottom: 10px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <div class="success-icon">✅</div>
+                    <h1 style="margin: 0;">¡Hogar Activado Exitosamente!</h1>
+                </div>
+                
+                <div class="content">
+                    <p>¡Hola <strong>{usuario.nombres} {usuario.apellidos}</strong>!</p>
+                    
+                    <p>Nos complace informarte que tu Hogar Comunitario ha sido <strong>ACTIVADO</strong> exitosamente después de completar la visita técnica.</p>
+                    
+                    <div class="info-box">
+                        <h2>📋 Detalles del Hogar</h2>
+                        <p><strong>Nombre:</strong> {hogar.nombre_hogar}</p>
+                        <p><strong>Dirección:</strong> {hogar.direccion}</p>
+                        <p><strong>Estado:</strong> <span style="color: #28a745; font-weight: bold;">ACTIVO</span></p>
+                        <p><strong>Capacidad aprobada:</strong> {hogar.capacidad} niños</p>
+                        <p><strong>Fecha de activación:</strong> {fecha_activacion}</p>
+                    </div>
+                    
+                    <div class="credentials">
+                        <h2>🔐 Acceso al Sistema ICBF Conecta</h2>
+                        <p>Ahora puedes acceder al sistema con tus credenciales:</p>
+                        <p><strong>Usuario:</strong> {usuario.documento}</p>
+                        <p><strong>Contraseña temporal:</strong> 123456</p>
+                        <p style="color: #856404; font-size: 14px;"><em>⚠️ Por seguridad, cambia tu contraseña en tu primer inicio de sesión.</em></p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h2>📅 Próxima Visita Técnica</h2>
+                        <p>Tu próxima visita de seguimiento está programada para: <strong>{fecha_proxima}</strong></p>
+                    </div>
+                    
+                    <p>Si tienes alguna pregunta o necesitas asistencia, no dudes en contactarnos.</p>
+                    
+                    <p style="margin-top: 30px;"><strong>¡Felicidades y bienvenida al programa ICBF Conecta!</strong></p>
+                    
+                    <div class="footer">
+                        <p><strong>Sistema ICBF Conecta</strong></p>
+                        <p>Este es un correo automático, por favor no responder.</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Mensaje de texto plano (fallback)
+        mensaje_texto = strip_tags(mensaje_html)
         
         send_mail(
             asunto,
-            mensaje,
+            mensaje_texto,
             settings.EMAIL_HOST_USER,
-            [usuario.correo],
+            [usuario.email],
+            html_message=mensaje_html,
             fail_silently=False,
         )
         
+        print(f"✅ Email de activación enviado exitosamente a {usuario.email}")
+        
     except Exception as e:
-        print(f"Error al enviar email de activación: {str(e)}")
+        print(f"❌ Error al enviar email de activación: {str(e)}")
 
+
+@login_required
+@rol_requerido('administrador')
+def programar_visita_ajax(request, hogar_id):
+    """Vista AJAX para programar o reprogramar la fecha de primera visita técnica"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    try:
+        # Obtener el hogar
+        hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+        
+        # Obtener datos del POST
+        fecha_str = request.POST.get('fecha_visita', '').strip()
+        observaciones = request.POST.get('observaciones', '').strip()
+        
+        if not fecha_str:
+            return JsonResponse({'success': False, 'error': 'Debe proporcionar una fecha para la visita'}, status=400)
+        
+        # Convertir la fecha (viene en formato YYYY-MM-DD del input type="date")
+        try:
+            fecha_visita = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'Formato de fecha inválido'}, status=400)
+        
+        # Validaciones de negocio
+        hoy = date.today()
+        
+        # 1. No permitir fechas pasadas
+        if fecha_visita < hoy:
+            return JsonResponse({'success': False, 'error': 'No se puede programar una visita en el pasado'}, status=400)
+        
+        # 2. No permitir fines de semana
+        if fecha_visita.weekday() in [5, 6]:  # 5=sábado, 6=domingo
+            return JsonResponse({'success': False, 'error': 'No se pueden programar visitas en fines de semana'}, status=400)
+        
+        # 3. Validar rango máximo de 5 semanas (35 días)
+        dias_diferencia = (fecha_visita - hoy).days
+        if dias_diferencia > 35:
+            return JsonResponse({'success': False, 'error': 'La visita no puede programarse con más de 5 semanas de anticipación'}, status=400)
+        
+        # Determinar si es programación o reprogramación
+        era_reprogramacion = hogar.fecha_primera_visita is not None
+        fecha_anterior = hogar.fecha_primera_visita
+        
+        # Guardar la nueva fecha
+        hogar.fecha_primera_visita = fecha_visita
+        hogar.save()
+        
+        # Enviar correo de notificación
+        try:
+            enviar_email_programacion_visita(
+                hogar=hogar,
+                fecha_visita=fecha_visita,
+                observaciones=observaciones,
+                es_reprogramacion=era_reprogramacion,
+                fecha_anterior=fecha_anterior
+            )
+        except Exception as e:
+            # Log del error pero no fallar la operación
+            print(f"Error al enviar correo de programación: {e}")
+        
+        # Formatear fecha para respuesta (DD/MM/YYYY)
+        fecha_formateada = fecha_visita.strftime('%d/%m/%Y')
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': f'Visita {"reprogramada" if era_reprogramacion else "programada"} exitosamente para el {fecha_formateada}',
+            'fecha': fecha_formateada,
+            'es_reprogramacion': era_reprogramacion
+        })
+        
+    except HogarComunitario.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Hogar no encontrado'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error al procesar la solicitud: {str(e)}'}, status=500)
+
+
+def enviar_email_programacion_visita(hogar, fecha_visita, observaciones, es_reprogramacion=False, fecha_anterior=None):
+    """Envía correo electrónico al agente educador cuando se programa o reprograma una visita"""
+    
+    if not hogar.correo:
+        return
+    
+    # Formatear fecha en español
+    meses = {
+        1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril', 5: 'mayo', 6: 'junio',
+        7: 'julio', 8: 'agosto', 9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
+    }
+    
+    dias_semana = {
+        0: 'lunes', 1: 'martes', 2: 'miércoles', 3: 'jueves', 4: 'viernes', 5: 'sábado', 6: 'domingo'
+    }
+    
+    dia_semana = dias_semana[fecha_visita.weekday()]
+    fecha_formateada = f"{dia_semana} {fecha_visita.day} de {meses[fecha_visita.month]} de {fecha_visita.year}"
+    
+    # Datos de la madre comunitaria
+    usuario = hogar.usuario
+    nombre_completo = f"{usuario.nombres} {usuario.apellidos}"
+    
+    # Asunto del correo
+    if es_reprogramacion:
+        asunto = f"🔄 Visita Técnica Reprogramada - {hogar.nombre_hogar}"
+    else:
+        asunto = f"📅 Visita Técnica Programada - {hogar.nombre_hogar}"
+    
+    # Cuerpo del correo en HTML
+    mensaje_html = f"""
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }}
+            .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+            .info-box {{ background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 5px; }}
+            .fecha-box {{ background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }}
+            .observaciones-box {{ background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 20px 0; border-radius: 5px; }}
+            .footer {{ text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }}
+            h2 {{ color: #667eea; margin-top: 0; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>{'🔄 Visita Reprogramada' if es_reprogramacion else '📅 Visita Programada'}</h1>
+                <p>Sistema ICBF Conecta</p>
+            </div>
+            <div class="content">
+                <p>¡Hola <strong>{nombre_completo}</strong>!</p>
+                
+                <p>{"Se ha reprogramado" if es_reprogramacion else "Se ha programado"} la visita técnica para tu Hogar Comunitario.</p>
+                
+                <div class="info-box">
+                    <h2>🏠 Información del Hogar</h2>
+                    <p><strong>Nombre:</strong> {hogar.nombre_hogar}</p>
+                    <p><strong>Dirección:</strong> {hogar.direccion}</p>
+                    <p><strong>Agente Educador:</strong> {nombre_completo}</p>
+                </div>
+                
+                <div class="fecha-box">
+                    <h2>📅 Fecha de la Visita</h2>
+                    <p style="font-size: 18px; margin: 0;"><strong>{fecha_formateada}</strong></p>
+                    {f'<p style="color: #856404; margin-top: 10px;"><em>Fecha anterior: {fecha_anterior.strftime("%d/%m/%Y")}</em></p>' if es_reprogramacion and fecha_anterior else ''}
+                </div>
+                
+                {f'''<div class="observaciones-box">
+                    <h2>📝 Observaciones</h2>
+                    <p>{observaciones}</p>
+                </div>''' if observaciones else ''}
+                
+                <div class="info-box">
+                    <h2>ℹ️ Información Importante</h2>
+                    <ul>
+                        <li>La visita técnica es un requisito obligatorio para la activación del hogar</li>
+                        <li>Por favor, ten preparada toda la documentación requerida</li>
+                        <li>Asegúrate de que los espacios físicos cumplan con las condiciones mínimas</li>
+                        <li>Si necesitas reprogramar, contacta a tu supervisor con anticipación</li>
+                    </ul>
+                </div>
+                
+                <p style="margin-top: 30px;">Si tienes alguna pregunta, no dudes en contactarnos.</p>
+                
+                <div class="footer">
+                    <p><strong>Sistema ICBF Conecta</strong></p>
+                    <p>Este es un correo automático, por favor no responder.</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Mensaje de texto plano (fallback)
+    mensaje_texto = strip_tags(mensaje_html)
+    
+    try:
+        send_mail(
+            asunto,
+            mensaje_texto,
+            settings.EMAIL_HOST_USER,
+            [hogar.correo],
+            html_message=mensaje_html,
+            fail_silently=False,
+        )
+        
+        print(f"✅ Email de programación de visita enviado exitosamente a {hogar.correo}")
+        
+    except Exception as e:
+        print(f"❌ Error al enviar email de programación: {str(e)}")
+        raise

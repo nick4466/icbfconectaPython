@@ -80,7 +80,7 @@ class UsuarioMadreForm(forms.ModelForm):
     class Meta:
         model = Usuario
         fields = ['documento', 'tipo_documento', 'nombres', 'apellidos', 'fecha_nacimiento', 'sexo', 'correo', 'telefono',
-                  'departamento_residencia', 'ciudad_residencia', 'localidad_bogota', 'direccion', 'barrio']
+                  'departamento_residencia', 'ciudad_residencia', 'localidad_bogota', 'barrio']
     
     def clean_fecha_nacimiento(self):
         from datetime import date
@@ -182,12 +182,32 @@ class HogarForm(forms.ModelForm):
         widget=forms.Select,
         empty_label="-- Seleccione una Localidad --"
     )
+    
+    # Campo estrato con opciones predefinidas (OBLIGATORIO para completar el registro)
+    estrato = forms.TypedChoiceField(
+        choices=[
+            ('', '-- Seleccione un estrato --'),
+            (1, 'Estrato 1'),
+            (2, 'Estrato 2'),
+            (3, 'Estrato 3'),
+            (4, 'Estrato 4'),
+            (5, 'Estrato 5'),
+            (6, 'Estrato 6'),
+        ],
+        required=True,  # ✅ OBLIGATORIO - Requerido para el registro del hogar
+        label='Estrato Socioeconómico',
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        coerce=lambda x: int(x) if x else None,
+        empty_value=None
+    )
 
     class Meta:
         model = HogarComunitario
         # Excluir campos que se asignan manualmente en la vista o automáticamente
         exclude = ['localidad', 'madre', 'fecha_registro', 'fecha_habilitacion', 
                    'area_social_m2', 'capacidad_calculada', 'formulario_completo']
+        # Incluir explícitamente el campo estrato para asegurar que se renderice
+        fields = '__all__'
         labels = {
             'nombre_hogar': 'Nombre del Hogar Comunitario',
             'direccion': 'Dirección Completa',
@@ -198,8 +218,8 @@ class HogarForm(forms.ModelForm):
             'num_banos': 'Número de Baños',
             'material_construccion': 'Material de Construcción',
             'riesgos_cercanos': 'Riesgos Cercanos al Hogar',
-            'fotos_interior': 'Fotos del Interior',
-            'fotos_exterior': 'Fotos del Exterior',
+            'fotos_interior': 'Fotos del Interior *',
+            'fotos_exterior': 'Fotos del Exterior *',
             'geolocalizacion_lat': 'Latitud',
             'geolocalizacion_lon': 'Longitud',
             'tipo_tenencia': 'Tipo de Tenencia del Inmueble',
@@ -208,6 +228,8 @@ class HogarForm(forms.ModelForm):
             'estado': 'Estado del Hogar',
         }
         widgets = {
+            # NOTA: 'estrato' NO debe estar aquí porque ya está definido como campo explícito arriba (línea 188-199)
+            # Si se define aquí, puede causar conflictos de renderizado
             'fotos_interior': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
             'fotos_exterior': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
             'documento_tenencia_pdf': forms.FileInput(attrs={'accept': 'application/pdf', 'class': 'form-control'}),
@@ -218,7 +240,6 @@ class HogarForm(forms.ModelForm):
             'nombre_hogar': forms.TextInput(attrs={'placeholder': 'Ej: Hogar Comunitario Los Ángeles', 'class': 'form-control'}),
             'direccion': forms.TextInput(attrs={'placeholder': 'Ej: Cra 97#135a-30 SUBA', 'id': 'id_direccion_hogar', 'class': 'form-control'}),
             'barrio': forms.TextInput(attrs={'placeholder': 'Ej: El Poblado, Chapinero, etc.', 'class': 'form-control'}),
-            'estrato': forms.NumberInput(attrs={'min': 1, 'max': 6, 'class': 'form-control'}),
             'num_habitaciones': forms.NumberInput(attrs={'min': 1, 'class': 'form-control'}),
             'num_banos': forms.NumberInput(attrs={'min': 1, 'class': 'form-control'}),
             'capacidad_maxima': forms.NumberInput(attrs={'min': 1, 'max': 30, 'class': 'form-control'}),
@@ -230,8 +251,8 @@ class HogarForm(forms.ModelForm):
             'geolocalizacion_lon': 'Coordenada de longitud (opcional, use Google Maps para obtenerla)',
             'capacidad_maxima': 'Número máximo de niños que puede atender el hogar (por defecto 15)',
             'tipo_tenencia': 'Indique si el inmueble es propio, arrendado o en comodato',
-            'fotos_interior': 'Suba fotos del interior del hogar (opcional)',
-            'fotos_exterior': 'Suba fotos del exterior del hogar (opcional)',
+            'fotos_interior': 'Suba fotos del interior del hogar (obligatorio)',
+            'fotos_exterior': 'Suba fotos del exterior del hogar (obligatorio)',
             'documento_tenencia_pdf': 'Documento que acredite la tenencia del inmueble (opcional)',
             'direccion': 'Ingrese la dirección completa del hogar (será verificada con la localidad)',
         }
@@ -652,16 +673,18 @@ class PadreForm(forms.ModelForm):
             ).order_by('nombre')
 
     def clean_correo(self):
+        """
+        ⚠️ VALIDACIÓN TEMPORALMENTE DESHABILITADA PARA PRUEBAS
+        Se permite usar el mismo correo en múltiples cuentas
+        """
         correo = self.cleaned_data.get('correo')
-        documento = self.cleaned_data.get('documento')
-
-        # Si el formulario está ligado a una instancia (edición), el chequeo es diferente
-        if self.instance and self.instance.pk:
-            if Usuario.objects.filter(correo=correo).exclude(pk=self.instance.pk).exists():
-                raise forms.ValidationError('Este correo ya está en uso por otro usuario.')
-        # Si es un formulario de creación y el correo ya existe
-        elif not self.instance.pk and Usuario.objects.filter(correo=correo).exists():
-            raise forms.ValidationError('Este correo ya está registrado. Si es el mismo padre, usa su número de documento para cargarlo.')
+        # Comentado temporalmente para permitir pruebas de envío de correos
+        # documento = self.cleaned_data.get('documento')
+        # if self.instance and self.instance.pk:
+        #     if Usuario.objects.filter(correo=correo).exclude(pk=self.instance.pk).exists():
+        #         raise forms.ValidationError('Este correo ya está en uso por otro usuario.')
+        # elif not self.instance.pk and Usuario.objects.filter(correo=correo).exists():
+        #     raise forms.ValidationError('Este correo ya está registrado. Si es el mismo padre, usa su número de documento para cargarlo.')
         return correo
 
     def clean(self):

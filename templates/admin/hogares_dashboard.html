@@ -962,16 +962,47 @@
                     <i class="fas fa-phone"></i>
                     <span>{{ hogar.madre.usuario.telefono }}</span>
                   </div>
-                  {% if hogar.ultima_visita %}
-                  <div class="info-row visita-info">
-                    <i class="fas fa-clock"></i>
-                    <span>Última visita: {{ hogar.ultima_visita|date:"d/m/Y" }}</span>
-                  </div>
+                  
+                  {# LÓGICA DE VISUALIZACIÓN DE VISITAS #}
+                  {% if hogar.estado == 'activo' or hogar.estado == 'aprobado' %}
+                    {# HOGAR ACTIVO: Mostrar última visita realizada #}
+                    {% if hogar.ultima_visita %}
+                      <div class="info-row" style="background:#d1fae5;padding:6px 10px;border-radius:4px;border-left:3px solid #10b981;">
+                        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+                        <span style="color:#065f46;">Última visita: {{ hogar.ultima_visita|date:"d/m/Y" }}</span>
+                      </div>
+                    {% else %}
+                      <div class="info-row" style="background:#fee2e2;padding:6px 10px;border-radius:4px;border-left:3px solid #ef4444;">
+                        <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
+                        <span style="color:#991b1b;">⚠️ Sin registro de visitas</span>
+                      </div>
+                    {% endif %}
                   {% else %}
-                  <div class="info-row visita-pendiente">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span><strong>¡Sin visita registrada!</strong></span>
-                  </div>
+                    {# HOGAR PENDIENTE: Mostrar fecha programada o sin programar #}
+                    {% if hogar.fecha_primera_visita %}
+                      {% now "Y-m-d" as fecha_hoy %}
+                      {% if hogar.fecha_primera_visita|date:"Y-m-d" == fecha_hoy %}
+                        <div class="info-row" style="background:#fef3c7;padding:6px 10px;border-radius:4px;border-left:3px solid #f59e0b;">
+                          <i class="fas fa-calendar-day" style="color:#f59e0b;"></i>
+                          <span style="color:#92400e;font-weight:600;">🔥 Visita programada HOY</span>
+                        </div>
+                      {% elif hogar.fecha_primera_visita|date:"Y-m-d" > fecha_hoy %}
+                        <div class="info-row" style="background:#dbeafe;padding:6px 10px;border-radius:4px;border-left:3px solid #3b82f6;">
+                          <i class="fas fa-calendar-check" style="color:#3b82f6;"></i>
+                          <span style="color:#1e40af;">Visita: {{ hogar.fecha_primera_visita|date:"d/m/Y" }}</span>
+                        </div>
+                      {% else %}
+                        <div class="info-row" style="background:#fee2e2;padding:6px 10px;border-radius:4px;border-left:3px solid #ef4444;">
+                          <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
+                          <span style="color:#991b1b;">⚠️ Visita vencida: {{ hogar.fecha_primera_visita|date:"d/m/Y" }}</span>
+                        </div>
+                      {% endif %}
+                    {% else %}
+                      <div class="info-row" style="background:#fef3c7;padding:6px 10px;border-radius:4px;border-left:3px solid #f59e0b;">
+                        <i class="fas fa-calendar-times" style="color:#f59e0b;"></i>
+                        <span style="color:#92400e;">⏳ Sin visita programada</span>
+                      </div>
+                    {% endif %}
                   {% endif %}
                 </div>
                 
@@ -992,17 +1023,23 @@
                     Editar
                   </a>
                   
-                  {# 🆕 Botón de Activación/Visita - Siempre disponible #}
+                  {# Sistema dinámico de botones según estado del hogar #}
                   {% if hogar.estado == 'activo' or hogar.estado == 'aprobado' %}
-                    {# Hogar YA ACTIVO - Botón para visitas de seguimiento #}
+                    {# HOGAR ACTIVO: Botón para visitas de seguimiento #}
                     <a href="{% url 'registrar_visita' hogar.id %}" class="btn btn-warning btn-small">
                       <i class="fas fa-calendar-check"></i>
                       Registrar Visita
                     </a>
                   {% else %}
-                    {# Hogar NO ACTIVO - Botón para primera activación #}
+                    {# HOGAR NO ACTIVO: Mostrar botones según si tiene fecha programada #}
                     {% if hogar.fecha_primera_visita %}
-                      {# Hogar CON fecha programada #}
+                      {# CON fecha programada: Botón Reprogramar + Activar #}
+                      <button class="btn btn-small" style="background:#f59e0b;color:white;" 
+                              onclick="event.stopPropagation(); abrirModalReprogramar({{ hogar.id }}, '{{ hogar.fecha_primera_visita|date:"Y-m-d" }}', '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');">
+                        <i class="fas fa-calendar-alt"></i>
+                        Reprogramar
+                      </button>
+                      
                       {% now "Y-m-d" as fecha_hoy %}
                       {% if hogar.fecha_primera_visita|date:"Y-m-d" == fecha_hoy %}
                         <a href="{% url 'activar_hogar' hogar.id %}" class="btn btn-success btn-small" style="background: linear-gradient(90deg, #10b981, #059669); animation: pulse-glow 2s infinite;">
@@ -1010,26 +1047,25 @@
                           Activar Hogar
                         </a>
                       {% else %}
-                        {# Permitir activación antes de la fecha programada si el administrador lo decide #}
-                        <a href="{% url 'activar_hogar' hogar.id %}" 
-                           class="btn btn-small" 
-                           style="background: linear-gradient(90deg, #10b981, #059669); color: white;"
-                           onclick="event.stopPropagation(); return confirm('📅 Visita programada para: {{ hogar.fecha_primera_visita|date:"d/m/Y" }}\n\n¿Deseas realizar la evaluación de activación ahora?\n\nPuedes completar el formulario en cualquier momento desde ahora hasta la fecha programada.');">
+                        <a href="{% url 'activar_hogar' hogar.id %}" class="btn btn-small" style="background: linear-gradient(90deg, #10b981, #059669); color: white;">
                           <i class="fas fa-check-circle"></i>
                           Activar Hogar
                         </a>
                       {% endif %}
                     {% else %}
-                      {# Hogar SIN fecha programada - Activación directa #}
-                      <a href="{% url 'activar_hogar' hogar.id %}" 
-                         class="btn btn-small" 
-                         style="background: linear-gradient(90deg, #10b981, #059669); color: white; animation: pulse-glow 2s infinite;"
-                         onclick="event.stopPropagation(); return confirm('⚠️ Este hogar NO tiene visita programada.\n\n¿Deseas realizar la evaluación de activación AHORA?\n\nSe registrará la fecha de hoy como fecha de visita.');">
-                        <i class="fas fa-clipboard-check"></i>
-                        Activar Ya
-                      </a>
+                      {# SIN fecha programada: Botón Programar #}
+                      <button class="btn btn-small" style="background:#3b82f6;color:white;animation: pulse-glow 2s infinite;" 
+                              onclick="event.stopPropagation(); abrirModalProgramar({{ hogar.id }}, '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');">
+                        <i class="fas fa-calendar-plus"></i>
+                        Programar Visita
+                      </button>
                     {% endif %}
                   {% endif %}
+                  
+                  <button class="btn btn-info btn-small" onclick="event.stopPropagation(); verHistorialVisitas({{ hogar.id }}, '{{ hogar.nombre_hogar }}');">
+                    <i class="fas fa-history"></i>
+                    Historial
+                  </button>
                   
                   <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); verHogarDetalle({{ hogar.id }})">
                     <i class="fas fa-folder-open"></i>
@@ -1052,6 +1088,83 @@
       </div>
     </main>
   </div>
+
+  <!-- ========== MODAL PROGRAMAR/REPROGRAMAR VISITA ========== -->
+  <div class="modal" id="modalProgramarVisita">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+        <h2 class="modal-title" id="modal-titulo">
+          <i class="fas fa-calendar-plus"></i>
+          Programar Primera Visita Técnica
+        </h2>
+        <button class="modal-close" onclick="cerrarModalVisita()" style="color: white;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 30px;">
+        <input type="hidden" id="modal-hogar-id">
+        
+        <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 16px; margin-bottom: 24px; border-radius: 6px;">
+          <p style="margin: 0 0 8px 0; color: #1e40af; font-weight: 600;">
+            <i class="fas fa-home"></i> Hogar: <span id="modal-hogar-nombre"></span>
+          </p>
+          <p style="margin: 0; color: #1e40af; font-weight: 500;">
+            <i class="fas fa-user"></i> Agente: <span id="modal-madre-nombre"></span>
+          </p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 15px;">
+            <i class="fas fa-calendar-day"></i> Fecha de Visita <span style="color: #ef4444;">*</span>
+          </label>
+          <input type="date" id="modal-fecha-visita" 
+                 style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 15px; font-family: inherit; transition: all 0.3s;"
+                 onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.15)'"
+                 onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
+        </div>
+
+        <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 20px; border-radius: 6px;">
+          <p style="margin: 0 0 8px 0; font-weight: 600; color: #92400e;">
+            <i class="fas fa-exclamation-triangle"></i> Requisitos de la Fecha:
+          </p>
+          <ul style="margin: 0; padding-left: 20px; color: #78350f; font-size: 14px;">
+            <li>Debe ser de lunes a viernes (no fines de semana)</li>
+            <li>No puede ser un día festivo</li>
+            <li>Máximo 5 semanas desde hoy</li>
+          </ul>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px; font-size: 15px;">
+            <i class="fas fa-comment"></i> Observaciones (Opcional)
+          </label>
+          <textarea id="modal-observaciones" rows="3" 
+                    placeholder="Ej: Programar en la mañana, confirmar disponibilidad con la madre..."
+                    style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; transition: all 0.3s;"
+                    onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.15)'"
+                    onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button onclick="cerrarModalVisita()" 
+                  style="padding: 12px 24px; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.2s;"
+                  onmouseover="this.style.background='#d1d5db'"
+                  onmouseout="this.style.background='#e5e7eb'">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button id="btn-confirmar-visita" onclick="confirmarProgramarVisita()" 
+                  style="padding: 12px 24px; background: linear-gradient(90deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.2s;"
+                  onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.3)'"
+                  onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
+            <i class="fas fa-check"></i> Programar Visita
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor para alertas -->
+  <div id="alertas-container" style="position: fixed; top: 80px; right: 20px; z-index: 10001; max-width: 400px;"></div>
 
   <!-- ========== MODAL HOGAR DETALLE ========== -->
   <div class="modal" id="modalHogarDetalle">
@@ -1156,6 +1269,139 @@
   </div>
 
   <script>
+    function verHistorialVisitas(hogarId, nombreHogar) {
+      // Eliminar modal anterior si existe
+      const modalAnterior = document.getElementById('modalHistorialVisitas');
+      if (modalAnterior) {
+        modalAnterior.remove();
+      }
+      
+      // Crear modal dinámico para mostrar historial
+      const modalHTML = `
+        <div id="modalHistorialVisitas" class="modal active" style="z-index: 10002;">
+          <div class="modal-content" style="max-width: 900px; max-height: 85vh; overflow-y: auto;">
+            <div class="modal-header">
+              <h2 id="tituloHistorial">
+                <i class="fas fa-history"></i>
+                Historial de Visitas - ${nombreHogar}
+              </h2>
+              <button class="close-btn" onclick="cerrarHistorialVisitas()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body" id="contenidoHistorial">
+              <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #3b82f6;"></i>
+                <p style="margin-top: 16px; color: #6b7280;">Cargando historial de visitas...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Insertar modal
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      
+      // Cargar datos del historial
+      fetch(`/api/hogares/${hogarId}/historial-visitas/`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Error del servidor: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          const contenedor = document.getElementById('contenidoHistorial');
+          if (!contenedor) return;
+          
+          if (data.visitas && data.visitas.length > 0) {
+            let html = `<div style="display: flex; flex-direction: column; gap: 20px;">`;
+            
+            data.visitas.forEach(visita => {
+              const estadoColor = {
+                'completada': '#10b981',
+                'agendada': '#3b82f6',
+                'cancelada': '#ef4444',
+                'pendiente': '#f59e0b'
+              };
+              
+              html += `
+                <div class="info-card" style="border-left: 4px solid ${estadoColor[visita.estado] || '#6b7280'};">
+                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">
+                      <i class="fas fa-calendar-check"></i>
+                      ${visita.tipo_visita_display}
+                    </h3>
+                    <span class="badge" style="background: ${estadoColor[visita.estado] || '#6b7280'};">
+                      ${visita.estado.toUpperCase()}
+                    </span>
+                  </div>
+                  
+                  <div class="info-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="info-item">
+                      <strong>Fecha Programada</strong>
+                      <span>${visita.fecha_programada}</span>
+                    </div>
+                    ${visita.fecha_realizacion ? `
+                      <div class="info-item">
+                        <strong>Fecha Realizada</strong>
+                        <span>${visita.fecha_realizacion}</span>
+                      </div>
+                    ` : ''}
+                    <div class="info-item">
+                      <strong>Visitador</strong>
+                      <span>${visita.visitador}</span>
+                    </div>
+                  </div>
+                  
+                  ${visita.observaciones_visita ? `
+                    <div style="margin-top: 12px; padding: 12px; background: #dbeafe; border-radius: 6px;">
+                      <strong style="display: block; margin-bottom: 6px;">Resultado:</strong>
+                      <p style="margin: 0; white-space: pre-wrap;">${visita.observaciones_visita}</p>
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            });
+            
+            html += `</div>`;
+            contenedor.innerHTML = html;
+          } else {
+            // NO HAY VISITAS
+            contenedor.innerHTML = `
+              <div style="text-align: center; padding: 80px 20px;">
+                <i class="fas fa-calendar-times" style="font-size: 80px; color: #d1d5db; margin-bottom: 24px;"></i>
+                <h3 style="color: #374151; margin: 0 0 12px 0; font-size: 22px;">Sin Visitas Registradas</h3>
+                <p style="color: #6b7280; margin: 0; font-size: 16px;">
+                  Este hogar aún no tiene visitas técnicas en el sistema.
+                </p>
+              </div>
+            `;
+          }
+        })
+        .catch(error => {
+          const contenedor = document.getElementById('contenidoHistorial');
+          if (!contenedor) return;
+          
+          contenedor.innerHTML = `
+            <div style="text-align: center; padding: 80px 20px;">
+              <i class="fas fa-exclamation-circle" style="font-size: 80px; color: #ef4444; margin-bottom: 24px;"></i>
+              <h3 style="color: #991b1b; margin: 0 0 12px 0; font-size: 22px;">Error al Cargar</h3>
+              <p style="color: #dc2626; margin: 0; font-size: 16px;">
+                No se pudo cargar el historial de visitas.
+              </p>
+            </div>
+          `;
+        });
+    }
+    
+    function cerrarHistorialVisitas() {
+      const modal = document.getElementById('modalHistorialVisitas');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+
     function verHogarDetalle(hogarId) {
       const modal = document.getElementById('modalHogarDetalle');
       modal.classList.add('active');
@@ -1730,6 +1976,147 @@
         modal.classList.remove('active');
       }
     }
+
+    // ========================================
+    // FUNCIONES PARA PROGRAMAR/REPROGRAMAR VISITAS
+    // ========================================
+
+    function abrirModalProgramar(hogarId, nombreHogar, nombreMadre) {
+      const modal = document.getElementById('modalProgramarVisita');
+      document.getElementById('modal-hogar-id').value = hogarId;
+      document.getElementById('modal-hogar-nombre').textContent = nombreHogar;
+      document.getElementById('modal-madre-nombre').textContent = nombreMadre;
+      document.getElementById('modal-fecha-visita').value = '';
+      document.getElementById('modal-observaciones').value = '';
+      document.getElementById('modal-titulo').textContent = '📅 Programar Primera Visita Técnica';
+      document.getElementById('btn-confirmar-visita').textContent = '✅ Programar Visita';
+      modal.classList.add('active');
+    }
+
+    function abrirModalReprogramar(hogarId, fechaActual, nombreHogar, nombreMadre) {
+      const modal = document.getElementById('modalProgramarVisita');
+      document.getElementById('modal-hogar-id').value = hogarId;
+      document.getElementById('modal-hogar-nombre').textContent = nombreHogar;
+      document.getElementById('modal-madre-nombre').textContent = nombreMadre;
+      document.getElementById('modal-fecha-visita').value = fechaActual;
+      document.getElementById('modal-observaciones').value = '';
+      document.getElementById('modal-titulo').textContent = '🔄 Reprogramar Visita Técnica';
+      document.getElementById('btn-confirmar-visita').textContent = '✅ Guardar Nueva Fecha';
+      modal.classList.add('active');
+    }
+
+    function cerrarModalVisita() {
+      const modal = document.getElementById('modalProgramarVisita');
+      modal.classList.remove('active');
+    }
+
+    function confirmarProgramarVisita() {
+      const hogarId = document.getElementById('modal-hogar-id').value;
+      const fechaVisita = document.getElementById('modal-fecha-visita').value;
+      const observaciones = document.getElementById('modal-observaciones').value;
+
+      if (!fechaVisita) {
+        mostrarAlerta('error', '⚠️ Debes seleccionar una fecha para la visita');
+        return;
+      }
+
+      // Validar que no sea fin de semana
+      const fecha = new Date(fechaVisita + 'T00:00:00');
+      const diaSemana = fecha.getDay();
+      if (diaSemana === 0 || diaSemana === 6) {
+        mostrarAlerta('error', '⚠️ No puedes programar visitas los fines de semana (sábado o domingo)');
+        return;
+      }
+
+      // Validar que no sea en el pasado
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      if (fecha < hoy) {
+        mostrarAlerta('error', '⚠️ La fecha de la visita no puede ser en el pasado');
+        return;
+      }
+
+      // Validar que no sea más de 5 semanas
+      const maxFecha = new Date();
+      maxFecha.setDate(maxFecha.getDate() + 35);
+      if (fecha > maxFecha) {
+        mostrarAlerta('error', '⚠️ La fecha no puede ser mayor a 5 semanas desde hoy');
+        return;
+      }
+
+      // Enviar solicitud AJAX
+      const btn = document.getElementById('btn-confirmar-visita');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+      fetch('/ajax/programar-visita/' + hogarId + '/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'fecha_visita=' + encodeURIComponent(fechaVisita) + '&observaciones=' + encodeURIComponent(observaciones)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          mostrarAlerta('success', data.mensaje);
+          cerrarModalVisita();
+          // Recargar página después de 1 segundo
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          mostrarAlerta('error', data.error || 'Error al programar la visita');
+          btn.disabled = false;
+          btn.innerHTML = '✅ Programar Visita';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        mostrarAlerta('error', 'Error de conexión. Intenta nuevamente.');
+        btn.disabled = false;
+        btn.innerHTML = '✅ Programar Visita';
+      });
+    }
+
+    function mostrarAlerta(tipo, mensaje) {
+      const alertas = document.getElementById('alertas-container');
+      if (!alertas) return;
+
+      const icono = tipo === 'success' ? '✅' : tipo === 'error' ? '❌' : 'ℹ️';
+      const color = tipo === 'success' ? '#10b981' : tipo === 'error' ? '#ef4444' : '#3b82f6';
+      const bgColor = tipo === 'success' ? '#d1fae5' : tipo === 'error' ? '#fee2e2' : '#dbeafe';
+
+
+      const alerta = document.createElement('div');
+      alerta.style.cssText = `
+        background: ${bgColor};
+        border-left: 4px solid ${color};
+        color: ${color === '#3b82f6' ? '#1e40af' : color === '#10b981' ? '#065f46' : '#991b1b'};
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        animation: slideInRight 0.3s ease-out;
+      `;
+      alerta.innerHTML = `<span style="font-size:20px;">${icono}</span><span>${mensaje}</span>`;
+      
+      alertas.appendChild(alerta);
+
+      setTimeout(() => {
+        alerta.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => alerta.remove(), 300);
+      }, 5000);
+    }
+
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        cerrarModalVisita();
+      }
+    });
   </script>
 
   <!-- Script de funciones de historial de visitas -->

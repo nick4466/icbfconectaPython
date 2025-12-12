@@ -171,7 +171,7 @@ class Usuario(AbstractUser):
     documento = models.BigIntegerField(unique=True)
     nombres = models.CharField(max_length=50)
     apellidos = models.CharField(max_length=50)
-    correo = models.EmailField(max_length=100, unique=True)
+    correo = models.EmailField(max_length=100, unique=False)  # ⚠️ TEMPORAL: Permitir correos duplicados para pruebas
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES, default='F')
     
     # 🆕 Ubicación geográfica
@@ -259,7 +259,7 @@ class Padre(models.Model):
 class MadreComunitaria(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='madre_profile')
     NIVEL_ESCOLARIDAD_CHOICES = [
-        ('Primaria', 'Primaria'),
+        # ('Primaria', 'Primaria'),  # ❌ OCULTO - No se permite seleccionar Primaria
         ('Bachiller', 'Bachiller'),
         ('Técnico', 'Técnico'),
         ('Tecnólogo', 'Tecnólogo'),
@@ -387,6 +387,20 @@ class HogarComunitario(models.Model):
 
     class Meta:
         db_table = 'hogares_comunitarios'
+
+    def save(self, *args, **kwargs):
+        """
+        ✅ VALIDACIÓN CRÍTICA: Asegurar consistencia de datos
+        Un hogar NO puede estar activo sin tener una visita de activación registrada
+        """
+        # Si el estado cambia a 'activo' o 'aprobado', validar que tenga ultima_visita
+        if self.estado in ['activo', 'aprobado'] and not self.ultima_visita:
+            raise ValueError(
+                f"ERROR DE CONSISTENCIA: No se puede activar el hogar '{self.nombre_hogar}' "
+                f"sin tener una visita de activación registrada (campo 'ultima_visita' vacío). "
+                f"Debe completar el formulario de activación primero."
+            )
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.nombre_hogar

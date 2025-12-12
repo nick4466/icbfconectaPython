@@ -65,8 +65,12 @@
     
     .section-title { color: var(--primary); margin: 30px 0 15px; font-size: 18px; border-left: 4px solid var(--primary-light); padding-left: 12px; font-weight: 700; }
     
-    .checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-    .checkbox-label { cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; }
+    .checkbox-label { cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+    .checkbox-label input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .marcar-todos-btn { background: var(--primary-light); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; margin-bottom: 15px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; transition: all 0.2s; }
+    .marcar-todos-btn:hover { background: var(--primary); transform: translateY(-1px); }
+    .marcar-todos-btn i { font-size: 12px; }
     
     .row { display: flex; gap: 20px; }
     .row .form-group { flex: 1; }
@@ -164,21 +168,27 @@
           </div>
 
           <h3 class="section-title"><i class="fas fa-plug"></i> Servicios Públicos</h3>
-          <div class="checkbox-grid">
-            <label class="checkbox-label"><input type="checkbox" name="servicio_acueducto" value="1"> Acueducto</label>
-            <label class="checkbox-label"><input type="checkbox" name="servicio_alcantarillado" value="1"> Alcantarillado</label>
-            <label class="checkbox-label"><input type="checkbox" name="servicio_energia" value="1"> Energía Eléctrica</label>
-            <label class="checkbox-label"><input type="checkbox" name="servicio_gas" value="1"> Gas Natural</label>
-            <label class="checkbox-label"><input type="checkbox" name="servicio_internet" value="1"> Internet</label>
-            <label class="checkbox-label"><input type="checkbox" name="servicio_telefono" value="1"> Teléfono</label>
+          <button type="button" class="marcar-todos-btn" onclick="marcarTodosServicios()">
+            <i class="fas fa-check-double"></i> Marcar Todos
+          </button>
+          <div class="checkbox-grid" id="servicios-grid">
+            <label class="checkbox-label">Acueducto <input type="checkbox" name="servicio_acueducto" value="1"></label>
+            <label class="checkbox-label">Alcantarillado <input type="checkbox" name="servicio_alcantarillado" value="1"></label>
+            <label class="checkbox-label">Energía Eléctrica <input type="checkbox" name="servicio_energia" value="1"></label>
+            <label class="checkbox-label">Gas Natural <input type="checkbox" name="servicio_gas" value="1"></label>
+            <label class="checkbox-label">Internet <input type="checkbox" name="servicio_internet" value="1"></label>
+            <label class="checkbox-label">Teléfono <input type="checkbox" name="servicio_telefono" value="1"></label>
           </div>
 
           <h3 class="section-title"><i class="fas fa-door-open"></i> Espacios de la Vivienda</h3>
-          <div class="checkbox-grid">
-            <label class="checkbox-label"><input type="checkbox" name="espacio_sala" value="1"> Sala</label>
-            <label class="checkbox-label"><input type="checkbox" name="espacio_comedor" value="1"> Comedor</label>
-            <label class="checkbox-label"><input type="checkbox" name="espacio_cocina" value="1"> Cocina</label>
-            <label class="checkbox-label"><input type="checkbox" name="espacio_patio" value="1"> Patio</label>
+          <button type="button" class="marcar-todos-btn" onclick="marcarTodosEspacios()">
+            <i class="fas fa-check-double"></i> Marcar Todos
+          </button>
+          <div class="checkbox-grid" id="espacios-grid">
+            <label class="checkbox-label">Sala <input type="checkbox" name="espacio_sala" value="1"></label>
+            <label class="checkbox-label">Comedor <input type="checkbox" name="espacio_comedor" value="1"></label>
+            <label class="checkbox-label">Cocina <input type="checkbox" name="espacio_cocina" value="1"></label>
+            <label class="checkbox-label">Patio <input type="checkbox" name="espacio_patio" value="1"></label>
           </div>
 
           <div class="form-group">
@@ -314,6 +324,44 @@
       </div>
     </div>
   </main>
+
+  <script>
+    // Función para marcar/desmarcar todos los checkboxes de Servicios Públicos
+    function marcarTodosServicios() {
+      const checkboxes = document.querySelectorAll('#servicios-grid input[type="checkbox"]');
+      const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
+      
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = !todosSeleccionados;
+      });
+      
+      // Cambiar texto del botón
+      const btn = event.target.closest('button');
+      if (todosSeleccionados) {
+        btn.innerHTML = '<i class="fas fa-check-double"></i> Marcar Todos';
+      } else {
+        btn.innerHTML = '<i class="fas fa-times"></i> Desmarcar Todos';
+      }
+    }
+
+    // Función para marcar/desmarcar todos los checkboxes de Espacios de la Vivienda
+    function marcarTodosEspacios() {
+      const checkboxes = document.querySelectorAll('#espacios-grid input[type="checkbox"]');
+      const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
+      
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = !todosSeleccionados;
+      });
+      
+      // Cambiar texto del botón
+      const btn = event.target.closest('button');
+      if (todosSeleccionados) {
+        btn.innerHTML = '<i class="fas fa-check-double"></i> Marcar Todos';
+      } else {
+        btn.innerHTML = '<i class="fas fa-times"></i> Desmarcar Todos';
+      }
+    }
+  </script>
 
 </body>
 </html>

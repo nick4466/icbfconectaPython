@@ -176,6 +176,9 @@ urlpatterns = [
      path("ajax/validar-nombre-hogar/", views.validar_nombre_hogar, name="validar_nombre_hogar"),  # Validar nombre hogar duplicado
      path("ajax/validar-documento-madre/", views.validar_documento_madre, name="validar_documento_madre"),  # Validar documento duplicado
 
+     # --- URL AJAX para programar/reprogramar visitas ---
+     path("ajax/programar-visita/<int:hogar_id>/", views.programar_visita_ajax, name="programar_visita_ajax"),
+
     # --- URLs de Visitas Técnicas ---
     path('visitas/hogares-pendientes/', views.listar_hogares_pendientes_visita, name='listar_hogares_pendientes_visita'),
     path('visitas/agendar/<int:hogar_id>/', views.agendar_visita_tecnica, name='agendar_visita_tecnica'),
