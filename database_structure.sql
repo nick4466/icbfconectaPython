@@ -592,53 +592,101 @@ CREATE TABLE novedades_novedad (
 -- DESARROLLO DE NIÑOS
 -- ========================================
 
--- Tabla: Desarrollo de Niños
+-- Tabla: Desarrollo de Niños (Evaluación Mensual)
 CREATE TABLE desarrollo_desarrollonino (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nino_id INTEGER NOT NULL UNIQUE,
-    socioafectiva_texto TEXT,
-    comunicativa_texto TEXT,
-    cognitiva_texto TEXT,
-    corporal_texto TEXT,
-    artistica_texto TEXT,
-    espiritual_texto TEXT,
+    nino_id INTEGER NOT NULL,
+    fecha_fin_mes DATE NOT NULL,
     
-    FOREIGN KEY (nino_id) REFERENCES ninos(id) ON DELETE CASCADE
+    -- Indicadores Cualitativos del Mes (Automáticos)
+    logro_mes VARCHAR(20) CHECK(logro_mes IN ('Alto', 'Adecuado', 'En Proceso')),
+    tendencia_valoracion VARCHAR(20) CHECK(tendencia_valoracion IN ('Avanza', 'Retrocede', 'Se Mantiene', 'Sin datos previos')),
+    participacion_frecuente VARCHAR(50),
+    porcentaje_asistencia INTEGER,
+    comportamiento_frecuente VARCHAR(50),
+    
+    -- Evaluación por Áreas del Desarrollo (Automática)
+    evaluacion_cognitiva TEXT,
+    evaluacion_comunicativa TEXT,
+    evaluacion_socio_afectiva TEXT,
+    evaluacion_corporal TEXT,
+    evaluacion_autonomia TEXT,
+    
+    -- Fortalezas, Aspectos a Mejorar y Alertas (Automáticos)
+    fortalezas_mes TEXT,
+    aspectos_a_mejorar TEXT,
+    alertas_mes TEXT,
+    
+    -- Conclusión General (Automática)
+    conclusion_general TEXT,
+    
+    -- Campos Manuales (Opcionales)
+    observaciones_adicionales TEXT,
+    recomendaciones_personales TEXT,
+    
+    FOREIGN KEY (nino_id) REFERENCES ninos(id) ON DELETE CASCADE,
+    UNIQUE(nino_id, fecha_fin_mes)
 );
+
+CREATE INDEX idx_desarrollo_nino ON desarrollo_desarrollonino(nino_id);
+CREATE INDEX idx_desarrollo_fecha ON desarrollo_desarrollonino(fecha_fin_mes);
 
 -- Tabla: Seguimiento Diario
 CREATE TABLE desarrollo_seguimientodiario (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nino_id INTEGER NOT NULL,
+    planeacion_id INTEGER NOT NULL,
     fecha DATE NOT NULL,
-    observaciones TEXT NOT NULL,
-    creado_por_id INTEGER,
-    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Campos de seguimiento
+    comportamiento_general VARCHAR(20) CHECK(comportamiento_general IN (
+        'participativo', 'aislado', 'impulsivo', 'inquieto', 'tranquilo', 'colaborativo'
+    )),
+    estado_emocional VARCHAR(20) CHECK(estado_emocional IN (
+        'alegre', 'tranquilo', 'curioso', 'motivado', 'carinoso', 
+        'cansado', 'triste', 'ansioso', 'frustrado', 'enojado', 
+        'timido', 'aislado_emocional'
+    )),
+    observaciones TEXT,
+    observacion_relevante BOOLEAN DEFAULT 0,
+    valoracion INTEGER CHECK(valoracion BETWEEN 1 AND 5),
     
     FOREIGN KEY (nino_id) REFERENCES ninos(id) ON DELETE CASCADE,
-    FOREIGN KEY (creado_por_id) REFERENCES usuarios(id) ON DELETE SET NULL
+    FOREIGN KEY (planeacion_id) REFERENCES planeaciones_planeacion(id) ON DELETE CASCADE,
+    UNIQUE(nino_id, fecha)
 );
 
--- Tabla: Evaluación de Dimensiones
+CREATE INDEX idx_seguimiento_nino ON desarrollo_seguimientodiario(nino_id);
+CREATE INDEX idx_seguimiento_fecha ON desarrollo_seguimientodiario(fecha);
+CREATE INDEX idx_seguimiento_planeacion ON desarrollo_seguimientodiario(planeacion_id);
+
+-- Tabla: Evaluación de Dimensiones (por seguimiento diario)
 CREATE TABLE desarrollo_evaluaciondimension (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nino_id INTEGER NOT NULL,
-    dimension VARCHAR(50) NOT NULL CHECK(dimension IN (
-        'socioafectiva', 'comunicativa', 'cognitiva', 
-        'corporal', 'artistica', 'espiritual'
-    )),
-    nivel VARCHAR(20) NOT NULL CHECK(nivel IN ('bajo', 'medio', 'alto')),
-    observaciones TEXT,
-    fecha_evaluacion DATE NOT NULL,
-    evaluado_por_id INTEGER,
+    seguimiento_id INTEGER NOT NULL,
+    dimension_id INTEGER NOT NULL,
+    desempeno VARCHAR(10) NOT NULL CHECK(desempeno IN ('alto', 'adecuado', 'proceso', 'bajo')),
+    observacion TEXT,
     
-    FOREIGN KEY (nino_id) REFERENCES ninos(id) ON DELETE CASCADE,
-    FOREIGN KEY (evaluado_por_id) REFERENCES usuarios(id) ON DELETE SET NULL
+    FOREIGN KEY (seguimiento_id) REFERENCES desarrollo_seguimientodiario(id) ON DELETE CASCADE,
+    FOREIGN KEY (dimension_id) REFERENCES planeaciones_dimension(id) ON DELETE CASCADE,
+    UNIQUE(seguimiento_id, dimension_id)
 );
+
+CREATE INDEX idx_evaluacion_seguimiento ON desarrollo_evaluaciondimension(seguimiento_id);
+CREATE INDEX idx_evaluacion_dimension ON desarrollo_evaluaciondimension(dimension_id);
 
 -- ========================================
 -- SISTEMA DE NOTIFICACIONES
 -- ========================================
+
+-- Tabla: Django Content Type (necesaria para GenericForeignKey)
+CREATE TABLE django_content_type (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_label VARCHAR(100) NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    UNIQUE(app_label, model)
+);
 
 -- Tabla: Notificaciones
 CREATE TABLE notifications_notification (
@@ -646,18 +694,22 @@ CREATE TABLE notifications_notification (
     recipient_id INTEGER,
     title VARCHAR(200) NOT NULL,
     message TEXT NOT NULL,
-    level VARCHAR(20) DEFAULT 'info' CHECK(level IN ('info', 'warning', 'error', 'success')),
-    notification_type VARCHAR(50),
+    level VARCHAR(20) DEFAULT 'info' CHECK(level IN ('grave', 'warning', 'info')),
     read BOOLEAN DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    url VARCHAR(500),
     
-    FOREIGN KEY (recipient_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    -- Campos para GenericForeignKey
+    content_type_id INTEGER,
+    object_id INTEGER,
+    
+    FOREIGN KEY (recipient_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (content_type_id) REFERENCES django_content_type(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_notifications_recipient ON notifications_notification(recipient_id);
 CREATE INDEX idx_notifications_read ON notifications_notification(read);
 CREATE INDEX idx_notifications_created ON notifications_notification(created_at);
+CREATE INDEX idx_notifications_content_type ON notifications_notification(content_type_id, object_id);
 
 -- ========================================
 -- CORREOS Y ARCHIVOS ADJUNTOS
@@ -677,10 +729,19 @@ CREATE TABLE correos_emaillog (
     asunto VARCHAR(255) NOT NULL,
     destinatarios TEXT NOT NULL,
     cuerpo TEXT NOT NULL,
-    enviado BOOLEAN DEFAULT 0,
-    fecha_envio DATETIME,
-    error TEXT,
-    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    enviado_con_exito BOOLEAN DEFAULT 1,
+    nota_error TEXT,
+    fecha_envio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de relación: EmailLog - ArchivoAdjunto (Many-to-Many)
+CREATE TABLE correos_emaillog_adjuntos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    emaillog_id INTEGER NOT NULL,
+    archivoadjunto_id INTEGER NOT NULL,
+    FOREIGN KEY (emaillog_id) REFERENCES correos_emaillog(id) ON DELETE CASCADE,
+    FOREIGN KEY (archivoadjunto_id) REFERENCES correos_archivoadjunto(id) ON DELETE CASCADE,
+    UNIQUE(emaillog_id, archivoadjunto_id)
 );
 
 -- ========================================

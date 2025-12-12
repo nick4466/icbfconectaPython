@@ -179,7 +179,7 @@ class HogarForm(forms.ModelForm):
         queryset=LocalidadBogota.objects.all().order_by('nombre'),
         required=False,
         label="Localidad (solo para Bogotá)",
-        widget=forms.Select(attrs={'id': 'id_localidad_hogar'}),
+        widget=forms.Select,
         empty_label="-- Seleccione una Localidad --"
     )
 
@@ -291,9 +291,15 @@ class HogarForm(forms.ModelForm):
             cleaned_data['estado'] = 'pendiente_visita'
         
         # Si la ciudad es Bogotá, validar que se seleccione una localidad
-        if ciudad and ciudad.nombre.upper() == 'BOGOTÁ':
+        # Usar 'in' para ser más flexible con variaciones del nombre
+        if ciudad and 'BOGOT' in ciudad.nombre.upper():
             if not localidad_bogota:
                 self.add_error('localidad_bogota', 'Debe seleccionar una localidad para hogares en Bogotá')
+        
+        # Validar que si hay localidad seleccionada, la ciudad sea Bogotá
+        if localidad_bogota and ciudad:
+            if 'BOGOT' not in ciudad.nombre.upper():
+                self.add_error('localidad_bogota', 'No puede seleccionar una localidad de Bogotá para un hogar en otra ciudad')
         
         # Si hay localidad seleccionada y dirección, validar coherencia (validación básica)
         if localidad_bogota and direccion:

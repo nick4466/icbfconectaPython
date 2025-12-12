@@ -655,10 +655,30 @@
             </div>
 
             <div class="form-group" id="localidad-hogar-group" style="display:none;">
-              <label for="id_localidad_hogar"><i class="fas fa-map-pin"></i> Localidad <span class="required-star">*</span></label>
-              {{ hogar_form.localidad_bogota }}
+              <label for="id_localidad_bogota"><i class="fas fa-map-pin"></i> Localidad <span class="required-star">*</span></label>
+              
+              <!-- Debug: Renderizar el campo con attrs explícitos -->
+              <select name="localidad_bogota" id="id_localidad_bogota" class="form-control" style="display:block !important; visibility:visible !important; opacity:1 !important;">
+                <option value="">-- Seleccione una Localidad --</option>
+                {% for localidad in localidades_bogota %}
+                  <option value="{{ localidad.id }}">{{ localidad.numero }}. {{ localidad.nombre }}</option>
+                {% endfor %}
+              </select>
+              
               <small style="color:#666;display:block;margin-top:5px;">Solo para hogares en Bogotá D.C.</small>
               {% for error in hogar_form.localidad_bogota.errors %}<span class="error">{{ error }}</span>{% endfor %}
+              <script>
+                // Debug: Verificar que el campo se renderizó
+                document.addEventListener('DOMContentLoaded', function() {
+                  const selectLocalidad = document.getElementById('id_localidad_bogota');
+                  if (selectLocalidad) {
+                    console.log('✅ Campo localidad encontrado, opciones:', selectLocalidad.options.length);
+                    console.log('📋 Localidades disponibles:', Array.from(selectLocalidad.options).map(o => o.text));
+                  } else {
+                    console.error('❌ Campo id_localidad_bogota NO encontrado en el DOM');
+                  }
+                });
+              </script>
             </div>
 
             <div class="form-group">
@@ -964,28 +984,47 @@
       // --- LÓGICA: Mostrar/ocultar localidad para Bogotá en Hogar Comunitario ---
       const ciudadHogarSelect = document.getElementById('id_ciudad');
       const localidadHogarGroup = document.getElementById('localidad-hogar-group');
-      const localidadHogarSelect = document.getElementById('id_localidad_hogar');
+      const localidadHogarSelect = document.getElementById('id_localidad_bogota');
       const direccionInput = document.getElementById('id_direccion_hogar');
       const direccionWarning = document.getElementById('direccion-warning');
 
       // Función para verificar si es Bogotá y mostrar/ocultar localidad
       function checkBogotaHogar() {
         if (!ciudadHogarSelect || !localidadHogarGroup || !localidadHogarSelect) {
-          console.log('Elementos no encontrados para checkBogotaHogar');
+          console.error('❌ Elementos no encontrados:', {
+            ciudadHogarSelect: !!ciudadHogarSelect,
+            localidadHogarGroup: !!localidadHogarGroup,
+            localidadHogarSelect: !!localidadHogarSelect
+          });
           return;
         }
         
         const selectedOption = ciudadHogarSelect.options[ciudadHogarSelect.selectedIndex];
-        const ciudadNombre = selectedOption ? selectedOption.text.toUpperCase() : '';
+        const ciudadNombre = selectedOption ? selectedOption.text : '';
+        const ciudadNombreUpper = ciudadNombre.toUpperCase();
         
-        console.log('Ciudad seleccionada:', ciudadNombre);
+        console.log('🔍 Verificando ciudad:', {
+          ciudadNombre: ciudadNombre,
+          ciudadNombreUpper: ciudadNombreUpper,
+          selectedIndex: ciudadHogarSelect.selectedIndex,
+          selectedValue: ciudadHogarSelect.value
+        });
         
-        if (ciudadNombre.includes('BOGOTÁ') || ciudadNombre.includes('BOGOTA')) {
-          console.log('Es Bogotá, mostrando localidades');
+        // Verificar si contiene "BOGOT" (sin tilde para ser más flexible)
+        const esBogota = ciudadNombreUpper.includes('BOGOT');
+        
+        console.log(`${esBogota ? '✅' : '❌'} Es Bogotá:`, esBogota);
+        
+        if (esBogota) {
+          console.log('📍 Mostrando campo de localidades');
           localidadHogarGroup.style.display = 'block';
           localidadHogarSelect.required = true;
+          
+          // Resaltar visualmente el campo
+          localidadHogarGroup.style.opacity = '1';
+          localidadHogarGroup.style.transition = 'opacity 0.3s ease';
         } else {
-          console.log('No es Bogotá, ocultando localidades');
+          console.log('🚫 Ocultando campo de localidades');
           localidadHogarGroup.style.display = 'none';
           localidadHogarSelect.required = false;
           localidadHogarSelect.value = '';
@@ -1018,12 +1057,18 @@
           
           const validDiv = document.getElementById('regional-validation');
           
-          if (regionalNombre && !regionalNombre.includes('Seleccione') && regionalNombre.toUpperCase() !== 'BOGOTÁ') {
+          // Verificar si NO es Bogotá (acepta "Bogotá", "BogotaDC", "Bogota DC", etc.)
+          const esBogota = regionalNombre && (
+            regionalNombre.toUpperCase().includes('BOGOTÁ') || 
+            regionalNombre.toUpperCase().includes('BOGOTA')
+          );
+          
+          if (regionalNombre && !regionalNombre.includes('Seleccione') && !esBogota) {
             validDiv.style.display = 'block';
             validDiv.style.backgroundColor = '#f8d7da';
             validDiv.style.color = '#721c24';
             validDiv.style.border = '2px solid #f5c6cb';
-            validDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> Por el momento solo se pueden matricular hogares en Bogotá. Por favor, seleccione la regional de Bogotá.';
+            validDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> Por el momento solo se pueden matricular hogares en Bogotá. Por favor, seleccione la regional de BogotaDC.';
             regionalSelect.style.borderColor = 'var(--danger)';
             regionalSelect.style.borderWidth = '2px';
             
@@ -1058,10 +1103,10 @@
                 });
                 ciudadSelect.disabled = false;
                 
-                console.log('Ciudades cargadas:', data.length);
+                console.log('✅ Ciudades cargadas:', data.length);
+                console.log('📋 Lista de ciudades:', data.map(c => c.nombre));
                 
-                // Verificar Bogotá después de cargar las ciudades
-                checkBogotaHogar();
+                // NO ejecutar checkBogotaHogar aquí, esperar a que el usuario seleccione una ciudad
               })
               .catch(err => {
                 ciudadSelect.innerHTML = '<option value="">-- Seleccione una Ciudad --</option>';
@@ -1085,11 +1130,14 @@
               console.log('Seleccionando ciudad previa:', selectedCityId);
               ciudadSelect.value = selectedCityId;
               ciudadSelect.disabled = false;
-              checkBogotaHogar();
+              
+              // IMPORTANTE: Disparar el evento change manualmente para que checkBogotaHogar se ejecute
+              const cityChangeEvent = new Event('change');
+              ciudadSelect.dispatchEvent(cityChangeEvent);
               
               // Si hay localidad pre-seleccionada, asegurarse de que se muestre
               {% if modo_edicion and hogar_form.instance.localidad_bogota_id %}
-                const localidadSelect = document.getElementById('id_localidad_hogar');
+                const localidadSelect = document.getElementById('id_localidad_bogota');
                 if (localidadSelect) {
                   setTimeout(() => {
                     localidadSelect.value = '{{ hogar_form.instance.localidad_bogota_id }}';
@@ -1103,13 +1151,22 @@
       }
 
       if (ciudadHogarSelect && localidadHogarGroup && localidadHogarSelect) {
+        console.log('✅ Elementos encontrados, configurando eventos');
+        
         // Ejecutar al cambiar ciudad
-        ciudadHogarSelect.addEventListener('change', checkBogotaHogar);
+        ciudadHogarSelect.addEventListener('change', function() {
+          console.log('🔄 Ciudad cambió, ejecutando checkBogotaHogar');
+          checkBogotaHogar();
+        });
         
         // Ejecutar al cargar la página (por si ya hay ciudad seleccionada)
         setTimeout(() => {
+          console.log('⏰ Timeout ejecutado, valor de ciudad:', ciudadHogarSelect.value);
           if (ciudadHogarSelect.value) {
+            console.log('🚀 Ejecutando checkBogotaHogar inicial');
             checkBogotaHogar();
+          } else {
+            console.log('⚠️ No hay ciudad seleccionada inicialmente');
           }
         }, 100);
 

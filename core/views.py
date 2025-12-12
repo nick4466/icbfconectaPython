@@ -634,9 +634,11 @@ def crear_madre(request):
             # Validación de documento duplicado
             if Usuario.objects.filter(documento=documento).exists():
                 messages.error(request, f"Ya existe un usuario con el documento {documento} registrado.")
+                from .models import LocalidadBogota
+                localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
                 return render(request, 'admin/madres_form.html', {
                     'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
-                    'initial_step': 1, 'regionales': regionales
+                    'initial_step': 1, 'regionales': regionales, 'localidades_bogota': localidades_bogota
                 })
 
             # Validación de hogar duplicado por dirección
@@ -645,9 +647,11 @@ def crear_madre(request):
                 error_step = 3
 
             if messages.get_messages(request):
+                from .models import LocalidadBogota
+                localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
                 return render(request, 'admin/madres_form.html', {
                     'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
-                    'initial_step': error_step, 'regionales': regionales
+                    'initial_step': error_step, 'regionales': regionales, 'localidades_bogota': localidades_bogota
                 })
 
             try:
@@ -687,12 +691,15 @@ def crear_madre(request):
                         # ✅ Validar que no sea en el pasado
                         if fecha_visita_obj < date.today():
                             messages.error(request, '❌ La fecha de primera visita no puede ser en el pasado.')
+                            from .models import LocalidadBogota
+                            localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
                             return render(request, 'admin/madres_form.html', {
                                 'usuario_form': usuario_form, 
                                 'madre_profile_form': madre_profile_form, 
                                 'hogar_form': hogar_form,
                                 'initial_step': 3, 
-                                'regionales': regionales
+                                'regionales': regionales,
+                                'localidades_bogota': localidades_bogota
                             })
                         
                         hogar.fecha_primera_visita = fecha_visita_obj
@@ -807,23 +814,32 @@ def crear_madre(request):
                 error_step = 3
             messages.error(request, 'Error en los datos suministrados. Revise el paso marcado en azul.')
 
+        from .models import LocalidadBogota
+        localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
         return render(request, 'admin/madres_form.html', {
             'usuario_form': usuario_form,
             'madre_profile_form': madre_profile_form,
             'hogar_form': hogar_form,
             'initial_step': error_step, # Para saber en qué paso del formulario mostrar el error
-            'regionales': regionales
+            'regionales': regionales,
+            'localidades_bogota': localidades_bogota
         })
 
     # GET
     # 💡 MEJORA: Si el admin tiene una regional, la pre-seleccionamos en el formulario del hogar.
     initial_hogar = {} # Revertido a estado original
+    
+    # 🔧 Cargar explícitamente las localidades de Bogotá para el template
+    from .models import LocalidadBogota
+    localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
+    
     return render(request, 'admin/madres_form.html', {
         'usuario_form': UsuarioMadreForm(),
         'madre_profile_form': MadreProfileForm(),
         # Pasamos los datos iniciales al formulario del hogar
         'hogar_form': HogarForm(),
         'regionales': regionales,
+        'localidades_bogota': localidades_bogota,  # 🆕 Pasar localidades explícitamente
         'initial_step': 1
     })
 @login_required
