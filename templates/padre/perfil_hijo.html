@@ -1,0 +1,938 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Perfil de {{ nino.nombres }} - Padre</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f7fa;
+      color: #333;
+    }
+
+    .container-main {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 15px;
+    }
+
+    /* ===== HEADER PERFIL ===== */
+    .perfil-header {
+      background: linear-gradient(135deg, #7a3eb1 0%, #9B59B6 100%);
+      color: white;
+      padding: 40px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      display: flex;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .perfil-foto {
+      flex-shrink: 0;
+    }
+
+    .perfil-foto img {
+      width: 160px;
+      height: 160px;
+      border-radius: 15px;
+      border: 4px solid white;
+      object-fit: cover;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .perfil-foto .sin-foto {
+      width: 160px;
+      height: 160px;
+      border-radius: 15px;
+      border: 4px solid white;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+    }
+
+    .perfil-info h1 {
+      font-size: 36px;
+      margin-bottom: 15px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .perfil-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .info-item {
+      background: rgba(255,255,255,0.15);
+      padding: 12px 15px;
+      border-radius: 8px;
+      border-left: 4px solid white;
+    }
+
+    .info-item strong {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    .info-item span {
+      display: block;
+      font-size: 16px;
+      margin-top: 5px;
+    }
+
+    /* ===== TABS ===== */
+    .nav-tabs {
+      border-bottom: 3px solid #e0e0e0;
+      margin-bottom: 30px;
+    }
+
+    .nav-tabs .nav-link {
+      color: #7a3eb1;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      padding: 12px 20px;
+    }
+
+    .nav-tabs .nav-link:hover {
+      color: #9B59B6;
+      border-bottom-color: #9B59B6;
+    }
+
+    .nav-tabs .nav-link.active {
+      color: white;
+      background-color: #7a3eb1;
+      border-bottom-color: #7a3eb1;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .tab-content {
+      background: white;
+      padding: 30px;
+      border-radius: 0 0 15px 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    /* ===== INFORMACIÓN PERSONAL ===== */
+    .info-section {
+      margin-bottom: 30px;
+    }
+
+    .info-section h3 {
+      color: #7a3eb1;
+      font-size: 18px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .info-box {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #7a3eb1;
+    }
+
+    .info-box strong {
+      display: block;
+      color: #7a3eb1;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .info-box span {
+      display: block;
+      color: #333;
+      font-size: 15px;
+    }
+
+    /* ===== DOCUMENTOS ===== */
+    .documentos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .documento-item {
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .documento-item:hover {
+      border-color: #7a3eb1;
+      box-shadow: 0 4px 15px rgba(122, 62, 177, 0.15);
+    }
+
+    .documento-item h4 {
+      color: #7a3eb1;
+      font-size: 14px;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+    }
+
+    .documento-item img {
+      max-width: 100%;
+      max-height: 150px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .documento-item a {
+      display: inline-block;
+      padding: 8px 15px;
+      background: #7a3eb1;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .documento-item a:hover {
+      background: #9B59B6;
+      transform: translateY(-2px);
+    }
+
+    .no-documento {
+      color: #999;
+      padding: 30px 15px;
+      font-size: 14px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+
+    /* ===== TABLAS ===== */
+    .tabla-responsive {
+      overflow-x: auto;
+    }
+
+    .tabla-responsive table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .tabla-responsive th {
+      background: #f5f5f5;
+      color: #7a3eb1;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #7a3eb1;
+    }
+
+    .tabla-responsive td {
+      padding: 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tabla-responsive tr:hover {
+      background: #f9f9f9;
+    }
+
+    .badge-asistencia {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-presente {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .badge-ausente {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .badge-justificado {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    /* ===== LISTA DE NOVEDADES ===== */
+    .novedad-item {
+      background: #f9f9f9;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #7a3eb1;
+      transition: all 0.3s ease;
+    }
+
+    .novedad-item:hover {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    .novedad-header {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .novedad-tipo {
+      display: inline-block;
+      padding: 6px 12px;
+      background: #7a3eb1;
+      color: white;
+      border-radius: 20px;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .novedad-fecha {
+      color: #999;
+      font-size: 12px;
+    }
+
+    .novedad-desc {
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* ===== BOTONES ===== */
+    .btn-primary {
+      background: #7a3eb1;
+      border: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background: #9B59B6;
+    }
+
+    .btn-outline-primary {
+      color: #7a3eb1;
+      border: 2px solid #7a3eb1;
+    }
+
+    .btn-outline-primary:hover {
+      background: #7a3eb1;
+      color: white;
+    }
+
+    .btn-volver {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      color: #7a3eb1;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+
+    .btn-volver:hover {
+      color: #9B59B6;
+      transform: translateX(-5px);
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      margin: 0;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .perfil-header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .perfil-info h1 {
+        font-size: 24px;
+      }
+
+      .perfil-info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .documentos-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-tabs {
+        flex-wrap: wrap;
+      }
+
+      .tab-content {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% include 'padre/navbar_padre.html' %}
+
+  <div class="container-main">
+    <!-- Botón volver -->
+    <a href="{% url 'padre_dashboard' %}" class="btn-volver">
+      <i class="fas fa-arrow-left"></i> Volver al Dashboard
+    </a>
+
+    <!-- HEADER PERFIL -->
+    <div class="perfil-header">
+      <!-- Foto -->
+      <div class="perfil-foto">
+        {% if nino.foto %}
+          <img src="{{ nino.foto.url }}" alt="Foto de {{ nino.nombres }}">
+        {% else %}
+          <div class="sin-foto">
+            <i class="fas fa-child"></i>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Información Básica -->
+      <div class="perfil-info">
+        <h1>{{ nino.nombres }} {{ nino.apellidos }}</h1>
+        <div class="perfil-info-grid">
+          <div class="info-item">
+            <strong>Fecha de Nacimiento</strong>
+            <span>{{ nino.fecha_nacimiento|date:"d \\d\\e F \\d\\e Y" }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Edad</strong>
+            <span>
+              {% with nino.fecha_nacimiento as fec %}
+                {% widthratio fec 1 1 %}
+                {% now "Y" as current_year %}
+                {{ current_year|add:"-"|add:fec|slice:"0:4" }} años
+              {% endwith %}
+            </span>
+          </div>
+          <div class="info-item">
+            <strong>Documento</strong>
+            <span>{{ nino.documento|default:"No registrado" }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Género</strong>
+            <span>{{ nino.get_genero_display|default:"No especificado" }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Hogar Comunitario</strong>
+            <span>{{ nino.hogar.nombre_hogar }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Estado</strong>
+            <span>
+              <span class="badge {% if nino.estado == 'activo' %}bg-success{% elif nino.estado == 'inactivo' %}bg-warning{% else %}bg-danger{% endif %}">
+                {{ nino.get_estado_display }}
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <ul class="nav nav-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-personal" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab">
+          <i class="fas fa-user"></i> Información Personal
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-documentos" data-bs-toggle="tab" data-bs-target="#documentos" type="button" role="tab">
+          <i class="fas fa-file"></i> Documentos
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-asistencia" data-bs-toggle="tab" data-bs-target="#asistencia" type="button" role="tab">
+          <i class="fas fa-calendar-check"></i> Asistencia
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-desarrollo" data-bs-toggle="tab" data-bs-target="#desarrollo" type="button" role="tab">
+          <i class="fas fa-chart-line"></i> Desarrollo
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-novedades" data-bs-toggle="tab" data-bs-target="#novedades" type="button" role="tab">
+          <i class="fas fa-bell"></i> Novedades
+        </button>
+      </li>
+    </ul>
+
+    <!-- TAB CONTENT -->
+    <div class="tab-content">
+
+      <!-- TAB 1: INFORMACIÓN PERSONAL -->
+      <div class="tab-pane fade show active" id="personal" role="tabpanel">
+        <!-- Datos Personales -->
+        <div class="info-section">
+          <h3><i class="fas fa-user-circle"></i> Datos Personales</h3>
+          <div class="info-grid">
+            <div class="info-box">
+              <strong>Nombres Completos</strong>
+              <span>{{ nino.nombres }} {{ nino.apellidos }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Tipo de Documento</strong>
+              <span>{{ nino.get_tipo_documento_display|default:"No especificado" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Número de Documento</strong>
+              <span>{{ nino.documento|default:"No registrado" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Fecha de Nacimiento</strong>
+              <span>{{ nino.fecha_nacimiento|date:"d \\d\\e F \\d\\e Y" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Género</strong>
+              <span>{{ nino.get_genero_display|default:"No especificado" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>País de Nacimiento</strong>
+              <span>
+                {% if nino.otro_pais %}
+                  {{ nino.otro_pais }}
+                {% else %}
+                  {{ nino.get_nacionalidad_display|default:"No especificado" }}
+                {% endif %}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos Médicos -->
+        <div class="info-section">
+          <h3><i class="fas fa-hospital"></i> Información Médica</h3>
+          <div class="info-grid">
+            <div class="info-box">
+              <strong>Tipo de Sangre</strong>
+              <span>{{ nino.tipo_sangre|default:"No registrado" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Tiene Discapacidad</strong>
+              <span>
+                {% if nino.tiene_discapacidad %}
+                  <span class="badge bg-warning">Sí</span>
+                {% else %}
+                  <span class="badge bg-success">No</span>
+                {% endif %}
+              </span>
+            </div>
+            {% if nino.tipos_discapacidad.all %}
+            <div class="info-box">
+              <strong>Tipos de Discapacidad</strong>
+              <span>
+                {% for disc in nino.tipos_discapacidad.all %}
+                  <span class="badge bg-info">{{ disc.nombre }}</span>
+                {% endfor %}
+              </span>
+            </div>
+            {% endif %}
+            {% if nino.otra_discapacidad %}
+            <div class="info-box">
+              <strong>Otra Discapacidad</strong>
+              <span>{{ nino.otra_discapacidad }}</span>
+            </div>
+            {% endif %}
+            {% if nino.observaciones_medicas %}
+            <div class="info-box">
+              <strong>Observaciones Médicas</strong>
+              <span>{{ nino.observaciones_medicas }}</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Datos de Admisión -->
+        <div class="info-section">
+          <h3><i class="fas fa-sign-in-alt"></i> Información de Admisión</h3>
+          <div class="info-grid">
+            <div class="info-box">
+              <strong>Hogar Comunitario</strong>
+              <span>{{ nino.hogar.nombre_hogar }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Madre Comunitaria</strong>
+              <span>{{ nino.hogar.madre.usuario.get_full_name }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Fecha de Ingreso</strong>
+              <span>{{ nino.fecha_ingreso|date:"d \\d\\e F \\d\\e Y" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Estado del Niño</strong>
+              <span>
+                <span class="badge {% if nino.estado == 'activo' %}bg-success{% elif nino.estado == 'inactivo' %}bg-warning{% else %}bg-danger{% endif %}">
+                  {{ nino.get_estado_display }}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos del Padre/Tutor -->
+        <div class="info-section">
+          <h3><i class="fas fa-user-tie"></i> Información del Padre/Madre o Tutor</h3>
+          <div class="info-grid">
+            <div class="info-box">
+              <strong>Nombres Completos</strong>
+              <span>{{ padre_info.usuario.get_full_name }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Tipo de Documento</strong>
+              <span>{{ padre_info.usuario.get_tipo_documento_display }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Documento</strong>
+              <span>{{ padre_info.usuario.documento }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Correo Electrónico</strong>
+              <span>{{ padre_info.usuario.correo }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Teléfono</strong>
+              <span>{{ padre_info.usuario.telefono|default:"No registrado" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Ocupación</strong>
+              <span>{{ padre_info.get_ocupacion_display|default:"No especificada" }}</span>
+            </div>
+            {% if padre_info.estrato %}
+            <div class="info-box">
+              <strong>Estrato Socioeconómico</strong>
+              <span>{{ padre_info.estrato }}</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: DOCUMENTOS -->
+      <div class="tab-pane fade" id="documentos" role="tabpanel">
+        <h3 style="color: #7a3eb1; margin-bottom: 20px;">
+          <i class="fas fa-file-upload"></i> Documentos del Niño
+        </h3>
+        <div class="documentos-grid">
+          <!-- Foto -->
+          <div class="documento-item">
+            <h4>Fotografía</h4>
+            {% if documentos.foto %}
+              <img src="{{ documentos.foto.url }}" alt="Foto de {{ nino.nombres }}">
+              <a href="{{ documentos.foto.url }}" download>
+                <i class="fas fa-download"></i> Descargar
+              </a>
+            {% else %}
+              <div class="no-documento">
+                <i class="fas fa-image"></i><br>
+                Sin foto registrada
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Carné de Vacunación -->
+          <div class="documento-item">
+            <h4>Carné de Vacunación</h4>
+            {% if documentos.carnet_vacunacion %}
+              <div style="padding: 20px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px;">
+                <i class="fas fa-file-pdf" style="font-size: 32px; color: #dc3545;"></i>
+              </div>
+              <a href="{{ documentos.carnet_vacunacion.url }}" download>
+                <i class="fas fa-download"></i> Descargar
+              </a>
+            {% else %}
+              <div class="no-documento">
+                <i class="fas fa-prescription-bottle"></i><br>
+                No disponible
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Certificado EPS -->
+          <div class="documento-item">
+            <h4>Certificado EPS</h4>
+            {% if documentos.certificado_eps %}
+              <div style="padding: 20px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px;">
+                <i class="fas fa-file-pdf" style="font-size: 32px; color: #dc3545;"></i>
+              </div>
+              <a href="{{ documentos.certificado_eps.url }}" download>
+                <i class="fas fa-download"></i> Descargar
+              </a>
+            {% else %}
+              <div class="no-documento">
+                <i class="fas fa-heartbeat"></i><br>
+                No disponible
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Registro Civil -->
+          <div class="documento-item">
+            <h4>Registro Civil</h4>
+            {% if documentos.registro_civil %}
+              <div style="padding: 20px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px;">
+                <i class="fas fa-file-pdf" style="font-size: 32px; color: #dc3545;"></i>
+              </div>
+              <a href="{{ documentos.registro_civil.url }}" download>
+                <i class="fas fa-download"></i> Descargar
+              </a>
+            {% else %}
+              <div class="no-documento">
+                <i class="fas fa-id-card"></i><br>
+                No disponible
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Documentos del Padre -->
+        <h3 style="color: #7a3eb1; margin: 30px 0 20px 0;">
+          <i class="fas fa-file-upload"></i> Documentos del Padre/Tutor
+        </h3>
+        <div class="documentos-grid">
+          <!-- Documento de Identidad -->
+          <div class="documento-item">
+            <h4>Documento de Identidad</h4>
+            {% if padre_info.documento_identidad_img %}
+              <div style="padding: 20px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px;">
+                <i class="fas fa-file-pdf" style="font-size: 32px; color: #dc3545;"></i>
+              </div>
+              <a href="{{ padre_info.documento_identidad_img.url }}" download>
+                <i class="fas fa-download"></i> Descargar
+              </a>
+            {% else %}
+              <div class="no-documento">
+                <i class="fas fa-id-card"></i><br>
+                No disponible
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Clasificación SISBEN -->
+          <div class="documento-item">
+            <h4>Clasificación SISBEN</h4>
+            {% if padre_info.clasificacion_sisben %}
+              <div style="padding: 20px; background: #f5f5f5; border-radius: 8px; margin-bottom: 10px;">
+                <i class="fas fa-file-pdf" style="font-size: 32px; color: #dc3545;"></i>
+              </div>
+              <a href="{{ padre_info.clasificacion_sisben.url }}" download>
+                <i class="fas fa-download"></i> Descargar
+              </a>
+            {% else %}
+              <div class="no-documento">
+                <i class="fas fa-chart-bar"></i><br>
+                No disponible
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: ASISTENCIA -->
+      <div class="tab-pane fade" id="asistencia" role="tabpanel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="color: #7a3eb1; margin: 0;">
+            <i class="fas fa-calendar-check"></i> Últimas Asistencias
+          </h3>
+          <a href="{% url 'padre_historial_asistencia' nino.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right"></i> Ver Historial Completo
+          </a>
+        </div>
+
+        {% if asistencia_reciente %}
+          <div class="tabla-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th>Día</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for asistencia in asistencia_reciente %}
+                  <tr>
+                    <td>{{ asistencia.fecha|date:"d \\d\\e F \\d\\e Y" }}</td>
+                    <td>
+                      <span class="badge-asistencia badge-{{ asistencia.estado|lower }}">
+                        {{ asistencia.get_estado_display }}
+                      </span>
+                    </td>
+                    <td>{{ asistencia.fecha|date:"l"|title }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <p>No hay registros de asistencia disponibles.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- TAB 4: DESARROLLO -->
+      <div class="tab-pane fade" id="desarrollo" role="tabpanel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="color: #7a3eb1; margin: 0;">
+            <i class="fas fa-chart-line"></i> Desarrollo Actual
+          </h3>
+          <a href="{% url 'padre_ver_desarrollo' nino.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-right"></i> Ver Todo el Desarrollo
+          </a>
+        </div>
+
+        {% if desarrollo_actual %}
+          <div class="info-grid">
+            <div class="info-box">
+              <strong>Mes Evaluado</strong>
+              <span>{{ desarrollo_actual.fecha_fin_mes|date:"F \\d\\e Y" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Logro del Mes</strong>
+              <span>{{ desarrollo_actual.logro_mes|default:"No evaluado" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Tendencia</strong>
+              <span>{{ desarrollo_actual.get_tendencia_valoracion_display|default:"No registrada" }}</span>
+            </div>
+            <div class="info-box">
+              <strong>Participación</strong>
+              <span>{{ desarrollo_actual.participacion_frecuente|default:"No registrada" }}</span>
+            </div>
+          </div>
+
+          <!-- Evaluación por Dimensiones -->
+          <div class="info-section" style="margin-top: 20px;">
+            <h3><i class="fas fa-star"></i> Evaluación por Dimensiones</h3>
+            <div class="info-grid">
+              <div class="info-box">
+                <strong>Dimensión Cognitiva</strong>
+                <span>{{ desarrollo_actual.evaluacion_cognitiva|default:"No evaluada" }}</span>
+              </div>
+              <div class="info-box">
+                <strong>Dimensión Comunicativa</strong>
+                <span>{{ desarrollo_actual.evaluacion_comunicativa|default:"No evaluada" }}</span>
+              </div>
+              <div class="info-box">
+                <strong>Dimensión Socio-Afectiva</strong>
+                <span>{{ desarrollo_actual.evaluacion_socioafectiva|default:"No evaluada" }}</span>
+              </div>
+              <div class="info-box">
+                <strong>Dimensión Físico-Motriz</strong>
+                <span>{{ desarrollo_actual.evaluacion_fisicomotriz|default:"No evaluada" }}</span>
+              </div>
+            </div>
+          </div>
+
+          {% if desarrollo_actual.observaciones %}
+          <div class="info-section" style="margin-top: 20px;">
+            <h3><i class="fas fa-comment-dots"></i> Observaciones</h3>
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #7a3eb1;">
+              <p>{{ desarrollo_actual.observaciones }}</p>
+            </div>
+          </div>
+          {% endif %}
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-chart-line"></i>
+            <p>No hay evaluaciones de desarrollo registradas aún.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- TAB 5: NOVEDADES -->
+      <div class="tab-pane fade" id="novedades" role="tabpanel">
+        <h3 style="color: #7a3eb1; margin-bottom: 20px;">
+          <i class="fas fa-bell"></i> Novedades Recientes
+        </h3>
+
+        {% if novedades_recientes %}
+          {% for novedad in novedades_recientes %}
+            <div class="novedad-item">
+              <div class="novedad-header">
+                <span class="novedad-tipo">{{ novedad.get_tipo_display }}</span>
+                <span class="novedad-fecha">{{ novedad.fecha|date:"d \\d\\e F \\d\\e Y" }}</span>
+              </div>
+              <div class="novedad-desc">{{ novedad.descripcion }}</div>
+              {% if novedad.documento %}
+                <div style="margin-top: 10px;">
+                  <a href="{{ novedad.documento.url }}" download class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-download"></i> Descargar Documento
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+
+          <div style="margin-top: 20px;">
+            <a href="{% url 'novedades:detalle_padre' novedades_recientes.0.id %}" class="btn btn-outline-primary">
+              <i class="fas fa-arrow-right"></i> Ver Todas las Novedades
+            </a>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-bell-slash"></i>
+            <p>No hay novedades registradas.</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

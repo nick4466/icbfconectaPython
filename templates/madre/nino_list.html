@@ -737,7 +737,9 @@
         <tbody>
           {% for nino in ninos %}
           <tr
+            style="{% if nino.estado == 'retirado' %}background-color: #f5f5f5; opacity: 0.7; border-left: 5px solid #E53935;{% endif %}"
             data-nino-id="{{ nino.id }}"
+            data-nino-estado="{{ nino.estado }}"
             data-nombre="{{ nino.nombres }} {{ nino.apellidos }}"
             data-nombres="{{ nino.nombres }}"
             data-apellidos="{{ nino.apellidos }}"
@@ -775,22 +777,38 @@
           >
             <td>
               {% if nino.foto %}
-                <img src="{{ nino.foto.url }}" alt="Foto de {{ nino.nombres }}" style="width:55px;height:55px;object-fit:cover;border-radius:50%;box-shadow:0 2px 8px #ccc;">
+                <img src="{{ nino.foto.url }}" alt="Foto de {{ nino.nombres }}" style="width:55px;height:55px;object-fit:cover;border-radius:50%;box-shadow:0 2px 8px #ccc;{% if nino.estado == 'retirado' %}filter: grayscale(100%);{% endif %}">
               {% else %}
                 <span style="color:#aaa;font-size:22px;"><i class="fas fa-user-circle"></i></span>
               {% endif %}
             </td>
-            <td>{{ nino.nombres }} {{ nino.apellidos }}</td>
+            <td>
+              {{ nino.nombres }} {{ nino.apellidos }}
+              {% if nino.estado == 'retirado' %}
+              <div style="font-size: 11px; color: #E53935; font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <i class="fas fa-times-circle"></i> RETIRADO
+              </div>
+              {% elif nino.estado == 'inactivo' %}
+              <div style="font-size: 11px; color: #FF9800; font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                <i class="fas fa-pause-circle"></i> INACTIVO
+              </div>
+              {% endif %}
+            </td>
             <td>{{ nino.documento|default:"N/A" }}</td>
             <td>{{ nino.fecha_nacimiento|date:"Y-m-d" }}</td>
             <td>{{ nino.genero|capfirst }}</td>
             <td>{{ nino.padre.usuario.nombres }} {{ nino.padre.usuario.apellidos }}</td>
             <td class="acciones">
+              {% if nino.estado == 'activo' %}
               <button class="btn-accion btn-verde ver-detalles" title="Ver Ficha"><i class="fas fa-eye"></i></button>
               <a href="{% url 'editar_nino' nino.id %}" class="btn-accion btn-azul" title="Editar"><i class="fas fa-edit"></i></a>
               <a href="{% url 'eliminar_nino' nino.id %}" class="btn-accion btn-rojo" title="Retirar" onclick="return confirm('¿Seguro que deseas retirar este niño?');"><i class="fas fa-trash-alt"></i></a>
               <a href="{% url 'reporte_matricula_nino_pdf' nino.id %}" class="btn-accion btn-reporte" title="Descargar PDF Matrícula"><i class="fas fa-file-pdf"></i></a>
               <a href="{% url 'certificado_matricula_pdf' nino.id %}" class="btn-accion" style="background-color: #17a2b8; color: white;" title="Certificado de Matrícula"><i class="fas fa-certificate"></i></a>
+              {% else %}
+              <button class="btn-accion btn-verde ver-detalles" title="Ver Ficha"><i class="fas fa-eye"></i></button>
+              <span style="padding: 4px 6px; color: #999; font-size: 12px; font-weight: 600; cursor: not-allowed;" title="No disponible (niño no activo)"><i class="fas fa-lock"></i></span>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}

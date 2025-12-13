@@ -141,8 +141,8 @@
                 </a>
               {% elif hogar.estado == 'visita_agendada' %}
                 {% with hogar.visitas_tecnicas.first as visita %}
-                  <a href="{% url 'crear_acta_visita' visita.id %}" class="btn btn-success">
-                    <i class="fas fa-file-alt"></i> Crear Acta
+                  <a href="{% url 'registrar_visita' hogar.id %}" class="btn btn-success">
+                    <i class="fas fa-calendar-check"></i> Registrar Visita
                   </a>
                 {% endwith %}
               {% elif hogar.estado == 'en_evaluacion' %}

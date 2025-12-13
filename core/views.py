@@ -2,10 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
-from django.db import transaction
+from django.db import transaction, models
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q, Count
-from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional, SolicitudMatriculacion, Discapacidad, VisitaTecnica, ActaVisitaTecnica
+from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional, SolicitudMatriculacion, Discapacidad, VisitaTecnica, ActaVisitaTecnica, SolicitudRetiroMatricula
 from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
@@ -32,6 +32,7 @@ from django.core.mail import send_mail, EmailMessage, get_connection  # 🆕 Par
 from django.utils.html import strip_tags
 from django.conf import settings  # 🆕 Para configuración de email
 from functools import wraps
+from django.core.exceptions import ValidationError
 
 # Importar decoradores
 from .decorators import rol_requerido
@@ -351,6 +352,16 @@ def matricular_nino(request):
         messages.error(request, 'No tienes un hogar comunitario asignado.')
         return redirect('madre_dashboard')
 
+    # 🛡️ B1: VALIDACIÓN DE ESTADO DEL HOGAR - Bloqueo de Matriculación
+    if hogar_madre.estado != 'activo':
+        messages.error(
+            request,
+            f'🚨 Error de Matriculación: El Hogar Comunitario no está en estado "Activo". '
+            f'El estado actual es: {hogar_madre.get_estado_display()}. '
+            f'Debe comunicarse con el administrador para la activación del hogar.'
+        )
+        return redirect('madre_dashboard')
+
     if request.method == 'POST':
         padre_form = PadreForm(request.POST, request.FILES, prefix='padre')
         nino_form = NinoForm(request.POST, request.FILES, prefix='nino')
@@ -644,6 +655,17 @@ def crear_madre(request):
             regional_hogar = hogar_form.cleaned_data.get('regional')
             ciudad_hogar = hogar_form.cleaned_data.get('ciudad')
             localidad_bogota_hogar = hogar_form.cleaned_data.get('localidad_bogota')
+            fecha_primera_visita = hogar_form.cleaned_data.get('fecha_primera_visita')
+
+            # Validar fecha antes de cualquier escritura en DB
+            if fecha_primera_visita and fecha_primera_visita < date.today():
+                hogar_form.add_error('fecha_primera_visita', 'La fecha de la primera visita no puede ser en el pasado.')
+                from .models import LocalidadBogota
+                localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
+                return render(request, 'admin/madres_form.html', {
+                    'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
+                    'initial_step': 3, 'regionales': regionales, 'localidades_bogota': localidades_bogota
+                })
 
             # Validación de documento duplicado
             if Usuario.objects.filter(documento=documento).exists():
@@ -658,6 +680,11 @@ def crear_madre(request):
             # Validación de hogar duplicado por nombre
             if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar).exists():
                 messages.error(request, f"Ya existe un hogar con el nombre '{nombre_hogar}' registrado.")
+                error_step = 3
+
+            # Validación de hogar duplicado por dirección
+            if HogarComunitario.objects.filter(direccion__iexact=direccion_hogar).exists():
+                messages.error(request, f"Ya existe un hogar registrado en la dirección '{direccion_hogar}'.")
                 error_step = 3
 
             if messages.get_messages(request):
@@ -703,49 +730,16 @@ def crear_madre(request):
                     else:
                         hogar.localidad = ciudad_hogar.nombre if ciudad_hogar else ''
                     
-                    # 🆕 El hogar inicia en estado "pendiente_revision" hasta que se realice la visita técnica
+                    # 🆕 El hogar inicia en estado pendiente_revision; si ya hay fecha, se respeta
                     hogar.estado = 'pendiente_revision'
-                    
-                    # Guardar fecha de primera visita si está disponible
-                    fecha_primera_visita = request.POST.get('fecha_primera_visita')
-                    if fecha_primera_visita:
-                        from datetime import datetime, date
-                        fecha_visita_obj = datetime.strptime(fecha_primera_visita, '%Y-%m-%d').date()
-                        
-                        # ✅ Validar que no sea en el pasado
-                        if fecha_visita_obj < date.today():
-                            messages.error(request, '❌ La fecha de primera visita no puede ser en el pasado.')
-                            from .models import LocalidadBogota
-                            localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
-                            return render(request, 'admin/madres_form.html', {
-                                'usuario_form': usuario_form, 
-                                'madre_profile_form': madre_profile_form, 
-                                'hogar_form': hogar_form,
-                                'initial_step': 3, 
-                                'regionales': regionales,
-                                'localidades_bogota': localidades_bogota
-                            })
-                        
-                        hogar.fecha_primera_visita = fecha_visita_obj
+                    hogar.fecha_primera_visita = fecha_primera_visita
+                    hogar.ultima_visita = None
+                    hogar.proxima_visita = None
 
                     hogar.save()
 
-                    # 4️⃣ Crear visita técnica programada (opcional)
-                    fecha_visita_dt = None
-                    visita = None
+                    # 4️⃣ Notificar creación (la visita se agenda posteriormente desde el panel de visitas)
                     correo_notificacion_enviado = False
-
-                    if fecha_primera_visita:
-                        from datetime import datetime
-                        fecha_visita_dt = datetime.strptime(fecha_primera_visita, '%Y-%m-%d')
-                        visita = VisitaTecnica.objects.create(
-                            hogar=hogar,
-                            fecha_programada=fecha_visita_dt,
-                            tipo_visita='V1',
-                            estado='agendada',
-                            creado_por=request.user,
-                            observaciones_agenda=f'Primera visita programada al crear el hogar {nombre_hogar}'
-                        )
 
                     # Enviar correo de notificación (siempre se intenta, aún sin fecha definida)
                     connection = None
@@ -757,7 +751,6 @@ def crear_madre(request):
                             'direccion_hogar': direccion_hogar,
                             'regional_nombre': regional_hogar.nombre if regional_hogar else '',
                             'ciudad_nombre': ciudad_hogar.nombre if ciudad_hogar else '',
-                            'fecha_visita_formateada': fecha_visita_dt.strftime('%d de %B de %Y') if fecha_visita_dt else None,
                             'login_url': request.build_absolute_uri(reverse('login')),
                         }
 
@@ -781,10 +774,6 @@ def crear_madre(request):
 
                         if enviados:
                             correo_notificacion_enviado = True
-                            if visita:
-                                visita.correo_enviado = True
-                                visita.fecha_envio_correo = timezone.now()
-                                visita.save()
 
                     except Exception as e:
                         print(f"Error al enviar correo: {e}")
@@ -827,8 +816,6 @@ def crear_madre(request):
 
                 # Mensaje de éxito informativo
                 mensaje_exito = '✅ ¡Agente educativo y hogar creados exitosamente! '
-                if fecha_visita_dt:
-                    mensaje_exito += f'📅 Visita técnica programada para el {fecha_visita_dt.strftime("%d de %B de %Y")}. '
                 if correo_notificacion_enviado:
                     mensaje_exito += '📧 Se envió un correo de confirmación. '
                 else:
@@ -1555,8 +1542,8 @@ def madre_dashboard(request):
     if not hogar_madre:
         return render(request, 'madre/dashboard.html', {'error': 'No tienes un hogar asignado.'})
     
-    # Obtener todos los niños del hogar
-    ninos = Nino.objects.filter(hogar=hogar_madre).select_related('padre', 'padre__usuario')
+    # Obtener todos los niños ACTIVOS del hogar (excluir retirados)
+    ninos = Nino.objects.filter(hogar=hogar_madre, estado='activo').select_related('padre', 'padre__usuario')
     total_ninos = ninos.count()
     
     # Información del hogar
@@ -1826,11 +1813,18 @@ def padre_dashboard(request):
             ultimo_desarrollo = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes').first()
             ultima_novedad = Novedad.objects.filter(nino=nino).order_by('-fecha').first()
 
+            # 🆕 Obtener solicitud de retiro pendiente para este niño
+            solicitud_retiro_pendiente = SolicitudRetiroMatricula.objects.filter(
+                nino=nino,
+                estado='pendiente'
+            ).first()
+
             ninos_data.append({
                 'nino': nino,
                 'ultima_asistencia': asistencia_info,
                 'ultimo_desarrollo': ultimo_desarrollo,
-                'ultima_novedad': ultima_novedad
+                'ultima_novedad': ultima_novedad,
+                'solicitud_retiro': solicitud_retiro_pendiente
             })
         
         # 🆕 Obtener solicitudes de matrícula del padre (pendientes, en corrección, rechazadas recientes)
@@ -1875,6 +1869,55 @@ def _get_logro_style(logro):
         return "#e74c3c", "fas fa-exclamation"
     else:
         return "#9B59B6", "fas fa-child"
+
+
+# =====================================================
+# 🆕 VISTA INTEGRAL: Perfil Completo del Hijo
+# =====================================================
+@login_required
+def padre_perfil_hijo(request, nino_id):
+    """
+    Vista que muestra TODA la información del hijo incluyendo documentos.
+    Solo el padre propietario puede ver la información de su hijo.
+    """
+    if request.user.rol.nombre_rol != 'padre':
+        return redirect('role_redirect')
+    
+    try:
+        from novedades.models import Novedad
+        from desarrollo.models import DesarrolloNino
+        from asistencia.models import Asistencia
+        
+        padre = Padre.objects.get(usuario=request.user)
+        nino = get_object_or_404(Nino, id=nino_id, padre=padre)
+        
+        # Información relacionada
+        asistencia_reciente = Asistencia.objects.filter(nino=nino).order_by('-fecha')[:10]
+        novedades_recientes = Novedad.objects.filter(nino=nino).order_by('-fecha')[:5]
+        desarrollo_actual = DesarrolloNino.objects.filter(nino=nino).order_by('-fecha_fin_mes').first()
+        
+        # Documentos disponibles
+        documentos = {
+            'foto': nino.foto,
+            'carnet_vacunacion': nino.carnet_vacunacion,
+            'certificado_eps': nino.certificado_eps,
+            'registro_civil': nino.registro_civil_img,
+        }
+        
+        # Información del padre/tutor
+        padre_info = nino.padre
+        
+        return render(request, 'padre/perfil_hijo.html', {
+            'nino': nino,
+            'padre': padre,
+            'padre_info': padre_info,
+            'documentos': documentos,
+            'asistencia_reciente': asistencia_reciente,
+            'novedades_recientes': novedades_recientes,
+            'desarrollo_actual': desarrollo_actual,
+        })
+    except Padre.DoesNotExist:
+        return redirect('padre_dashboard')
 
 
 # ----------------------------------------------------
@@ -2412,6 +2455,16 @@ def matricular_nino_a_padre_existente(request):
         hogar_madre = HogarComunitario.objects.get(madre=madre_profile)
     except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
         messages.error(request, 'No tienes un hogar comunitario asignado.')
+        return redirect('madre_dashboard')
+
+    # 🛡️ B2: VALIDACIÓN DE ESTADO DEL HOGAR - Bloqueo de Matriculación
+    if hogar_madre.estado != 'activo':
+        messages.error(
+            request,
+            f'🚨 Error de Matriculación: El Hogar Comunitario no está en estado "Activo". '
+            f'El estado actual es: {hogar_madre.get_estado_display()}. '
+            f'Debe comunicarse con el administrador para la activación del hogar.'
+        )
         return redirect('madre_dashboard')
 
     if request.method == 'POST':
@@ -3079,7 +3132,8 @@ def padre_solicitar_matricula(request):
                 hogar = hogar_correcto
             else:
                 try:
-                    hogar = HogarComunitario.objects.get(id=hogar_id, estado='aprobado')
+                    # 🛡️ B3: VALIDACIÓN DE ESTADO DEL HOGAR - Cambiar de 'aprobado' a 'activo'
+                    hogar = HogarComunitario.objects.get(id=hogar_id, estado='activo')
                 except HogarComunitario.DoesNotExist:
                     return JsonResponse({
                         'status': 'error',
@@ -3274,6 +3328,15 @@ def enviar_invitacion_matricula(request):
             hogar_madre = HogarComunitario.objects.filter(madre=request.user.madre_profile).first()
             if not hogar_madre:
                 return JsonResponse({'status': 'error', 'mensaje': 'No tienes un hogar asignado.'}, status=400)
+
+            # 🛡️ B4: VALIDACIÓN DE ESTADO DEL HOGAR - Bloqueo de Matriculación (AJAX)
+            if hogar_madre.estado != 'activo':
+                return JsonResponse({
+                    'status': 'error',
+                    'mensaje': f'🚨 Error de Matriculación: El Hogar Comunitario no está en estado "Activo". '
+                               f'El estado actual es: {hogar_madre.get_estado_display()}. '
+                               f'Debe comunicarse con el administrador para la activación del hogar.'
+                }, status=403)
             
             # Obtener email del acudiente
             email_acudiente = request.POST.get('email_acudiente', '').strip()
@@ -4886,6 +4949,45 @@ def validar_documento_madre(request):
 # 🏠 SISTEMA DE VISITAS TÉCNICAS PARA HABILITACIÓN DE HOGARES
 # ========================================================================================
 
+
+def _actualizar_hogar_despues_de_programar_visita(hogar, visita, *, contexto='primera_visita'):
+    """Sincroniza datos del hogar al agendar visitas sin degradar estados finales."""
+    if not visita or not hogar:
+        return
+
+    estado_final = hogar.estado in ['activo', 'rechazado']
+    campos_actualizados = []
+
+    if not estado_final and hogar.estado != 'visita_agendada':
+        hogar.estado = 'visita_agendada'
+        campos_actualizados.append('estado')
+
+    fecha_visita = visita.fecha_programada.date() if visita.fecha_programada else None
+
+    if fecha_visita:
+        if getattr(visita, 'tipo_visita', None) == 'V1':
+            if hogar.fecha_primera_visita != fecha_visita:
+                hogar.fecha_primera_visita = fecha_visita
+                campos_actualizados.append('fecha_primera_visita')
+        else:
+            if hogar.proxima_visita != fecha_visita:
+                hogar.proxima_visita = fecha_visita
+                campos_actualizados.append('proxima_visita')
+
+    if campos_actualizados:
+        hogar.save(update_fields=campos_actualizados)
+
+
+def _calcular_seguimiento_anual(fecha_base):
+    """Suma un año y ajusta a lunes si cae en fin de semana."""
+    fecha = fecha_base + timedelta(days=365)
+    if fecha.weekday() == 5:  # sábado
+        fecha += timedelta(days=2)
+    elif fecha.weekday() == 6:  # domingo
+        fecha += timedelta(days=1)
+    return fecha
+
+
 @login_required
 def listar_hogares_pendientes_visita(request):
     """
@@ -4926,9 +5028,11 @@ def agendar_visita_tecnica(request, hogar_id):
             visita.creado_por = request.user
             visita.save()
             
-            # Actualizar estado del hogar
-            hogar.estado = 'visita_agendada'
-            hogar.save()
+            _actualizar_hogar_despues_de_programar_visita(
+                hogar,
+                visita,
+                contexto='primera_visita' if visita.tipo_visita == 'V1' else 'seguimiento'
+            )
             
             # Enviar correo a la madre
             enviar_correo_visita_agendada(visita)
@@ -4951,131 +5055,11 @@ def agendar_visita_tecnica(request, hogar_id):
 
 
 @login_required
-def crear_acta_visita(request, visita_id):
-    """
-    Formulario para crear el Acta de Visita Técnica (V1).
-    Dividido en pasos para facilitar el llenado.
-    """
-    visita = get_object_or_404(VisitaTecnica, id=visita_id)
-    
-    # Verificar si ya existe un acta
-    try:
-        acta = visita.acta
-        editing = True
-    except ActaVisitaTecnica.DoesNotExist:
-        acta = None
-        editing = False
-    
-    if request.method == 'POST':
-        if acta:
-            form = ActaVisitaTecnicaForm(request.POST, request.FILES, instance=acta)
-        else:
-            form = ActaVisitaTecnicaForm(request.POST, request.FILES)
-        
-        if form.is_valid():
-            acta_obj = form.save(commit=False)
-            acta_obj.visita = visita
-            acta_obj.completado_por = request.user
-            acta_obj.save()
-            
-            # Actualizar estado de la visita
-            visita.estado = 'completada'
-            visita.fecha_realizacion = timezone.now()
-            visita.save()
-            
-            # Actualizar estado del hogar según resultado
-            hogar = visita.hogar
-            if acta_obj.resultado_visita == 'aprobado':
-                hogar.estado = 'activo'
-                hogar.fecha_habilitacion = timezone.now()
-                hogar.capacidad_maxima = acta_obj.capacidad_recomendada
-                # Actualizar geolocalización verificada
-                hogar.geolocalizacion_lat = acta_obj.geolocalizacion_lat_verificada
-                hogar.geolocalizacion_lon = acta_obj.geolocalizacion_lon_verificada
-                hogar.save()
-                enviar_correo_hogar_aprobado(hogar, acta_obj)
-                
-            elif acta_obj.resultado_visita == 'aprobado_condiciones':
-                hogar.estado = 'activo'
-                hogar.fecha_habilitacion = timezone.now()
-                hogar.capacidad_maxima = acta_obj.capacidad_recomendada
-                hogar.geolocalizacion_lat = acta_obj.geolocalizacion_lat_verificada
-                hogar.geolocalizacion_lon = acta_obj.geolocalizacion_lon_verificada
-                hogar.save()
-                enviar_correo_hogar_aprobado_condiciones(hogar, acta_obj)
-                
-            elif acta_obj.resultado_visita == 'rechazado':
-                hogar.estado = 'rechazado'
-                hogar.save()
-                enviar_correo_hogar_rechazado(hogar, acta_obj)
-                
-            elif acta_obj.resultado_visita == 'requiere_segunda_visita':
-                hogar.estado = 'en_evaluacion'
-                hogar.save()
-            
-            messages.success(request, f'Acta de visita guardada exitosamente. Estado del hogar: {hogar.get_estado_display()}')
-            return redirect('ver_acta_visita', acta_id=acta_obj.id)
-    else:
-        if acta:
-            form = ActaVisitaTecnicaForm(instance=acta)
-        else:
-            form = ActaVisitaTecnicaForm()
-    
-    # Obtener el paso actual
-    current_step = request.GET.get('step', '1')
-    
-    context = {
-        'form': form,
-        'visita': visita,
-        'hogar': visita.hogar,
-        'current_step': current_step,
-        'editing': editing,
-    }
-    
-    return render(request, 'admin/visitas/crear_acta.html', context)
 
 
-@login_required
-def ver_acta_visita(request, acta_id):
-    """
-    Vista completa del acta de visita técnica.
-    """
-    acta = get_object_or_404(ActaVisitaTecnica, id=acta_id)
-    
-    context = {
-        'acta': acta,
-        'visita': acta.visita,
-        'hogar': acta.visita.hogar,
-    }
-    
-    return render(request, 'admin/visitas/ver_acta.html', context)
-
-
-@login_required
-def descargar_acta_pdf(request, acta_id):
-    """
-    Genera y descarga el acta de visita en formato PDF.
-    """
-    acta = get_object_or_404(ActaVisitaTecnica, id=acta_id)
-    
-    template = get_template('admin/visitas/acta_pdf.html')
-    context = {
-        'acta': acta,
-        'visita': acta.visita,
-        'hogar': acta.visita.hogar,
-    }
-    html = template.render(context)
-    
-    # Crear PDF
-    result = io.BytesIO()
-    pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
-    
-    if not pdf.err:
-        response = HttpResponse(result.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="Acta_Visita_{acta.visita.hogar.nombre_hogar}.pdf"'
-        return response
-    
-    return HttpResponse('Error al generar PDF', status=400)
+# ========================================================================================
+# 🏠 REGISTRO DE VISITAS (Activación y Reactivación de Hogares)
+# ========================================================================================
 
 
 @login_required
@@ -5315,6 +5299,19 @@ def completar_visita_tecnica(request, hogar_id):
     
     if request.method == 'POST':
         form = HogarFormulario2Form(request.POST, request.FILES, instance=hogar)
+        
+        # Manejar solicitud de borrado de archivos mediante checkboxes
+        if request.POST.get('clear_fotos_interior'):
+            form.data = form.data.copy()  # Hacer copia mutable del POST
+            form.files['fotos_interior'] = None  # Borrar del formulario
+            if hogar.fotos_interior:
+                hogar.fotos_interior.delete()
+        
+        if request.POST.get('clear_fotos_exterior'):
+            form.data = form.data.copy()
+            form.files['fotos_exterior'] = None
+            if hogar.fotos_exterior:
+                hogar.fotos_exterior.delete()
         
         if form.is_valid():
             # El formulario automáticamente:
@@ -5813,10 +5810,19 @@ def hogares_dashboard(request):
     filtro_estado = request.GET.get('estado', '')
     busqueda = request.GET.get('q', '').strip()
     
+    from django.db.models import Prefetch
+    from django.utils import timezone
+    import json
+
     # Query base con relaciones pre-cargadas y anotaciones
+    visitas_prefetch = Prefetch(
+        'visitas_tecnicas',
+        queryset=VisitaTecnica.objects.select_related('acta').order_by('fecha_programada')
+    )
+
     hogares = HogarComunitario.objects.select_related(
         'madre__usuario', 'regional', 'ciudad', 'localidad_bogota'
-    ).annotate(
+    ).prefetch_related(visitas_prefetch).annotate(
         ninos_count=Count('ninos', filter=Q(ninos__estado='activo'))
     )
     
@@ -5835,21 +5841,84 @@ def hogares_dashboard(request):
             Q(direccion__icontains=busqueda)
         )
     
-    # Ordenar por localidad y fecha de registro
-    hogares = hogares.order_by('localidad_bogota__numero', '-fecha_registro')
-    
     # Obtener todas las localidades de Bogotá para el filtro
     from core.models import LocalidadBogota
+    from django.db.models import Case, When, Q
     localidades = LocalidadBogota.objects.all().order_by('numero')
     
-    # Agrupar hogares por localidad
+    # Ordenar con prioridades:
+    # 1. Hogares SIN visita programada (fecha_primera_visita IS NULL)
+    # 2. Hogares con visita programada pero SIN completar (ultima_visita IS NULL)
+    # 3. Hogares con visitas pero sin programada (sin próxima visita)
+    # 4. Hogares nuevos (fecha_registro DESC)
+    hoy = timezone.now().date()
+    
+    hogares = hogares.annotate(
+        prioridad_visita=Case(
+            When(fecha_primera_visita__isnull=True, then=0),  # Sin visita programada
+            When(Q(fecha_primera_visita__isnull=False) & Q(ultima_visita__isnull=True), then=1),  # Programada pero no completada
+            When(proxima_visita__isnull=True, then=2),  # Sin próxima visita agendada
+            default=3,  # Tienen visitas
+            output_field=models.IntegerField(),
+        )
+    ).order_by('prioridad_visita', '-fecha_registro')
+    
+    # Agrupar hogares por localidad con metadatos de visitas
     hogares_por_localidad = defaultdict(list)
+
     for hogar in hogares:
+        visitas = list(hogar.visitas_tecnicas.all())
+        total_visitas = len(visitas)
+        completadas = [v for v in visitas if v.estado == 'completada' and v.fecha_realizacion]
+        ultima_visita_obj = max(completadas, key=lambda v: v.fecha_realizacion) if completadas else None
+        ultima_visita_fecha = ultima_visita_obj.fecha_realizacion.date() if ultima_visita_obj else None
+        ultima_visita_tipo = ultima_visita_obj.tipo_visita if ultima_visita_obj else None
+
+        agendadas = [v for v in visitas if v.estado == 'agendada' and v.fecha_programada]
+        agendadas_sorted = sorted(agendadas, key=lambda v: v.fecha_programada)
+        proxima_visita_obj = agendadas_sorted[0] if agendadas_sorted else None
+        proxima_visita_fecha = proxima_visita_obj.fecha_programada.date() if proxima_visita_obj else None
+        proxima_visita_estado = None
+        if proxima_visita_fecha:
+            proxima_visita_estado = 'vencida' if proxima_visita_fecha < hoy else 'programada'
+        else:
+            proxima_visita_estado = 'sin_programar'
+
+        hogar.total_visitas = total_visitas
+        hogar.ultima_visita_calculada = ultima_visita_fecha
+        hogar.ultima_visita_tipo = ultima_visita_tipo
+        hogar.proxima_visita_calculada = proxima_visita_fecha
+        hogar.proxima_visita_estado = proxima_visita_estado
+        hogar.sin_visitas = total_visitas == 0
+        hogar.tiene_visita_programada = proxima_visita_obj is not None
+        hogar.primera_visita_agendada_id = proxima_visita_obj.id if proxima_visita_obj else None
+        hogar.permite_agendar = hogar.estado in ['pendiente_revision', 'pendiente_visita', 'en_evaluacion'] and not hogar.tiene_visita_programada
+        hogar.permite_reprogramar = hogar.estado in ['pendiente_revision', 'pendiente_visita', 'en_evaluacion'] and hogar.tiene_visita_programada
+        hogar.permite_visita_rapida = hogar.estado == 'pendiente_visita' and hogar.sin_visitas
+        hogar.permite_registrar_seguimiento = hogar.estado == 'activo'
+
+        historial = []
+        for v in visitas:
+            try:
+                resultado_visita = v.acta.resultado_visita
+                tiene_acta = True
+            except Exception:
+                resultado_visita = None
+                tiene_acta = False
+            historial.append({
+                'fecha': v.fecha_programada.date().isoformat() if v.fecha_programada else None,
+                'estado': v.estado,
+                'tipo': v.tipo_visita,
+                'resultado': resultado_visita,
+                'tiene_acta': tiene_acta,
+                'fecha_realizacion': v.fecha_realizacion.date().isoformat() if v.fecha_realizacion else None
+            })
+
+        hogar.visitas_json = json.dumps(historial)
+
         if hogar.localidad_bogota:
-            # Usar formato "Ciudad - Localidad" para hogares en Bogotá
             clave_localidad = f"{hogar.ciudad.nombre} - {hogar.localidad_bogota.nombre}"
         elif hogar.ciudad:
-            # Para hogares sin localidad asignada
             clave_localidad = hogar.ciudad.nombre
         else:
             clave_localidad = 'Sin ubicación'
@@ -5880,6 +5949,8 @@ def realizar_visita_tecnica(request, hogar_id):
     """
     hogar = get_object_or_404(HogarComunitario, id=hogar_id)
     
+    es_visita_rapida = request.GET.get('rapida') == '1'
+
     # Obtener la visita programada
     visita = hogar.visitas_tecnicas.filter(
         estado='agendada'
@@ -5890,7 +5961,7 @@ def realizar_visita_tecnica(request, hogar_id):
         return redirect('hogares_dashboard')
     
     # Verificar si se puede realizar la visita (fecha programada o posterior)
-    puede_realizar_visita = visita.fecha_programada.date() <= timezone.now().date()
+    puede_realizar_visita = es_visita_rapida or visita.fecha_programada.date() <= timezone.now().date()
     
     if request.method == 'POST' and puede_realizar_visita:
         try:
@@ -6153,20 +6224,11 @@ def programar_visita(request, hogar_id):
         try:
             from datetime import datetime
             fecha_visita_dt = datetime.strptime(fecha_programada, '%Y-%m-%d')
-            fecha_visita_date = fecha_visita_dt.date()
-            
-            # Validar que la fecha no sea en el pasado
-            from datetime import date
-            if fecha_visita_date < date.today():
+
+            if fecha_visita_dt.date() < date.today():
                 messages.error(request, '❌ La fecha de visita no puede ser en el pasado.')
                 return redirect('hogares_dashboard')
-            
-            # Actualizar fecha_primera_visita si no existe (hogar sin visita programada)
-            if not hogar.fecha_primera_visita:
-                hogar.fecha_primera_visita = fecha_visita_date
-                hogar.save()
-            
-            # Crear la visita
+
             visita = VisitaTecnica.objects.create(
                 hogar=hogar,
                 fecha_programada=fecha_visita_dt,
@@ -6175,41 +6237,18 @@ def programar_visita(request, hogar_id):
                 creado_por=request.user,
                 observaciones_agenda=observaciones
             )
-            
-            # Enviar correo de notificación
-            from django.core.mail import send_mail
-            usuario = hogar.madre.usuario
-            
-            mensaje = f"""
-            Estimado/a {usuario.nombres} {usuario.apellidos},
-            
-            Se ha programado una nueva visita técnica para su hogar "{hogar.nombre_hogar}":
-            
-            Fecha: {visita.fecha_programada.strftime('%d de %B de %Y a las %H:%M')}
-            Tipo: {visita.get_tipo_visita_display()}
-            Observaciones: {observaciones}
-            
-            Por favor esté disponible en esa fecha.
-            
-            Saludos,
-            ICBF Conecta
-            """
-            
-            send_mail(
-                'Nueva Visita Técnica Programada - ICBF Conecta',
-                mensaje,
-                'noreply@icbf.gov.co',
-                [usuario.correo],
-                fail_silently=True
+
+            _actualizar_hogar_despues_de_programar_visita(
+                hogar,
+                visita,
+                contexto='primera_visita' if not hogar.fecha_primera_visita else 'seguimiento'
             )
-            
-            visita.correo_enviado = True
-            visita.fecha_envio_correo = timezone.now()
-            visita.save()
-            
+
+            enviar_correo_visita_agendada(visita)
+
             messages.success(request, '✅ Visita programada exitosamente. Se envió notificación por correo.')
             return redirect('hogares_dashboard')
-            
+
         except Exception as e:
             messages.error(request, f'❌ Error al programar visita: {str(e)}')
     
@@ -6475,6 +6514,12 @@ def activar_hogar(request, hogar_id):
     # Si fecha_hoy == fecha_primera_visita, no mostrar mensaje (es el día correcto)
     
     if request.method == 'POST':
+        if not hogar.visitas_tecnicas.filter(estado='completada').exists():
+            messages.error(
+                request,
+                '⚠️ No puedes activar un hogar sin al menos una visita registrada. Completa la visita técnica antes de continuar.'
+            )
+            return redirect('hogares_dashboard')
         try:
             # Capturar datos del formulario
             tipo_vivienda = request.POST.get('tipo_vivienda')
@@ -6591,6 +6636,22 @@ RECOMENDACIÓN: {recomendacion.upper()}
                 # Guardar cambios (ultima_visita ya fue seteada arriba)
                 hogar.save()
                 
+                # Crear visita agendada para la próxima fecha
+                siguiente_fecha = hogar.proxima_visita
+                existe_agendada = hogar.visitas_tecnicas.filter(
+                    estado='agendada',
+                    fecha_programada__date=siguiente_fecha
+                ).exists()
+                if not existe_agendada:
+                    VisitaTecnica.objects.create(
+                        hogar=hogar,
+                        fecha_programada=datetime.combine(siguiente_fecha, datetime.min.time()),
+                        tipo_visita='V2',
+                        estado='agendada',
+                        creado_por=request.user,
+                        observaciones_agenda='Visita de seguimiento automática (1 año)'
+                    )
+                
                 # Enviar email de activación
                 enviar_email_activacion(hogar)
                 
@@ -6605,6 +6666,22 @@ RECOMENDACIÓN: {recomendacion.upper()}
                 hogar.estado = 'activo'
                 hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
                 hogar.save()
+
+                # Crear visita agendada para la próxima fecha
+                siguiente_fecha = hogar.proxima_visita
+                existe_agendada = hogar.visitas_tecnicas.filter(
+                    estado='agendada',
+                    fecha_programada__date=siguiente_fecha
+                ).exists()
+                if not existe_agendada:
+                    VisitaTecnica.objects.create(
+                        hogar=hogar,
+                        fecha_programada=datetime.combine(siguiente_fecha, datetime.min.time()),
+                        tipo_visita='V2',
+                        estado='agendada',
+                        creado_por=request.user,
+                        observaciones_agenda='Visita de seguimiento automática (1 año)'
+                    )
                 
                 # Enviar email de activación
                 enviar_email_activacion(hogar)
@@ -6659,21 +6736,103 @@ def registrar_visita(request, hogar_id):
     """
     Vista para registrar visitas de seguimiento en hogares YA ACTIVOS.
     Usa el mismo formulario de evaluación que la activación.
+    
+    Parámetros:
+    - registro_inmediato=1: Registra la visita al instante (sin pedir detalles)
     """
     hogar = get_object_or_404(HogarComunitario, id=hogar_id)
     fecha_hoy = date.today()
+    es_visita_rapida = request.GET.get('rapida') == '1'
+    es_registro_inmediato = request.GET.get('registro_inmediato') == '1'
     
-    # Verificar que el hogar esté activo
-    if hogar.estado not in ['activo', 'aprobado']:
+    # Si es registro inmediato, crear visita simple sin formulario
+    if es_registro_inmediato and request.method == 'GET':
+        # Mostrar confirmación
+        context = {
+            'hogar': hogar,
+            'es_registro_inmediato': True,
+            'fecha_hoy': fecha_hoy.strftime('%d/%m/%Y'),
+            'titulo': f'Registrar Visita Inmediatamente - {hogar.nombre_hogar}'
+        }
+        return render(request, 'admin/registrar_visita_inmediata.html', context)
+    
+    # Si es POST de registro inmediato, guardar visita simple
+    if es_registro_inmediato and request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Crear visita técnica simple (sin detalles completos)
+                observaciones = request.POST.get('observaciones_rapidas', 'Visita de seguimiento registrada rápidamente')
+                resultado = request.POST.get('resultado', 'aprobado')
+                
+                VisitaTecnica.objects.create(
+                    hogar=hogar,
+                    fecha_programada=datetime.combine(fecha_hoy, datetime.min.time()),
+                    fecha_realizacion=timezone.now(),
+                    tipo_visita='V2',
+                    estado='completada',
+                    observaciones_agenda=observaciones,
+                    visitador=request.user,
+                    creado_por=request.user
+                )
+                
+                # Actualizar hogar
+                hogar.ultima_visita = fecha_hoy
+                hogar.observaciones_visita = f"[REGISTRO INMEDIATO] {observaciones}"
+                
+                if resultado == 'aprobado':
+                    hogar.estado_aptitud = 'apto'
+                    hogar.estado = 'activo'
+                    hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
+                    hogar.save()
+
+                    # Auto-crear próxima visita
+                    siguiente_fecha = hogar.proxima_visita
+                    existe_agendada = hogar.visitas_tecnicas.filter(
+                        estado='agendada',
+                        fecha_programada__date=siguiente_fecha
+                    ).exists()
+                    if not existe_agendada:
+                        VisitaTecnica.objects.create(
+                            hogar=hogar,
+                            fecha_programada=datetime.combine(siguiente_fecha, datetime.min.time()),
+                            tipo_visita='V2',
+                            estado='agendada',
+                            creado_por=request.user,
+                            observaciones_agenda='Visita de seguimiento automática (1 año)'
+                        )
+                    
+                    messages.success(request, 
+                        f'✅ Visita registrada exitosamente. '
+                        f'El hogar continúa ACTIVO. '
+                        f'Próxima visita: {hogar.proxima_visita.strftime("%d/%m/%Y")}'
+                    )
+                elif resultado == 'no_aprobado':
+                    hogar.estado_aptitud = 'no_apto'
+                    hogar.estado = 'rechazado'
+                    hogar.save()
+                    
+                    messages.error(request, 
+                        f'❌ Hogar NO APTO. Estado cambiado a "Rechazado".'
+                    )
+                
+                return redirect('hogares_dashboard')
+                
+        except Exception as e:
+            messages.error(request, f'Error al registrar visita: {str(e)}')
+            return redirect('hogares_dashboard')
+    
+    # Verificar que el hogar esté activo (para flujo normal)
+    if not es_visita_rapida and hogar.estado not in ['activo', 'aprobado']:
         messages.warning(request, 'Solo puedes registrar visitas en hogares activos.')
         return redirect('hogares_dashboard')
     
     if request.method == 'POST':
         try:
-            # Capturar datos del formulario (mismo código que activar_hogar)
-            tipo_vivienda = request.POST.get('tipo_vivienda')
-            ubicacion = request.POST.get('ubicacion')
-            sin_riesgo = request.POST.get('sin_riesgo')
+            with transaction.atomic():
+                # Capturar datos del formulario (mismo código que activar_hogar)
+                tipo_vivienda = request.POST.get('tipo_vivienda')
+                ubicacion = request.POST.get('ubicacion')
+                sin_riesgo = request.POST.get('sin_riesgo')
             
             servicios = {
                 'acueducto': request.POST.get('servicio_acueducto') == '1',
@@ -6712,7 +6871,7 @@ def registrar_visita(request, hogar_id):
                     f'Valor ingresado: {capacidad_calculada}.'
                 )
                 return redirect('registrar_visita', hogar_id=hogar.id)
-            
+
             # Construir observaciones
             observaciones_completas = f"""
 === VISITA DE SEGUIMIENTO ===
@@ -6757,6 +6916,18 @@ OBSERVACIONES:
 RESULTADO: {recomendacion.upper()}
 """
             
+            # Registrar la visita técnica como completada (V2 seguimiento)
+            VisitaTecnica.objects.create(
+                hogar=hogar,
+                fecha_programada=datetime.combine(fecha_hoy, datetime.min.time()),
+                fecha_realizacion=timezone.now(),
+                tipo_visita='V2',
+                estado='completada',
+                observaciones_agenda=observaciones_generales,
+                visitador=request.user,
+                creado_por=request.user
+            )
+            
             # Actualizar hogar
             hogar.ultima_visita = fecha_hoy
             hogar.observaciones_visita = observaciones_completas
@@ -6769,6 +6940,22 @@ RESULTADO: {recomendacion.upper()}
                 hogar.estado = 'activo'
                 hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
                 hogar.save()
+
+                # Programar automáticamente la próxima visita anual si no existe
+                siguiente_fecha = hogar.proxima_visita
+                existe_agendada = hogar.visitas_tecnicas.filter(
+                    estado='agendada',
+                    fecha_programada__date=siguiente_fecha
+                ).exists()
+                if not existe_agendada:
+                    VisitaTecnica.objects.create(
+                        hogar=hogar,
+                        fecha_programada=datetime.combine(siguiente_fecha, datetime.min.time()),
+                        tipo_visita='V2',
+                        estado='agendada',
+                        creado_por=request.user,
+                        observaciones_agenda='Visita de seguimiento automática (1 año)'
+                    )
                 
                 messages.success(request, 
                     f'✅ Visita registrada exitosamente. '
@@ -6781,6 +6968,21 @@ RESULTADO: {recomendacion.upper()}
                 hogar.estado = 'activo'
                 hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
                 hogar.save()
+
+                siguiente_fecha = hogar.proxima_visita
+                existe_agendada = hogar.visitas_tecnicas.filter(
+                    estado='agendada',
+                    fecha_programada__date=siguiente_fecha
+                ).exists()
+                if not existe_agendada:
+                    VisitaTecnica.objects.create(
+                        hogar=hogar,
+                        fecha_programada=datetime.combine(siguiente_fecha, datetime.min.time()),
+                        tipo_visita='V2',
+                        estado='agendada',
+                        creado_por=request.user,
+                        observaciones_agenda='Visita de seguimiento automática (1 año)'
+                    )
                 
                 messages.warning(request, 
                     f'⚠️ Visita registrada CON CONDICIONES. '
@@ -6804,6 +7006,21 @@ RESULTADO: {recomendacion.upper()}
                 # Programar visita más próxima (30 días)
                 hogar.proxima_visita = fecha_hoy + timedelta(days=30)
                 hogar.save()
+
+                siguiente_fecha = hogar.proxima_visita
+                existe_agendada = hogar.visitas_tecnicas.filter(
+                    estado='agendada',
+                    fecha_programada__date=siguiente_fecha
+                ).exists()
+                if not existe_agendada:
+                    VisitaTecnica.objects.create(
+                        hogar=hogar,
+                        fecha_programada=datetime.combine(siguiente_fecha, datetime.min.time()),
+                        tipo_visita='V2',
+                        estado='agendada',
+                        creado_por=request.user,
+                        observaciones_agenda='Visita de seguimiento automática (30 días)'
+                    )
                 
                 messages.info(request, 
                     f'🔄 Se requiere NUEVA VISITA en 30 días. '
@@ -6836,6 +7053,11 @@ def enviar_email_activacion(hogar):
         
         madre = hogar.madre
         usuario = madre.usuario
+        correo_destinatario = getattr(usuario, 'correo', None) or getattr(usuario, 'email', None)
+
+        if not correo_destinatario:
+            print(f"❌ Email de activación no enviado: el usuario {usuario.documento} no tiene correo registrado.")
+            return
         
         # Formatear fecha en español
         meses = {
@@ -6923,11 +7145,12 @@ def enviar_email_activacion(hogar):
                 <div class="content">
                     <p>¡Hola <strong>{usuario.nombres} {usuario.apellidos}</strong>!</p>
                     
-                    <p>Nos complace informarte que tu Hogar Comunitario ha sido <strong>ACTIVADO</strong> exitosamente después de completar la visita técnica.</p>
+                    <p>Nos complace informarte que tu Hogar Comunitario <strong>{hogar.nombre_hogar}</strong> ha aprobado la visita técnica y ha sido <strong>ACTIVADO</strong>. Ya puedes matricular niños en ICBF Conecta.</p>
                     
                     <div class="info-box">
                         <h2>📋 Detalles del Hogar</h2>
                         <p><strong>Nombre:</strong> {hogar.nombre_hogar}</p>
+                        <p><strong>Agente educativo:</strong> {usuario.nombres} {usuario.apellidos}</p>
                         <p><strong>Dirección:</strong> {hogar.direccion}</p>
                         <p><strong>Estado:</strong> <span style="color: #28a745; font-weight: bold;">ACTIVO</span></p>
                         <p><strong>Capacidad aprobada:</strong> {hogar.capacidad} niños</p>
@@ -6968,12 +7191,12 @@ def enviar_email_activacion(hogar):
             asunto,
             mensaje_texto,
             settings.EMAIL_HOST_USER,
-            [usuario.email],
+            [correo_destinatario],
             html_message=mensaje_html,
             fail_silently=False,
         )
         
-        print(f"✅ Email de activación enviado exitosamente a {usuario.email}")
+        print(f"✅ Email de activación enviado exitosamente a {correo_destinatario}")
         
     except Exception as e:
         print(f"❌ Error al enviar email de activación: {str(e)}")
@@ -7023,26 +7246,42 @@ def programar_visita_ajax(request, hogar_id):
         era_reprogramacion = hogar.fecha_primera_visita is not None
         fecha_anterior = hogar.fecha_primera_visita
         
-        # Guardar la nueva fecha
-        hogar.fecha_primera_visita = fecha_visita
-        hogar.save()
-        
-        # Enviar correo de notificación
-        try:
-            enviar_email_programacion_visita(
-                hogar=hogar,
-                fecha_visita=fecha_visita,
-                observaciones=observaciones,
-                es_reprogramacion=era_reprogramacion,
-                fecha_anterior=fecha_anterior
+        fecha_programada_dt = None
+        visita = hogar.visitas_tecnicas.filter(estado='agendada').order_by('-fecha_programada').first()
+
+        if visita:
+            fecha_programada_dt = datetime.combine(
+                fecha_visita,
+                visita.fecha_programada.time()
             )
+            visita.fecha_programada = fecha_programada_dt
+            visita.observaciones_agenda = observaciones
+            visita.creado_por = request.user
+            visita.save(update_fields=['fecha_programada', 'observaciones_agenda', 'creado_por', 'fecha_actualizacion'])
+        else:
+            fecha_programada_dt = datetime.combine(fecha_visita, datetime.min.time())
+            visita = VisitaTecnica.objects.create(
+                hogar=hogar,
+                fecha_programada=fecha_programada_dt,
+                tipo_visita='V1',
+                estado='agendada',
+                creado_por=request.user,
+                observaciones_agenda=observaciones
+            )
+
+        _actualizar_hogar_despues_de_programar_visita(
+            hogar,
+            visita,
+            contexto='primera_visita' if visita.tipo_visita == 'V1' else 'seguimiento'
+        )
+
+        try:
+            enviar_correo_visita_agendada(visita)
         except Exception as e:
-            # Log del error pero no fallar la operación
             print(f"Error al enviar correo de programación: {e}")
-        
-        # Formatear fecha para respuesta (DD/MM/YYYY)
+
         fecha_formateada = fecha_visita.strftime('%d/%m/%Y')
-        
+
         return JsonResponse({
             'success': True,
             'mensaje': f'Visita {"reprogramada" if era_reprogramacion else "programada"} exitosamente para el {fecha_formateada}',
@@ -7056,119 +7295,463 @@ def programar_visita_ajax(request, hogar_id):
         return JsonResponse({'success': False, 'error': f'Error al procesar la solicitud: {str(e)}'}, status=500)
 
 
-def enviar_email_programacion_visita(hogar, fecha_visita, observaciones, es_reprogramacion=False, fecha_anterior=None):
-    """Envía correo electrónico al agente educador cuando se programa o reprograma una visita"""
-    
-    if not hogar.correo:
-        return
-    
-    # Formatear fecha en español
-    meses = {
-        1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril', 5: 'mayo', 6: 'junio',
-        7: 'julio', 8: 'agosto', 9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
-    }
-    
-    dias_semana = {
-        0: 'lunes', 1: 'martes', 2: 'miércoles', 3: 'jueves', 4: 'viernes', 5: 'sábado', 6: 'domingo'
-    }
-    
-    dia_semana = dias_semana[fecha_visita.weekday()]
-    fecha_formateada = f"{dia_semana} {fecha_visita.day} de {meses[fecha_visita.month]} de {fecha_visita.year}"
-    
-    # Datos de la madre comunitaria
-    usuario = hogar.usuario
-    nombre_completo = f"{usuario.nombres} {usuario.apellidos}"
-    
-    # Asunto del correo
-    if es_reprogramacion:
-        asunto = f"🔄 Visita Técnica Reprogramada - {hogar.nombre_hogar}"
-    else:
-        asunto = f"📅 Visita Técnica Programada - {hogar.nombre_hogar}"
-    
-    # Cuerpo del correo en HTML
-    mensaje_html = f"""
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <style>
-            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-            .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }}
-            .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
-            .info-box {{ background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 5px; }}
-            .fecha-box {{ background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }}
-            .observaciones-box {{ background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 20px 0; border-radius: 5px; }}
-            .footer {{ text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }}
-            h2 {{ color: #667eea; margin-top: 0; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>{'🔄 Visita Reprogramada' if es_reprogramacion else '📅 Visita Programada'}</h1>
-                <p>Sistema ICBF Conecta</p>
-            </div>
-            <div class="content">
-                <p>¡Hola <strong>{nombre_completo}</strong>!</p>
-                
-                <p>{"Se ha reprogramado" if es_reprogramacion else "Se ha programado"} la visita técnica para tu Hogar Comunitario.</p>
-                
-                <div class="info-box">
-                    <h2>🏠 Información del Hogar</h2>
-                    <p><strong>Nombre:</strong> {hogar.nombre_hogar}</p>
-                    <p><strong>Dirección:</strong> {hogar.direccion}</p>
-                    <p><strong>Agente Educador:</strong> {nombre_completo}</p>
-                </div>
-                
-                <div class="fecha-box">
-                    <h2>📅 Fecha de la Visita</h2>
-                    <p style="font-size: 18px; margin: 0;"><strong>{fecha_formateada}</strong></p>
-                    {f'<p style="color: #856404; margin-top: 10px;"><em>Fecha anterior: {fecha_anterior.strftime("%d/%m/%Y")}</em></p>' if es_reprogramacion and fecha_anterior else ''}
-                </div>
-                
-                {f'''<div class="observaciones-box">
-                    <h2>📝 Observaciones</h2>
-                    <p>{observaciones}</p>
-                </div>''' if observaciones else ''}
-                
-                <div class="info-box">
-                    <h2>ℹ️ Información Importante</h2>
-                    <ul>
-                        <li>La visita técnica es un requisito obligatorio para la activación del hogar</li>
-                        <li>Por favor, ten preparada toda la documentación requerida</li>
-                        <li>Asegúrate de que los espacios físicos cumplan con las condiciones mínimas</li>
-                        <li>Si necesitas reprogramar, contacta a tu supervisor con anticipación</li>
-                    </ul>
-                </div>
-                
-                <p style="margin-top: 30px;">Si tienes alguna pregunta, no dudes en contactarnos.</p>
-                
-                <div class="footer">
-                    <p><strong>Sistema ICBF Conecta</strong></p>
-                    <p>Este es un correo automático, por favor no responder.</p>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
+# ========== API: DESCARGAR ACTA DE VISITA ==========
+@login_required
+@rol_requerido('administrador')
+def descargar_acta_visita(request, hogar_id):
     """
-    
-    # Mensaje de texto plano (fallback)
-    mensaje_texto = strip_tags(mensaje_html)
+    Descarga el PDF del acta de la última visita técnica completada del hogar.
+    """
+    from django.http import FileResponse
+    import os
     
     try:
-        send_mail(
-            asunto,
-            mensaje_texto,
-            settings.EMAIL_HOST_USER,
-            [hogar.correo],
-            html_message=mensaje_html,
-            fail_silently=False,
+        hogar = get_object_or_404(HogarComunitario, id=hogar_id)
+        
+        # Buscar la última visita técnica completada
+        ultima_visita = VisitaTecnica.objects.filter(
+            hogar=hogar,
+            estado='completada',
+            acta__isnull=False
+        ).order_by('-fecha_realizacion').first()
+        
+        if not ultima_visita or not ultima_visita.acta:
+            return JsonResponse(
+                {'error': 'No se encontró acta de visita para descargar'}, 
+                status=404
+            )
+        
+        acta = ultima_visita.acta
+        
+        # Verificar si el archivo PDF existe
+        if not acta.archivo_pdf or not os.path.exists(acta.archivo_pdf.path):
+            return JsonResponse(
+                {'error': 'El archivo del acta no está disponible'}, 
+                status=404
+            )
+        
+        # Descargar el archivo
+        response = FileResponse(
+            open(acta.archivo_pdf.path, 'rb'),
+            as_attachment=True,
+            filename=f'acta_visita_{hogar.nombre_hogar}_{ultima_visita.fecha_realizacion.strftime("%d%m%Y")}.pdf'
         )
+        response['Content-Type'] = 'application/pdf'
+        return response
         
-        print(f"✅ Email de programación de visita enviado exitosamente a {hogar.correo}")
-        
+    except HogarComunitario.DoesNotExist:
+        return JsonResponse({'error': 'Hogar no encontrado'}, status=404)
     except Exception as e:
-        print(f"❌ Error al enviar email de programación: {str(e)}")
-        raise
+        print(f"Error al descargar acta: {str(e)}")
+        return JsonResponse(
+            {'error': f'Error al descargar el acta: {str(e)}'}, 
+            status=500
+        )
+
+
+# ========================================================================================
+# 🔴 VISTAS: SOLICITUD DE RETIRO DE MATRÍCULA
+# ========================================================================================
+
+@login_required
+def padre_solicitar_retiro(request, nino_id):
+    """
+    Vista AJAX: Crear solicitud de retiro de matrícula
+    URL: POST /padre/solicitar-retiro/{nino_id}/
+    Acceso: Solo padre autenticado
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        # 1. Validar que sea padre
+        if request.user.rol.nombre_rol != 'padre':
+            return JsonResponse({'error': 'No tienes permiso'}, status=403)
+        
+        padre_profile = Padre.objects.get(usuario=request.user)
+        
+        # 2. Obtener el niño y validar que sea del padre
+        nino = get_object_or_404(Nino, id=nino_id, padre=padre_profile)
+        
+        # 3. Validar que el niño esté activo
+        if nino.estado != 'activo':
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'El niño {nino.nombres} no está en estado activo. '
+                          f'Estado actual: {nino.get_estado_display()}'
+            }, status=400)
+        
+        # 4. Validar que no haya solicitud pendiente
+        solicitud_pendiente = SolicitudRetiroMatricula.objects.filter(
+            nino=nino,
+            estado='pendiente'
+        ).first()
+        
+        if solicitud_pendiente:
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': f'Ya existe una solicitud de retiro pendiente para {nino.nombres}. '
+                          f'Por favor espera la respuesta de la madre.'
+            }, status=400)
+        
+        # 5. Obtener datos del formulario
+        motivo = request.POST.get('motivo', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        
+        if not motivo:
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'Debes seleccionar un motivo'
+            }, status=400)
+        
+        # Validar longitud de descripción
+        if len(descripcion) > 500:
+            return JsonResponse({
+                'status': 'error',
+                'mensaje': 'La descripción no puede exceder 500 caracteres'
+            }, status=400)
+        
+        # 6. Crear solicitud de retiro
+        with transaction.atomic():
+            solicitud = SolicitudRetiroMatricula.objects.create(
+                nino=nino,
+                padre=padre_profile,
+                hogar=nino.hogar,
+                motivo=motivo,
+                descripcion=descripcion,
+                estado='pendiente'
+            )
+            
+            # 7. Enviar email a la madre
+            try:
+                enviar_email_retiro_padre(solicitud)
+            except Exception as e:
+                print(f"Error al enviar email: {str(e)}")
+            
+            # 8. Crear notificación in-app para la madre
+            try:
+                from notifications.models import Notification
+                from django.contrib.contenttypes.models import ContentType
+                
+                content_type = ContentType.objects.get_for_model(SolicitudRetiroMatricula)
+                
+                Notification.objects.create(
+                    recipient=nino.hogar.madre.usuario,
+                    title=f'⚠️ Nueva Solicitud de Retiro',
+                    message=f'{request.user.nombres} {request.user.apellidos} ha solicitado retirar a {nino.nombres} {nino.apellidos} del hogar.',
+                    level='warning',
+                    content_type=content_type,
+                    object_id=solicitud.id
+                )
+            except Exception as e:
+                print(f"Error al crear notificación: {str(e)}")
+        
+        return JsonResponse({
+            'status': 'ok',
+            'mensaje': f'✅ Solicitud enviada correctamente. La madre comunitaria revisará tu solicitud.',
+            'solicitud_id': solicitud.id
+        })
+    
+    except Padre.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'mensaje': 'No se encontró tu perfil de padre'
+        }, status=400)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'status': 'error',
+            'mensaje': f'Error al procesar la solicitud: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def padre_ver_retiros(request):
+    """
+    Vista: Ver historial de solicitudes de retiro del padre
+    URL: GET /padre/mis-retiros/
+    Acceso: Solo padre autenticado
+    """
+    if request.user.rol.nombre_rol != 'padre':
+        return redirect('role_redirect')
+    
+    try:
+        padre_profile = Padre.objects.get(usuario=request.user)
+        
+        # Solicitudes pendientes
+        retiros_pendientes = SolicitudRetiroMatricula.objects.filter(
+            padre=padre_profile,
+            estado='pendiente'
+        ).select_related('nino', 'hogar').order_by('-fecha_solicitud')
+        
+        # Solicitudes procesadas
+        retiros_procesados = SolicitudRetiroMatricula.objects.filter(
+            padre=padre_profile
+        ).exclude(estado='pendiente').select_related('nino', 'hogar').order_by('-fecha_respuesta')
+        
+        return render(request, 'padre/mis_retiros.html', {
+            'retiros_pendientes': retiros_pendientes,
+            'retiros_procesados': retiros_procesados,
+        })
+    
+    except Padre.DoesNotExist:
+        return render(request, 'padre/mis_retiros.html', {
+            'error': 'No se encontró tu perfil de padre'
+        })
+
+
+@login_required
+def padre_cancelar_retiro(request, solicitud_id):
+    """
+    Vista AJAX: Cancelar una solicitud de retiro pendiente
+    URL: POST /padre/cancelar-retiro/{solicitud_id}/
+    Acceso: Solo el padre que creó la solicitud
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        solicitud = get_object_or_404(SolicitudRetiroMatricula, id=solicitud_id)
+        
+        # Validar que sea el padre de la solicitud
+        if solicitud.padre.usuario != request.user:
+            return JsonResponse({
+                'error': 'No tienes permiso para cancelar esta solicitud'
+            }, status=403)
+        
+        # Validar que esté pendiente
+        if solicitud.estado != 'pendiente':
+            return JsonResponse({
+                'error': f'No puedes cancelar una solicitud {solicitud.get_estado_display()}'
+            }, status=400)
+        
+        # Cancelar
+        solicitud.cancelar_por_padre()
+        
+        return JsonResponse({
+            'status': 'ok',
+            'mensaje': 'Solicitud cancelada correctamente'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Error: {str(e)}'
+        }, status=500)
+
+
+# ========================================================================================
+# 🟢 VISTAS: MADRE COMUNITARIA - PROCESAR RETIROS
+# ========================================================================================
+
+@login_required
+def madre_ver_retiros_solicitudes(request):
+    """
+    Vista: Ver solicitudes de retiro pendientes del hogar
+    URL: GET /madre/solicitudes-retiro/
+    Acceso: Solo madre comunitaria
+    """
+    if request.user.rol.nombre_rol != 'madre_comunitaria':
+        return redirect('role_redirect')
+    
+    try:
+        hogar = HogarComunitario.objects.get(madre=request.user.madre_profile)
+        
+        # Solicitudes pendientes
+        retiros_pendientes = SolicitudRetiroMatricula.objects.filter(
+            hogar=hogar,
+            estado='pendiente'
+        ).select_related('nino', 'padre__usuario').order_by('-fecha_solicitud')
+        
+        # Solicitudes procesadas (últimos 30 días)
+        from datetime import timedelta
+        hace_30 = timezone.now() - timedelta(days=30)
+        retiros_procesados = SolicitudRetiroMatricula.objects.filter(
+            hogar=hogar
+        ).exclude(estado='pendiente').filter(
+            fecha_respuesta__gte=hace_30
+        ).select_related('nino', 'padre__usuario').order_by('-fecha_respuesta')
+        
+        return render(request, 'madre/solicitudes_retiro.html', {
+            'retiros_pendientes': retiros_pendientes,
+            'retiros_procesados': retiros_procesados,
+            'hogar': hogar,
+        })
+    
+    except HogarComunitario.DoesNotExist:
+        messages.error(request, 'No tienes un hogar asignado')
+        return redirect('madre_dashboard')
+
+
+@login_required
+def madre_procesar_retiro(request, solicitud_id):
+    """
+    Vista AJAX: Aprobar o rechazar una solicitud de retiro
+    URL: POST /madre/procesar-retiro/{solicitud_id}/
+    Parámetros: accion (aprobar/rechazar), observaciones
+    Acceso: Solo madre comunitaria del hogar
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        # Validar que sea madre
+        if request.user.rol.nombre_rol != 'madre_comunitaria':
+            return JsonResponse({'error': 'No tienes permiso'}, status=403)
+        
+        solicitud = get_object_or_404(SolicitudRetiroMatricula, id=solicitud_id)
+        
+        # Validar que sea del hogar de la madre
+        if solicitud.hogar.madre.usuario != request.user:
+            return JsonResponse({
+                'error': 'No tienes permiso para procesar esta solicitud'
+            }, status=403)
+        
+        # Validar que esté pendiente
+        if solicitud.estado != 'pendiente':
+            return JsonResponse({
+                'error': f'Esta solicitud ya fue procesada'
+            }, status=400)
+        
+        accion = request.POST.get('accion', '').strip()
+        observaciones = request.POST.get('observaciones', '').strip()
+        
+        if accion not in ['aprobar', 'rechazar']:
+            return JsonResponse({
+                'error': 'Acción no válida'
+            }, status=400)
+        
+        if accion == 'rechazar' and not observaciones:
+            return JsonResponse({
+                'error': 'Debes proporcionar un motivo para rechazar'
+            }, status=400)
+        
+        # Procesar solicitud
+        with transaction.atomic():
+            if accion == 'aprobar':
+                solicitud.aprobar(usuario=request.user, observaciones=observaciones)
+                mensaje_resultado = f'Retiro de {solicitud.nino.nombres} APROBADO'
+            else:  # rechazar
+                solicitud.rechazar(usuario=request.user, observaciones=observaciones)
+                mensaje_resultado = f'Retiro de {solicitud.nino.nombres} RECHAZADO'
+            
+            # Enviar email al padre
+            try:
+                enviar_email_respuesta_retiro(solicitud, accion)
+            except Exception as e:
+                print(f"Error al enviar email: {str(e)}")
+            
+            # Crear notificación in-app para el padre
+            try:
+                from notifications.models import Notification
+                from django.contrib.contenttypes.models import ContentType
+                
+                titulo = f'Solicitud de Retiro {"✅ APROBADA" if accion == "aprobar" else "❌ RECHAZADA"}'
+                mensaje = f'Tu solicitud de retiro de {solicitud.nino.nombres} ha sido {accion.upper()}ED'
+                
+                content_type = ContentType.objects.get_for_model(SolicitudRetiroMatricula)
+                
+                Notification.objects.create(
+                    recipient=solicitud.padre.usuario,
+                    title=titulo,
+                    message=mensaje,
+                    level='info' if accion == 'aprobar' else 'warning',
+                    content_type=content_type,
+                    object_id=solicitud.id
+                )
+            except Exception as e:
+                print(f"Error al crear notificación: {str(e)}")
+        
+        return JsonResponse({
+            'status': 'ok',
+            'mensaje': mensaje_resultado,
+            'solicitud_id': solicitud.id
+        })
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'error': f'Error: {str(e)}'
+        }, status=500)
+
+
+# ========================================================================================
+# 📧 FUNCIONES DE EMAIL
+# ========================================================================================
+
+def enviar_email_retiro_padre(solicitud):
+    """
+    Envía email a la madre cuando el padre solicita retiro
+    """
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    
+    madre = solicitud.hogar.madre
+    padre = solicitud.padre
+    
+    subject = f'⚠️ Nueva Solicitud de Retiro - {solicitud.nino.nombres}'
+    
+    context = {
+        'madre': madre,
+        'padre': padre,
+        'nino': solicitud.nino,
+        'hogar': solicitud.hogar,
+        'motivo': solicitud.get_motivo_display(),
+        'descripcion': solicitud.descripcion,
+        'fecha': solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M'),
+    }
+    
+    html_message = render_to_string('emails/solicitud_retiro_padre.html', context)
+    
+    send_mail(
+        subject,
+        '',
+        settings.DEFAULT_FROM_EMAIL,
+        [madre.usuario.correo],
+        fail_silently=False,
+        html_message=html_message
+    )
+
+
+def enviar_email_respuesta_retiro(solicitud, accion):
+    """
+    Envía email al padre cuando la madre responde a la solicitud
+    """
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    
+    padre = solicitud.padre
+    madre = solicitud.hogar.madre
+    
+    if accion == 'aprobar':
+        subject = f'✅ Solicitud de Retiro APROBADA - {solicitud.nino.nombres}'
+        template = 'emails/retiro_aprobado.html'
+    else:
+        subject = f'❌ Solicitud de Retiro RECHAZADA - {solicitud.nino.nombres}'
+        template = 'emails/retiro_rechazado.html'
+    
+    context = {
+        'padre': padre,
+        'madre': madre,
+        'nino': solicitud.nino,
+        'hogar': solicitud.hogar,
+        'observaciones': solicitud.observaciones_madre,
+        'fecha_respuesta': solicitud.fecha_respuesta.strftime('%d/%m/%Y %H:%M'),
+    }
+    
+    html_message = render_to_string(template, context)
+    
+    send_mail(
+        subject,
+        '',
+        settings.DEFAULT_FROM_EMAIL,
+        [padre.usuario.correo],
+        fail_silently=False,
+        html_message=html_message
+    )
+
+
+

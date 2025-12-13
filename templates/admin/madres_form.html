@@ -369,7 +369,7 @@
             <div class="form-group">
               <div style="display:flex;align-items:flex-start;gap:10px;padding:15px;background-color:#e8f4f8;border-radius:8px;border-left:4px solid var(--primary-light);">
                 <label for="{{ madre_profile_form.no_retirado_icbf.id_for_label }}" style="margin:0;cursor:pointer;flex:1;order:1;">
-                  <strong>Declaro que no he sido retirado del programa ICBF</strong>
+                  <strong>Declaro que no he sido retirado del programa ICBF <span class="required-star">*</span></strong>
                   <br><small style="color:#666;">Confirmo que nunca he sido desvinculado del programa</small>
                 </label>
                 <div style="order:2;">
@@ -1035,15 +1035,36 @@
           <div class="column-panel">
             <h4><i class="fas fa-images"></i> Fotos del Interior <span class="required-star">*</span></h4>
             <div class="form-group">
+              {% if hogar_form.fotos_interior.value %}
+                <div id="existing-fotos_interior" style="background:#e0f2fe;padding:10px;border-radius:6px;margin-bottom:10px;border-left:4px solid #0369a1;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <p style="margin:0;color:#0369a1;font-size:14px;">
+                      <i class="fas fa-check-circle"></i> <strong>Archivo actual:</strong> {{ hogar_form.fotos_interior.value.name|truncatewords:3 }}
+                    </p>
+                    <small style="color:#0c4a6e;font-size:11px;">Si no lo cambias, se mantendrá</small>
+                  </div>
+                  <label style="margin-top:8px;display:flex;align-items:center;color:#0c4a6e;font-size:12px;cursor:pointer;">
+                    <input type="checkbox" name="clear_fotos_interior" style="margin-right:8px;"> 
+                    <span>Borrar este archivo</span>
+                  </label>
+                </div>
+              {% endif %}
+              <label style="display:block;margin-bottom:8px;color:#666;font-size:12px;">
+                {% if hogar_form.fotos_interior.value %}
+                  Seleccionar nuevo archivo (dejar en blanco para mantener el actual):
+                {% else %}
+                  Seleccionar archivo:
+                {% endif %}
+              </label>
               <input type="file" name="fotos_interior" id="{{ hogar_form.fotos_interior.id_for_label }}" 
                      accept="image/*"
-                     required
+                     {% if not hogar_form.fotos_interior.value %}required{% endif %}
                      onchange="previewFile(this, 'fotos_interior')">
               <div id="preview-fotos_interior" class="file-preview-container" style="display:none;">
                 <img class="preview-image" style="display:none;" />
                 <button type="button" class="remove-file-btn" onclick="removeFile('fotos_interior')">✕ Eliminar archivo</button>
               </div>
-              <small style="color:#666;display:block;margin-top:5px;">Suba fotos del interior del hogar (obligatorio)</small>
+              <small style="color:#666;display:block;margin-top:5px;">Suba fotos del interior del hogar (mínimo 3 fotos)</small>
               {% for error in hogar_form.fotos_interior.errors %}<span class="error">{{ error }}</span>{% endfor %}
             </div>
           </div>
@@ -1051,15 +1072,36 @@
           <div class="column-panel">
             <h4><i class="fas fa-images"></i> Fotos del Exterior <span class="required-star">*</span></h4>
             <div class="form-group">
+              {% if hogar_form.fotos_exterior.value %}
+                <div id="existing-fotos_exterior" style="background:#e0f2fe;padding:10px;border-radius:6px;margin-bottom:10px;border-left:4px solid #0369a1;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <p style="margin:0;color:#0369a1;font-size:14px;">
+                      <i class="fas fa-check-circle"></i> <strong>Archivo actual:</strong> {{ hogar_form.fotos_exterior.value.name|truncatewords:3 }}
+                    </p>
+                    <small style="color:#0c4a6e;font-size:11px;">Si no lo cambias, se mantendrá</small>
+                  </div>
+                  <label style="margin-top:8px;display:flex;align-items:center;color:#0c4a6e;font-size:12px;cursor:pointer;">
+                    <input type="checkbox" name="clear_fotos_exterior" style="margin-right:8px;">
+                    <span>Borrar este archivo</span>
+                  </label>
+                </div>
+              {% endif %}
+              <label style="display:block;margin-bottom:8px;color:#666;font-size:12px;">
+                {% if hogar_form.fotos_exterior.value %}
+                  Seleccionar nuevo archivo (dejar en blanco para mantener el actual):
+                {% else %}
+                  Seleccionar archivo:
+                {% endif %}
+              </label>
               <input type="file" name="fotos_exterior" id="{{ hogar_form.fotos_exterior.id_for_label }}" 
                      accept="image/*"
-                     required
+                     {% if not hogar_form.fotos_exterior.value %}required{% endif %}
                      onchange="previewFile(this, 'fotos_exterior')">
               <div id="preview-fotos_exterior" class="file-preview-container" style="display:none;">
                 <img class="preview-image" style="display:none;" />
                 <button type="button" class="remove-file-btn" onclick="removeFile('fotos_exterior')">✕ Eliminar archivo</button>
               </div>
-              <small style="color:#666;display:block;margin-top:5px;">Suba fotos del exterior del hogar (obligatorio)</small>
+              <small style="color:#666;display:block;margin-top:5px;">Suba fotos del exterior del hogar (mínimo 1 foto)</small>
               {% for error in hogar_form.fotos_exterior.errors %}<span class="error">{{ error }}</span>{% endfor %}
             </div>
           </div>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .header p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .warning-alert {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            color: #856404;
+        }
+
+        .warning-alert strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .info-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .info-box .label {
+            font-weight: bold;
+            color: #495057;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-box .value {
+            color: #212529;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        .info-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+
+        .info-row .info-box {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #dee2e6;
+            margin: 20px 0;
+        }
+
+        .reason-box {
+            background-color: #f8f0e8;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .reason-box strong {
+            color: #856404;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .signature {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            color: #212529;
+            margin-top: 10px;
+        }
+
+        .signature-role {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background-color: #ffc107;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #ffc107;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .button:hover {
+            background-color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Encabezado -->
+        <div class="header">
+            <h2>❌ Solicitud de Retiro RECHAZADA</h2>
+            <p>ICBF Conecta - Gestión de Hogares Comunitarios</p>
+        </div>
+
+        <!-- Contenido -->
+        <div class="content">
+            <p>Hola <strong>{{ padre.usuario.nombres }} {{ padre.usuario.apellidos }}</strong>,</p>
+
+            <p>Tu solicitud de retiro de matrícula ha sido <strong style="color: #ff9800;">RECHAZADA</strong>.</p>
+
+            <!-- Alerta de rechazo -->
+            <div class="warning-alert">
+                <strong>⚠️ Solicitud Rechazada</strong>
+                La solicitud fue revisada por {{ madre.usuario.nombres }} {{ madre.usuario.apellidos }}.
+            </div>
+
+            <!-- Información del niño -->
+            <div class="info-row">
+                <div class="info-box">
+                    <div class="label">Niño/Niña</div>
+                    <div class="value">{{ nino.nombres }} {{ nino.apellidos }}</div>
+                </div>
+                <div class="info-box">
+                    <div class="label">Estado Actual</div>
+                    <div class="value">
+                        <span style="color: #28a745; font-weight: bold;">ACTIVO</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fecha de respuesta -->
+            <div class="info-box">
+                <div class="label">Fecha de Rechazo</div>
+                <div class="value">{{ fecha_respuesta }}</div>
+            </div>
+
+            <!-- Motivo del rechazo -->
+            {% if observaciones %}
+            <div class="reason-box">
+                <strong>Motivo del Rechazo:</strong>
+                {{ observaciones }}
+            </div>
+            {% else %}
+            <div class="reason-box">
+                <strong>Motivo del Rechazo:</strong>
+                La madre comunitaria consideró que no es posible procesar el retiro en este momento.
+            </div>
+            {% endif %}
+
+            <div class="divider"></div>
+
+            <!-- Información importante -->
+            <div style="background-color: #fff3cd; padding: 15px; border-radius: 4px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                <strong style="color: #856404;">📌 Información Importante:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px; color: #333;">
+                    <li>{{ nino.nombres }} continúa vinculado al hogar {{ hogar.nombre_hogar }}</li>
+                    <li>El estado actual es "ACTIVO"</li>
+                    <li>Si deseas solicitar nuevamente, puedes hacerlo en el futuro</li>
+                    <li>Contáctanos si tienes dudas sobre esta decisión</li>
+                </ul>
+            </div>
+
+            <!-- Contacto para apelación -->
+            <div class="info-box">
+                <div class="label">¿No estás de acuerdo?</div>
+                <div class="value">
+                    Puedes contactar directamente con la madre comunitaria para discutir esta decisión:<br>
+                    <strong>{{ madre.usuario.nombres }} {{ madre.usuario.apellidos }}</strong><br>
+                    <small style="color: #6c757d;">{{ hogar.nombre_hogar }}</small>
+                </div>
+            </div>
+
+            <!-- Firma -->
+            <div class="signature">
+                <p>Saludos cordiales,</p>
+                <div class="signature-name">ICBF Conecta</div>
+                <div class="signature-role">Sistema de Gestión de Hogares Comunitarios</div>
+            </div>
+        </div>
+
+        <!-- Pie -->
+        <div class="footer">
+            <p style="margin: 0;">
+                Este es un correo automático. Por favor no respondas a este mensaje.<br>
+                Si tienes dudas, contacta a tu coordinador del ICBF.
+            </p>
+            <p style="margin: 10px 0 0 0; color: #999;">
+                © 2024 Instituto Colombiano de Bienestar Familiar. Todos los derechos reservados.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

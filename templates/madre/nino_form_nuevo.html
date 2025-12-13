@@ -253,6 +253,20 @@
       background-color: #f0f9ff;
       border-radius: 0 6px 6px 0;
     }
+
+    .form-disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .form-disabled input,
+    .form-disabled select,
+    .form-disabled textarea,
+    .form-disabled button[type="submit"] {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background-color: #f5f5f5 !important;
+    }
     
     @media (max-width: 768px) {
       .container { padding: 20px; }
@@ -296,7 +310,16 @@
       </div>
     {% endif %}
 
-    <form method="POST" enctype="multipart/form-data">
+    {% if hogar_madre.estado != 'activo' %}
+      <div class="alert-error" style="background: #fee; border: 2px solid #f44; border-radius: 8px; padding: 15px; margin-bottom: 25px; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-exclamation-circle" style="color: #f44; font-size: 20px;"></i>
+        <div style="color: #333;">
+          <strong>🚫 Atención:</strong> Las matrículas están bloqueadas porque el Hogar Comunitario no está en estado 'Activo'. Su estado actual es: <strong>{{ hogar_madre.get_estado_display }}</strong>. Contacte al administrador para revisar el estado.
+        </div>
+      </div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" id="nino-form">
       {% csrf_token %}
 
       <!-- SECCIÓN: DATOS DEL PADRE/TUTOR -->
@@ -1160,6 +1183,26 @@
       </div>
     </form>
   </div>
+
+  <!-- SCRIPT: Deshabilitar formulario si hogar no está activo -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const hogarEstado = '{{ hogar_madre.estado }}';
+      const form = document.getElementById('nino-form');
+      
+      if (hogarEstado !== 'activo' && form) {
+        // Deshabilitar todos los input, select, textarea y el botón de submit
+        const formElements = form.querySelectorAll('input, select, textarea, button[type="submit"]');
+        formElements.forEach(element => {
+          element.disabled = true;
+        });
+        
+        // Agregar clase visual para mostrar que está deshabilitado
+        form.classList.add('form-disabled');
+      }
+    });
+  </script>
+
 </body>
 {% if messages %}
   <script>

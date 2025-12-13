@@ -89,8 +89,8 @@ def listar_desarrollos(request):
     except HogarComunitario.DoesNotExist:
         return render(request, 'madre/desarrollo_list.html', {'error': 'No tienes un hogar asignado.'})
 
-    desarrollos = DesarrolloNino.objects.filter(nino__hogar=hogar_madre).select_related('nino', 'nino__padre__usuario').order_by('-fecha_fin_mes')
-    ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre)
+    desarrollos = DesarrolloNino.objects.filter(nino__hogar=hogar_madre, nino__estado='activo').select_related('nino', 'nino__padre__usuario').order_by('-fecha_fin_mes')
+    ninos_del_hogar = Nino.objects.filter(hogar=hogar_madre, estado='activo')
 
     # --- Lógica de Filtrado Mejorada ---
     nino_id_filtro = request.GET.get('nino', '')

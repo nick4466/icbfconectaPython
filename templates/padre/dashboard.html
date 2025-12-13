@@ -174,8 +174,9 @@
     /* ======================== */
     .grid-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 28px;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      align-items: stretch;
     }
 
     /* ======================== */
@@ -190,6 +191,8 @@
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       display: flex;
       flex-direction: column;
+      min-height: 600px;
+      height: 100%;
     }
 
     .card:hover {
@@ -267,9 +270,13 @@
     }
 
     .card-footer {
-      margin-top: 20px; /* Espacio antes del footer */
+      margin-top: auto;
       padding-top: 16px;
-      text-align: right; /* Alinea el ícono restante a la derecha */
+      border-top: 1px solid #f0f0f0;
+      text-align: right;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .btn-principal {
@@ -287,6 +294,12 @@
     .btn-principal:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 15px rgba(77, 182, 255, 0.4);
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
     .quick-actions a {
@@ -466,7 +479,30 @@
 
       {% for data in ninos_data %}
 
-        <div class="card">
+        <div class="card" style="{% if data.nino.estado != 'activo' %}border-left: 5px solid {% if data.nino.estado == 'retirado' %}#E53935{% else %}#FF9800{% endif %}; opacity: 0.85;{% endif %}">
+
+          <!-- AVISO DE NO MATRICULADO -->
+          {% if data.nino.estado != 'activo' %}
+          <div style="background: {% if data.nino.estado == 'retirado' %}linear-gradient(135deg, #E53935 0%, #C62828 100%){% else %}linear-gradient(135deg, #FF9800 0%, #F57C00 100%){% endif %}; color: white; padding: 16px; border-radius: 12px 12px 0 0; display: flex; align-items: center; gap: 12px;">
+            <i class="fas {% if data.nino.estado == 'retirado' %}fa-times-circle{% else %}fa-exclamation-circle{% endif %}" style="font-size: 24px;"></i>
+            <div>
+              <div style="font-weight: 700; font-size: 15px;">
+                {% if data.nino.estado == 'retirado' %}
+                  Este niño ya no está matriculado
+                {% else %}
+                  Este niño se encuentra inactivo
+                {% endif %}
+              </div>
+              <div style="font-size: 13px; opacity: 0.95;">
+                {% if data.nino.estado == 'retirado' %}
+                  Ha sido retirado del hogar. No hay registros activos.
+                {% else %}
+                  Se encuentra en estado inactivo. Contacta la madre comunitaria para más información.
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
 
           <!-- HEADER TARJETA -->
           <div class="card-header">
@@ -512,19 +548,50 @@
             </a>
             {% endif %}
 
+            {% if data.solicitud_retiro %}
+            <div class="info-section" style="background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px; margin-top: 15px;">
+              <h4 style="margin: 0 0 8px 0; color: #f57c00;"><i class="fas fa-hourglass-half"></i> En Proceso de Retiro</h4>
+              <p style="margin: 0 0 6px 0;"><strong>Hogar:</strong> {{ data.solicitud_retiro.hogar.nombre_hogar }}</p>
+              <p style="margin: 0 0 6px 0;"><strong>Solicitado:</strong> {{ data.solicitud_retiro.fecha_solicitud|date:"d \d\e F \d\e Y" }}</p>
+              {% if data.solicitud_retiro.motivo %}
+              <p style="margin: 0;"><strong>Motivo:</strong> {{ data.solicitud_retiro.get_motivo_display }}</p>
+              {% endif %}
+            </div>
+            {% endif %}
+
           </div>
 
           <!-- FOOTER TARJETA -->
           <div class="card-footer">
             <div class="quick-actions">
-              <a href="{% url 'padre_historial_asistencia' data.nino.id %}" title="Ver Asistencias" style="margin-right: 12px;">
+              <a href="{% url 'padre_historial_asistencia' data.nino.id %}" title="Ver Asistencias">
                 <i class="fas fa-clipboard-list" style="color: #4DB6FF; font-size: 18px;"></i>
               </a>
-              <a href="{% url 'novedades:lista_padre_novedades' data.nino.id %}" title="Justificaciones" style="margin-right: 12px;">
+              <a href="{% url 'novedades:lista_padre_novedades' data.nino.id %}" title="Novedades">
                 <i class="fas fa-file-medical-alt" style="color: #E57373; font-size: 18px;"></i>
               </a>
               <a href="{% url 'calendario_padres' %}" title="Ver Calendario">
-                <i class="fas fa-calendar-alt"></i>
+                <i class="fas fa-calendar-alt" style="color: #FFB74D; font-size: 18px;"></i>
+              </a>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <a href="{% url 'certificado_matricula_pdf' data.nino.id %}" class="btn btn-info btn-sm" title="Descargar Certificado de Matrícula" style="padding: 6px 12px; font-size: 12px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 6px;">
+                <i class="fas fa-certificate"></i>
+              </a>
+              {% if data.nino.estado == 'activo' %}
+              <button 
+                type="button" 
+                class="btn btn-danger btn-sm" 
+                onclick="abrirModal({{ data.nino.id }})"
+                title="Solicitar retiro de matrícula"
+                style="padding: 6px 12px; font-size: 12px;"
+              >
+                <i class="fas fa-sign-out-alt mr-1"></i>Retiro
+              </button>
+              {% endif %}
+              <a href="{% url 'padre_perfil_hijo' data.nino.id %}" class="btn-principal" style="margin: 0; padding: 8px 14px; font-size: 12px;">
+                📋 Perfil
               </a>
             </div>
           </div>
@@ -542,6 +609,9 @@
 
     </div>
   </div>
+
+  <!-- Modal: Solicitar Retiro (se carga al final) -->
+  {% include "padre/modal_solicitar_retiro.html" %}
 
 </body>
 </html>

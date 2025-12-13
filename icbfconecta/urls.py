@@ -76,6 +76,7 @@ urlpatterns = [
     # --- 🆕 APIs del Dashboard Mejorado ---
     path('api/hogares/<int:hogar_id>/detalle/', views.hogar_detalle_api, name='hogar_detalle_api'),
     path('api/hogares/<int:hogar_id>/historial-visitas/', views.hogar_historial_visitas_api, name='hogar_historial_visitas_api'),
+    path('api/hogares/<int:hogar_id>/descargar-acta/', views.descargar_acta_visita, name='descargar_acta_visita'),
     path('api/ninos/<int:nino_id>/detalle/', views.nino_detalle_api, name='nino_detalle_api'),
     path('preview/<str:tipo>/<int:id>/<str:campo>/', views.preview_document, name='preview_document'),
     path('ninos/<int:nino_id>/carpeta/', views.nino_carpeta_view, name='nino_carpeta'),
@@ -92,6 +93,7 @@ urlpatterns = [
     # --- Vistas para Padres (Ahora con ID de niño) ---
     path('padre/desarrollo/<int:nino_id>/', views.padre_ver_desarrollo, name='padre_ver_desarrollo'),
     path('padre/asistencia/<int:nino_id>/', views.padre_historial_asistencia, name='padre_historial_asistencia'),
+    path('padre/perfil-hijo/<int:nino_id>/', views.padre_perfil_hijo, name='padre_perfil_hijo'),
     path('padre/calendario/', calendario_padres, name='calendario_padres'),
     path('padre/calendario/info/', obtener_info, name='obtener_info'),
 
@@ -182,9 +184,6 @@ urlpatterns = [
     # --- URLs de Visitas Técnicas ---
     path('visitas/hogares-pendientes/', views.listar_hogares_pendientes_visita, name='listar_hogares_pendientes_visita'),
     path('visitas/agendar/<int:hogar_id>/', views.agendar_visita_tecnica, name='agendar_visita_tecnica'),
-    path('visitas/crear-acta/<int:visita_id>/', views.crear_acta_visita, name='crear_acta_visita'),
-    path('visitas/ver-acta/<int:acta_id>/', views.ver_acta_visita, name='ver_acta_visita'),
-    path('visitas/descargar-acta/<int:acta_id>/', views.descargar_acta_pdf, name='descargar_acta_pdf'),
     path('visitas/listar/', views.listar_visitas_tecnicas, name='listar_visitas_tecnicas'),
 
     # --- 🆕 URLs Formulario 2 - Sistema de Dos Fases ---
@@ -197,6 +196,15 @@ urlpatterns = [
     path('padre/hogares/', views.padre_ver_hogares, name='padre_ver_hogares'),
     path('padre/hogares/<int:hogar_id>/', views.padre_detalle_hogar, name='padre_detalle_hogar'),
     path('padre/dashboard-mejorado/', views.padre_dashboard_mejorado, name='padre_dashboard_mejorado'),
+
+    # --- 🆕 URLs Solicitud de Retiro de Matrícula (PADRE) ---
+    path('padre/solicitar-retiro/<int:nino_id>/', views.padre_solicitar_retiro, name='padre_solicitar_retiro'),
+    path('padre/mis-retiros/', views.padre_ver_retiros, name='padre_ver_retiros'),
+    path('padre/cancelar-retiro/<int:solicitud_id>/', views.padre_cancelar_retiro, name='padre_cancelar_retiro'),
+
+    # --- 🆕 URLs Solicitud de Retiro de Matrícula (MADRE) ---
+    path('madre/solicitudes-retiro/', views.madre_ver_retiros_solicitudes, name='madre_ver_retiros'),
+    path('madre/procesar-retiro/<int:solicitud_id>/', views.madre_procesar_retiro, name='madre_procesar_retiro'),
 
     #-----------------------------------------------juanito---------------------------------------------#
     # --- URLs de Asistencias no borrar please ultra importarte ;D #---

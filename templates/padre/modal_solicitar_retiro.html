@@ -1,0 +1,439 @@
+<!-- Modal: Solicitar Retiro de Matrícula -->
+<div id="modalSolicitarRetiro" class="modal-custom" style="display: none;">
+    <div class="modal-overlay" onclick="cerrarModal()"></div>
+    <div class="modal-contenedor">
+        <!-- Encabezado -->
+        <div class="modal-header-custom">
+            <h3>⚠️ Solicitar Retiro de Matrícula</h3>
+            <button type="button" class="close-btn" onclick="cerrarModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Cuerpo -->
+        <div class="modal-body-custom">
+            <div class="alerta-info">
+                <strong>⚠️ Atención:</strong> Esta acción solicita el retiro formal. La madre comunitaria revisará tu solicitud.
+            </div>
+
+            <form id="formSolicitarRetiro">
+                {% csrf_token %}
+                <input type="hidden" id="ninoId" name="nino_id" value="">
+
+                <!-- Motivo -->
+                <div class="form-group-custom">
+                    <label for="motivoRetiro">
+                        Motivo del Retiro <span style="color: #dc3545;">*</span>
+                    </label>
+                    <select id="motivoRetiro" name="motivo" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px;">
+                        <option value="">-- Selecciona un motivo --</option>
+                        <option value="cambio_domicilio">Cambio de domicilio</option>
+                        <option value="cambio_cuidador">Cambio de cuidador</option>
+                        <option value="cambio_hogar">Cambio de hogar comunitario</option>
+                        <option value="razon_personal">Razón personal</option>
+                        <option value="problemas_adaptacion">Problemas de adaptación</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+
+                <!-- Descripción -->
+                <div class="form-group-custom">
+                    <label for="descripcionRetiro">
+                        Descripción adicional
+                    </label>
+                    <textarea
+                        id="descripcionRetiro"
+                        name="descripcion"
+                        placeholder="Proporciona detalles (máximo 500 caracteres)"
+                        maxlength="500"
+                        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; font-family: 'Roboto', sans-serif; resize: vertical; min-height: 100px;"
+                    ></textarea>
+                    <small id="contadorDescripcion" style="color: #999; font-size: 12px; margin-top: 5px; display: block;">
+                        0/500 caracteres
+                    </small>
+                </div>
+
+                <!-- Alerta de confirmación -->
+                <div class="alerta-warning">
+                    <strong>📋 Recuerda:</strong>
+                    <ul>
+                        <li>Esta solicitud debe ser aprobada por la madre comunitaria</li>
+                        <li>Recibirás una respuesta en los próximos días</li>
+                        <li>El estado del niño cambiará una vez aprobado</li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <!-- Pie -->
+        <div class="modal-footer-custom">
+            <button type="button" class="btn-cancelar" onclick="cerrarModal()">
+                Cancelar
+            </button>
+            <button
+                type="button"
+                class="btn-enviar"
+                id="btnEnviarRetiro"
+            >
+                <i class="fas fa-paper-plane"></i> Enviar Solicitud
+            </button>
+        </div>
+    </div>
+</div>
+<!-- Estilos CSS -->
+<style>
+    /* Modal Overlay */
+    .modal-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    /* Contenedor Modal */
+    .modal-contenedor {
+        position: relative;
+        z-index: 10000;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header-custom {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 3px solid #ffc107;
+    }
+
+    .modal-header-custom h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background 0.2s;
+    }
+
+    .close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-body-custom {
+        padding: 25px;
+    }
+
+    .modal-footer-custom {
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        background-color: #f9f9f9;
+    }
+
+    /* Formulario */
+    .form-group-custom {
+        margin-bottom: 20px;
+    }
+
+    .form-group-custom label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .form-group-custom select,
+    .form-group-custom textarea {
+        font-family: 'Roboto', sans-serif;
+    }
+
+    /* Alertas */
+    .alerta-info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-left: 4px solid #0c5460;
+        padding: 12px 15px;
+        border-radius: 4px;
+        color: #0c5460;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .alerta-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        border-left: 4px solid #ff6b6b;
+        padding: 12px 15px;
+        border-radius: 4px;
+        color: #856404;
+        margin-top: 20px;
+        font-size: 13px;
+    }
+
+    .alerta-warning strong {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .alerta-warning ul {
+        margin: 8px 0 0 0;
+        padding-left: 20px;
+    }
+
+    .alerta-warning li {
+        margin-bottom: 4px;
+    }
+
+    /* Botones */
+    .btn-cancelar,
+    .btn-enviar {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+
+    .btn-cancelar {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-cancelar:hover {
+        background-color: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-enviar {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        min-width: 150px;
+    }
+
+    .btn-enviar:hover:not(:disabled) {
+        background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    }
+
+    .btn-enviar:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .modal-contenedor {
+            width: 95%;
+            max-height: 95vh;
+        }
+
+        .modal-header-custom h3 {
+            font-size: 16px;
+        }
+
+        .modal-body-custom {
+            padding: 15px;
+        }
+
+        .modal-footer-custom {
+            padding: 15px;
+            flex-direction: column;
+        }
+
+        .btn-cancelar,
+        .btn-enviar {
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- Scripts -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Contador de caracteres
+        const descripcion = document.getElementById('descripcionRetiro');
+        const contador = document.getElementById('contadorDescripcion');
+        
+        if (descripcion) {
+            descripcion.addEventListener('input', function() {
+                contador.textContent = `${this.value.length}/500 caracteres`;
+            });
+        }
+
+        // Enviar solicitud
+        const btnEnviar = document.getElementById('btnEnviarRetiro');
+        if (btnEnviar) {
+            btnEnviar.addEventListener('click', function() {
+                const form = document.getElementById('formSolicitarRetiro');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                enviarSolicitudRetiro();
+            });
+        }
+    });
+
+    function abrirModal(ninoId) {
+        const modal = document.getElementById('modalSolicitarRetiro');
+        document.getElementById('ninoId').value = ninoId;
+        document.getElementById('motivoRetiro').value = '';
+        document.getElementById('descripcionRetiro').value = '';
+        document.getElementById('contadorDescripcion').textContent = '0/500 caracteres';
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModal() {
+        const modal = document.getElementById('modalSolicitarRetiro');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // Cerrar modal al hacer click en el overlay
+    document.addEventListener('click', function(event) {
+        const modal = document.getElementById('modalSolicitarRetiro');
+        if (event.target === modal.querySelector('.modal-overlay')) {
+            cerrarModal();
+        }
+    });
+
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            cerrarModal();
+        }
+    });
+
+    function enviarSolicitudRetiro() {
+        const motivo = document.getElementById('motivoRetiro').value;
+        const descripcion = document.getElementById('descripcionRetiro').value;
+        const ninoId = document.getElementById('ninoId').value;
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        const btn = document.getElementById('btnEnviarRetiro');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+        const formData = new FormData();
+        formData.append('motivo', motivo);
+        formData.append('descripcion', descripcion);
+        formData.append('csrfmiddlewaretoken', csrf);
+
+        fetch(`/padre/solicitar-retiro/${ninoId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                showToast('✅ Éxito', data.mensaje, 'success');
+                cerrarModal();
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                showToast('❌ Error', data.mensaje, 'danger');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('❌ Error', 'Error al procesar la solicitud', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Solicitud';
+        });
+    }
+
+    function showToast(title, message, type = 'info') {
+        const colors = {
+            'success': '#28a745',
+            'danger': '#dc3545',
+            'warning': '#ffc107',
+            'info': '#17a2b8'
+        };
+
+        const toastHTML = `
+            <div style="
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: white;
+                border-left: 4px solid ${colors[type]};
+                padding: 15px 20px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 99999;
+                min-width: 300px;
+            ">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <div style="color: ${colors[type]}; font-size: 20px; flex-shrink: 0;">
+                        ${type === 'success' ? '✅' : type === 'danger' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}
+                    </div>
+                    <div>
+                        <strong style="color: ${colors[type]}; display: block; margin-bottom: 4px;">${title}</strong>
+                        <p style="color: #666; margin: 0; font-size: 14px;">${message}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = toastHTML;
+        const toast = tempDiv.firstElementChild;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+</script>

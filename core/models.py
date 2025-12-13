@@ -1218,3 +1218,200 @@ class ActaVisitaTecnica(models.Model):
             self.capacidad_calculada = int(area_total / 1.5)
         
         super().save(*args, **kwargs)
+
+
+# ========================================================================================
+# 🔴 MODELO: SOLICITUD DE RETIRO DE MATRÍCULA
+# ========================================================================================
+
+class SolicitudRetiroMatricula(models.Model):
+    """
+    Modelo para gestionar solicitudes de retiro de matrícula de niños.
+    
+    Flujo:
+    1. Padre solicita retiro del niño (estado='pendiente')
+    2. Madre revisa la solicitud
+    3. Madre aprueba → niño cambia a 'retirado'
+    4. Madre rechaza → niño sigue en 'activo'
+    """
+    
+    MOTIVO_CHOICES = [
+        ('cambio_hogar', 'Cambio de hogar comunitario'),
+        ('cambio_ciudad', 'Cambio de ciudad/departamento'),
+        ('economico', 'Razones económicas'),
+        ('personal', 'Razones personales/familiares'),
+        ('salud', 'Problemas de salud'),
+        ('cambio_colegio', 'Cambio de colegio'),
+        ('traslado_laboral', 'Traslado laboral'),
+        ('otro', 'Otro motivo'),
+    ]
+    
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente de Aprobación'),
+        ('aprobado', 'Aprobado'),
+        ('rechazado', 'Rechazado'),
+        ('cancelado_padre', 'Cancelado por el Padre'),
+    ]
+    
+    # Relaciones principales
+    nino = models.ForeignKey(
+        Nino,
+        on_delete=models.CASCADE,
+        related_name='solicitudes_retiro',
+        help_text='El niño que se desea retirar'
+    )
+    padre = models.ForeignKey(
+        Padre,
+        on_delete=models.CASCADE,
+        related_name='solicitudes_retiro',
+        help_text='El padre que solicita el retiro'
+    )
+    hogar = models.ForeignKey(
+        HogarComunitario,
+        on_delete=models.CASCADE,
+        related_name='solicitudes_retiro',
+        help_text='El hogar del que se retira el niño'
+    )
+    
+    # Información de la solicitud
+    motivo = models.CharField(
+        max_length=50,
+        choices=MOTIVO_CHOICES,
+        help_text='Motivo del retiro'
+    )
+    descripcion = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Descripción adicional del motivo (máximo 500 caracteres)'
+    )
+    estado = models.CharField(
+        max_length=30,
+        choices=ESTADO_CHOICES,
+        default='pendiente',
+        help_text='Estado actual de la solicitud'
+    )
+    
+    # Auditoría - Creación
+    fecha_solicitud = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Fecha en que se creó la solicitud'
+    )
+    
+    # Auditoría - Respuesta de la madre
+    fecha_respuesta = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Fecha en que la madre respondió'
+    )
+    observaciones_madre = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Observaciones o motivo del rechazo (si aplica)'
+    )
+    respondida_por = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='retiros_procesados',
+        help_text='La madre que procesó la solicitud'
+    )
+    
+    class Meta:
+        db_table = 'solicitudes_retiro_matricula'
+        verbose_name = 'Solicitud de Retiro de Matrícula'
+        verbose_name_plural = 'Solicitudes de Retiro de Matrícula'
+        ordering = ['-fecha_solicitud']
+        indexes = [
+            models.Index(fields=['nino', 'estado']),
+            models.Index(fields=['padre', 'fecha_solicitud']),
+            models.Index(fields=['hogar', 'estado']),
+        ]
+        # Un niño puede tener solo una solicitud pendiente
+        constraints = [
+            models.UniqueConstraint(
+                fields=['nino', 'estado'],
+                condition=models.Q(estado='pendiente'),
+                name='una_solicitud_pendiente_por_nino'
+            )
+        ]
+    
+    def __str__(self):
+        return f"Retiro {self.nino.nombres} - {self.estado}"
+    
+    def save(self, *args, **kwargs):
+        """Validaciones al guardar"""
+        # Validar que el niño esté en estado activo al crear la solicitud
+        if self.pk is None:  # Solo en creación
+            if self.nino.estado != 'activo':
+                raise ValueError(
+                    f"El niño {self.nino.nombres} no está en estado activo. "
+                    f"Estado actual: {self.nino.get_estado_display()}"
+                )
+        
+        super().save(*args, **kwargs)
+    
+    def aprobar(self, usuario=None, observaciones=''):
+        """
+        Aprueba el retiro y cambia el estado del niño a 'retirado'
+        
+        Args:
+            usuario: El usuario (madre) que aprueba
+            observaciones: Notas adicionales
+        """
+        from django.utils import timezone
+        
+        if self.estado != 'pendiente':
+            raise ValueError(f"Solo se pueden aprobar solicitudes pendientes. Esta está: {self.estado}")
+        
+        # Actualizar solicitud
+        self.estado = 'aprobado'
+        self.fecha_respuesta = timezone.now()
+        self.respondida_por = usuario
+        self.observaciones_madre = observaciones
+        self.save()
+        
+        # Cambiar estado del niño
+        self.nino.estado = 'retirado'
+        self.nino.save()
+        
+        return True
+    
+    def rechazar(self, usuario=None, observaciones=''):
+        """
+        Rechaza el retiro. El niño sigue en estado 'activo'
+        
+        Args:
+            usuario: El usuario (madre) que rechaza
+            observaciones: Motivo del rechazo
+        """
+        from django.utils import timezone
+        
+        if self.estado != 'pendiente':
+            raise ValueError(f"Solo se pueden rechazar solicitudes pendientes. Esta está: {self.estado}")
+        
+        if not observaciones:
+            raise ValueError("Debes proporcionar un motivo para rechazar la solicitud")
+        
+        # Actualizar solicitud
+        self.estado = 'rechazado'
+        self.fecha_respuesta = timezone.now()
+        self.respondida_por = usuario
+        self.observaciones_madre = observaciones
+        self.save()
+        
+        # El niño NO cambia de estado, sigue siendo 'activo'
+        return True
+    
+    def cancelar_por_padre(self):
+        """El padre cancela su propia solicitud"""
+        from django.utils import timezone
+        
+        if self.estado != 'pendiente':
+            raise ValueError("Solo se pueden cancelar solicitudes pendientes")
+        
+        self.estado = 'cancelado_padre'
+        self.fecha_respuesta = timezone.now()
+        self.save()
+        
+        return True

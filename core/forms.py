@@ -6,6 +6,46 @@ from .models import (Usuario, Nino, MadreComunitaria, HogarComunitario, Regional
                      ConvivienteHogar)
 
 
+MAX_UPLOAD_SIZE_MB = 5
+MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+
+
+class FileSizeValidationMixin:
+    max_upload_size_mb = MAX_UPLOAD_SIZE_MB
+    max_upload_size_bytes = MAX_UPLOAD_SIZE_BYTES
+
+    def _get_file_field_names(self):
+        explicit = getattr(self, 'FILE_FIELDS', None)
+        if explicit is not None:
+            return [field for field in explicit if field in self.fields]
+        return [
+            name for name, field in self.fields.items()
+            if isinstance(field, (forms.FileField, forms.ImageField))
+        ]
+
+    def _exceeds_limit(self, file_obj):
+        size = getattr(file_obj, 'size', None)
+        if size is None and hasattr(file_obj, 'file'):
+            size = getattr(getattr(file_obj, 'file', None), 'size', None)
+        if size is None:
+            return False
+        return size > self.max_upload_size_bytes
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name in self._get_file_field_names():
+            file_obj = cleaned_data.get(field_name)
+            if not file_obj or field_name not in self.files:
+                continue
+            if self._exceeds_limit(file_obj):
+                label = self.fields[field_name].label or field_name.replace('_', ' ')
+                self.add_error(
+                    field_name,
+                    f'El archivo para {label} no debe superar los {self.max_upload_size_mb} MB.'
+                )
+        return cleaned_data
+
+
 # ----------------------------------------------------
 # 🟩 FORMULARIO DE LOGIN PERSONALIZADO
 # ----------------------------------------------------
@@ -128,7 +168,7 @@ class UsuarioMadreForm(forms.ModelForm):
             self.fields['localidad_bogota'].widget.attrs['data-selected-id'] = self.instance.localidad_bogota.id
 
 # --- Formulario del Perfil MadreComunitaria ---
-class MadreProfileForm(forms.ModelForm):
+class MadreProfileForm(FileSizeValidationMixin, forms.ModelForm):
     # Permitir imágenes y PDFs para foto y firma
     foto_madre = forms.FileField(
         label="Foto de la Madre", 
@@ -159,8 +199,17 @@ class MadreProfileForm(forms.ModelForm):
              'cartas_recomendacion_pdf': forms.FileInput(attrs={'accept': 'application/pdf,image/*'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        declaracion_field = self.fields.get('no_retirado_icbf')
+        if declaracion_field:
+            declaracion_field.required = True
+            declaracion_field.widget.attrs.setdefault('required', 'required')
+            declaracion_field.widget.attrs.setdefault('aria-required', 'true')
+            declaracion_field.error_messages.setdefault('required', 'Debe aceptar esta declaración para continuar.')
+
 # --- Formulario de Hogar Comunitario ---
-class HogarForm(forms.ModelForm):
+class HogarForm(FileSizeValidationMixin, forms.ModelForm):
     regional = forms.ModelChoiceField(
         queryset=Regional.objects.all(),
         required=True,
@@ -311,7 +360,7 @@ class HogarForm(forms.ModelForm):
 # ----------------------------------------------------
 # 💡 NUEVO: Formulario para Administradores
 # ----------------------------------------------------
-class AdminForm(forms.ModelForm):
+class AdminForm(FileSizeValidationMixin, forms.ModelForm):
     contraseña = forms.CharField(widget=forms.PasswordInput, required=False, label="Nueva Contraseña")
     foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))
 
@@ -371,7 +420,7 @@ class CustomPasswordResetForm(PasswordResetForm):
 # ----------------------------------------------------
 # 💡 FORMULARIOS DE PERFIL
 # ----------------------------------------------------
-class AdminPerfilForm(forms.ModelForm):
+class AdminPerfilForm(FileSizeValidationMixin, forms.ModelForm):
     """Formulario para que el Administrador edite su perfil."""
     correo = forms.EmailField(label="Correo electrónico", required=True)
     foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))
@@ -396,7 +445,7 @@ class MadrePerfilForm(forms.ModelForm):
         }
 
 
-class PadrePerfilForm(forms.ModelForm):
+class PadrePerfilForm(FileSizeValidationMixin, forms.ModelForm):
     """Formulario para que el Padre de Familia edite su perfil."""
     correo = forms.EmailField(label="Correo electrónico", required=True)
     ocupacion = forms.CharField(max_length=50, required=False)
@@ -413,7 +462,7 @@ class PadrePerfilForm(forms.ModelForm):
 # ----------------------------------------------------
 # 👶 FORMULARIO DE NIÑOS (Expandido)
 # ----------------------------------------------------
-class NinoForm(forms.ModelForm):
+class NinoForm(FileSizeValidationMixin, forms.ModelForm):
     tipo_documento = forms.ChoiceField(
         choices=Nino.TIPO_DOCUMENTO_CHOICES,
         label="Tipo de Documento",
@@ -519,7 +568,7 @@ class NinoForm(forms.ModelForm):
 # ----------------------------------------------------
 # 👨 FORMULARIO DE REGISTRO DE PADRES (Expandido)
 # ----------------------------------------------------
-class PadreForm(forms.ModelForm):
+class PadreForm(FileSizeValidationMixin, forms.ModelForm):
     # Campos de Usuario
     documento = forms.IntegerField(label='Número de Documento', required=True)
     nombres = forms.CharField(max_length=50, label="Nombres", required=True)
@@ -685,7 +734,7 @@ class PadreForm(forms.ModelForm):
 # 🆕 NUEVOS FORMULARIOS PARA MEJORAS DE MATRÍCULA
 # ----------------------------------------------------
 
-class NinoSoloForm(forms.ModelForm):
+class NinoSoloForm(FileSizeValidationMixin, forms.ModelForm):
     """Formulario solo para el niño cuando se asigna a un padre existente"""
     tipo_documento = forms.ChoiceField(
         choices=Nino.TIPO_DOCUMENTO_CHOICES,

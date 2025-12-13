@@ -506,10 +506,12 @@
       display: flex;
       gap: 8px;
       margin-top: 16px;
+      flex-wrap: wrap;
+      justify-content: space-between;
     }
 
     .btn-small {
-      flex: 1;
+      flex: 1 1 32%;
       padding: 8px 12px;
       font-size: 13px;
     }
@@ -878,10 +880,16 @@
                 <label>⚡ Estado</label>
                 <select name="estado" class="form-control">
                   <option value="">Todos</option>
-                  <option value="aprobado" {% if filtro_estado == 'aprobado' %}selected{% endif %}>Aprobado</option>
-                  <option value="pendiente_visita" {% if filtro_estado == 'pendiente_visita' %}selected{% endif %}>Pendiente Visita</option>
+                  <option value="pendiente_revision" {% if filtro_estado == 'pendiente_revision' %}selected{% endif %}>Pendiente de Revisión</option>
                   <option value="en_revision" {% if filtro_estado == 'en_revision' %}selected{% endif %}>En Revisión</option>
+                  <option value="aprobado" {% if filtro_estado == 'aprobado' %}selected{% endif %}>Aprobado</option>
                   <option value="rechazado" {% if filtro_estado == 'rechazado' %}selected{% endif %}>Rechazado</option>
+                  <option value="en_mantenimiento" {% if filtro_estado == 'en_mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                  <option value="pendiente_visita" {% if filtro_estado == 'pendiente_visita' %}selected{% endif %}>Pendiente de Visita (Legacy)</option>
+                  <option value="visita_agendada" {% if filtro_estado == 'visita_agendada' %}selected{% endif %}>Visita Agendada (Legacy)</option>
+                  <option value="en_evaluacion" {% if filtro_estado == 'en_evaluacion' %}selected{% endif %}>En Evaluación (Legacy)</option>
+                  <option value="activo" {% if filtro_estado == 'activo' %}selected{% endif %}>Activo (Legacy)</option>
+                  <option value="inactivo" {% if filtro_estado == 'inactivo' %}selected{% endif %}>Inactivo (Legacy)</option>
                 </select>
               </div>
               
@@ -923,8 +931,17 @@
             
             <div class="hogares-grid">
               {% for hogar in hogares_loc %}
-              <div class="hogar-card">
-                <div class="hogar-header" onclick="verHogarDetalle({{ hogar.id }})" style="cursor: pointer;">
+              <div class="hogar-card"
+                   data-hogar-id="{{ hogar.id }}"
+                   data-estado="{{ hogar.estado }}"
+                   data-total-visitas="{{ hogar.total_visitas }}"
+                   data-ultima="{% if hogar.ultima_visita_calculada %}{{ hogar.ultima_visita_calculada|date:'Y-m-d' }}{% endif %}"
+                   data-ultima-tipo="{{ hogar.ultima_visita_tipo }}"
+                   data-proxima="{% if hogar.proxima_visita_calculada %}{{ hogar.proxima_visita_calculada|date:'Y-m-d' }}{% endif %}"
+                   data-proxima-estado="{{ hogar.proxima_visita_estado }}"
+                   data-visitas='{{ hogar.visitas_json|escapejs }}'
+                   onclick="verVisitasInfo(this)">
+                <div class="hogar-header" style="cursor: pointer;">
                   <div>
                     <div class="hogar-name">{{ hogar.nombre_hogar }}</div>
                     <div class="hogar-responsable">
@@ -964,37 +981,29 @@
                   </div>
                   
                   {# LÓGICA DE VISUALIZACIÓN DE VISITAS #}
-                  {% if hogar.estado == 'activo' or hogar.estado == 'aprobado' %}
-                    {# HOGAR ACTIVO: Mostrar última visita realizada #}
-                    {% if hogar.ultima_visita %}
+                  {% if hogar.sin_visitas %}
+                    <div class="info-row" style="background:#fee2e2;padding:6px 10px;border-radius:4px;border-left:3px solid #ef4444;">
+                      <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
+                      <span style="color:#991b1b;">Este hogar aún no ha sido visitado</span>
+                    </div>
+                  {% else %}
+                    {% if hogar.ultima_visita_calculada %}
                       <div class="info-row" style="background:#d1fae5;padding:6px 10px;border-radius:4px;border-left:3px solid #10b981;">
                         <i class="fas fa-check-circle" style="color:#10b981;"></i>
-                        <span style="color:#065f46;">Última visita: {{ hogar.ultima_visita|date:"d/m/Y" }}</span>
-                      </div>
-                    {% else %}
-                      <div class="info-row" style="background:#fee2e2;padding:6px 10px;border-radius:4px;border-left:3px solid #ef4444;">
-                        <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
-                        <span style="color:#991b1b;">⚠️ Sin registro de visitas</span>
+                        <span style="color:#065f46;">Última visita: {{ hogar.ultima_visita_calculada|date:"d/m/Y" }}{% if hogar.ultima_visita_tipo %} · {{ hogar.ultima_visita_tipo }}{% endif %}</span>
                       </div>
                     {% endif %}
-                  {% else %}
-                    {# HOGAR PENDIENTE: Mostrar fecha programada o sin programar #}
-                    {% if hogar.fecha_primera_visita %}
-                      {% now "Y-m-d" as fecha_hoy %}
-                      {% if hogar.fecha_primera_visita|date:"Y-m-d" == fecha_hoy %}
-                        <div class="info-row" style="background:#fef3c7;padding:6px 10px;border-radius:4px;border-left:3px solid #f59e0b;">
-                          <i class="fas fa-calendar-day" style="color:#f59e0b;"></i>
-                          <span style="color:#92400e;font-weight:600;">🔥 Visita programada HOY</span>
-                        </div>
-                      {% elif hogar.fecha_primera_visita|date:"Y-m-d" > fecha_hoy %}
-                        <div class="info-row" style="background:#dbeafe;padding:6px 10px;border-radius:4px;border-left:3px solid #3b82f6;">
-                          <i class="fas fa-calendar-check" style="color:#3b82f6;"></i>
-                          <span style="color:#1e40af;">Visita: {{ hogar.fecha_primera_visita|date:"d/m/Y" }}</span>
-                        </div>
-                      {% else %}
+
+                    {% if hogar.proxima_visita_calculada %}
+                      {% if hogar.proxima_visita_estado == 'vencida' %}
                         <div class="info-row" style="background:#fee2e2;padding:6px 10px;border-radius:4px;border-left:3px solid #ef4444;">
                           <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
-                          <span style="color:#991b1b;">⚠️ Visita vencida: {{ hogar.fecha_primera_visita|date:"d/m/Y" }}</span>
+                          <span style="color:#991b1b;">⚠️ Visita vencida: {{ hogar.proxima_visita_calculada|date:"d/m/Y" }}</span>
+                        </div>
+                      {% else %}
+                        <div class="info-row" style="background:#dbeafe;padding:6px 10px;border-radius:4px;border-left:3px solid #3b82f6;">
+                          <i class="fas fa-calendar-check" style="color:#3b82f6;"></i>
+                          <span style="color:#1e40af;">Próxima visita: {{ hogar.proxima_visita_calculada|date:"d/m/Y" }}</span>
                         </div>
                       {% endif %}
                     {% else %}
@@ -1023,45 +1032,50 @@
                     Editar
                   </a>
                   
+                  <!-- 🆕 BOTÓN: Registrar Visita Ya (sin formulario, registra inmediatamente) -->
+                  <button class="btn btn-warning btn-small" 
+                          onclick="event.stopPropagation(); registrarVisitaYa({{ hogar.id }}, '{{ hogar.nombre_hogar }}');"
+                          title="Registrar una visita técnica de forma inmediata">
+                    <i class="fas fa-bolt"></i>
+                    Registrar Visita Ya
+                  </button>
+                  
                   {# Sistema dinámico de botones según estado del hogar #}
-                  {% if hogar.estado == 'activo' or hogar.estado == 'aprobado' %}
-                    {# HOGAR ACTIVO: Botón para visitas de seguimiento #}
-                    <a href="{% url 'registrar_visita' hogar.id %}" class="btn btn-warning btn-small">
-                      <i class="fas fa-calendar-check"></i>
-                      Registrar Visita
-                    </a>
+                  {% if hogar.estado == 'activo' %}
+                    <button class="btn btn-info btn-small" 
+                            onclick="event.stopPropagation(); abrirModalProgramar({{ hogar.id }}, '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');">
+                      <i class="fas fa-calendar-plus"></i>
+                      Programar Visita
+                    </button>
+                  {% elif hogar.estado == 'rechazado' %}
+                    <button class="btn btn-outline btn-small" disabled title="Hogar rechazado">
+                      <i class="fas fa-ban"></i>
+                      Sin acciones
+                    </button>
                   {% else %}
-                    {# HOGAR NO ACTIVO: Mostrar botones según si tiene fecha programada #}
-                    {% if hogar.fecha_primera_visita %}
-                      {# CON fecha programada: Botón Reprogramar + Activar #}
-                      <button class="btn btn-small" style="background:#f59e0b;color:white;" 
-                              onclick="event.stopPropagation(); abrirModalReprogramar({{ hogar.id }}, '{{ hogar.fecha_primera_visita|date:"Y-m-d" }}', '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');">
-                        <i class="fas fa-calendar-alt"></i>
-                        Reprogramar
-                      </button>
-                      
-                      {% now "Y-m-d" as fecha_hoy %}
-                      {% if hogar.fecha_primera_visita|date:"Y-m-d" == fecha_hoy %}
-                        <a href="{% url 'activar_hogar' hogar.id %}" class="btn btn-success btn-small" style="background: linear-gradient(90deg, #10b981, #059669); animation: pulse-glow 2s infinite;">
-                          <i class="fas fa-check-circle"></i>
-                          Activar Hogar
-                        </a>
-                      {% else %}
-                        <a href="{% url 'activar_hogar' hogar.id %}" class="btn btn-small" style="background: linear-gradient(90deg, #10b981, #059669); color: white;">
-                          <i class="fas fa-check-circle"></i>
-                          Activar Hogar
-                        </a>
-                      {% endif %}
-                    {% else %}
-                      {# SIN fecha programada: Botón Programar #}
+                    {% if hogar.permite_agendar %}
                       <button class="btn btn-small" style="background:#3b82f6;color:white;animation: pulse-glow 2s infinite;" 
                               onclick="event.stopPropagation(); abrirModalProgramar({{ hogar.id }}, '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');">
                         <i class="fas fa-calendar-plus"></i>
                         Programar Visita
                       </button>
+                    {% elif hogar.permite_reprogramar %}
+                      <button class="btn btn-small" style="background:#f59e0b;color:white;" 
+                              onclick="event.stopPropagation(); abrirModalReprogramar({{ hogar.id }}, '{{ hogar.proxima_visita_calculada|date:"Y-m-d" }}', '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');">
+                        <i class="fas fa-calendar-alt"></i>
+                        Reprogramar
+                      </button>
                     {% endif %}
                   {% endif %}
-                  
+
+                  <!-- Botón para Descargar Acta de Visita (si existe) -->
+                  {% if hogar.ultima_visita_calculada %}
+                    <button class="btn btn-success btn-small" onclick="event.stopPropagation(); descargarActaVisita({{ hogar.id }}, '{{ hogar.nombre_hogar }}');" title="Descargar acta de la última visita">
+                      <i class="fas fa-download"></i>
+                      Descargar Acta
+                    </button>
+                  {% endif %}
+
                   <button class="btn btn-info btn-small" onclick="event.stopPropagation(); verHistorialVisitas({{ hogar.id }}, '{{ hogar.nombre_hogar }}');">
                     <i class="fas fa-history"></i>
                     Historial
@@ -1087,6 +1101,26 @@
 
       </div>
     </main>
+  </div>
+
+  <!-- ========== MODAL INFO DE VISITAS (CARD CLICK) ========== -->
+  <div class="modal" id="modalVisitasInfo">
+    <div class="modal-content" style="max-width: 720px;">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i class="fas fa-route"></i>
+          Visitas del Hogar
+        </h2>
+        <button class="modal-close" onclick="cerrarModalVisitasInfo()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="contenidoVisitasInfo">
+        <div style="text-align: center; padding: 40px; color: var(--text-light);">
+          <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--primary);"></i>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ========== MODAL PROGRAMAR/REPROGRAMAR VISITA ========== -->
@@ -1269,6 +1303,126 @@
   </div>
 
   <script>
+    function formatoFechaCorta(fechaStr) {
+      if (!fechaStr) return '';
+      const fecha = new Date(fechaStr);
+      if (Number.isNaN(fecha.getTime())) return fechaStr;
+      return fecha.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function verVisitasInfo(cardEl) {
+      const modal = document.getElementById('modalVisitasInfo');
+      const contenedor = document.getElementById('contenidoVisitasInfo');
+      const visitas = cardEl.dataset.visitas ? JSON.parse(cardEl.dataset.visitas) : [];
+
+      const ultima = cardEl.dataset.ultima ? formatoFechaCorta(cardEl.dataset.ultima) : '—';
+      const proxima = cardEl.dataset.proxima ? formatoFechaCorta(cardEl.dataset.proxima) : '—';
+      const ultimaTipo = cardEl.dataset.ultimaTipo || '';
+      const proximaEstado = cardEl.dataset.proximaEstado || '';
+      const estado = cardEl.dataset.estado || '';
+      const total = cardEl.dataset.totalVisitas || '0';
+
+      const estadoBadge = {
+        'activo': '<span class="badge badge-success">Activo</span>',
+        'aprobado': '<span class="badge badge-success">Aprobado</span>',
+        'pendiente_visita': '<span class="badge badge-warning">Pendiente visita</span>',
+        'en_revision': '<span class="badge badge-info">En revisión</span>',
+        'rechazado': '<span class="badge badge-danger">Rechazado</span>'
+      }[estado] || `<span class="badge badge-secondary">${estado || 'Sin estado'}</span>`;
+
+      const estadoProxima = proximaEstado === 'vencida'
+        ? `<span style="color:#991b1b; font-weight:600;">⚠️ Vencida</span>`
+        : proxima !== '—'
+          ? `<span style="color:#1e40af; font-weight:600;">Programada</span>`
+          : '<span style="color:#92400e;">Sin programación</span>';
+
+      const resumenHTML = `
+        <div class="info-card" style="margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:700; font-size:18px; color:var(--dark);">Estado del hogar</div>
+            ${estadoBadge}
+          </div>
+          <div class="info-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="info-item">
+              <strong>Total visitas</strong>
+              <span style="font-size:18px; font-weight:700; color:var(--primary);">${total}</span>
+            </div>
+            <div class="info-item">
+              <strong>Última visita</strong>
+              <span>${ultima}${ultimaTipo ? ' · ' + ultimaTipo : ''}</span>
+            </div>
+            <div class="info-item">
+              <strong>Próxima visita</strong>
+              <span>${proxima}</span>
+            </div>
+            <div class="info-item">
+              <strong>Estado próxima</strong>
+              <span>${estadoProxima}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      let historialHTML = '';
+      if (!visitas || visitas.length === 0) {
+        historialHTML = `
+          <div style="text-align:center; padding:40px; color: var(--text-light);">
+            <i class="fas fa-calendar-times" style="font-size:48px; color:#d1d5db; margin-bottom:12px;"></i>
+            <div>No hay visitas registradas para este hogar.</div>
+          </div>
+        `;
+      } else {
+        historialHTML = '<div style="display:flex; flex-direction:column; gap:12px;">';
+        visitas.forEach((visita) => {
+          const estadoColor = visita.estado === 'completada' ? '#10b981'
+            : visita.estado === 'agendada' ? '#3b82f6'
+            : visita.estado === 'cancelada' ? '#ef4444'
+            : '#f59e0b';
+
+          historialHTML += `
+            <div class="info-card" style="border-left:4px solid ${estadoColor};">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="font-weight:700; color:var(--dark);">${visita.tipo_visita_display || visita.tipo_visita || 'Visita'}</div>
+                <span class="badge" style="background:${estadoColor}; color:white;">${(visita.estado || '').toUpperCase()}</span>
+              </div>
+              <div class="info-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="info-item">
+                  <strong>Programada</strong>
+                  <span>${visita.fecha_programada ? formatoFechaCorta(visita.fecha_programada) : '—'}</span>
+                </div>
+                <div class="info-item">
+                  <strong>Realizada</strong>
+                  <span>${visita.fecha_realizacion ? formatoFechaCorta(visita.fecha_realizacion) : '—'}</span>
+                </div>
+                <div class="info-item">
+                  <strong>Visitador</strong>
+                  <span>${visita.visitador || 'Sin asignar'}</span>
+                </div>
+                <div class="info-item">
+                  <strong>Acta</strong>
+                  <span>${visita.tiene_acta ? 'Sí' : 'No'}</span>
+                </div>
+              </div>
+              ${visita.observaciones_visita ? `<div style="margin-top:8px; padding:10px; background:#f3f4f6; border-radius:8px; color:var(--text);">${visita.observaciones_visita}</div>` : ''}
+            </div>
+          `;
+        });
+        historialHTML += '</div>';
+      }
+
+      contenedor.innerHTML = resumenHTML + historialHTML;
+      modal.classList.add('active');
+
+      modal.onclick = (e) => {
+        if (e.target === modal) cerrarModalVisitasInfo();
+      };
+    }
+
+    function cerrarModalVisitasInfo() {
+      const modal = document.getElementById('modalVisitasInfo');
+      modal.classList.remove('active');
+    }
+
     function verHistorialVisitas(hogarId, nombreHogar) {
       // Eliminar modal anterior si existe
       const modalAnterior = document.getElementById('modalHistorialVisitas');
@@ -1400,6 +1554,72 @@
       if (modal) {
         modal.classList.remove('active');
       }
+    }
+
+    function descargarActaVisita(hogarId, nombreHogar) {
+      // Mostrar indicador de carga
+      const btnActa = event.target.closest('button');
+      if (btnActa) {
+        const iconOriginal = btnActa.innerHTML;
+        btnActa.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Descargando...';
+        btnActa.disabled = true;
+      }
+
+      // Intentar descargar el PDF
+      fetch(`/api/hogares/${hogarId}/descargar-acta/`)
+        .then(response => {
+          if (!response.ok) {
+            if (response.status === 404) {
+              throw new Error('No se encontró acta de visita para descargar');
+            } else if (response.status === 403) {
+              throw new Error('No tienes permisos para descargar este documento');
+            } else {
+              throw new Error('Error al descargar el acta');
+            }
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          // Crear enlace de descarga
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `acta_visita_${nombreHogar}_${new Date().getTime()}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(link);
+
+          // Restaurar botón
+          if (btnActa) {
+            btnActa.innerHTML = '<i class="fas fa-download"></i> Descargar Acta';
+            btnActa.disabled = false;
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert(`⚠️ ${error.message}`);
+
+          // Restaurar botón
+          if (btnActa) {
+            btnActa.innerHTML = '<i class="fas fa-download"></i> Descargar Acta';
+            btnActa.disabled = false;
+          }
+        });
+    }
+
+    function registrarVisitaYa(hogarId, nombreHogar) {
+      /**
+       * Registra una visita técnica de forma inmediata (sin pedir fecha)
+       * Abre un modal para completar los datos de la visita al instante
+       */
+      if (!confirm(`¿Deseas registrar una visita técnica para "${nombreHogar}" AHORA MISMO?\n\nEsta acción registrará la visita con la fecha y hora actual.`)) {
+        return;
+      }
+
+      // Redirigir al formulario de registro de visita
+      // El formulario detectará que es "visita ya" vs "programar"
+      window.location.href = `/hogares/${hogarId}/registrar-visita/?registro_inmediato=1`;
     }
 
     function verHogarDetalle(hogarId) {
@@ -1980,6 +2200,11 @@
     // ========================================
     // FUNCIONES PARA PROGRAMAR/REPROGRAMAR VISITAS
     // ========================================
+
+    function abrirVisitaRapida(hogarId, nombreHogar) {
+      // Redirige al flujo de visita rápida (usa el mismo registrar_visita con bandera opcional)
+      window.location.href = `/hogares/${hogarId}/registrar-visita/?rapida=1`;
+    }
 
     function abrirModalProgramar(hogarId, nombreHogar, nombreMadre) {
       const modal = document.getElementById('modalProgramarVisita');

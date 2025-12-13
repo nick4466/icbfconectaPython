@@ -294,31 +294,7 @@
     <!-- Tabla -->
     <div class="tabla-container">
       <div class="tabla-wrapper">
-          </div>
-          <div class="form-group">
-            <label for="madre">Agente Educativo</label>
-            <input type="text" name="madre" id="madre" value="{{ filtros.madre|default:'' }}" placeholder="Nombre o Apellido">
-          </div>
-          <div class="form-group">
-            <label for="regional">Regional</label>
-            <select name="regional" id="regional">
-              <option value="">Todas</option>
-              {% for regional in regionales_filtro %}
-                <option value="{{ regional.id }}" {% if filtros.regional == regional.id|stringformat:"s" %}selected{% endif %}>
-                  {{ regional.nombre }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="actions">
-            <button type="submit" class="btn-filtro btn-buscar">Buscar</button>
-            <a href="{% url 'listar_hogares' %}" class="btn-filtro btn-limpiar">Limpiar</a>
-          </div>
-        </form>
-        <!-- No hay botón de crear, pero la estructura se mantiene -->
-      </div>
-
-      <div class="tabla-wrapper"><table>
+        <table>
         <thead>
           <tr>
             <th>Nombre del Hogar</th>
