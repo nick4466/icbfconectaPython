@@ -12,73 +12,70 @@ class DesarrolloNino(models.Model):
     logro_mes = models.CharField(
         max_length=20,
         choices=[('Alto', 'Alto'), ('Adecuado', 'Adecuado'), ('En Proceso', 'En Proceso')],
-        verbose_name="Logro General del Mes",
-        null=True, blank=True,
+        verbose_name="Logro General del Mes", 
         help_text="Categoría cualitativa basada en la frecuencia de valoraciones diarias."
     )
     tendencia_valoracion = models.CharField(
         max_length=20,  # Aumentado para permitir 'Sin datos previos'
         choices=[('Avanza', 'Avanza'), ('Retrocede', 'Retrocede'), ('Se Mantiene', 'Se Mantiene'), ('Sin datos previos', 'Sin datos previos')],
         verbose_name="Tendencia de Valoración",
-        null=True, blank=True,
         help_text="Comparación con el promedio del mes anterior."
     )
     participacion_frecuente = models.CharField(
-        max_length=50, verbose_name="Participación Más Frecuente", null=True, blank=True
+        max_length=50, verbose_name="Participación Más Frecuente"
     )
     porcentaje_asistencia = models.PositiveSmallIntegerField(
         verbose_name="Porcentaje de Asistencia Mensual",
-        null=True, blank=True,
         help_text="Porcentaje de días presentes sobre los días hábiles del mes."
     )
     comportamiento_frecuente = models.CharField(
-        max_length=50, verbose_name="Comportamiento Más Frecuente", null=True, blank=True
+        max_length=50, verbose_name="Comportamiento Más Frecuente"
     )
 
     # --- 3. Evaluación por Áreas del Desarrollo (Automática) ---
-    evaluacion_cognitiva = models.TextField(verbose_name="Evaluación Cognitiva", null=True, blank=True)
-    evaluacion_comunicativa = models.TextField(verbose_name="Evaluación Comunicativa / Lenguaje", null=True, blank=True)
-    evaluacion_socio_afectiva = models.TextField(verbose_name="Evaluación Socio-afectiva", null=True, blank=True)
-    evaluacion_corporal = models.TextField(verbose_name="Evaluación Corporal / Motricidad", null=True, blank=True)
-    evaluacion_autonomia = models.TextField(verbose_name="Evaluación Autonomía", null=True, blank=True)
+    evaluacion_cognitiva = models.TextField(verbose_name="Evaluación Cognitiva", default='')
+    evaluacion_comunicativa = models.TextField(verbose_name="Evaluación Comunicativa / Lenguaje", default='')
+    evaluacion_socio_afectiva = models.TextField(verbose_name="Evaluación Socio-afectiva", default='')
+    evaluacion_corporal = models.TextField(verbose_name="Evaluación Corporal / Motricidad", default='')
+    evaluacion_autonomia = models.TextField(verbose_name="Evaluación Autonomía", default='')
 
     # --- 4. Fortalezas del Mes (Automática) ---
     fortalezas_mes = models.TextField(
         verbose_name="Fortalezas del Mes",
-        null=True, blank=True,
+        default='',
         help_text="Lista generada automáticamente de aspectos positivos."
     )
 
     # --- 5. Aspectos por Mejorar (Automáticos) ---
     aspectos_a_mejorar = models.TextField(
         verbose_name="Aspectos por Mejorar",
-        null=True, blank=True,
+        default='',
         help_text="Lista generada automáticamente de áreas de oportunidad."
     )
 
     # --- 6. Alertas del Mes (Automáticas) ---
     alertas_mes = models.TextField(
         verbose_name="Alertas del Mes",
-        null=True, blank=True,
+        default='',
         help_text="Alertas automáticas sobre inasistencias, valoraciones bajas o novedades."
     )
 
     # --- 7. Conclusión General (Automática) ---
     conclusion_general = models.TextField(
         verbose_name="Conclusión General del Desarrollo",
-        null=True, blank=True,
+        default='',
         help_text="Resumen automático del progreso y estado general del niño en el mes."
     )
 
     # --- 8. Campos Manuales (Opcionales) ---
     observaciones_adicionales = models.TextField(
         verbose_name="Observaciones Adicionales del Educador",
-        blank=True, null=True,
+        blank=True, default='',
         help_text="Espacio para notas o comentarios manuales del educador."
     )
     recomendaciones_personales = models.TextField(
         verbose_name="Recomendaciones Personales",
-        blank=True, null=True,
+        blank=True, default='',
         help_text="Recomendaciones específicas para la familia o el seguimiento."
     )
 
