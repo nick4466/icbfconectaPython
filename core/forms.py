@@ -176,10 +176,10 @@ class HogarForm(forms.ModelForm):
         empty_label="-- Seleccione una Ciudad --"
     )
     localidad_bogota = forms.ModelChoiceField(
-        queryset=LocalidadBogota.objects.all().order_by('nombre'),
+        queryset=LocalidadBogota.objects.all().order_by('numero'),
         required=False,
         label="Localidad (solo para Bogotá)",
-        widget=forms.Select,
+        widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label="-- Seleccione una Localidad --"
     )
     
@@ -203,11 +203,15 @@ class HogarForm(forms.ModelForm):
 
     class Meta:
         model = HogarComunitario
-        # Excluir campos que se asignan manualmente en la vista o automáticamente
-        exclude = ['localidad', 'madre', 'fecha_registro', 'fecha_habilitacion', 
-                   'area_social_m2', 'capacidad_calculada', 'formulario_completo']
-        # Incluir explícitamente el campo estrato para asegurar que se renderice
-        fields = '__all__'
+        # Campos para el formulario inicial - Django usará defaults del modelo para los demás
+        fields = [
+            'regional', 'ciudad', 'localidad_bogota', 'nombre_hogar', 
+            'direccion', 'barrio', 'estrato', 'capacidad_maxima',
+            'num_habitaciones', 'num_banos', 'material_construccion',
+            'riesgos_cercanos', 'tipo_tenencia', 'documento_tenencia_pdf',
+            'fotos_interior', 'fotos_exterior', 'geolocalizacion_lat', 'geolocalizacion_lon',
+            'fecha_primera_visita'
+        ]
         labels = {
             'nombre_hogar': 'Nombre del Hogar Comunitario',
             'direccion': 'Dirección Completa',
@@ -225,7 +229,6 @@ class HogarForm(forms.ModelForm):
             'tipo_tenencia': 'Tipo de Tenencia del Inmueble',
             'documento_tenencia_pdf': 'Documento de Tenencia (PDF)',
             'capacidad_maxima': 'Capacidad Máxima de Niños',
-            'estado': 'Estado del Hogar',
         }
         widgets = {
             # NOTA: 'estrato' NO debe estar aquí porque ya está definido como campo explícito arriba (línea 188-199)
@@ -243,7 +246,6 @@ class HogarForm(forms.ModelForm):
             'num_habitaciones': forms.NumberInput(attrs={'min': 1, 'class': 'form-control'}),
             'num_banos': forms.NumberInput(attrs={'min': 1, 'class': 'form-control'}),
             'capacidad_maxima': forms.NumberInput(attrs={'min': 1, 'max': 30, 'class': 'form-control'}),
-            'estado': forms.Select(attrs={'class': 'form-control'}),
             'tipo_tenencia': forms.Select(attrs={'class': 'form-control'}),
         }
         help_texts = {
@@ -260,17 +262,13 @@ class HogarForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Establecer estado por defecto en "Pendiente de Visita" para nuevos hogares
+        # ✅ ESTADO: Se maneja automáticamente con el default del modelo
+        # No tocamos el campo - Django usará 'pendiente_revision' del modelo
+        
+        # Para nuevos hogares, capacidad_maxima es no requerida y usa valor por defecto
         if not self.instance.pk:  # Solo para creación, no para edición
-            self.fields['estado'].initial = 'pendiente_visita'
-            # Hacer el campo NO requerido para que no falle la validación si no se envía
-            self.fields['estado'].required = False
-            # Aplicar estilo visual de deshabilitado
-            self.fields['estado'].widget.attrs['style'] = 'pointer-events: none; background-color: #e9ecef;'
-            self.fields['estado'].help_text = 'El estado inicial siempre es "Pendiente de Visita"'
-            # Hacer que el campo capacidad_maxima también sea no requerido para nuevos hogares
             self.fields['capacidad_maxima'].required = False
-            self.fields['capacidad_maxima'].initial = 15  # Usar el valor por defecto del modelo
+            self.fields['capacidad_maxima'].initial = 15
             self.fields['capacidad_maxima'].widget.attrs['style'] = 'pointer-events: none; background-color: #e9ecef;'
             self.fields['capacidad_maxima'].help_text = 'La capacidad se determinará después de la visita técnica'
         
@@ -285,31 +283,11 @@ class HogarForm(forms.ModelForm):
         else:
             self.fields['ciudad'].queryset = Ciudad.objects.none()
     
-    def clean_estado(self):
-        """Asegurar que nuevos hogares siempre tengan estado 'pendiente_visita'"""
-        if not self.instance.pk:  # Solo para nuevos hogares
-            return 'pendiente_visita'
-        # Para hogares existentes, devolver el valor del formulario o mantener el actual
-        estado = self.cleaned_data.get('estado')
-        return estado if estado else self.instance.estado
-    
-    def clean_capacidad_maxima(self):
-        """Para nuevos hogares, usar el valor por defecto (15) hasta la visita técnica"""
-        if not self.instance.pk:  # Solo para nuevos hogares
-            return 15  # Valor por defecto del modelo
-        # Para hogares existentes, devolver el valor del formulario
-        capacidad = self.cleaned_data.get('capacidad_maxima')
-        return capacidad if capacidad is not None else 15
-    
     def clean(self):
         cleaned_data = super().clean()
         ciudad = cleaned_data.get('ciudad')
         localidad_bogota = cleaned_data.get('localidad_bogota')
         direccion = cleaned_data.get('direccion')
-        
-        # Forzar estado pendiente_visita para nuevos hogares
-        if not self.instance.pk:
-            cleaned_data['estado'] = 'pendiente_visita'
         
         # Si la ciudad es Bogotá, validar que se seleccione una localidad
         # Usar 'in' para ser más flexible con variaciones del nombre
@@ -1173,9 +1151,9 @@ class HogarFormulario1Form(forms.ModelForm):
     
     def save(self, commit=True):
         instance = super().save(commit=False)
-        # Establecer estado inicial
+        # ⚙️ FLUJO INICIAL: Crear hogar → estado 'pendiente_revision' (sin revisar)
         instance.estado = 'pendiente_revision'
-        instance.formulario_completo = False  # Marca que falta el formulario 2
+        instance.formulario_completo = False  # Formulario técnico (Formulario 2) no completado
         
         if commit:
             instance.save()
@@ -1417,7 +1395,8 @@ class HogarFormulario2Form(forms.ModelForm):
         # Marcar formulario como completo
         instance.formulario_completo = True
         
-        # Cambiar estado a "en_revision" para que el administrador revise
+        # ⚙️ FLUJO: Completar visita técnica → estado 'en_revision' (siendo evaluado)
+        # El siguiente paso es aprobar/rechazar en la vista aprobar_rechazar_hogar
         instance.estado = 'en_revision'
         
         if commit:

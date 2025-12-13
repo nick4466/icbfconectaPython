@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+    .container { max-width: 640px; margin: 30px auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+    .header { background: linear-gradient(135deg, #004080, #2a7bff); color: white; padding: 28px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px; color: #334155; line-height: 1.6; }
+    .info-box { background: #f0f8ff; border-left: 4px solid #2563eb; padding: 18px; border-radius: 8px; margin: 24px 0; }
+    .info-item { margin: 8px 0; }
+    .cta { display: inline-block; margin-top: 20px; padding: 12px 24px; background: #16a34a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
+    .cta:hover { background: #15803d; }
+    .footer { background: #f9fafb; padding: 18px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Hogar Comunitario Registrado</h1>
+      <p>Programa Hogares Comunitarios ICBF</p>
+    </div>
+    <div class="content">
+      <p>Estimada <strong>{{ nombres }} {{ apellidos }}</strong>,</p>
+      <p>
+        Te confirmamos que el hogar comunitario <strong>"{{ nombre_hogar }}"</strong> fue registrado exitosamente en el sistema ICBF Conecta.
+      </p>
+      <div class="info-box">
+        <div class="info-item"><strong>Nombre del hogar:</strong> {{ nombre_hogar }}</div>
+        <div class="info-item"><strong>Direccion:</strong> {{ direccion_hogar }}</div>
+        {% if ciudad_nombre %}<div class="info-item"><strong>Ciudad:</strong> {{ ciudad_nombre }}</div>{% endif %}
+        {% if regional_nombre %}<div class="info-item"><strong>Regional:</strong> {{ regional_nombre }}</div>{% endif %}
+        {% if fecha_visita_formateada %}
+          <div class="info-item"><strong>Visita tecnica:</strong> {{ fecha_visita_formateada }}</div>
+          <p style="margin-top:12px;">Nuestro equipo realizara la visita en la fecha indicada para evaluar las condiciones del hogar y continuar con el proceso de habilitacion.</p>
+        {% else %}
+          <p style="margin-top:12px;">Proximamente nos comunicaremos contigo para agendar la visita tecnica de verificacion.</p>
+        {% endif %}
+      </div>
+      <p>
+        Puedes ingresar al portal administrativo en cualquier momento para consultar el estado del proceso y actualizar la información requerida.
+      </p>
+      <p style="text-align:center;">
+        <a class="cta" href="{{ login_url }}">Ingresar a ICBF Conecta</a>
+      </p>
+      <p style="margin-top:24px; font-size:14px; color:#475569;">
+        Recuerda que el hogar continuara en estado <strong>"Pendiente de Revision"</strong> hasta completar la visita tecnica. Ante cualquier duda, responde a este correo o comunicate con tu coordinador regional.
+      </p>
+    </div>
+    <div class="footer">
+      <p><strong>Instituto Colombiano de Bienestar Familiar - ICBF</strong></p>
+      <p>Programa Hogares Comunitarios de Bienestar</p>
+      <p>Este es un correo automatico, por favor no responder directamente.</p>
+    </div>
+  </div>
+</body>
+</html>

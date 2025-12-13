@@ -620,13 +620,94 @@
         </div>
 
         <!-- ==================== SECCIÓN 3: INFORMACIÓN DEL HOGAR COMUNITARIO ==================== -->
+        <h3 class="full-width" style="color:var(--primary);margin:40px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
+          <i class="fas fa-home"></i> 3. Información del Hogar Comunitario
+        </h3>
+        
+        <div style="margin:10px 0 20px 0;padding:12px;background:#e7f3ff;color:#004085;border-radius:8px;border:1px solid #bee5eb;font-size:14px;">
+          <i class="fas fa-info-circle"></i> Registre los datos del hogar comunitario separados de la residencia de la madre.
+        </div>
+
+        <!-- GRID: DATOS BÁSICOS DEL HOGAR -->
+        <div class="two-column-grid">
+          <!-- COLUMNA IZQUIERDA: IDENTIFICACIÓN -->
+          <div class="column-panel">
+            <h4><i class="fas fa-info-circle"></i> Identificación del Hogar</h4>
+            
+            <div class="form-group">
+              <label for="id_nombre_hogar"><i class="fas fa-tag"></i> Nombre del Hogar <span class="required-star">*</span></label>
+              <input type="text" 
+                     name="nombre_hogar" 
+                     id="id_nombre_hogar" 
+                     class="form-control" 
+                     placeholder="Ej: Hogar Pequeños Pasos"
+                     value="{{ hogar_form.nombre_hogar.value|default:'' }}"
+                     required>
+              <div id="nombre-hogar-validation" style="display:none;margin-top:8px;padding:10px;border-radius:6px;"></div>
+            </div>
+            
+            <div class="form-group">
+              <label for="id_regional"><i class="fas fa-map-location-dot"></i> Regional <span class="required-star">*</span></label>
+              {{ hogar_form.regional }}
+              <div id="regional-validation" style="margin-top:8px;padding:10px;border-radius:6px;display:none;"></div>
+            </div>
+            
+            <div class="form-group">
+              <label for="id_ciudad"><i class="fas fa-city"></i> Ciudad <span class="required-star">*</span></label>
+              {{ hogar_form.ciudad }}
+              <small style="color:#666;display:block;margin-top:5px;">Se carga automáticamente según la regional seleccionada</small>
+            </div>
+          </div>
+          
+          <!-- COLUMNA DERECHA: UBICACIÓN -->
+          <div class="column-panel">
+            <h4><i class="fas fa-map-marker-alt"></i> Ubicación del Hogar</h4>
+            
+            <div class="form-group">
+              <label for="id_direccion"><i class="fas fa-road"></i> Dirección <span class="required-star">*</span></label>
+              <input type="text" 
+                     name="direccion" 
+                     id="id_direccion" 
+                     class="form-control" 
+                     placeholder="Ej: Carrera 5 # 22-34, Apto 201"
+                     value="{{ hogar_form.direccion.value|default:'' }}"
+                     required>
+              <small style="color:#666;display:block;margin-top:5px;">Dirección completa donde se ubica el hogar</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="id_barrio_hogar"><i class="fas fa-building"></i> Barrio <span class="required-star">*</span></label>
+              <input type="text" 
+                     name="barrio" 
+                     id="id_barrio_hogar" 
+                     class="form-control" 
+                     placeholder="Ej: Centro, Chapinero, Usaquén"
+                     value="{{ hogar_form.barrio.value|default:'' }}"
+                     required>
+              <small style="color:#666;display:block;margin-top:5px;">Barrio o zona donde se ubica el hogar</small>
+            </div>
+
+            <div class="form-group">
+              <label for="{{ hogar_form.estrato.id_for_label }}"><i class="fas fa-layer-group"></i> Estrato Socioeconómico <span class="required-star">*</span></label>
+              {{ hogar_form.estrato }}
+              {% for error in hogar_form.estrato.errors %}<span class="error">{{ error }}</span>{% endfor %}
+            </div>
+            
+            <!-- LOCALIDAD BOGOTÁ (Solo si la ciudad es Bogotá) -->
+            <div class="form-group" id="localidad-hogar-group" style="display:none;">
+              <label for="id_localidad_bogota"><i class="fas fa-map"></i> Localidad (solo Bogotá) <span class="required-star">*</span></label>
+              <select name="localidad_bogota" id="id_localidad_bogota" class="form-control" required>
+                <option value="">-- Seleccione una Localidad --</option>
+                {% for localidad in localidades_bogota %}
+                  <option value="{{ localidad.id }}">{{ localidad.numero }}. {{ localidad.nombre }}</option>
+                {% endfor %}
+              </select>
+              <small style="color:#666;display:block;margin-top:5px;">Solo aplica si el hogar está en Bogotá D.C.</small>
+            </div>
+          </div>
+        </div>
 
         </div>
-        
-        <!-- CAMPOS OCULTOS PARA DATOS DEL HOGAR (sincronizados con residencia) -->
-        <input type="hidden" name="direccion" id="id_direccion_hogar">
-        <input type="hidden" name="regional" id="id_regional_hogar">
-        <input type="hidden" name="ciudad" id="id_ciudad_hogar">
         <!-- GRID DE DOS COLUMNAS: CARACTERÍSTICAS FÍSICAS Y TENENCIA -->
         <div class="two-column-grid">
           <!-- COLUMNA IZQUIERDA: CARACTERÍSTICAS FÍSICAS -->
@@ -1384,52 +1465,12 @@
       }
     });
   </script>
-  <!-- Script para sincronizar campos de residencia con los del hogar -->
+  <!-- Script: Madre y Hogar con campos SEPARADOS -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-
-      // IDs de los campos de la sección HOGAR (los que Django espera)
-      const direccionResidencia = document.getElementById('id_direccion_residencia');
-      const direccionHogar = document.getElementById('id_direccion_hogar');
-      const regionalHogar = document.getElementById('id_regional_hogar');
-      const ciudadHogar = document.getElementById('id_ciudad_hogar');
-      // Selects de la sección HOGAR (los que Django espera)
-      const regionalSelectHogar = document.getElementById('id_regional');
-      const ciudadSelectHogar = document.getElementById('id_ciudad');
-
-      function syncHogarFields() {
-        // Dirección: sigue viniendo de residencia
-        if (direccionResidencia && direccionHogar) {
-          direccionHogar.value = direccionResidencia.value;
-        }
-        // Regional y ciudad: SIEMPRE del select de la sección hogar
-        if (regionalSelectHogar && regionalHogar) {
-          regionalHogar.value = regionalSelectHogar.value;
-        }
-        if (ciudadSelectHogar && ciudadHogar) {
-          ciudadHogar.value = ciudadSelectHogar.value;
-        }
-      }
-
-      // Sincronizar al cargar
-      syncHogarFields();
-
-      // Sincronizar cada vez que cambian los campos relevantes
-      if (direccionResidencia) direccionResidencia.addEventListener('input', syncHogarFields);
-      if (regionalSelectHogar) regionalSelectHogar.addEventListener('change', syncHogarFields);
-      if (ciudadSelectHogar) ciudadSelectHogar.addEventListener('change', syncHogarFields);
-
-      // Debug: mostrar valores antes de enviar
-      const form = document.getElementById('madreCreationForm');
-      if (form) {
-        form.addEventListener('submit', function(e) {
-          syncHogarFields(); // asegurar sincronización final
-          console.log('VALORES ENVIADOS:');
-          console.log('direccion:', direccionHogar.value);
-          console.log('regional:', regionalHogar.value);
-          console.log('ciudad:', ciudadHogar.value);
-        });
-      }
+      // ✅ Madre y Hogar tienen campos independientes
+      // MADRE: departamento_residencia, ciudad_residencia, localidad_bogota, barrio
+      // HOGAR: regional, ciudad, direccion, barrio, localidad_bogota (se muestra/oculta si es Bogotá)
 
       // Validación: Solo permitir Bogotá
       const departamentoResidencia = document.getElementById('id_departamento_residencia');
@@ -2103,6 +2144,249 @@
         });
       });
     }
+
+    // ==================== 💾 PERSISTENCIA DE DATOS DEL FORMULARIO ====================
+    // Guardar datos en sessionStorage cada vez que cambian
+    // Recuperar datos cuando se carga la página
+    
+    const STORAGE_KEY = 'form_datos_agente_educativo';
+    const STORAGE_FILES_KEY = 'form_archivos_agente_educativo';
+    
+    // Función para guardar todos los datos del formulario
+    function guardarDatosFormulario() {
+      const form = document.getElementById('madreCreationForm');
+      if (!form) return;
+      
+      const datos = {
+        timestamp: new Date().getTime(),
+        campos: {}
+      };
+      
+      // Guardar todos los inputs, selects y textareas
+      const inputs = form.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="number"], input[type="date"], select, textarea');
+      inputs.forEach(input => {
+        // No guardar campos de archivo
+        if (input.type !== 'file' && input.name && !input.name.includes('conviviente')) {
+          datos.campos[input.name] = input.value;
+        }
+      });
+      
+      // Guardar en sessionStorage
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(datos));
+        console.log('✅ Datos del formulario guardados en sessionStorage');
+      } catch (e) {
+        console.warn('⚠️ No se pudieron guardar los datos:', e);
+      }
+    }
+    
+    // Función para recuperar datos del formulario
+    function recuperarDatosFormulario() {
+      try {
+        const datosGuardados = sessionStorage.getItem(STORAGE_KEY);
+        if (!datosGuardados) {
+          console.log('ℹ️ No hay datos guardados anteriormente');
+          return;
+        }
+        
+        const datos = JSON.parse(datosGuardados);
+        const form = document.getElementById('madreCreationForm');
+        if (!form) return;
+        
+        console.log('📝 Recuperando datos del formulario...');
+        
+        // Restaurar valores en los campos
+        Object.keys(datos.campos).forEach(nombre => {
+          const valor = datos.campos[nombre];
+          const input = form.querySelector(`[name="${nombre}"]`);
+          
+          if (input) {
+            input.value = valor;
+            
+            // Disparar evento change para actualizar dependencias (ej: selects de ciudad)
+            const event = new Event('change', { bubbles: true });
+            input.dispatchEvent(event);
+            
+            console.log(`✅ Campo restaurado: ${nombre} = ${valor}`);
+          }
+        });
+        
+        console.log('✅ Datos del formulario recuperados');
+        
+        // Esperar un poco para que se carguen las ciudades si hay una regional seleccionada
+        setTimeout(() => {
+          recuperarArchivos();
+        }, 500);
+        
+      } catch (e) {
+        console.error('❌ Error al recuperar datos:', e);
+      }
+    }
+    
+    // Función para guardar archivos en base64
+    function guardarArchivos() {
+      const form = document.getElementById('madreCreationForm');
+      if (!form) return;
+      
+      const archivos = {};
+      const inputsArchivos = form.querySelectorAll('input[type="file"]');
+      
+      inputsArchivos.forEach(input => {
+        if (input.files && input.files[0]) {
+          const file = input.files[0];
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+            archivos[input.name] = {
+              nombre: file.name,
+              tipo: file.type,
+              base64: e.target.result,
+              timestamp: new Date().getTime()
+            };
+            
+            // Guardar cada archivo cuando esté listo
+            try {
+              sessionStorage.setItem(STORAGE_FILES_KEY + '_' + input.name, JSON.stringify(archivos[input.name]));
+              console.log(`💾 Archivo guardado: ${input.name}`);
+            } catch (e) {
+              console.warn(`⚠️ No se pudo guardar el archivo ${input.name}:`, e);
+            }
+          };
+          
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+    
+    // Función para recuperar archivos
+    function recuperarArchivos() {
+      const form = document.getElementById('madreCreationForm');
+      if (!form) return;
+      
+      const inputsArchivos = form.querySelectorAll('input[type="file"]');
+      console.log(`🔍 Buscando ${inputsArchivos.length} campos de archivo...`);
+      
+      inputsArchivos.forEach(input => {
+        const archivoGuardado = sessionStorage.getItem(STORAGE_FILES_KEY + '_' + input.name);
+        
+        if (archivoGuardado) {
+          try {
+            const archivo = JSON.parse(archivoGuardado);
+            
+            // Convertir base64 nuevamente a File
+            const byteString = atob(archivo.base64.split(',')[1]);
+            const mimeString = archivo.base64.split(',')[0].match(/:(.*?);/)[1];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+              ia[i] = byteString.charCodeAt(i);
+            }
+            const blob = new Blob([ab], { type: mimeString });
+            const nuevoFile = new File([blob], archivo.nombre, { type: archivo.tipo });
+            
+            // Crear objeto DataTransfer para asignar el archivo
+            const dt = new DataTransfer();
+            dt.items.add(nuevoFile);
+            input.files = dt.files;
+            
+            // Disparar evento change para mostrar preview
+            const event = new Event('change', { bubbles: true });
+            input.dispatchEvent(event);
+            
+            console.log(`✅ Archivo recuperado: ${input.name}`);
+          } catch (e) {
+            console.warn(`⚠️ Error al recuperar archivo ${input.name}:`, e);
+          }
+        }
+      });
+    }
+    
+    // Inicializar: Recuperar datos al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      // Recuperar datos guardados
+      recuperarDatosFormulario();
+      
+      // Guardar datos cada vez que cambian (throttled a cada 1 segundo)
+      const form = document.getElementById('madreCreationForm');
+      if (form) {
+        let saveTimeout;
+        
+        // Guardar cuando cambian inputs
+        form.addEventListener('change', function() {
+          clearTimeout(saveTimeout);
+          saveTimeout = setTimeout(() => {
+            guardarDatosFormulario();
+            guardarArchivos();
+          }, 500);
+        });
+        
+        // Guardar cuando se escribe en textareas e inputs de texto
+        form.addEventListener('input', function(e) {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+              guardarDatosFormulario();
+            }, 1000);
+          }
+        });
+        
+        // Guardar archivos cuando se seleccionan
+        const inputsArchivos = form.querySelectorAll('input[type="file"]');
+        inputsArchivos.forEach(input => {
+          input.addEventListener('change', function() {
+            guardarArchivos();
+          });
+        });
+        
+        // Limpiar datos al enviar el formulario
+        form.addEventListener('submit', function() {
+          console.log('📤 Formulario siendo enviado, limpiando datos guardados...');
+          sessionStorage.removeItem(STORAGE_KEY);
+          // No limpiar archivos aún, podrían ser necesarios
+          console.log('✅ Datos de sesión limpiados');
+        });
+      }
+      
+      // Mostrar notificación si hay datos guardados
+      const datosGuardados = sessionStorage.getItem(STORAGE_KEY);
+      if (datosGuardados) {
+        try {
+          const datos = JSON.parse(datosGuardados);
+          const ahora = new Date().getTime();
+          const hace = ahora - datos.timestamp;
+          const minutos = Math.floor(hace / 60000);
+          
+          if (minutos < 60) {
+            // Mostrar notificación
+            const notificacion = document.createElement('div');
+            notificacion.style.cssText = 'background:#4CAF50;color:white;padding:15px 20px;border-radius:8px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 8px rgba(0,0,0,0.2);';
+            notificacion.innerHTML = `
+              <div style="display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-history" style="font-size:20px;"></i>
+                <div>
+                  <strong>Datos guardados</strong>
+                  <br><small>Se encontraron datos de una sesión anterior (hace ${minutos} minuto${minutos !== 1 ? 's' : ''})</small>
+                </div>
+              </div>
+              <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:0;">&times;</button>
+            `;
+            
+            const form = document.getElementById('madreCreationForm');
+            if (form) {
+              form.insertBefore(notificacion, form.firstChild);
+            }
+          }
+        } catch (e) {
+          console.warn('⚠️ Error al mostrar notificación:', e);
+        }
+      }
+    });
+    
+    // Limpiar datos si el usuario sale de la página sin enviar el formulario
+    window.addEventListener('beforeunload', function(e) {
+      // No limpiar automáticamente, mantener los datos para cuando vuelva
+      // console.log('Usuario saliendo de la página');
+    });
   </script>
 </body>
 </html>

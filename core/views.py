@@ -28,7 +28,8 @@ from django.http import JsonResponse
 from datetime import date, datetime, timedelta
 import calendar
 from datetime import date
-from django.core.mail import send_mail  # 🆕 Para envío de emails
+from django.core.mail import send_mail, EmailMessage, get_connection  # 🆕 Para envío de emails
+from django.utils.html import strip_tags
 from django.conf import settings  # 🆕 Para configuración de email
 from functools import wraps
 
@@ -484,11 +485,9 @@ class MadreForm(forms.ModelForm):
         fields = ['nombres', 'apellidos', 'documento', 'email', 'telefono', 'direccion']
 
 
-class HogarForm(forms.ModelForm):
-    class Meta:
-        model = HogarComunitario
-        fields = ['nombre_hogar', 'direccion', 'localidad', 'estado', 'regional', 'ciudad']
-# En la sección de formularios simples en views.py
+# ✅ HogarForm está importado desde forms.py (línea 19)
+# NO crear una versión duplicada aquí
+
 class AdministradorForm(forms.ModelForm):
     # Añadir el campo de contraseña, ya que no se incluye automáticamente
     contraseña = forms.CharField(widget=forms.PasswordInput, required=True)
@@ -604,28 +603,15 @@ def crear_madre(request):
 
         usuario_form = UsuarioMadreForm(request.POST, request.FILES)
         madre_profile_form = MadreProfileForm(request.POST, request.FILES)
-        # Inicializar el formulario de hogar SIN datos de residencia, solo con los campos que sí se piden en el template
-        # Extraer solo los datos relevantes para el hogar
-        hogar_data = request.POST.copy()
-        # Rellenar automáticamente los campos requeridos del hogar con los datos de la madre
-        if 'nombre_hogar' not in hogar_data or not hogar_data.get('nombre_hogar'):
-            nombres = request.POST.get('nombres', '')
-            hogar_data['nombre_hogar'] = f"Hogar de {nombres.split(' ')[0]}" if nombres else ''
-        if 'direccion' not in hogar_data or not hogar_data.get('direccion'):
-            hogar_data['direccion'] = request.POST.get('direccion', '')
-        if 'localidad_bogota' not in hogar_data or not hogar_data.get('localidad_bogota'):
-            hogar_data['localidad_bogota'] = request.POST.get('localidad_bogota', '')
-        if 'ciudad' not in hogar_data or not hogar_data.get('ciudad'):
-            hogar_data['ciudad'] = request.POST.get('ciudad_residencia', '')
-        if 'departamento' not in hogar_data or not hogar_data.get('departamento'):
-            hogar_data['departamento'] = request.POST.get('departamento_residencia', '')
-        # El campo regional debe venir del POST, pero si no, dejarlo vacío
-        if 'regional' not in hogar_data:
-            hogar_data['regional'] = request.POST.get('regional', '')
-        # Estado se maneja en el form Hogar, pero si no, ponerlo explícito
-        if 'estado' not in hogar_data:
-            hogar_data['estado'] = 'pendiente_visita'
-        hogar_form = HogarForm(hogar_data, request.FILES)
+        # ✅ El hogar ahora es INDEPENDIENTE de la madre
+        # Los datos vienen directamente del formulario (sección 3 del template)
+        
+        # ✅ IMPORTANTE: Limpiar 'estado' del POST si viene (fue enviado por template antiguo)
+        post_data = request.POST.copy()
+        if 'estado' in post_data:
+            del post_data['estado']
+        
+        hogar_form = HogarForm(post_data, request.FILES)
         error_step = 1
 
         # DEBUG: Imprimir errores de cada formulario
@@ -634,6 +620,11 @@ def crear_madre(request):
         print(f"UsuarioForm válido: {usuario_form.is_valid()}")
         if not usuario_form.is_valid():
             print(f"  Errores: {usuario_form.errors}")
+        print(f"HogarForm válido: {hogar_form.is_valid()}")
+        if not hogar_form.is_valid():
+            print(f"  Errores: {hogar_form.errors}")
+            print(f"  Campos en hogar_form: {list(hogar_form.fields.keys())}")
+            print(f"  POST data: {request.POST.keys()}")
         print(f"MadreProfileForm válido: {madre_profile_form.is_valid()}")
         if not madre_profile_form.is_valid():
             print(f"  Errores: {madre_profile_form.errors}")
@@ -644,15 +635,15 @@ def crear_madre(request):
 
         if usuario_form.is_valid() and madre_profile_form.is_valid() and hogar_form.is_valid():
             documento = usuario_form.cleaned_data.get('documento')
-            # El nombre del hogar se genera automáticamente con el nombre de la madre
-            nombre_hogar = "Hogar de " + usuario_form.cleaned_data.get('nombres', '').split(' ')[0]
-
-
-            # Heredar datos de residencia de la madre
-            direccion_hogar = usuario_form.cleaned_data.get('direccion')
-            localidad_bogota = usuario_form.cleaned_data.get('localidad_bogota')
-            ciudad = usuario_form.cleaned_data.get('ciudad_residencia')
-            departamento = usuario_form.cleaned_data.get('departamento_residencia')
+            
+            # ✅ AHORA: Los datos del hogar vienen del hogar_form, NO se generan
+            # Obtener los valores ingresados en el formulario
+            nombre_hogar = hogar_form.cleaned_data.get('nombre_hogar')
+            direccion_hogar = hogar_form.cleaned_data.get('direccion')
+            barrio_hogar = hogar_form.cleaned_data.get('barrio')
+            regional_hogar = hogar_form.cleaned_data.get('regional')
+            ciudad_hogar = hogar_form.cleaned_data.get('ciudad')
+            localidad_bogota_hogar = hogar_form.cleaned_data.get('localidad_bogota')
 
             # Validación de documento duplicado
             if Usuario.objects.filter(documento=documento).exists():
@@ -664,9 +655,9 @@ def crear_madre(request):
                     'initial_step': 1, 'regionales': regionales, 'localidades_bogota': localidades_bogota
                 })
 
-            # Validación de hogar duplicado por dirección
-            if HogarComunitario.objects.filter(direccion__iexact=direccion_hogar).exists():
-                messages.error(request, f"La dirección '{direccion_hogar}' ya está registrada para otro hogar.")
+            # Validación de hogar duplicado por nombre
+            if HogarComunitario.objects.filter(nombre_hogar__iexact=nombre_hogar).exists():
+                messages.error(request, f"Ya existe un hogar con el nombre '{nombre_hogar}' registrado.")
                 error_step = 3
 
             if messages.get_messages(request):
@@ -698,18 +689,22 @@ def crear_madre(request):
                     # 3️⃣ Crear hogar comunitario asociado a la madre
                     hogar = hogar_form.save(commit=False)
                     hogar.madre = madre_profile
+                    # ✅ Los datos del hogar vienen del formulario (INDEPENDIENTE de la madre)
                     hogar.nombre_hogar = nombre_hogar
-                    # Heredar datos de residencia de la madre
                     hogar.direccion = direccion_hogar
-                    hogar.localidad_bogota = localidad_bogota
-                    hogar.ciudad = ciudad
+                    hogar.barrio = barrio_hogar
+                    hogar.regional = regional_hogar
+                    hogar.ciudad = ciudad_hogar
+                    hogar.localidad_bogota = localidad_bogota_hogar
+                    
                     # Mantener compatibilidad: guardar nombre de localidad en campo texto
-                    if localidad_bogota:
-                        hogar.localidad = localidad_bogota.nombre
+                    if localidad_bogota_hogar:
+                        hogar.localidad = localidad_bogota_hogar.nombre
                     else:
-                        hogar.localidad = ciudad.nombre if ciudad else ''
-                    # 🆕 El hogar inicia en estado "pendiente_visita" hasta que se realice la visita técnica
-                    hogar.estado = 'pendiente_visita'
+                        hogar.localidad = ciudad_hogar.nombre if ciudad_hogar else ''
+                    
+                    # 🆕 El hogar inicia en estado "pendiente_revision" hasta que se realice la visita técnica
+                    hogar.estado = 'pendiente_revision'
                     
                     # Guardar fecha de primera visita si está disponible
                     fecha_primera_visita = request.POST.get('fecha_primera_visita')
@@ -732,15 +727,17 @@ def crear_madre(request):
                             })
                         
                         hogar.fecha_primera_visita = fecha_visita_obj
-                    
+
                     hogar.save()
 
-                    # 4️⃣ Crear visita técnica programada
+                    # 4️⃣ Crear visita técnica programada (opcional)
+                    fecha_visita_dt = None
+                    visita = None
+                    correo_notificacion_enviado = False
+
                     if fecha_primera_visita:
-                        from .models import VisitaTecnica
                         from datetime import datetime
                         fecha_visita_dt = datetime.strptime(fecha_primera_visita, '%Y-%m-%d')
-                        
                         visita = VisitaTecnica.objects.create(
                             hogar=hogar,
                             fecha_programada=fecha_visita_dt,
@@ -749,51 +746,59 @@ def crear_madre(request):
                             creado_por=request.user,
                             observaciones_agenda=f'Primera visita programada al crear el hogar {nombre_hogar}'
                         )
-                        
-                        # Enviar correo de notificación
+
+                    # Enviar correo de notificación (siempre se intenta, aún sin fecha definida)
+                    connection = None
+                    try:
+                        contexto_correo = {
+                            'nombres': usuario.nombres,
+                            'apellidos': usuario.apellidos,
+                            'nombre_hogar': nombre_hogar,
+                            'direccion_hogar': direccion_hogar,
+                            'regional_nombre': regional_hogar.nombre if regional_hogar else '',
+                            'ciudad_nombre': ciudad_hogar.nombre if ciudad_hogar else '',
+                            'fecha_visita_formateada': fecha_visita_dt.strftime('%d de %B de %Y') if fecha_visita_dt else None,
+                            'login_url': request.build_absolute_uri(reverse('login')),
+                        }
+
+                        mensaje_html = render_to_string('emails/hogar_creado.html', contexto_correo)
+
+                        connection = get_connection()
                         try:
-                            from django.core.mail import send_mail
-                            from django.template.loader import render_to_string
-                            from django.utils.html import strip_tags
-                            
-                            asunto = f'Visita Técnica Programada - {nombre_hogar}'
-                            mensaje_html = f"""
-                            <html>
-                            <body style="font-family: Arial, sans-serif;">
-                                <h2 style="color: #004080;">Visita Técnica Programada</h2>
-                                <p>Estimado/a <strong>{usuario.nombres} {usuario.apellidos}</strong>,</p>
-                                <p>Se ha programado la primera visita técnica para el hogar comunitario:</p>
-                                <div style="background-color: #f0f8ff; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0;">
-                                    <p><strong>Hogar:</strong> {nombre_hogar}</p>
-                                    <p><strong>Dirección:</strong> {direccion_hogar}</p>
-                                    <p><strong>Fecha de Visita:</strong> {fecha_visita_dt.strftime('%d de %B de %Y')}</p>
-                                </div>
-                                <p>Durante esta visita se evaluarán las condiciones del hogar para determinar su capacidad y habilitación.</p>
-                                <p><strong>Importante:</strong> Por favor asegúrese de estar presente en la fecha programada.</p>
-                                <br>
-                                <p>Atentamente,</p>
-                                <p><strong>Sistema ICBF Conecta</strong></p>
-                            </body>
-                            </html>
-                            """
-                            mensaje_texto = strip_tags(mensaje_html)
-                            
-                            send_mail(
-                                asunto,
-                                mensaje_texto,
-                                'noreply@icbf.gov.co',
-                                [usuario.correo],
-                                html_message=mensaje_html,
-                                fail_silently=True
-                            )
-                            
-                            visita.correo_enviado = True
-                            from django.utils import timezone
-                            visita.fecha_envio_correo = timezone.now()
-                            visita.save()
-                            
-                        except Exception as e:
-                            print(f"Error al enviar correo: {e}")
+                            connection.open()
+                        except Exception:
+                            pass
+
+                        email = EmailMessage(
+                            subject=f'Hogar Registrado - {nombre_hogar}',
+                            body=mensaje_html,
+                            from_email=settings.DEFAULT_FROM_EMAIL or settings.EMAIL_HOST_USER,
+                            to=[usuario.correo],
+                            connection=connection
+                        )
+                        email.content_subtype = 'html'
+                        enviados = email.send(fail_silently=False)
+
+                        if enviados:
+                            correo_notificacion_enviado = True
+                            if visita:
+                                visita.correo_enviado = True
+                                visita.fecha_envio_correo = timezone.now()
+                                visita.save()
+
+                    except Exception as e:
+                        print(f"Error al enviar correo: {e}")
+                        messages.warning(
+                            request,
+                            '⚠️ El hogar se creó, pero no se pudo enviar el correo de confirmación. '
+                            'Verifique la configuración SMTP (EMAIL_HOST_USER/EMAIL_HOST_PASSWORD) o revise los logs.'
+                        )
+                    finally:
+                        if connection:
+                            try:
+                                connection.close()
+                            except Exception:
+                                pass
 
                     # 5️⃣ Crear convivientes del hogar
                     num_convivientes = request.POST.get('num_convivientes', 0)
@@ -822,9 +827,12 @@ def crear_madre(request):
 
                 # Mensaje de éxito informativo
                 mensaje_exito = '✅ ¡Agente educativo y hogar creados exitosamente! '
-                if fecha_primera_visita:
+                if fecha_visita_dt:
                     mensaje_exito += f'📅 Visita técnica programada para el {fecha_visita_dt.strftime("%d de %B de %Y")}. '
-                    mensaje_exito += f'📧 Se ha enviado un correo de confirmación. '
+                if correo_notificacion_enviado:
+                    mensaje_exito += '📧 Se envió un correo de confirmación. '
+                else:
+                    mensaje_exito += '⚠️ No se pudo enviar el correo automático; verifique la configuración de email. '
                 mensaje_exito += '⚠️ El hogar permanecerá en estado "Pendiente de Visita" hasta completar la evaluación técnica. '
                 mensaje_exito += '🔑 Contraseña temporal: 123456'
                 
@@ -866,9 +874,12 @@ def crear_madre(request):
                     error_step = 3
                 errores_detallados.append('🏠 <strong>Sección 3 - Información del Hogar:</strong>')
                 for field, errors in hogar_form.errors.items():
-                    field_label = hogar_form.fields[field].label if field in hogar_form.fields else field
-                    for error in errors:
-                        errores_detallados.append(f'   • <strong>{field_label}:</strong> {error}')
+                    # ✅ Solo mostrar errores de campos que existen en el formulario
+                    if field in hogar_form.fields:
+                        field_label = hogar_form.fields[field].label
+                        for error in errors:
+                            errores_detallados.append(f'   • <strong>{field_label}:</strong> {error}')
+                    # else: ignorar campos fantasma como 'estado'
             
             # Construir mensaje HTML con todos los errores
             if errores_detallados:
@@ -5269,13 +5280,15 @@ def completar_visita_tecnica(request, hogar_id):
     """
     Vista para completar el Formulario 2 (Visita Técnica).
     
-    Esta vista se accede cuando:
-    1. La visita técnica ya ocurrió
-    2. El administrador necesita completar la revisión del hogar
+    FLUJO DE ESTADOS:
+    1. Crear hogar → estado = 'pendiente_revision' (sin revisar)
+    2. Completar este formulario → estado = 'en_revision' (siendo evaluado)
+    3. Aprobar/Rechazar → estado final (aprobado/rechazado)
     
-    Solo es accesible si:
-    - El hogar está en estado 'pendiente_revision' o 'en_revision'
-    - El formulario técnico NO está completo (formulario_completo = False)
+    Esta vista requiere:
+    - Hogar en estado 'pendiente_revision' (nuevo) o 'en_revision' (en proceso)
+    - NOTA: Acepta 'pendiente_visita' por compatibilidad con datos legacy
+    - Formulario técnico NO completado (formulario_completo = False)
     """
     hogar = get_object_or_404(HogarComunitario, pk=hogar_id)
     
@@ -5289,13 +5302,14 @@ def completar_visita_tecnica(request, hogar_id):
         return redirect('detalle_hogar', hogar_id=hogar.id)
     
     # Verificar que el hogar esté en un estado válido para completar
+    # Estados: pendiente_revision (nuevo), en_revision (en proceso), pendiente_visita (legacy)
     estados_validos = ['pendiente_revision', 'en_revision', 'pendiente_visita']
     if hogar.estado not in estados_validos:
         messages.error(
             request,
             f'No se puede completar la visita técnica. '
             f'Estado actual: {hogar.get_estado_display()}. '
-            f'Estados válidos: Pendiente de Revisión, En Revisión.'
+            f'El hogar debe estar en estado "Pendiente de Revisión" o "En Revisión".'
         )
         return redirect('detalle_hogar', hogar_id=hogar.id)
     
@@ -5469,14 +5483,19 @@ def aprobar_rechazar_hogar(request, hogar_id):
     """
     Vista para aprobar o rechazar un hogar después de la revisión.
     
-    Solo accesible si:
-    - El hogar está en estado 'en_revision'
-    - El formulario técnico está completo
-    - El área cumple con los requisitos (≥24 m² para aprobar)
+    FLUJO DE ESTADOS:
+    - Entrada: estado = 'en_revision' (siendo evaluado)
+    - Salida: estado = 'aprobado' o 'rechazado'
+    
+    Requisitos:
+    - El hogar debe estar en estado 'en_revision'
+    - El formulario técnico debe estar completo
+    - El área debe cumplir requisitos (≥24 m² para aprobar)
     """
     hogar = get_object_or_404(HogarComunitario, pk=hogar_id)
     
     # Verificar que el hogar esté listo para revisión final
+    # Solo permite estado 'en_revision' (después de completar Formulario 2)
     if hogar.estado not in ['en_revision', 'pendiente_revision']:
         messages.error(
             request,
@@ -6404,16 +6423,17 @@ def calcular_proxima_visita(fecha_base):
 @rol_requerido('administrador')
 def activar_hogar(request, hogar_id):
     """
-    Vista para activar un hogar después de la primera visita técnica.
-    Solo disponible el día programado de la visita.
+    Vista para activar un hogar después de la revisión final.
     
-    Procesa el formulario de evaluación y determina:
-    - Si el hogar es APTO (aprobado) → estado 'activo'
-    - Si el hogar es NO APTO → estado 'pendiente_visita'
-    - Envía email de notificación si es activado
+    FLUJO DE ESTADOS FINALES:
+    - Si aprobado → estado = 'activo' (hogar habilitado)
+    - Si rechazado → estado = 'rechazado' (no cumple requisitos)
+    - Si requiere nueva visita → estado = 'pendiente_revision' (volver a revisar)
     
-    IMPORTANTE: Esta vista SOLO cambia el estado a 'activo' si el formulario
-    es completado exitosamente. No permite atajos ni activación sin evaluación.
+    Envía email de notificación según resultado.
+    
+    IMPORTANTE: Esta vista es la final del proceso de evaluación.
+    No permite atajos - requiere evaluación completa.
     """
     hogar = get_object_or_404(HogarComunitario, id=hogar_id)
     fecha_hoy = date.today()
@@ -6597,7 +6617,7 @@ RECOMENDACIÓN: {recomendacion.upper()}
                 
             elif recomendacion == 'no_aprobado':
                 hogar.estado_aptitud = 'no_apto'
-                hogar.estado = 'pendiente_visita'
+                hogar.estado = 'pendiente_revision'
                 hogar.save()
                 
                 messages.error(request, 
@@ -6608,7 +6628,7 @@ RECOMENDACIÓN: {recomendacion.upper()}
                 
             elif recomendacion == 'requiere_nueva_visita':
                 hogar.estado_aptitud = 'no_apto'
-                hogar.estado = 'pendiente_visita'
+                hogar.estado = 'pendiente_revision'
                 hogar.fecha_primera_visita = None  # Permitir reprogramación
                 hogar.save()
                 
