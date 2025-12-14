@@ -188,8 +188,8 @@ urlpatterns = [
 
     # --- 🆕 URLs Formulario 2 - Sistema de Dos Fases ---
     path('hogares/revision/', views.lista_hogares_revision, name='lista_hogares_revision'),
-    path('hogares/<int:hogar_id>/visita-tecnica/', views.completar_visita_tecnica, name='completar_visita_tecnica'),
-    path('hogares/<int:hogar_id>/aprobar-rechazar/', views.aprobar_rechazar_hogar, name='aprobar_rechazar_hogar'),
+    # Formulario eliminado - usar activar_hogar en su lugar
+    # Eliminado: usar activar_hogar en su lugar
     path('hogares/<int:hogar_id>/detalle/', views.detalle_hogar, name='detalle_hogar'),
 
     # --- 🆕 URLs Dashboard del Padre Mejorado ---
@@ -205,6 +205,12 @@ urlpatterns = [
     # --- 🆕 URLs Solicitud de Retiro de Matrícula (MADRE) ---
     path('madre/solicitudes-retiro/', views.madre_ver_retiros_solicitudes, name='madre_ver_retiros'),
     path('madre/procesar-retiro/<int:solicitud_id>/', views.madre_procesar_retiro, name='madre_procesar_retiro'),
+
+    # --- 🆕 AJAX Barrios por Localidad ---
+    path('api/barrios-por-localidad/<int:localidad_id>/', views.obtener_barrios_por_localidad, name='obtener_barrios'),
+    
+    # --- 🆕 AJAX Localidades Bogotá ---
+    path('api/localidades-bogota/', views.api_localidades_bogota, name='api_localidades_bogota'),
 
     #-----------------------------------------------juanito---------------------------------------------#
     # --- URLs de Asistencias no borrar please ultra importarte ;D #---

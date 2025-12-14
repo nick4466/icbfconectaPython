@@ -214,14 +214,14 @@ class HogarForm(FileSizeValidationMixin, forms.ModelForm):
         queryset=Regional.objects.all(),
         required=True,
         label="Regional",
-        widget=forms.Select,
+        widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label="-- Seleccione una Regional --"
     )
     ciudad = forms.ModelChoiceField(
         queryset=Ciudad.objects.none(),
         required=True,
         label="Ciudad",
-        widget=forms.Select,
+        widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label="-- Seleccione una Ciudad --"
     )
     localidad_bogota = forms.ModelChoiceField(
@@ -230,6 +230,14 @@ class HogarForm(FileSizeValidationMixin, forms.ModelForm):
         label="Localidad (solo para Bogotá)",
         widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label="-- Seleccione una Localidad --"
+    )
+    
+    # Campo barrio como CharField (se llena dinámicamente con JavaScript desde API)
+    barrio = forms.CharField(
+        max_length=100,
+        required=False,
+        label="Barrio",
+        widget=forms.Select(attrs={'class': 'form-control'}),
     )
     
     # Campo estrato con opciones predefinidas (OBLIGATORIO para completar el registro)
@@ -280,8 +288,6 @@ class HogarForm(FileSizeValidationMixin, forms.ModelForm):
             'capacidad_maxima': 'Capacidad Máxima de Niños',
         }
         widgets = {
-            # NOTA: 'estrato' NO debe estar aquí porque ya está definido como campo explícito arriba (línea 188-199)
-            # Si se define aquí, puede causar conflictos de renderizado
             'fotos_interior': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
             'fotos_exterior': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
             'documento_tenencia_pdf': forms.FileInput(attrs={'accept': 'application/pdf', 'class': 'form-control'}),
@@ -291,7 +297,6 @@ class HogarForm(FileSizeValidationMixin, forms.ModelForm):
             'geolocalizacion_lon': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': 'Ej: -74.0817500', 'class': 'form-control'}),
             'nombre_hogar': forms.TextInput(attrs={'placeholder': 'Ej: Hogar Comunitario Los Ángeles', 'class': 'form-control'}),
             'direccion': forms.TextInput(attrs={'placeholder': 'Ej: Cra 97#135a-30 SUBA', 'id': 'id_direccion_hogar', 'class': 'form-control'}),
-            'barrio': forms.TextInput(attrs={'placeholder': 'Ej: El Poblado, Chapinero, etc.', 'class': 'form-control'}),
             'num_habitaciones': forms.NumberInput(attrs={'min': 1, 'class': 'form-control'}),
             'num_banos': forms.NumberInput(attrs={'min': 1, 'class': 'form-control'}),
             'capacidad_maxima': forms.NumberInput(attrs={'min': 1, 'max': 30, 'class': 'form-control'}),
@@ -311,9 +316,6 @@ class HogarForm(FileSizeValidationMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # ✅ ESTADO: Se maneja automáticamente con el default del modelo
-        # No tocamos el campo - Django usará 'pendiente_revision' del modelo
-        
         # Para nuevos hogares, capacidad_maxima es no requerida y usa valor por defecto
         if not self.instance.pk:  # Solo para creación, no para edición
             self.fields['capacidad_maxima'].required = False
@@ -321,6 +323,7 @@ class HogarForm(FileSizeValidationMixin, forms.ModelForm):
             self.fields['capacidad_maxima'].widget.attrs['style'] = 'pointer-events: none; background-color: #e9ecef;'
             self.fields['capacidad_maxima'].help_text = 'La capacidad se determinará después de la visita técnica'
         
+        # Cargar ciudades si hay una regional seleccionada (modo edición o POST)
         if 'regional' in self.data:
             try:
                 regional_id = int(self.data.get('regional'))
@@ -328,32 +331,53 @@ class HogarForm(FileSizeValidationMixin, forms.ModelForm):
             except (ValueError, TypeError):
                 self.fields['ciudad'].queryset = Ciudad.objects.none()
         elif self.instance and self.instance.pk and self.instance.regional:
+            # Modo edición: mostrar ciudades de la regional actual
             self.fields['ciudad'].queryset = Ciudad.objects.filter(regional=self.instance.regional).order_by('nombre')
         else:
             self.fields['ciudad'].queryset = Ciudad.objects.none()
     
     def clean(self):
         cleaned_data = super().clean()
+        nombre_hogar = cleaned_data.get('nombre_hogar')
         ciudad = cleaned_data.get('ciudad')
         localidad_bogota = cleaned_data.get('localidad_bogota')
+        barrio = cleaned_data.get('barrio')
         direccion = cleaned_data.get('direccion')
         
-        # Si la ciudad es Bogotá, validar que se seleccione una localidad
-        # Usar 'in' para ser más flexible con variaciones del nombre
+        # ✅ VALIDACIÓN: Verificar que el nombre del hogar no esté duplicado
+        if nombre_hogar:
+            nombre_normalizado = nombre_hogar.strip().upper()
+            hogar_existente = HogarComunitario.objects.filter(
+                nombre_hogar__iexact=nombre_normalizado
+            ).exclude(pk=self.instance.pk)  # Excluir el hogar actual (si está editando)
+            
+            if hogar_existente.exists():
+                primer_hogar = hogar_existente.first()
+                self.add_error('nombre_hogar', f'⚠️ Ya existe un hogar con el nombre "{nombre_hogar}". El nombre debe ser único.')
+        
+        # ✅ VALIDACIÓN: Verificar que la dirección no esté duplicada
+        if direccion:
+            # Buscar si existe otro hogar con la misma dirección
+            direccion_normalizada = direccion.strip().upper()
+            hogar_existente = HogarComunitario.objects.filter(
+                direccion__iexact=direccion_normalizada
+            ).exclude(pk=self.instance.pk)  # Excluir el hogar actual (si está editando)
+            
+            if hogar_existente.exists():
+                primer_hogar = hogar_existente.first()
+                self.add_error('direccion', f'⚠️ Esta dirección ya está registrada por otro hogar ({primer_hogar.nombre_hogar}). No puede registrar dos hogares con la misma dirección.')
+        
+        # Si la ciudad es Bogotá, validar que se seleccione una localidad y barrio
         if ciudad and 'BOGOT' in ciudad.nombre.upper():
             if not localidad_bogota:
                 self.add_error('localidad_bogota', 'Debe seleccionar una localidad para hogares en Bogotá')
+            if not barrio:
+                self.add_error('barrio', 'Debe seleccionar un barrio para hogares en Bogotá')
         
         # Validar que si hay localidad seleccionada, la ciudad sea Bogotá
         if localidad_bogota and ciudad:
             if 'BOGOT' not in ciudad.nombre.upper():
                 self.add_error('localidad_bogota', 'No puede seleccionar una localidad de Bogotá para un hogar en otra ciudad')
-        
-        # Si hay localidad seleccionada y dirección, validar coherencia (validación básica)
-        if localidad_bogota and direccion:
-            # Aquí se puede implementar lógica más sofisticada de validación
-            # Por ahora, solo verificamos que se hayan proporcionado ambos campos
-            pass
         
         return cleaned_data
 
@@ -1180,6 +1204,19 @@ class HogarFormulario1Form(forms.ModelForm):
         regional = cleaned_data.get('regional')
         ciudad = cleaned_data.get('ciudad')
         localidad_bogota = cleaned_data.get('localidad_bogota')
+        direccion = cleaned_data.get('direccion')
+        
+        # ✅ VALIDACIÓN: Verificar que la dirección no esté duplicada
+        if direccion:
+            # Buscar si existe otro hogar con la misma dirección
+            direccion_normalizada = direccion.strip().upper()
+            hogar_existente = HogarComunitario.objects.filter(
+                direccion__iexact=direccion_normalizada
+            ).exclude(pk=self.instance.pk)  # Excluir el hogar actual (si está editando)
+            
+            if hogar_existente.exists():
+                primer_hogar = hogar_existente.first()
+                self.add_error('direccion', f'⚠️ Esta dirección ya está registrada por otro hogar ({primer_hogar.nombre_hogar}). No puede registrar dos hogares con la misma dirección.')
         
         # Validar que solo se permita Bogotá como regional
         if regional and regional.nombre.upper() != 'BOGOTÁ':

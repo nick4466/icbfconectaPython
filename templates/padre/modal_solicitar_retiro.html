@@ -316,12 +316,16 @@
         }
     });
 
-    function abrirModal(ninoId) {
+    // Variable global para almacenar el nombre del niño
+    let ninoNameGlobal = '';
+
+    function abrirModal(ninoId, ninoName = '') {
         const modal = document.getElementById('modalSolicitarRetiro');
         document.getElementById('ninoId').value = ninoId;
         document.getElementById('motivoRetiro').value = '';
         document.getElementById('descripcionRetiro').value = '';
         document.getElementById('contadorDescripcion').textContent = '0/500 caracteres';
+        ninoNameGlobal = ninoName; // Guardar el nombre del niño
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
@@ -353,6 +357,58 @@
         const ninoId = document.getElementById('ninoId').value;
         const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+        // Obtener el nombre del niño desde la variable global
+        const ninoName = ninoNameGlobal || 'el niño/a';
+
+        // Mapear motivo a texto legible
+        const motivoTexto = {
+            'cambio_domicilio': 'Cambio de domicilio',
+            'cambio_cuidador': 'Cambio de cuidador',
+            'cambio_hogar': 'Cambio de hogar comunitario',
+            'razon_personal': 'Razón personal',
+            'problemas_adaptacion': 'Problemas de adaptación',
+            'otro': 'Otro'
+        };
+
+        // Mostrar modal de confirmación con SweetAlert2
+        Swal.fire({
+            title: '⚠️ ¡Atención!',
+            html: `
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <p style="margin-bottom: 15px; font-size: 16px;">
+                        <strong>¿Estás completamente seguro que deseas solicitar el retiro de:</strong>
+                    </p>
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545; margin-bottom: 15px;">
+                        <p style="margin: 8px 0; color: #333;"><strong>Niño/a:</strong> ${ninoName}</p>
+                        <p style="margin: 8px 0; color: #333;"><strong>Motivo:</strong> ${motivoTexto[motivo] || motivo}</p>
+                        ${descripcion ? `<p style="margin: 8px 0; color: #333;"><strong>Descripción:</strong> ${descripcion}</p>` : ''}
+                    </div>
+                    <div style="background-color: #fff3cd; padding: 12px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                        <p style="margin: 0; color: #856404; font-weight: 500;">
+                            <strong>⚠️ Importante:</strong> Esta acción <strong>no se puede deshacer</strong>. 
+                            Una vez enviada la solicitud, solo la madre comunitaria podrá aprobarla o rechazarla.
+                        </p>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '✅ Sí, retirar',
+            cancelButtonText: '❌ Cancelar',
+            reverseButtons: true,
+            allowOutsideClick: false,
+            allowEscapeKey: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Proceder con el envío si el usuario confirmó
+                procedeEnviarSolicitudRetiro(ninoId, motivo, descripcion, csrf);
+            }
+        });
+    }
+
+    function procedeEnviarSolicitudRetiro(ninoId, motivo, descripcion, csrf) {
         const btn = document.getElementById('btnEnviarRetiro');
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';

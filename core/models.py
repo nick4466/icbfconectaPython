@@ -4,6 +4,26 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
+
+# ------------------------
+# Manager para Soft Delete
+# ------------------------
+class SoftDeleteManager(models.Manager):
+    """
+    Manager que filtra automáticamente los registros eliminados lógicamente.
+    Solo devuelve registros donde is_deleted=False
+    """
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+    
+    def deleted(self):
+        """Retorna solo los registros eliminados lógicamente"""
+        return super().get_queryset().filter(is_deleted=True)
+    
+    def all_including_deleted(self):
+        """Retorna todos los registros, incluyendo eliminados"""
+        return super().get_queryset()
 
 # ------------------------
 # Discapacidad
@@ -118,6 +138,22 @@ class LocalidadBogota(models.Model):
     
     def __str__(self):
         return f"{self.numero}. {self.nombre}"
+
+
+class BarrioBogota(models.Model):
+    """Barrios de las 20 Localidades de Bogotá D.C."""
+    localidad = models.ForeignKey(LocalidadBogota, on_delete=models.CASCADE, related_name='barrios')
+    nombre = models.CharField(max_length=100)
+    
+    class Meta:
+        db_table = 'barrios_bogota'
+        verbose_name = 'Barrio de Bogotá'
+        verbose_name_plural = 'Barrios de Bogotá'
+        unique_together = ['localidad', 'nombre']
+        ordering = ['localidad', 'nombre']
+    
+    def __str__(self):
+        return f"{self.nombre} ({self.localidad.nombre})"
 
 # ------------------------
 # Gestor de usuarios personalizado
@@ -366,19 +402,13 @@ class HogarComunitario(models.Model):
     estado = models.CharField(
         max_length=30,
         choices=[
-            ('pendiente_revision', 'Pendiente de Revisión'),
-            ('en_revision', 'En Revisión'),
-            ('aprobado', 'Aprobado'),
-            ('rechazado', 'Rechazado'),
-            ('en_mantenimiento', 'En Mantenimiento'),
-            # Legacy states (mantener por compatibilidad)
             ('pendiente_visita', 'Pendiente de Visita'),
-            ('visita_agendada', 'Visita Agendada'),
-            ('en_evaluacion', 'En Evaluación'),
+            ('visitando', 'Visitando'),
             ('activo', 'Activo'),
-            ('inactivo', 'Inactivo'),
+            ('rechazado', 'Rechazado'),
         ],
-        default='pendiente_revision'
+        default='pendiente_visita',
+        help_text="Estado del hogar en el ciclo de visita técnica"
     )
     madre = models.ForeignKey(MadreComunitaria, on_delete=models.PROTECT, related_name='hogares_asignados')
 
@@ -539,6 +569,13 @@ class Nino(models.Model):
         ],
         default='activo'
     )
+    
+    # 🆕 Campos para Soft Delete
+    is_deleted = models.BooleanField(default=False, help_text="Marca si el niño ha sido eliminado lógicamente del sistema")
+    deleted_at = models.DateTimeField(null=True, blank=True, help_text="Fecha y hora en que fue eliminado")
+    
+    # Manager personalizado
+    objects = SoftDeleteManager()
 
     class Meta:
         db_table = 'ninos'
@@ -1371,8 +1408,10 @@ class SolicitudRetiroMatricula(models.Model):
         self.observaciones_madre = observaciones
         self.save()
         
-        # Cambiar estado del niño
+        # Cambiar estado del niño y marcar como eliminado lógicamente
         self.nino.estado = 'retirado'
+        self.nino.is_deleted = True
+        self.nino.deleted_at = timezone.now()
         self.nino.save()
         
         return True

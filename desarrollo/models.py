@@ -13,23 +13,26 @@ class DesarrolloNino(models.Model):
         max_length=20,
         choices=[('Alto', 'Alto'), ('Adecuado', 'Adecuado'), ('En Proceso', 'En Proceso')],
         verbose_name="Logro General del Mes", 
-        help_text="Categoría cualitativa basada en la frecuencia de valoraciones diarias."
+        help_text="Categoría cualitativa basada en la frecuencia de valoraciones diarias.",
+        null=True, blank=True
     )
     tendencia_valoracion = models.CharField(
         max_length=20,  # Aumentado para permitir 'Sin datos previos'
         choices=[('Avanza', 'Avanza'), ('Retrocede', 'Retrocede'), ('Se Mantiene', 'Se Mantiene'), ('Sin datos previos', 'Sin datos previos')],
         verbose_name="Tendencia de Valoración",
-        help_text="Comparación con el promedio del mes anterior."
+        help_text="Comparación con el promedio del mes anterior.",
+        null=True, blank=True
     )
     participacion_frecuente = models.CharField(
-        max_length=50, verbose_name="Participación Más Frecuente"
+        max_length=50, verbose_name="Participación Más Frecuente", null=True, blank=True
     )
     porcentaje_asistencia = models.PositiveSmallIntegerField(
         verbose_name="Porcentaje de Asistencia Mensual",
-        help_text="Porcentaje de días presentes sobre los días hábiles del mes."
+        help_text="Porcentaje de días presentes sobre los días hábiles del mes.",
+        null=True, blank=True
     )
     comportamiento_frecuente = models.CharField(
-        max_length=50, verbose_name="Comportamiento Más Frecuente"
+        max_length=50, verbose_name="Comportamiento Más Frecuente", null=True, blank=True
     )
 
     # --- 3. Evaluación por Áreas del Desarrollo (Automática) ---

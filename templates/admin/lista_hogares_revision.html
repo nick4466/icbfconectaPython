@@ -131,14 +131,14 @@
                     <label class="form-label">Estado</label>
                     <select name="estado" class="form-select">
                         <option value="">Todos los estados</option>
-                        <option value="pendiente_revision" {% if estado_filter == 'pendiente_revision' %}selected{% endif %}>
-                            Pendiente de Revisión
+                        <option value="pendiente_visita" {% if estado_filter == 'pendiente_visita' %}selected{% endif %}>
+                            Pendiente de Visita
                         </option>
-                        <option value="en_revision" {% if estado_filter == 'en_revision' %}selected{% endif %}>
-                            En Revisión
+                        <option value="visitando" {% if estado_filter == 'visitando' %}selected{% endif %}>
+                            Visitando
                         </option>
-                        <option value="aprobado" {% if estado_filter == 'aprobado' %}selected{% endif %}>
-                            Aprobado
+                        <option value="activo" {% if estado_filter == 'activo' %}selected{% endif %}>
+                            Activo
                         </option>
                         <option value="rechazado" {% if estado_filter == 'rechazado' %}selected{% endif %}>
                             Rechazado
@@ -200,7 +200,7 @@
         <div class="row">
             {% for hogar in hogares %}
                 <div class="col-md-6 mb-3">
-                    <div class="card hogar-card {% if hogar.estado == 'pendiente_revision' %}pendiente{% elif hogar.estado == 'en_revision' %}en-revision{% endif %}">
+                    <div class="card hogar-card {% if hogar.estado == 'pendiente_visita' %}pendiente{% elif hogar.estado == 'visitando' %}en-revision{% endif %}">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="flex-grow-1">
@@ -223,9 +223,9 @@
                                     <!-- Estado y Progreso -->
                                     <div class="mb-2">
                                         <span class="badge 
-                                            {% if hogar.estado == 'pendiente_revision' %}bg-warning text-dark
-                                            {% elif hogar.estado == 'en_revision' %}bg-info
-                                            {% elif hogar.estado == 'aprobado' %}bg-success
+                                            {% if hogar.estado == 'pendiente_visita' %}bg-warning text-dark
+                                            {% elif hogar.estado == 'visitando' %}bg-info
+                                            {% elif hogar.estado == 'activo' %}bg-success
                                             {% else %}bg-secondary{% endif %}">
                                             {{ hogar.get_estado_display }}
                                         </span>
@@ -264,7 +264,7 @@
                                         <p class="mb-0">
                                             <small>
                                                 <strong>📅 Visita Programada:</strong> {{ hogar.fecha_primera_visita|date:"d/m/Y" }}
-                                                {% if hogar.fecha_primera_visita < hoy and hogar.estado in 'pendiente_revision,en_revision' %}
+                                                {% if hogar.fecha_primera_visita < hoy and hogar.estado in 'pendiente_visita,visitando' %}
                                                     <span class="badge bg-danger ms-2">🚨 VENCIDA</span>
                                                 {% elif hogar.fecha_primera_visita >= hoy and hogar.fecha_primera_visita <= hoy|date:'Y-m-d'|add_days:7 %}
                                                     <span class="badge bg-warning text-dark ms-2">⚠️ PRÓXIMA ({{ hogar.fecha_primera_visita|timeuntil }})</span>
@@ -282,13 +282,13 @@
                                 </a>
                                 
                                 {% if not hogar.formulario_completo %}
-                                    <a href="{% url 'completar_visita_tecnica' hogar.id %}" class="btn btn-sm btn-warning">
+                                    <a href="{% url 'activar_hogar' hogar.id %}" class="btn btn-sm btn-warning">
                                         📝 Completar Visita Técnica
                                     </a>
                                 {% endif %}
 
                                 {% if hogar.formulario_completo and hogar.estado == 'en_revision' %}
-                                    <a href="{% url 'aprobar_rechazar_hogar' hogar.id %}" class="btn btn-sm btn-success">
+                                    <a href="{% url 'activar_hogar' hogar.id %}" class="btn btn-sm btn-success">
                                         ✅ Aprobar/Rechazar
                                     </a>
                                 {% endif %}

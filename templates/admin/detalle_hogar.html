@@ -50,9 +50,9 @@
             <p class="text-muted mb-2">{{ hogar.direccion }}</p>
             <div>
                 <span class="badge status-badge 
-                    {% if hogar.estado == 'pendiente_revision' %}bg-warning text-dark
-                    {% elif hogar.estado == 'en_revision' %}bg-info
-                    {% elif hogar.estado == 'aprobado' %}bg-success
+                    {% if hogar.estado == 'pendiente_visita' %}bg-warning text-dark
+                    {% elif hogar.estado == 'visitando' %}bg-info
+                    {% elif hogar.estado == 'activo' %}bg-success
                     {% elif hogar.estado == 'rechazado' %}bg-danger
                     {% else %}bg-secondary{% endif %}">
                     {{ hogar.get_estado_display }}
@@ -66,12 +66,12 @@
         </div>
         <div class="btn-group-vertical">
             {% if puede_completar_visita %}
-                <a href="{% url 'completar_visita_tecnica' hogar.id %}" class="btn btn-warning mb-2">
+                <a href="{% url 'activar_hogar' hogar.id %}" class="btn btn-warning mb-2">
                     📝 Completar Visita Técnica
                 </a>
             {% endif %}
             {% if puede_aprobar %}
-                <a href="{% url 'aprobar_rechazar_hogar' hogar.id %}" class="btn btn-success mb-2">
+                <a href="{% url 'activar_hogar' hogar.id %}" class="btn btn-success mb-2">
                     ✅ Aprobar/Rechazar
                 </a>
             {% endif %}

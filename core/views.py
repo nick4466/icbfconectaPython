@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.db import transaction, models
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q, Count
-from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional, SolicitudMatriculacion, Discapacidad, VisitaTecnica, ActaVisitaTecnica, SolicitudRetiroMatricula
+from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional, SolicitudMatriculacion, Discapacidad, VisitaTecnica, ActaVisitaTecnica, SolicitudRetiroMatricula, BarrioBogota
 from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
@@ -730,8 +730,8 @@ def crear_madre(request):
                     else:
                         hogar.localidad = ciudad_hogar.nombre if ciudad_hogar else ''
                     
-                    # 🆕 El hogar inicia en estado pendiente_revision; si ya hay fecha, se respeta
-                    hogar.estado = 'pendiente_revision'
+                    # 🆕 El hogar inicia en estado pendiente_visita; si ya hay fecha, se respeta
+                    hogar.estado = 'pendiente_visita'
                     hogar.fecha_primera_visita = fecha_primera_visita
                     hogar.ultima_visita = None
                     hogar.proxima_visita = None
@@ -751,6 +751,7 @@ def crear_madre(request):
                             'direccion_hogar': direccion_hogar,
                             'regional_nombre': regional_hogar.nombre if regional_hogar else '',
                             'ciudad_nombre': ciudad_hogar.nombre if ciudad_hogar else '',
+                            'usuario_documento': usuario.documento,
                             'login_url': request.build_absolute_uri(reverse('login')),
                         }
 
@@ -4958,8 +4959,8 @@ def _actualizar_hogar_despues_de_programar_visita(hogar, visita, *, contexto='pr
     estado_final = hogar.estado in ['activo', 'rechazado']
     campos_actualizados = []
 
-    if not estado_final and hogar.estado != 'visita_agendada':
-        hogar.estado = 'visita_agendada'
+    if not estado_final and hogar.estado != 'visitando':
+        hogar.estado = 'visitando'
         campos_actualizados.append('estado')
 
     fecha_visita = visita.fecha_programada.date() if visita.fecha_programada else None
@@ -5257,111 +5258,9 @@ def enviar_correo_hogar_rechazado(hogar, acta):
 # ============================================================================
 # 🆕 NUEVAS VISTAS - SISTEMA DE DOS FASES (FORMULARIO 2)
 # ============================================================================
-
-@login_required
-@rol_requerido('administrador')
-def completar_visita_tecnica(request, hogar_id):
-    """
-    Vista para completar el Formulario 2 (Visita Técnica).
-    
-    FLUJO DE ESTADOS:
-    1. Crear hogar → estado = 'pendiente_revision' (sin revisar)
-    2. Completar este formulario → estado = 'en_revision' (siendo evaluado)
-    3. Aprobar/Rechazar → estado final (aprobado/rechazado)
-    
-    Esta vista requiere:
-    - Hogar en estado 'pendiente_revision' (nuevo) o 'en_revision' (en proceso)
-    - NOTA: Acepta 'pendiente_visita' por compatibilidad con datos legacy
-    - Formulario técnico NO completado (formulario_completo = False)
-    """
-    hogar = get_object_or_404(HogarComunitario, pk=hogar_id)
-    
-    # Verificar que el hogar no esté ya completado
-    if hogar.formulario_completo:
-        messages.warning(
-            request, 
-            f'El hogar "{hogar.nombre_hogar}" ya tiene el formulario técnico completo. '
-            'Use la opción de edición si necesita modificar los datos.'
-        )
-        return redirect('detalle_hogar', hogar_id=hogar.id)
-    
-    # Verificar que el hogar esté en un estado válido para completar
-    # Estados: pendiente_revision (nuevo), en_revision (en proceso), pendiente_visita (legacy)
-    estados_validos = ['pendiente_revision', 'en_revision', 'pendiente_visita']
-    if hogar.estado not in estados_validos:
-        messages.error(
-            request,
-            f'No se puede completar la visita técnica. '
-            f'Estado actual: {hogar.get_estado_display()}. '
-            f'El hogar debe estar en estado "Pendiente de Revisión" o "En Revisión".'
-        )
-        return redirect('detalle_hogar', hogar_id=hogar.id)
-    
-    if request.method == 'POST':
-        form = HogarFormulario2Form(request.POST, request.FILES, instance=hogar)
-        
-        # Manejar solicitud de borrado de archivos mediante checkboxes
-        if request.POST.get('clear_fotos_interior'):
-            form.data = form.data.copy()  # Hacer copia mutable del POST
-            form.files['fotos_interior'] = None  # Borrar del formulario
-            if hogar.fotos_interior:
-                hogar.fotos_interior.delete()
-        
-        if request.POST.get('clear_fotos_exterior'):
-            form.data = form.data.copy()
-            form.files['fotos_exterior'] = None
-            if hogar.fotos_exterior:
-                hogar.fotos_exterior.delete()
-        
-        if form.is_valid():
-            # El formulario automáticamente:
-            # - Calcula la capacidad: piso(área_m²/2)
-            # - Establece formulario_completo = True
-            # - Cambia estado a 'en_revision'
-            hogar_actualizado = form.save()
-            
-            # Mensajes informativos según el área
-            area = hogar_actualizado.area_social_m2
-            capacidad = hogar_actualizado.capacidad_calculada
-            
-            if area < 24:
-                messages.error(
-                    request,
-                    f'⚠️ HOGAR NO APTO: El área social ({area} m²) es inferior al mínimo requerido (24 m²). '
-                    f'Este hogar NO PUEDE SER APROBADO.'
-                )
-            elif 24 <= area < 30:
-                messages.success(
-                    request,
-                    f'✅ Visita técnica completada exitosamente. '
-                    f'Área: {area} m². Capacidad calculada: {capacidad} niños. '
-                    f'Estado: En Revisión. Puede proceder a aprobar el hogar.'
-                )
-            else:  # area >= 30
-                messages.success(
-                    request,
-                    f'✅ Visita técnica completada exitosamente. '
-                    f'Área: {area} m². Capacidad máxima: {capacidad} niños (límite 15). '
-                    f'Estado: En Revisión. Puede proceder a aprobar el hogar.'
-                )
-            
-            return redirect('lista_hogares_revision')
-        else:
-            messages.error(
-                request, 
-                'Por favor corrija los errores del formulario antes de continuar.'
-            )
-    else:
-        form = HogarFormulario2Form(instance=hogar)
-    
-    context = {
-        'form': form,
-        'hogar': hogar,
-        'titulo': f'Visita Técnica - {hogar.nombre_hogar}',
-        'es_nuevo': not hogar.area_social_m2,  # True si es primera vez
-    }
-    return render(request, 'admin/hogar_formulario2.html', context)
-
+# FUNCIÓN ELIMINADA: completar_visita_tecnica
+# Ahora se usa SOLO formulario_activacion_hogar.html para todas las visitas
+# ============================================================================
 
 @login_required
 @rol_requerido('administrador')
@@ -5419,27 +5318,27 @@ def lista_hogares_revision(request):
         # Visitas que ya pasaron pero el hogar no está aprobado
         hogares = hogares.filter(
             fecha_primera_visita__lt=hoy,
-            estado__in=['pendiente_revision', 'en_revision']
+            estado__in=['pendiente_visita', 'visitando']
         )
     
     # Contar por estado
     total_hogares = HogarComunitario.objects.count()
-    hogares_pendientes = HogarComunitario.objects.filter(estado='pendiente_revision').count()
-    hogares_en_revision = HogarComunitario.objects.filter(estado='en_revision').count()
-    hogares_aprobados = HogarComunitario.objects.filter(estado='aprobado').count()
+    hogares_pendientes = HogarComunitario.objects.filter(estado='pendiente_visita').count()
+    hogares_en_revision = HogarComunitario.objects.filter(estado='visitando').count()
+    hogares_aprobados = HogarComunitario.objects.filter(estado='activo').count()
     hogares_rechazados = HogarComunitario.objects.filter(estado='rechazado').count()
-    hogares_mantenimiento = HogarComunitario.objects.filter(estado='en_mantenimiento').count()
+    hogares_mantenimiento = 0  # Deprecated state
     
     # Alertas de visitas
     visitas_proximas = HogarComunitario.objects.filter(
         fecha_primera_visita__gte=hoy,
         fecha_primera_visita__lte=hoy + timedelta(days=7),
-        estado__in=['pendiente_revision', 'en_revision']
+        estado__in=['pendiente_visita', 'visitando']
     ).count()
     
     visitas_vencidas = HogarComunitario.objects.filter(
         fecha_primera_visita__lt=hoy,
-        estado__in=['pendiente_revision', 'en_revision']
+        estado__in=['pendiente_visita', 'visitando']
     ).count()
     
     # Paginación
@@ -5476,109 +5375,6 @@ def lista_hogares_revision(request):
 
 @login_required
 @rol_requerido('administrador')
-def aprobar_rechazar_hogar(request, hogar_id):
-    """
-    Vista para aprobar o rechazar un hogar después de la revisión.
-    
-    FLUJO DE ESTADOS:
-    - Entrada: estado = 'en_revision' (siendo evaluado)
-    - Salida: estado = 'aprobado' o 'rechazado'
-    
-    Requisitos:
-    - El hogar debe estar en estado 'en_revision'
-    - El formulario técnico debe estar completo
-    - El área debe cumplir requisitos (≥24 m² para aprobar)
-    """
-    hogar = get_object_or_404(HogarComunitario, pk=hogar_id)
-    
-    # Verificar que el hogar esté listo para revisión final
-    # Solo permite estado 'en_revision' (después de completar Formulario 2)
-    if hogar.estado not in ['en_revision', 'pendiente_revision']:
-        messages.error(
-            request,
-            f'Este hogar no está en estado de revisión. '
-            f'Estado actual: {hogar.get_estado_display()}'
-        )
-        return redirect('detalle_hogar', hogar_id=hogar.id)
-    
-    # Verificar que el formulario técnico esté completo
-    if not hogar.formulario_completo:
-        messages.error(
-            request,
-            'Debe completar la visita técnica (Formulario 2) antes de aprobar o rechazar el hogar.'
-        )
-        return redirect('completar_visita_tecnica', hogar_id=hogar.id)
-    
-    if request.method == 'POST':
-        accion = request.POST.get('accion')
-        observaciones = request.POST.get('observaciones', '').strip()
-        
-        if accion == 'aprobar':
-            # Verificar área mínima antes de aprobar
-            if hogar.area_social_m2 and hogar.area_social_m2 < 24:
-                messages.error(
-                    request,
-                    f'⚠️ NO SE PUEDE APROBAR: El área social ({hogar.area_social_m2} m²) '
-                    f'es inferior al mínimo requerido (24 m²). '
-                    f'Debe rechazar el hogar o solicitar modificaciones.'
-                )
-                return redirect('aprobar_rechazar_hogar', hogar_id=hogar.id)
-            
-            # Aprobar hogar
-            hogar.estado = 'aprobado'
-            hogar.save()
-            
-            messages.success(
-                request,
-                f'✅ Hogar "{hogar.nombre_hogar}" APROBADO exitosamente. '
-                f'Capacidad autorizada: {hogar.capacidad_calculada} niños. '
-                f'La madre comunitaria ha sido notificada.'
-            )
-            
-            # TODO: Enviar correo de aprobación
-            
-        elif accion == 'rechazar':
-            if not observaciones:
-                messages.error(
-                    request,
-                    'Debe proporcionar observaciones al rechazar un hogar.'
-                )
-                return redirect('aprobar_rechazar_hogar', hogar_id=hogar.id)
-            
-            # Rechazar hogar
-            hogar.estado = 'rechazado'
-            hogar.save()
-            
-            messages.warning(
-                request,
-                f'Hogar "{hogar.nombre_hogar}" RECHAZADO. '
-                f'Se ha notificado a la madre comunitaria.'
-            )
-            
-            # TODO: Guardar observaciones y enviar correo de rechazo
-            
-        elif accion == 'mantenimiento':
-            hogar.estado = 'en_mantenimiento'
-            hogar.save()
-            
-            messages.info(
-                request,
-                f'Hogar "{hogar.nombre_hogar}" marcado como EN MANTENIMIENTO.'
-            )
-        
-        return redirect('lista_hogares_revision')
-    
-    # GET - Mostrar formulario de aprobación/rechazo
-    context = {
-        'hogar': hogar,
-        'puede_aprobar': hogar.area_social_m2 and hogar.area_social_m2 >= 24,
-        'area_insuficiente': hogar.area_social_m2 and hogar.area_social_m2 < 24,
-    }
-    return render(request, 'admin/aprobar_rechazar_hogar.html', context)
-
-
-@login_required
-@rol_requerido('administrador')
 def detalle_hogar(request, hogar_id):
     """
     Vista detallada de un hogar comunitario.
@@ -5599,8 +5395,8 @@ def detalle_hogar(request, hogar_id):
         'hogar': hogar,
         'convivientes': convivientes,
         'tiene_formulario_completo': hogar.formulario_completo,
-        'puede_completar_visita': not hogar.formulario_completo and hogar.estado in ['pendiente_revision', 'en_revision', 'pendiente_visita'],
-        'puede_aprobar': hogar.formulario_completo and hogar.estado == 'en_revision',
+        'puede_completar_visita': not hogar.formulario_completo and hogar.estado in ['pendiente_visita', 'visitando'],
+        'puede_aprobar': hogar.formulario_completo and hogar.estado == 'visitando',
     }
     return render(request, 'admin/detalle_hogar.html', context)
 
@@ -5742,7 +5538,7 @@ def padre_dashboard_mejorado(request):
         ).distinct().count()
         
         hogares_pendientes = HogarComunitario.objects.filter(
-            estado__in=['pendiente_revision', 'en_revision']
+            estado__in=['pendiente_visita', 'visitando']
         ).count()
         
         # Estadísticas por localidad
@@ -5750,7 +5546,7 @@ def padre_dashboard_mejorado(request):
         from core.models import LocalidadBogota
         
         hogares_por_localidad = HogarComunitario.objects.filter(
-            estado='aprobado',
+            estado='activo',
             localidad_bogota__isnull=False
         ).values('localidad_bogota__nombre').annotate(
             total=Count('id')
@@ -5892,8 +5688,9 @@ def hogares_dashboard(request):
         hogar.sin_visitas = total_visitas == 0
         hogar.tiene_visita_programada = proxima_visita_obj is not None
         hogar.primera_visita_agendada_id = proxima_visita_obj.id if proxima_visita_obj else None
-        hogar.permite_agendar = hogar.estado in ['pendiente_revision', 'pendiente_visita', 'en_evaluacion'] and not hogar.tiene_visita_programada
-        hogar.permite_reprogramar = hogar.estado in ['pendiente_revision', 'pendiente_visita', 'en_evaluacion'] and hogar.tiene_visita_programada
+        hogar.hoy = hoy  # 🆕 Pasar hoy para comparaciones en template
+        hogar.permite_agendar = hogar.estado in ['pendiente_visita', 'visitando'] and not hogar.tiene_visita_programada
+        hogar.permite_reprogramar = hogar.estado in ['pendiente_visita', 'visitando'] and hogar.tiene_visita_programada
         hogar.permite_visita_rapida = hogar.estado == 'pendiente_visita' and hogar.sin_visitas
         hogar.permite_registrar_seguimiento = hogar.estado == 'activo'
 
@@ -6055,7 +5852,7 @@ def realizar_visita_tecnica(request, hogar_id):
                 recomendacion = request.POST.get('recomendacion_habilitacion')
                 capacidad_recomendada = int(request.POST.get('capacidad_recomendada'))
                 if recomendacion == 'aprobado':
-                    hogar.estado = 'aprobado'
+                    hogar.estado = 'activo'
                     hogar.capacidad_maxima = capacidad_recomendada
                     hogar.capacidad_calculada = capacidad_recomendada  # Sincronizar
                     hogar.capacidad = capacidad_recomendada  # Sincronizar
@@ -6066,7 +5863,7 @@ def realizar_visita_tecnica(request, hogar_id):
                     enviar_correo_aprobacion(hogar, request.user)
                     
                 elif recomendacion == 'aprobado_condicional' or recomendacion == 'aprobado_condiciones':
-                    hogar.estado = 'en_revision'
+                    hogar.estado = 'visitando'
                     hogar.capacidad_maxima = capacidad_recomendada
                     hogar.capacidad_calculada = capacidad_recomendada  # Sincronizar
                     hogar.capacidad = capacidad_recomendada  # Sincronizar
@@ -6374,6 +6171,11 @@ def actualizar_visitas_hogar(request, hogar_id):
         # Guardar cambios
         hogar.save()
         
+        # 📧 Si es la primera visita y el hogar es apto, enviar correo a la madre
+        if es_primera_visita and hogar.estado_aptitud == 'apto':
+            enviar_email_activacion(hogar)
+            print(f"✅ Correo de notificación enviado a la madre del hogar {hogar.nombre_hogar}")
+        
         # Preparar respuesta
         mensaje = '✅ Visita registrada exitosamente'
         if es_primera_visita:
@@ -6462,17 +6264,14 @@ def calcular_proxima_visita(fecha_base):
 @rol_requerido('administrador')
 def activar_hogar(request, hogar_id):
     """
-    Vista para activar un hogar después de la revisión final.
+    Vista para activar un hogar después de la evaluación.
     
     FLUJO DE ESTADOS FINALES:
     - Si aprobado → estado = 'activo' (hogar habilitado)
     - Si rechazado → estado = 'rechazado' (no cumple requisitos)
-    - Si requiere nueva visita → estado = 'pendiente_revision' (volver a revisar)
+    - Si requiere nueva visita → estado = 'pendiente_visita' (volver a revisar)
     
     Envía email de notificación según resultado.
-    
-    IMPORTANTE: Esta vista es la final del proceso de evaluación.
-    No permite atajos - requiere evaluación completa.
     """
     hogar = get_object_or_404(HogarComunitario, id=hogar_id)
     fecha_hoy = date.today()
@@ -6694,7 +6493,7 @@ RECOMENDACIÓN: {recomendacion.upper()}
                 
             elif recomendacion == 'no_aprobado':
                 hogar.estado_aptitud = 'no_apto'
-                hogar.estado = 'pendiente_revision'
+                hogar.estado = 'pendiente_visita'
                 hogar.save()
                 
                 messages.error(request, 
@@ -6705,7 +6504,7 @@ RECOMENDACIÓN: {recomendacion.upper()}
                 
             elif recomendacion == 'requiere_nueva_visita':
                 hogar.estado_aptitud = 'no_apto'
-                hogar.estado = 'pendiente_revision'
+                hogar.estado = 'pendiente_visita'
                 hogar.fecha_primera_visita = None  # Permitir reprogramación
                 hogar.save()
                 
@@ -6734,97 +6533,17 @@ RECOMENDACIÓN: {recomendacion.upper()}
 @rol_requerido('administrador')
 def registrar_visita(request, hogar_id):
     """
-    Vista para registrar visitas de seguimiento en hogares YA ACTIVOS.
-    Usa el mismo formulario de evaluación que la activación.
+    Vista para registrar visitas de seguimiento.
+    Usa el MISMO formulario que activar_hogar: formulario_activacion_hogar.html
     
-    Parámetros:
-    - registro_inmediato=1: Registra la visita al instante (sin pedir detalles)
+    Esta vista redirige directamente al formulario de evaluación completo.
+    No hay formularios intermedios ni confirmaciones - solo el formulario principal.
     """
     hogar = get_object_or_404(HogarComunitario, id=hogar_id)
     fecha_hoy = date.today()
-    es_visita_rapida = request.GET.get('rapida') == '1'
-    es_registro_inmediato = request.GET.get('registro_inmediato') == '1'
     
-    # Si es registro inmediato, crear visita simple sin formulario
-    if es_registro_inmediato and request.method == 'GET':
-        # Mostrar confirmación
-        context = {
-            'hogar': hogar,
-            'es_registro_inmediato': True,
-            'fecha_hoy': fecha_hoy.strftime('%d/%m/%Y'),
-            'titulo': f'Registrar Visita Inmediatamente - {hogar.nombre_hogar}'
-        }
-        return render(request, 'admin/registrar_visita_inmediata.html', context)
-    
-    # Si es POST de registro inmediato, guardar visita simple
-    if es_registro_inmediato and request.method == 'POST':
-        try:
-            with transaction.atomic():
-                # Crear visita técnica simple (sin detalles completos)
-                observaciones = request.POST.get('observaciones_rapidas', 'Visita de seguimiento registrada rápidamente')
-                resultado = request.POST.get('resultado', 'aprobado')
-                
-                VisitaTecnica.objects.create(
-                    hogar=hogar,
-                    fecha_programada=datetime.combine(fecha_hoy, datetime.min.time()),
-                    fecha_realizacion=timezone.now(),
-                    tipo_visita='V2',
-                    estado='completada',
-                    observaciones_agenda=observaciones,
-                    visitador=request.user,
-                    creado_por=request.user
-                )
-                
-                # Actualizar hogar
-                hogar.ultima_visita = fecha_hoy
-                hogar.observaciones_visita = f"[REGISTRO INMEDIATO] {observaciones}"
-                
-                if resultado == 'aprobado':
-                    hogar.estado_aptitud = 'apto'
-                    hogar.estado = 'activo'
-                    hogar.proxima_visita = calcular_proxima_visita(fecha_hoy)
-                    hogar.save()
-
-                    # Auto-crear próxima visita
-                    siguiente_fecha = hogar.proxima_visita
-                    existe_agendada = hogar.visitas_tecnicas.filter(
-                        estado='agendada',
-                        fecha_programada__date=siguiente_fecha
-                    ).exists()
-                    if not existe_agendada:
-                        VisitaTecnica.objects.create(
-                            hogar=hogar,
-                            fecha_programada=datetime.combine(siguiente_fecha, datetime.min.time()),
-                            tipo_visita='V2',
-                            estado='agendada',
-                            creado_por=request.user,
-                            observaciones_agenda='Visita de seguimiento automática (1 año)'
-                        )
-                    
-                    messages.success(request, 
-                        f'✅ Visita registrada exitosamente. '
-                        f'El hogar continúa ACTIVO. '
-                        f'Próxima visita: {hogar.proxima_visita.strftime("%d/%m/%Y")}'
-                    )
-                elif resultado == 'no_aprobado':
-                    hogar.estado_aptitud = 'no_apto'
-                    hogar.estado = 'rechazado'
-                    hogar.save()
-                    
-                    messages.error(request, 
-                        f'❌ Hogar NO APTO. Estado cambiado a "Rechazado".'
-                    )
-                
-                return redirect('hogares_dashboard')
-                
-        except Exception as e:
-            messages.error(request, f'Error al registrar visita: {str(e)}')
-            return redirect('hogares_dashboard')
-    
-    # Verificar que el hogar esté activo (para flujo normal)
-    if not es_visita_rapida and hogar.estado not in ['activo', 'aprobado']:
-        messages.warning(request, 'Solo puedes registrar visitas en hogares activos.')
-        return redirect('hogares_dashboard')
+    # SIMPLIFICADO: Saltamos cualquier formulario intermedio
+    # Vamos DIRECTAMENTE al formulario de evaluación completo
     
     if request.method == 'POST':
         try:
@@ -6954,7 +6673,8 @@ RESULTADO: {recomendacion.upper()}
                         tipo_visita='V2',
                         estado='agendada',
                         creado_por=request.user,
-                        observaciones_agenda='Visita de seguimiento automática (1 año)'
+                        visitador=request.user,
+                        observaciones_agenda=f'Visita de seguimiento automática (1 año después de {fecha_hoy.strftime("%d/%m/%Y")})'
                     )
                 
                 messages.success(request, 
@@ -7145,34 +6865,56 @@ def enviar_email_activacion(hogar):
                 <div class="content">
                     <p>¡Hola <strong>{usuario.nombres} {usuario.apellidos}</strong>!</p>
                     
-                    <p>Nos complace informarte que tu Hogar Comunitario <strong>{hogar.nombre_hogar}</strong> ha aprobado la visita técnica y ha sido <strong>ACTIVADO</strong>. Ya puedes matricular niños en ICBF Conecta.</p>
+                    <div style="background: #d4edda; border: 2px solid #28a745; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                        <h2 style="color: #28a745; margin-top: 0;">✅ ¡Tu Hogar está APTO!</h2>
+                        <p style="font-size: 16px; color: #155724; margin: 0;">
+                            <strong>Ya puedes matricular niños en tu hogar comunitario</strong>
+                        </p>
+                    </div>
+                    
+                    <p>Tu Hogar Comunitario <strong>{hogar.nombre_hogar}</strong> ha aprobado la evaluación técnica y ha sido <strong>ACTIVADO</strong>.</p>
                     
                     <div class="info-box">
                         <h2>📋 Detalles del Hogar</h2>
                         <p><strong>Nombre:</strong> {hogar.nombre_hogar}</p>
                         <p><strong>Agente educativo:</strong> {usuario.nombres} {usuario.apellidos}</p>
                         <p><strong>Dirección:</strong> {hogar.direccion}</p>
-                        <p><strong>Estado:</strong> <span style="color: #28a745; font-weight: bold;">ACTIVO</span></p>
+                        <p><strong>Estado:</strong> <span style="color: #28a745; font-weight: bold;">✅ APTO - ACTIVO</span></p>
                         <p><strong>Capacidad aprobada:</strong> {hogar.capacidad} niños</p>
                         <p><strong>Fecha de activación:</strong> {fecha_activacion}</p>
                     </div>
                     
+                    <div style="background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                        <h2 style="color: #1976d2; margin-top: 0;">🎓 ¿Qué puedes hacer ahora?</h2>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>✅ <strong>Matricular niños</strong> en tu hogar a través del sistema ICBF Conecta</li>
+                            <li>✅ <strong>Acceso a planeaciones educativas</strong> y documentación pedagógica</li>
+                            <li>✅ <strong>Seguimiento del desarrollo</strong> de los niños en tu cuidado</li>
+                            <li>✅ <strong>Comunicación</strong> directa con padres y administración</li>
+                            <li>✅ <strong>Reportes y certificados</strong> de matrícula</li>
+                        </ul>
+                    </div>
+                    
                     <div class="credentials">
                         <h2>🔐 Acceso al Sistema ICBF Conecta</h2>
-                        <p>Ahora puedes acceder al sistema con tus credenciales:</p>
-                        <p><strong>Usuario:</strong> {usuario.documento}</p>
-                        <p><strong>Contraseña temporal:</strong> 123456</p>
-                        <p style="color: #856404; font-size: 14px;"><em>⚠️ Por seguridad, cambia tu contraseña en tu primer inicio de sesión.</em></p>
+                        <p>Inicia sesión con tus credenciales:</p>
+                        <p><strong>Usuario (documento):</strong> {usuario.documento}</p>
+                        <p><strong>Contraseña:</strong> La que estableciste</p>
+                        <p style="color: #856404; font-size: 14px;"><em>💡 Accede a <strong>http://127.0.0.1:8000</strong> para matricular tus primeros niños</em></p>
                     </div>
                     
                     <div class="info-box">
-                        <h2>📅 Próxima Visita Técnica</h2>
-                        <p>Tu próxima visita de seguimiento está programada para: <strong>{fecha_proxima}</strong></p>
+                        <h2>📅 Próxima Visita de Seguimiento</h2>
+                        <p>Te recordamos que tendrás una visita de seguimiento el: <strong>{fecha_proxima}</strong></p>
+                        <p style="color: #666; font-size: 14px;">Esto es parte del proceso de evaluación continua de ICBF.</p>
                     </div>
                     
-                    <p>Si tienes alguna pregunta o necesitas asistencia, no dudes en contactarnos.</p>
-                    
-                    <p style="margin-top: 30px;"><strong>¡Felicidades y bienvenida al programa ICBF Conecta!</strong></p>
+                    <p style="margin-top: 30px; text-align: center; font-weight: bold; font-size: 16px;">
+                        ¡Felicidades y bienvenida al programa ICBF Conecta! 🎉
+                    </p>
+                    <p style="text-align: center; color: #666;">
+                        Estamos aquí para apoyarte en tu labor educativa
+                    </p>
                     
                     <div class="footer">
                         <p><strong>Sistema ICBF Conecta</strong></p>
@@ -7754,4 +7496,46 @@ def enviar_email_respuesta_retiro(solicitud, accion):
     )
 
 
+def obtener_barrios_por_localidad(request, localidad_id):
+    """
+    Vista AJAX que devuelve los barrios de una localidad específica.
+    Retorna JSON con lista de barrios.
+    """
+    from django.http import JsonResponse
+    
+    try:
+        barrios = BarrioBogota.objects.filter(localidad_id=localidad_id).values('id', 'nombre').order_by('nombre')
+        return JsonResponse({
+            'success': True,
+            'barrios': list(barrios)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
 
+
+# 🆕 ENDPOINT: Obtener todas las localidades de Bogotá
+@csrf_exempt
+def api_localidades_bogota(request):
+    """
+    API para obtener todas las localidades de Bogotá.
+    GET: /api/localidades-bogota/
+    Returns: JSON array con [{id, numero, nombre}, ...]
+    """
+    from core.models import LocalidadBogota
+    
+    try:
+        localidades = LocalidadBogota.objects.all().order_by('numero')
+        data = [
+            {
+                'id': loc.id,
+                'numero': loc.numero,
+                'nombre': loc.nombre,
+            }
+            for loc in localidades
+        ]
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

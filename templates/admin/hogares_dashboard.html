@@ -880,16 +880,10 @@
                 <label>⚡ Estado</label>
                 <select name="estado" class="form-control">
                   <option value="">Todos</option>
-                  <option value="pendiente_revision" {% if filtro_estado == 'pendiente_revision' %}selected{% endif %}>Pendiente de Revisión</option>
-                  <option value="en_revision" {% if filtro_estado == 'en_revision' %}selected{% endif %}>En Revisión</option>
-                  <option value="aprobado" {% if filtro_estado == 'aprobado' %}selected{% endif %}>Aprobado</option>
+                  <option value="pendiente_visita" {% if filtro_estado == 'pendiente_visita' %}selected{% endif %}>Pendiente de Visita</option>
+                  <option value="visitando" {% if filtro_estado == 'visitando' %}selected{% endif %}>Visitando</option>
+                  <option value="activo" {% if filtro_estado == 'activo' %}selected{% endif %}>Activo</option>
                   <option value="rechazado" {% if filtro_estado == 'rechazado' %}selected{% endif %}>Rechazado</option>
-                  <option value="en_mantenimiento" {% if filtro_estado == 'en_mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
-                  <option value="pendiente_visita" {% if filtro_estado == 'pendiente_visita' %}selected{% endif %}>Pendiente de Visita (Legacy)</option>
-                  <option value="visita_agendada" {% if filtro_estado == 'visita_agendada' %}selected{% endif %}>Visita Agendada (Legacy)</option>
-                  <option value="en_evaluacion" {% if filtro_estado == 'en_evaluacion' %}selected{% endif %}>En Evaluación (Legacy)</option>
-                  <option value="activo" {% if filtro_estado == 'activo' %}selected{% endif %}>Activo (Legacy)</option>
-                  <option value="inactivo" {% if filtro_estado == 'inactivo' %}selected{% endif %}>Inactivo (Legacy)</option>
                 </select>
               </div>
               
@@ -953,11 +947,11 @@
                     {% if hogar.estado == 'activo' %}
                       <span class="badge badge-success">✅ Activo y Apto</span>
                     {% elif hogar.estado == 'aprobado' %}
-                      <span class="badge badge-success">✓ Aprobado</span>
+                      <span class="badge badge-success">✓ Activo</span>
                     {% elif hogar.estado == 'pendiente_visita' %}
                       <span class="badge badge-warning">⏱ Pendiente Visita</span>
-                    {% elif hogar.estado == 'en_revision' %}
-                      <span class="badge badge-info">🔄 En Revisión</span>
+                    {% elif hogar.estado == 'visitando' %}
+                      <span class="badge badge-info">🔄 Visitando</span>
                     {% elif hogar.estado == 'rechazado' %}
                       <span class="badge badge-danger">✗ Rechazado</span>
                     {% else %}
@@ -1032,56 +1026,76 @@
                     Editar
                   </a>
                   
-                  <!-- 🆕 BOTÓN: Registrar Visita Ya (sin formulario, registra inmediatamente) -->
-                  <button class="btn btn-warning btn-small" 
+                  <!-- ===== BOTÓN 1: REALIZAR VISITA (Programar/Reprogramar) ===== -->
+                  {% if hogar.estado == 'pendiente_visita' or hogar.estado == 'visitando' %}
+                    {% if hogar.permite_agendar %}
+                      <!-- Estado: Sin fecha asignada - ACTIVO -->
+                      <button class="btn btn-small" style="background:#3b82f6;color:white;animation: pulse-glow 2s infinite;" 
+                              onclick="event.stopPropagation(); abrirModalProgramar({{ hogar.id }}, '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');"
+                              title="Asignar fecha para la visita técnica">
+                        <i class="fas fa-calendar-plus"></i>
+                        Realizar Visita
+                      </button>
+                    {% elif hogar.permite_reprogramar %}
+                      <!-- Estado: Con fecha asignada - ACTIVO para cambiar -->
+                      <button class="btn btn-small" style="background:#f59e0b;color:white;" 
+                              onclick="event.stopPropagation(); abrirModalReprogramar({{ hogar.id }}, '{{ hogar.proxima_visita_calculada|date:"Y-m-d" }}', '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');"
+                              title="Cambiar fecha de la visita">
+                        <i class="fas fa-calendar-alt"></i>
+                        Realizar Visita
+                      </button>
+                    {% endif %}
+                  {% else %}
+                    <!-- Estado: Activo o Rechazado - DESHABILITADO -->
+                    <button class="btn btn-small" style="background:#d1d5db;color:#6b7280;cursor:not-allowed;" disabled
+                            title="{% if hogar.estado == 'activo' %}Hogar ya completó su visita inicial{% elif hogar.estado == 'rechazado' %}Hogar rechazado{% else %}No disponible{% endif %}">
+                      <i class="fas fa-calendar-plus"></i>
+                      Realizar Visita
+                    </button>
+                  {% endif %}
+                  
+                  <!-- ===== BOTÓN 2: REGISTRAR VISITA YA ===== -->
+                  <!-- SIEMPRE HABILITADO - Sin validaciones -->
+                  <button class="btn btn-success btn-small" 
                           onclick="event.stopPropagation(); registrarVisitaYa({{ hogar.id }}, '{{ hogar.nombre_hogar }}');"
-                          title="Registrar una visita técnica de forma inmediata">
-                    <i class="fas fa-bolt"></i>
+                          title="Llenar formulario de evaluación ahora">
+                    <i class="fas fa-check"></i>
                     Registrar Visita Ya
                   </button>
                   
-                  {# Sistema dinámico de botones según estado del hogar #}
-                  {% if hogar.estado == 'activo' %}
-                    <button class="btn btn-info btn-small" 
-                            onclick="event.stopPropagation(); abrirModalProgramar({{ hogar.id }}, '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');">
-                      <i class="fas fa-calendar-plus"></i>
-                      Programar Visita
-                    </button>
-                  {% elif hogar.estado == 'rechazado' %}
-                    <button class="btn btn-outline btn-small" disabled title="Hogar rechazado">
-                      <i class="fas fa-ban"></i>
-                      Sin acciones
-                    </button>
-                  {% else %}
-                    {% if hogar.permite_agendar %}
-                      <button class="btn btn-small" style="background:#3b82f6;color:white;animation: pulse-glow 2s infinite;" 
-                              onclick="event.stopPropagation(); abrirModalProgramar({{ hogar.id }}, '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');">
-                        <i class="fas fa-calendar-plus"></i>
-                        Programar Visita
-                      </button>
-                    {% elif hogar.permite_reprogramar %}
-                      <button class="btn btn-small" style="background:#f59e0b;color:white;" 
-                              onclick="event.stopPropagation(); abrirModalReprogramar({{ hogar.id }}, '{{ hogar.proxima_visita_calculada|date:"Y-m-d" }}', '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');">
-                        <i class="fas fa-calendar-alt"></i>
-                        Reprogramar
-                      </button>
-                    {% endif %}
-                  {% endif %}
+                  <!-- ===== BOTÓN 3: MODIFICAR FECHA ===== -->
+                  <!-- SIEMPRE HABILITADO - Permite agendar o reprogramar -->
+                  <button class="btn btn-info btn-small" 
+                          onclick="event.stopPropagation(); abrirModalReprogramar({{ hogar.id }}, '{% if hogar.proxima_visita_calculada %}{{ hogar.proxima_visita_calculada|date:"Y-m-d" }}{% endif %}', '{{ hogar.nombre_hogar }}', '{{ hogar.madre.usuario.nombres }} {{ hogar.madre.usuario.apellidos }}');"
+                          title="Agendar o modificar fecha de visita">
+                    <i class="fas fa-calendar-edit"></i>
+                    Modificar Fecha
+                  </button>
 
-                  <!-- Botón para Descargar Acta de Visita (si existe) -->
+                  <!-- ===== BOTÓN 4: DESCARGAR ACTA ===== -->
                   {% if hogar.ultima_visita_calculada %}
                     <button class="btn btn-success btn-small" onclick="event.stopPropagation(); descargarActaVisita({{ hogar.id }}, '{{ hogar.nombre_hogar }}');" title="Descargar acta de la última visita">
                       <i class="fas fa-download"></i>
                       Descargar Acta
                     </button>
+                  {% else %}
+                    <button class="btn btn-small" style="background:#d1d5db;color:#6b7280;cursor:not-allowed;" disabled
+                            title="No hay visita completada aún">
+                      <i class="fas fa-download"></i>
+                      Descargar Acta
+                    </button>
                   {% endif %}
 
-                  <button class="btn btn-info btn-small" onclick="event.stopPropagation(); verHistorialVisitas({{ hogar.id }}, '{{ hogar.nombre_hogar }}');">
+                  <!-- ===== BOTÓN 5: HISTORIAL ===== -->
+                  <button class="btn btn-info btn-small" onclick="event.stopPropagation(); verHistorialVisitas({{ hogar.id }}, '{{ hogar.nombre_hogar }}');"
+                          title="Ver historial completo de visitas">
                     <i class="fas fa-history"></i>
                     Historial
                   </button>
                   
-                  <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); verHogarDetalle({{ hogar.id }})">
+                  <!-- ===== BOTÓN 6: VER CARPETA ===== -->
+                  <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); verHogarDetalle({{ hogar.id }})"
+                          title="Ver información completa del hogar">
                     <i class="fas fa-folder-open"></i>
                     Ver Carpeta
                   </button>
@@ -1610,16 +1624,11 @@
 
     function registrarVisitaYa(hogarId, nombreHogar) {
       /**
-       * Registra una visita técnica de forma inmediata (sin pedir fecha)
-       * Abre un modal para completar los datos de la visita al instante
+       * Redirige directamente al formulario de evaluación
+       * Sin pasos intermedios ni confirmaciones innecesarias
        */
-      if (!confirm(`¿Deseas registrar una visita técnica para "${nombreHogar}" AHORA MISMO?\n\nEsta acción registrará la visita con la fecha y hora actual.`)) {
-        return;
-      }
-
-      // Redirigir al formulario de registro de visita
-      // El formulario detectará que es "visita ya" vs "programar"
-      window.location.href = `/hogares/${hogarId}/registrar-visita/?registro_inmediato=1`;
+      // Ir DIRECTAMENTE al formulario sin parámetros especiales
+      window.location.href = `/hogares/${hogarId}/registrar-visita/`;
     }
 
     function verHogarDetalle(hogarId) {

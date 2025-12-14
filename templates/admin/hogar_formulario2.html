@@ -74,9 +74,9 @@
                 <strong>Agente Educativo:</strong> {{ hogar.madre.usuario.get_full_name }}<br>
                 <strong>Estado Actual:</strong> 
                 <span class="badge 
-                    {% if hogar.estado == 'pendiente_revision' %}bg-warning
-                    {% elif hogar.estado == 'en_revision' %}bg-info
-                    {% elif hogar.estado == 'aprobado' %}bg-success
+                    {% if hogar.estado == 'pendiente_visita' %}bg-warning
+                    {% elif hogar.estado == 'visitando' %}bg-info
+                    {% elif hogar.estado == 'activo' %}bg-success
                     {% else %}bg-secondary{% endif %}">
                     {{ hogar.get_estado_display }}
                 </span>
