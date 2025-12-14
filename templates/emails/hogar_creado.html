@@ -31,7 +31,11 @@
         <div class="info-item"><strong>Nombre del hogar:</strong> {{ nombre_hogar }}</div>
         <div class="info-item"><strong>Direccion:</strong> {{ direccion_hogar }}</div>
         {% if ciudad_nombre %}<div class="info-item"><strong>Ciudad:</strong> {{ ciudad_nombre }}</div>{% endif %}
-        {% if regional_nombre %}<div class="info-item"><strong>Regional:</strong> {{ regional_nombre }}</div>{% endif %}
+        {% if ciudad_nombre == "Bogotá" %}
+          {% if localidad_nombre %}<div class="info-item"><strong>Localidad:</strong> {{ localidad_nombre }}</div>{% endif %}
+        {% else %}
+          {% if regional_nombre %}<div class="info-item"><strong>Regional:</strong> {{ regional_nombre }}</div>{% endif %}
+        {% endif %}
         {% if fecha_visita_formateada %}
           <div class="info-item"><strong>Visita tecnica:</strong> {{ fecha_visita_formateada }}</div>
           <p style="margin-top:12px;">Nuestro equipo realizara la visita en la fecha indicada para evaluar las condiciones del hogar y continuar con el proceso de habilitacion.</p>

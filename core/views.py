@@ -657,6 +657,37 @@ def crear_madre(request):
             localidad_bogota_hogar = hogar_form.cleaned_data.get('localidad_bogota')
             fecha_primera_visita = hogar_form.cleaned_data.get('fecha_primera_visita')
 
+            # ✅ VALIDACIÓN CRÍTICA: Si la ciudad es Bogotá, la regional DEBE ser Bogotá
+            if ciudad_hogar and ciudad_hogar.nombre.lower() == 'bogotá':
+                try:
+                    regional_bogota = Regional.objects.get(nombre__iexact='Bogotá')
+                    if regional_hogar.id != regional_bogota.id:
+                        messages.error(request, 'Para Bogotá D.C., la Regional debe ser "Bogotá". Por favor, corrija esta selección.')
+                        from .models import LocalidadBogota
+                        localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
+                        return render(request, 'admin/madres_form.html', {
+                            'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
+                            'initial_step': 3, 'regionales': regionales, 'localidades_bogota': localidades_bogota
+                        })
+                except Regional.DoesNotExist:
+                    messages.error(request, 'No se encontró la Regional "Bogotá" en el sistema.')
+                    from .models import LocalidadBogota
+                    localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
+                    return render(request, 'admin/madres_form.html', {
+                        'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
+                        'initial_step': 3, 'regionales': regionales, 'localidades_bogota': localidades_bogota
+                    })
+                    
+                # Si es Bogotá, también DEBE tener una localidad seleccionada
+                if not localidad_bogota_hogar:
+                    messages.error(request, 'Para hogares en Bogotá D.C., debe seleccionar una Localidad.')
+                    from .models import LocalidadBogota
+                    localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
+                    return render(request, 'admin/madres_form.html', {
+                        'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
+                        'initial_step': 3, 'regionales': regionales, 'localidades_bogota': localidades_bogota
+                    })
+
             # Validar fecha antes de cualquier escritura en DB
             if fecha_primera_visita and fecha_primera_visita < date.today():
                 hogar_form.add_error('fecha_primera_visita', 'La fecha de la primera visita no puede ser en el pasado.')
@@ -751,6 +782,7 @@ def crear_madre(request):
                             'direccion_hogar': direccion_hogar,
                             'regional_nombre': regional_hogar.nombre if regional_hogar else '',
                             'ciudad_nombre': ciudad_hogar.nombre if ciudad_hogar else '',
+                            'localidad_nombre': localidad_bogota_hogar.nombre if localidad_bogota_hogar else '',
                             'usuario_documento': usuario.documento,
                             'login_url': request.build_absolute_uri(reverse('login')),
                         }
@@ -803,6 +835,21 @@ def crear_madre(request):
                         nombre = request.POST.get(f'conviviente_{i}_nombre_completo')
                         parentesco = request.POST.get(f'conviviente_{i}_parentesco')
                         antecedentes = request.FILES.get(f'conviviente_{i}_antecedentes')
+                        
+                        # Validar tamaño del archivo antecedentes
+                        MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+                        if antecedentes and antecedentes.size > MAX_FILE_SIZE:
+                            messages.error(
+                                request,
+                                f'El archivo de antecedentes del conviviente {i+1} supera los 5 MB. Por favor, sube un archivo más pequeño.'
+                            )
+                            error_step = 3
+                            from .models import LocalidadBogota
+                            localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
+                            return render(request, 'admin/madres_form.html', {
+                                'usuario_form': usuario_form, 'madre_profile_form': madre_profile_form, 'hogar_form': hogar_form,
+                                'initial_step': error_step, 'regionales': regionales, 'localidades_bogota': localidades_bogota
+                            })
                         
                         if tipo_doc and numero_doc and nombre and parentesco:
                             from .models import ConvivienteHogar
