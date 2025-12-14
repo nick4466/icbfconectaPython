@@ -561,7 +561,8 @@ input[type="radio"]:checked + label {
           <label for="fecha">Fecha inicio</label>
           <div class="date-input">
             <i class="fas fa-calendar-alt" style="color:#0654a6"></i>
-            <input type="date" id="fecha-range-start" name="fecha" value="{{ fecha_hoy }}" required aria-label="Fecha inicio rango">
+            <!-- ✅ SIN name="fecha" - se copia a #fecha en JS antes de enviar -->
+            <input type="date" id="fecha-range-start" value="{{ fecha_hoy }}" required aria-label="Fecha inicio rango">
           </div>
         </div>
 
@@ -719,6 +720,15 @@ input[type="radio"]:checked + label {
       const sinJustBtn = document.getElementById('sinJustificarBtn');
       const modalClose = document.getElementById('modal-close');
 
+      // ✅ DEFINIR VARIABLES DE FECHA AL INICIO
+      const fecha = document.getElementById('fecha');
+      const fechaRangeStart = document.getElementById('fecha-range-start');
+      const endDate = document.getElementById('end_date');
+      const showBtn = document.getElementById('show-range');
+      const hideBtn = document.getElementById('hide-range');
+      const compact = document.getElementById('date-compact');
+      const range = document.getElementById('date-range');
+
       /* Toggle notificaciones */
       if (notifToggle && notifPanel) {
         notifToggle.addEventListener('click', (e) => {
@@ -773,12 +783,25 @@ input[type="radio"]:checked + label {
       const asistenciaForm = document.getElementById('asistencia-form');
       if (asistenciaForm) {
         asistenciaForm.addEventListener('submit', (ev) => {
-          // seleccionar inicio dependiendo de si el rango está visible
-          const inicioElem = document.getElementById('date-range') && document.getElementById('date-range').style.display !== 'none'
-            ? document.getElementById('fecha-range-start')
-            : document.getElementById('fecha');
-          const inicio = inicioElem ? inicioElem.value : '';
-          const fin = document.getElementById('end_date') ? document.getElementById('end_date').value : '';
+          // ✅ CRÍTICO: SIEMPRE sincronizar fecha antes de enviar
+          // Si el rango está visible, copiar la fecha-range-start al input #fecha que se envía
+          if (range && range.style.display !== 'none') {
+            if (fecha && fechaRangeStart && fechaRangeStart.value) {
+              fecha.value = fechaRangeStart.value;
+            }
+          }
+
+          // DEBUG: Ver qué se está enviando
+          console.log("=== DEBUG SUBMIT FORM ===");
+          console.log("Range visible?", range && range.style.display !== 'none');
+          console.log("Input #fecha value (name='fecha'):", fecha ? fecha.value : 'NO EXISTE');
+          console.log("Input #fecha-range-start value:", fechaRangeStart ? fechaRangeStart.value : 'NO EXISTE');
+          console.log("Input #end_date value (name='end_date'):", endDate ? endDate.value : 'NO EXISTE');
+          console.log("========================");
+
+          // Validación: si hay fecha fin, verificar que no sea anterior a la fecha inicio
+          const inicio = fecha ? fecha.value : '';
+          const fin = endDate ? endDate.value : '';
           if (inicio && fin && fin < inicio) {
             ev.preventDefault();
             alert('La fecha fin debe ser mayor o igual a la fecha inicio.');
@@ -789,26 +812,22 @@ input[type="radio"]:checked + label {
       }
 
       // Toggle mostrar/ocultar rango
-      const showBtn = document.getElementById('show-range');
-      const hideBtn = document.getElementById('hide-range');
-      const compact = document.getElementById('date-compact');
-      const range = document.getElementById('date-range');
-      const fecha = document.getElementById('fecha');
-      const fechaRangeStart = document.getElementById('fecha-range-start');
-      const endDate = document.getElementById('end_date');
-
       function openRange() {
         compact.style.display = 'none';
         range.style.display = 'flex';
         // keep start-date synced
-        if (fecha && fechaRangeStart) fechaRangeStart.value = fecha.value || '{{ fecha_hoy }}';
+        if (fecha && fechaRangeStart) {
+          fechaRangeStart.value = fecha.value || '{{ fecha_hoy }}';
+        }
       }
 
       function closeRange() {
         range.style.display = 'none';
         compact.style.display = 'flex';
-        // copy back start date
-        if (fecha && fechaRangeStart) fecha.value = fechaRangeStart.value || fecha.value;
+        // ✅ CRÍTICO: Copiar fecha de rango al input fecha (para que se envíe al servidor)
+        if (fecha && fechaRangeStart) {
+          fecha.value = fechaRangeStart.value || fecha.value;
+        }
         // limpiar end_date
         if (endDate) endDate.value = '';
       }
@@ -816,25 +835,43 @@ input[type="radio"]:checked + label {
       showBtn && showBtn.addEventListener('click', openRange);
       hideBtn && hideBtn.addEventListener('click', closeRange);
 
+      // ✅ CRÍTICO: Sincronizar cuando se cambia la fecha de rango inicio
+      if (fechaRangeStart) {
+        fechaRangeStart.addEventListener('change', () => {
+          // Actualizar el input #fecha con el valor del rango
+          if (fecha) fecha.value = fechaRangeStart.value;
+        });
+      }
+
       // Inicializar estado según si existe end_date en contexto
-      document.addEventListener('DOMContentLoaded', function initRange() {
-        if (endDate && endDate.value) {
-          openRange();
-        } else {
-          closeRange();
-        }
-      });
+      if (endDate && endDate.value) {
+        openRange();
+      } else {
+        closeRange();
+      }
 
       /* Cuando se marca "Ausente" abrimos modal y cargamos nino+fecha */
       document.querySelectorAll("input[type='radio'][value='Ausente']").forEach(radio => {
         radio.addEventListener('change', (e) => {
           if (e.target.checked) {
-            // abrir modal y asignar nino y fecha
+            // ✅ IMPORTANTE: Obtener la fecha correcta (del rango o de la normal)
+            let fechaValue = '';
+            if (range && range.style.display !== 'none') {
+              // Si está en modo rango, usar fecha-range-start
+              fechaValue = fechaRangeStart ? fechaRangeStart.value : '';
+            } else {
+              // Si está en modo normal, usar fecha
+              fechaValue = fecha ? fecha.value : '';
+            }
+
+            if (!fechaValue) { 
+              alert('Selecciona la fecha antes de justificar.'); 
+              e.target.checked = false; 
+              return; 
+            }
             const ninoId = e.target.getAttribute('data-id');
-            const fecha = document.getElementById('fecha') ? document.getElementById('fecha').value : '';
-            if (!fecha) { alert('Selecciona la fecha antes de justificar.'); e.target.checked = false; return; }
             modalNinoInput.value = ninoId;
-            modalFechaInput.value = fecha;
+            modalFechaInput.value = fechaValue;
             modal.classList.add('active');
             modal.setAttribute('aria-hidden','false');
           }

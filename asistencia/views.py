@@ -25,19 +25,35 @@ def asistencia_form(request):
     ninos = Nino.objects.filter(hogar=hogar_madre)
 
     if request.method == 'POST':
+        # DEBUG: Imprimir qué se recibe en POST
+        print("\n" + "=" * 80)
+        print("DEBUG POST recibido en asistencia_form:")
+        print(f"POST keys: {list(request.POST.keys())}")
+        print(f"POST data: {dict(request.POST)}")
+        print(f"Valor de POST['fecha']: {request.POST.get('fecha')}")
+        print(f"Valor de POST['end_date']: {request.POST.get('end_date')}")
+        print("=" * 80 + "\n")
+
         # Soportar rango de fechas: `fecha` (inicio) y opcional `end_date` (fin).
         fecha_str = request.POST.get('fecha')
         end_date_str = request.POST.get('end_date')
 
+        print(f"fecha_str (después de .get()): {fecha_str}")
+        print(f"end_date_str (después de .get()): {end_date_str}\n")
+
         if fecha_str:
             start_date = date.fromisoformat(fecha_str)
+            print(f"start_date (convertida): {start_date}")
         else:
             start_date = date.today()
+            print(f"start_date (por defecto hoy): {start_date}")
 
         if end_date_str:
             end_date = date.fromisoformat(end_date_str)
+            print(f"end_date (convertida): {end_date}")
         else:
             end_date = start_date
+            print(f"end_date (igual a start_date): {end_date}")
 
         # Generar lista de fechas inclusivas entre start_date y end_date
         delta_days = (end_date - start_date).days
@@ -46,6 +62,8 @@ def asistencia_form(request):
             fechas_a_guardar = [start_date]
             for i in range(1, delta_days + 1):
                 fechas_a_guardar.append(start_date + __import__('datetime').timedelta(days=i))
+
+        print(f"Fechas a guardar: {fechas_a_guardar}\n")
 
         # Para cada fecha del rango, guardar la asistencia seleccionada para cada niño
         for fecha_hoy in fechas_a_guardar:
