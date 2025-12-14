@@ -201,6 +201,15 @@ urlpatterns = [
     path('padre/solicitar-retiro/<int:nino_id>/', views.padre_solicitar_retiro, name='padre_solicitar_retiro'),
     path('padre/mis-retiros/', views.padre_ver_retiros, name='padre_ver_retiros'),
     path('padre/cancelar-retiro/<int:solicitud_id>/', views.padre_cancelar_retiro, name='padre_cancelar_retiro'),
+    
+    # --- 🆕 URLs Solicitudes de Matrícula (PADRE) ---
+    path('padre/mis-solicitudes/', views.padre_ver_solicitudes_matricula, name='padre_solicitudes_matricula'),
+    path('padre/solicitud-detalles/<int:solicitud_id>/', views.padre_solicitud_detalle, name='padre_solicitud_detalle'),
+
+    # --- 🔔 URLs Notificaciones (PADRE) ---
+    path('padre/api/notificaciones/', views.api_notificaciones_padre, name='api_notificaciones_padre'),
+    path('padre/api/notificaciones/<int:notif_id>/marcar-leida/', views.api_marcar_notificacion_leida, name='api_marcar_notificacion_leida'),
+    path('padre/api/notificaciones/marcar-todas-leidas/', views.api_marcar_todas_leidas, name='api_marcar_todas_leidas'),
 
     # --- 🆕 URLs Solicitud de Retiro de Matrícula (MADRE) ---
     path('madre/solicitudes-retiro/', views.madre_ver_retiros_solicitudes, name='madre_ver_retiros'),

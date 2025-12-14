@@ -7539,3 +7539,182 @@ def api_localidades_bogota(request):
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+
+# ========================
+# 🆕 SOLICITUDES DE MATRÍCULA - VISTA PADRE
+# ========================
+@login_required
+def padre_ver_solicitudes_matricula(request):
+    """
+    Vista: Ver historial de solicitudes de matrícula del padre
+    URL: GET /padre/mis-solicitudes/
+    Acceso: Solo padre autenticado
+    Muestra: Pendientes, Aprobadas, Rechazadas
+    """
+    if request.user.rol.nombre_rol != 'padre':
+        return redirect('role_redirect')
+    
+    try:
+        padre_profile = Padre.objects.get(usuario=request.user)
+        
+        # Solicitudes pendientes (en proceso)
+        solicitudes_pendientes = SolicitudMatriculacion.objects.filter(
+            padre_solicitante=padre_profile,
+            estado__in=['pendiente', 'correccion']
+        ).select_related('hogar').order_by('-fecha_creacion')
+        
+        # Solicitudes aprobadas
+        solicitudes_aprobadas = SolicitudMatriculacion.objects.filter(
+            padre_solicitante=padre_profile,
+            estado='aprobado'
+        ).select_related('hogar').order_by('-fecha_creacion')
+        
+        # Solicitudes rechazadas
+        solicitudes_rechazadas = SolicitudMatriculacion.objects.filter(
+            padre_solicitante=padre_profile,
+            estado='rechazado'
+        ).select_related('hogar').order_by('-fecha_creacion')
+        
+        context = {
+            'solicitudes_pendientes': solicitudes_pendientes,
+            'solicitudes_aprobadas': solicitudes_aprobadas,
+            'solicitudes_rechazadas': solicitudes_rechazadas,
+        }
+        
+        return render(request, 'padre/mis_solicitudes_matricula.html', context)
+    
+    except Padre.DoesNotExist:
+        return render(request, 'padre/mis_solicitudes_matricula.html', {
+            'error': 'No se encontró tu perfil de padre'
+        })
+
+
+@login_required
+@rol_requerido('padre')
+def padre_solicitud_detalle(request, solicitud_id):
+    """
+    Vista: Ver detalles de una solicitud de matrícula específica
+    """
+    try:
+        padre = request.user.padre_profile
+        solicitud = get_object_or_404(SolicitudMatriculacion, id=solicitud_id, padre_solicitante=padre)
+        
+        context = {
+            'solicitud': solicitud,
+        }
+        
+        return render(request, 'padre/solicitud_detalle.html', context)
+    
+    except Padre.DoesNotExist:
+        messages.error(request, 'No eres padre')
+        return redirect('padre_dashboard')
+        return redirect('padre_dashboard')
+
+
+# ========================
+# 🔔 NOTIFICACIONES PADRE
+# ========================
+
+@login_required
+@rol_requerido('padre')
+def api_notificaciones_padre(request):
+    """
+    Endpoint AJAX para obtener notificaciones del padre
+    GET: Retorna lista de notificaciones con cantidad de no leídas
+    """
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        padre = request.user.padre_profile
+        
+        # Obtener notificaciones del sistema
+        from notifications.models import Notification
+        from django.contrib.contenttypes.models import ContentType
+        
+        notificaciones = Notification.objects.filter(recipient=request.user).order_by('-created_at')[:20]
+        
+        # Construir respuesta con datos de notificaciones
+        notif_data = []
+        for notif in notificaciones:
+            # Determinar tipo de notificación
+            tipo = 'info'
+            if notif.content_type and notif.object_id:
+                if 'SolicitudMatriculacion' in str(notif.content_type):
+                    tipo = 'matricula'
+                elif 'SolicitudRetiroMatricula' in str(notif.content_type):
+                    tipo = 'retiro'
+                elif 'SeguimientoDiario' in str(notif.content_type):
+                    tipo = 'desarrollo'
+                elif 'Asistencia' in str(notif.content_type):
+                    tipo = 'asistencia'
+            
+            notif_data.append({
+                'id': notif.id,
+                'titulo': notif.title,
+                'mensaje': notif.message,
+                'tipo': tipo,
+                'leida': notif.read,
+                'fecha': notif.created_at.isoformat() if notif.created_at else None
+            })
+        
+        # Contar no leídas
+        no_leidas = Notification.objects.filter(recipient=request.user, read=False).count()
+        
+        return JsonResponse({
+            'status': 'ok',
+            'notificaciones': notif_data,
+            'no_leidas': no_leidas
+        })
+    
+    except Padre.DoesNotExist:
+        return JsonResponse({'error': 'No eres padre'}, status=403)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@rol_requerido('padre')
+def api_marcar_notificacion_leida(request, notif_id):
+    """
+    Endpoint AJAX para marcar una notificación como leída
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        from notifications.models import Notification
+        
+        notificacion = get_object_or_404(Notification, id=notif_id, recipient=request.user)
+        notificacion.read = True
+        notificacion.save()
+        
+        return JsonResponse({'status': 'ok'})
+    
+    except Notification.DoesNotExist:
+        return JsonResponse({'error': 'Notificación no encontrada'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@rol_requerido('padre')
+def api_marcar_todas_leidas(request):
+    """
+    Endpoint AJAX para marcar todas las notificaciones como leídas
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    try:
+        from notifications.models import Notification
+        
+        Notification.objects.filter(recipient=request.user, read=False).update(read=True)
+        
+        return JsonResponse({'status': 'ok'})
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+

@@ -687,26 +687,6 @@
         {% endfor %}
       {% endif %}
 
-      <!-- SOLICITUDES RECHAZADAS -->
-      {% if solicitudes_rechazadas %}
-        {% for solicitud in solicitudes_rechazadas %}
-        <div class="alert-card alert-danger">
-          <div class="alert-icon">
-            <i class="fas fa-times-circle"></i>
-          </div>
-          <div class="alert-content">
-            <h3>Solicitud Rechazada</h3>
-            <p><strong>{{ solicitud.nombres_nino }} {{ solicitud.apellidos_nino }}</strong></p>
-            <p>{{ solicitud.motivo_rechazo|truncatewords:20 }}</p>
-            <div class="alert-actions">
-              <a href="{% url 'padre_ver_solicitud' solicitud.id %}" class="alert-btn alert-btn-primary">
-                Ver detalles
-              </a>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      {% endif %}
     </div>
 
     <!-- BOTÓN SOLICITAR MATRÍCULA -->

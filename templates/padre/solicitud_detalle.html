@@ -4,6 +4,220 @@
 {% block title %}Detalle de Solicitud - ICBF Conecta{% endblock %}
 
 {% block content %}
+<div class="container mt-5 mb-5">
+    <!-- Botón de Atrás -->
+    <div class="mb-4">
+        <a href="{% url 'padre_solicitudes_matricula' %}" class="btn btn-outline-secondary">
+            ← Volver a Mis Solicitudes
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Card Principal -->
+            <div class="card shadow-lg border-0 mb-4">
+                <!-- Header -->
+                <div class="card-header p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-2">Solicitud de Matrícula</h3>
+                            <p class="mb-0 small">ID: #{{ solicitud.id }}</p>
+                        </div>
+                        <!-- Badge Estado -->
+                        {% if solicitud.estado == 'pendiente' %}
+                            <span class="badge bg-warning text-dark p-3 fs-6">⏳ Pendiente</span>
+                        {% elif solicitud.estado == 'aprobado' %}
+                            <span class="badge bg-success p-3 fs-6">✅ Aprobada</span>
+                        {% elif solicitud.estado == 'rechazado' %}
+                            <span class="badge bg-danger p-3 fs-6">❌ Rechazada</span>
+                        {% elif solicitud.estado == 'correccion' %}
+                            <span class="badge bg-warning p-3 fs-6">🔧 En Corrección</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Contenido -->
+                <div class="card-body p-4">
+                    <!-- Información del Niño -->
+                    <div class="mb-5">
+                        <h5 class="text-primary fw-bold mb-3 pb-2 border-bottom">👶 Información del Niño</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Nombre Completo</p>
+                                <p class="fw-bold fs-5">{{ solicitud.nombres_nino }} {{ solicitud.apellidos_nino }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Documento</p>
+                                <p class="fw-bold">{{ solicitud.documento_nino }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Fecha de Nacimiento</p>
+                                <p class="fw-bold">{{ solicitud.fecha_nacimiento_nino|date:"d/m/Y" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Género</p>
+                                <p class="fw-bold">{{ solicitud.genero_nino }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Tipo de Sangre</p>
+                                <p class="fw-bold">{{ solicitud.tipo_sangre_nino|default:"No especificado" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Parentesco</p>
+                                <p class="fw-bold">{{ solicitud.parentesco|default:"No especificado" }}</p>
+                            </div>
+                        </div>
+                        {% if solicitud.observaciones_nino %}
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <p class="text-muted small mb-2">Observaciones</p>
+                            <p>{{ solicitud.observaciones_nino }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Información del Hogar -->
+                    <div class="mb-5">
+                        <h5 class="text-primary fw-bold mb-3 pb-2 border-bottom">🏠 Información del Hogar</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Nombre del Hogar</p>
+                                <p class="fw-bold fs-5">{{ solicitud.hogar.nombre_hogar }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Madre Comunitaria</p>
+                                <p class="fw-bold">{{ solicitud.hogar.madre_comunitaria.nombres }} {{ solicitud.hogar.madre_comunitaria.apellidos }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Dirección</p>
+                                <p class="fw-bold">{{ solicitud.hogar.direccion }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Teléfono</p>
+                                <p class="fw-bold">{{ solicitud.hogar.telefono }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Ciudad</p>
+                                <p class="fw-bold">{{ solicitud.hogar.ciudad }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Regional</p>
+                                <p class="fw-bold">{{ solicitud.hogar.regional }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información del Padre/Acudiente -->
+                    <div class="mb-5">
+                        <h5 class="text-primary fw-bold mb-3 pb-2 border-bottom">👨‍👩‍👧 Información del Acudiente</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Nombre Completo</p>
+                                <p class="fw-bold">{{ solicitud.nombres_padre }} {{ solicitud.apellidos_padre }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Documento</p>
+                                <p class="fw-bold">{{ solicitud.tipo_documento_padre }}: {{ solicitud.documento_padre }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Correo</p>
+                                <p class="fw-bold">{{ solicitud.correo_padre }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Teléfono</p>
+                                <p class="fw-bold">{{ solicitud.telefono_padre }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Ocupación</p>
+                                <p class="fw-bold">{{ solicitud.ocupacion_padre|default:"No especificado" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Nivel Educativo</p>
+                                <p class="fw-bold">{{ solicitud.nivel_educativo_padre|default:"No especificado" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fechas -->
+                    <div class="mb-5">
+                        <h5 class="text-primary fw-bold mb-3 pb-2 border-bottom">📅 Historial</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Fecha de Solicitud</p>
+                                <p class="fw-bold">{{ solicitud.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                            </div>
+                            {% if solicitud.fecha_aprobacion %}
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Fecha de Aprobación</p>
+                                <p class="fw-bold">{{ solicitud.fecha_aprobacion|date:"d/m/Y H:i" }}</p>
+                            </div>
+                            {% endif %}
+                            {% if solicitud.fecha_rechazo %}
+                            <div class="col-md-6">
+                                <p class="text-muted small mb-1">Fecha de Rechazo</p>
+                                <p class="fw-bold">{{ solicitud.fecha_rechazo|date:"d/m/Y H:i" }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Motivo Rechazo -->
+                    {% if solicitud.estado == 'rechazado' and solicitud.motivo_rechazo %}
+                    <div class="alert alert-danger border-start border-5 p-4 mb-5">
+                        <h5 class="alert-heading fw-bold mb-3">⚠️ Motivo del Rechazo</h5>
+                        <p class="mb-0 fs-6">{{ solicitud.motivo_rechazo }}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Alertas de Estado -->
+                    {% if solicitud.estado == 'rechazado' %}
+                    <div class="alert alert-info border-start border-5 p-4">
+                        <p class="mb-0">
+                            <strong>ℹ️ Información:</strong> Puedes volver a intentar la matrícula en otro hogar.
+                        </p>
+                    </div>
+                    {% elif solicitud.estado == 'pendiente' %}
+                    <div class="alert alert-warning border-start border-5 p-4">
+                        <p class="mb-0">
+                            <strong>⏳ Estado:</strong> Tu solicitud está siendo revisada. Te notificaremos cuando haya una respuesta.
+                        </p>
+                    </div>
+                    {% elif solicitud.estado == 'aprobado' %}
+                    <div class="alert alert-success border-start border-5 p-4">
+                        <p class="mb-0">
+                            <strong>✅ ¡Felicidades!</strong> Tu solicitud ha sido aprobada. Tu hijo ya está matriculado.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-lg border-0 sticky-top" style="top: 20px;">
+                <div class="card-header p-3" style="background: #f8f9fa;">
+                    <h6 class="mb-0 fw-bold">📋 Acciones Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if solicitud.estado == 'rechazado' %}
+                        <a href="{% url 'padre_solicitar_matricula' %}" class="btn btn-success btn-sm">
+                            🔄 Reintentar Matrícula
+                        </a>
+                        <a href="{% url 'padre_ver_hogares' %}" class="btn btn-info btn-sm">
+                            🏠 Ver Otros Hogares
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'padre_solicitudes_matricula' %}" class="btn btn-outline-secondary btn-sm">
+                            ← Volver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .solicitud-detalle-container {
         max-width: 900px;

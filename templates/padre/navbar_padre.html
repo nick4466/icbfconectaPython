@@ -97,6 +97,174 @@
     .dropdown-content button:hover {
       background: #FFEBEE;
     }
+
+    /* 🔔 ESTILOS PARA CAMPANA DE NOTIFICACIONES */
+    .notifications-dropdown {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .notifications-bell {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #4DB6FF;
+      cursor: pointer;
+      position: relative;
+      padding: 8px;
+      transition: color 0.2s;
+      margin-right: 15px;
+    }
+
+    .notifications-bell:hover {
+      color: #2196F3;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #dc3545;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .notifications-panel {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 350px;
+      max-height: 500px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      margin-top: 10px;
+    }
+
+    .notifications-panel.show {
+      display: flex;
+    }
+
+    .notifications-header {
+      padding: 15px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .notifications-header h3 {
+      margin: 0;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .close-notifications {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .notifications-list {
+      overflow-y: auto;
+      max-height: 350px;
+      flex: 1;
+    }
+
+    .notification-item {
+      padding: 12px 15px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .notification-item:hover {
+      background: #f8f8f8;
+    }
+
+    .notification-item.unread {
+      background: #f0f8ff;
+      font-weight: 500;
+    }
+
+    .notification-icon {
+      flex-shrink: 0;
+      font-size: 16px;
+      margin-top: 2px;
+    }
+
+    .notification-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .notification-title {
+      margin: 0;
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .notification-message {
+      margin: 4px 0 0 0;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .notification-time {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .empty-notifications {
+      padding: 40px 15px;
+      text-align: center;
+      color: #999;
+    }
+
+    .notifications-footer {
+      padding: 12px 15px;
+      border-top: 1px solid #e0e0e0;
+      text-align: center;
+    }
+
+    .btn-mark-all {
+      background: none;
+      border: none;
+      color: #4DB6FF;
+      cursor: pointer;
+      font-size: 13px;
+      text-decoration: underline;
+      padding: 0;
+    }
+
+    .btn-mark-all:hover {
+      color: #2196F3;
+    }
+
+    .loading-text {
+      text-align: center;
+      color: #999;
+      padding: 20px;
+      margin: 0;
+    }
     </style>
 </head>
 <body>
@@ -112,6 +280,7 @@
         <nav class="navbar-menu">
           <ul>
             <li><a href="{% url 'padre_dashboard' %}" class="btn-inicio"><i class="fas fa-home"></i> Inicio</a></li>
+            <li><a href="{% url 'padre_solicitudes_matricula' %}" class="btn-solicitudes"><i class="fas fa-file-alt"></i> Mis Solicitudes</a></li>
             <li><a href="{% url 'padre_ver_retiros' %}" class="btn-retiros"><i class="fas fa-sign-out-alt"></i> Mis Retiros</a></li>
             <li><a href="{% url 'calendario_padres' %}" class="btn-planeaciones"><i class="fas fa-calendar"></i> Calendario</a></li>
           </ul>
@@ -119,6 +288,27 @@
 
         <div class="header-right">
             <span class="navbar-user-name">{{ user.nombres }}</span>
+
+            <!-- 🔔 CAMPANA DE NOTIFICACIONES -->
+            <div class="notifications-dropdown">
+                <button class="notifications-bell" id="notificationsBell" title="Notificaciones">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                </button>
+                
+                <div class="notifications-panel" id="notificationsPanel">
+                    <div class="notifications-header">
+                        <h3>Notificaciones</h3>
+                        <button class="close-notifications" onclick="toggleNotifications()">&times;</button>
+                    </div>
+                    <div class="notifications-list" id="notificationsList">
+                        <p class="loading-text">Cargando notificaciones...</p>
+                    </div>
+                    <div class="notifications-footer">
+                        <button onclick="markAllAsRead()" class="btn-mark-all">Marcar todas como leídas</button>
+                    </div>
+                </div>
+            </div>
 
             <div class="user-menu-dropdown">
                 <button class="user-menu-button nav-btn" aria-haspopup="true" aria-expanded="false">
@@ -144,6 +334,166 @@
         {% block content %}
         {% endblock %}
     </main>
+
+    <script>
+    // 🔔 FUNCIONES PARA CAMPANA DE NOTIFICACIONES
+    const notificationsBell = document.getElementById('notificationsBell');
+    const notificationsPanel = document.getElementById('notificationsPanel');
+    const notificationsList = document.getElementById('notificationsList');
+    const notificationBadge = document.getElementById('notificationBadge');
+
+    // Alternar panel de notificaciones
+    function toggleNotifications() {
+        notificationsPanel.classList.toggle('show');
+        if (notificationsPanel.classList.contains('show')) {
+            cargarNotificaciones();
+        }
+    }
+
+    notificationsBell.addEventListener('click', toggleNotifications);
+
+    // Cerrar panel cuando se hace click fuera
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.notifications-dropdown')) {
+            notificationsPanel.classList.remove('show');
+        }
+    });
+
+    // Cargar notificaciones del servidor
+    async function cargarNotificaciones() {
+        try {
+            const response = await fetch('/padre/api/notificaciones/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (!response.ok) throw new Error('Error al cargar notificaciones');
+            
+            const data = await response.json();
+            mostrarNotificaciones(data.notificaciones);
+            actualizarBadge(data.no_leidas);
+        } catch (error) {
+            console.error('Error:', error);
+            notificationsList.innerHTML = '<div class="empty-notifications">Error al cargar notificaciones</div>';
+        }
+    }
+
+    // Mostrar notificaciones en el panel
+    function mostrarNotificaciones(notificaciones) {
+        if (notificaciones.length === 0) {
+            notificationsList.innerHTML = '<div class="empty-notifications">No hay notificaciones</div>';
+            return;
+        }
+
+        let html = '';
+        const iconos = {
+            'matricula': '📝',
+            'retiro': '↩️',
+            'desarrollo': '📊',
+            'asistencia': '✅',
+            'info': 'ℹ️'
+        };
+
+        notificaciones.forEach(notif => {
+            const icono = iconos[notif.tipo] || 'ℹ️';
+            const claseUnread = notif.leida ? '' : 'unread';
+            const tiempo = formatearTiempo(notif.fecha);
+
+            html += `
+                <div class="notification-item ${claseUnread}" onclick="abrirNotificacion('${notif.tipo}', ${notif.id})">
+                    <div class="notification-icon">${icono}</div>
+                    <div class="notification-content">
+                        <p class="notification-title">${notif.titulo}</p>
+                        <p class="notification-message">${notif.mensaje}</p>
+                        <p class="notification-time">${tiempo}</p>
+                    </div>
+                </div>
+            `;
+        });
+
+        notificationsList.innerHTML = html;
+    }
+
+    // Actualizar badge de notificaciones no leídas
+    function actualizarBadge(cantidad) {
+        if (cantidad > 0) {
+            notificationBadge.textContent = cantidad > 99 ? '99+' : cantidad;
+            notificationBadge.style.display = 'flex';
+        } else {
+            notificationBadge.style.display = 'none';
+        }
+    }
+
+    // Formatear tiempo hace cuánto se envió
+    function formatearTiempo(fecha) {
+        const ahora = new Date();
+        const fechaNotif = new Date(fecha);
+        const diferencia = Math.floor((ahora - fechaNotif) / 1000);
+
+        if (diferencia < 60) return 'Hace unos segundos';
+        if (diferencia < 3600) return `Hace ${Math.floor(diferencia / 60)}m`;
+        if (diferencia < 86400) return `Hace ${Math.floor(diferencia / 3600)}h`;
+        return `Hace ${Math.floor(diferencia / 86400)}d`;
+    }
+
+    // Abrir notificación y redirigir
+    function abrirNotificacion(tipo, notifId) {
+        marcarComoLeida(notifId);
+        
+        const rutas = {
+            'matricula': '/padre/mis-solicitudes-matricula/',
+            'retiro': '/padre/mis-retiros/',
+            'desarrollo': '/padre/dashboard/',
+            'asistencia': '/padre/dashboard/',
+            'info': '/padre/dashboard/'
+        };
+
+        if (rutas[tipo]) {
+            window.location.href = rutas[tipo];
+        }
+    }
+
+    // Marcar notificación como leída
+    async function marcarComoLeida(notifId) {
+        try {
+            await fetch(`/padre/api/notificaciones/${notifId}/marcar-leida/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                }
+            });
+            cargarNotificaciones();
+        } catch (error) {
+            console.error('Error al marcar como leída:', error);
+        }
+    }
+
+    // Marcar todas como leídas
+    async function markAllAsRead() {
+        try {
+            await fetch('/padre/api/notificaciones/marcar-todas-leidas/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                }
+            });
+            cargarNotificaciones();
+        } catch (error) {
+            console.error('Error al marcar todas como leídas:', error);
+        }
+    }
+
+    // Cargar notificaciones al iniciar
+    document.addEventListener('DOMContentLoaded', function() {
+        cargarNotificaciones();
+        // Actualizar cada 30 segundos
+        setInterval(cargarNotificaciones, 30000);
+    });
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>
