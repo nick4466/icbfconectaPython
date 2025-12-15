@@ -173,12 +173,12 @@ class MadreProfileForm(FileSizeValidationMixin, forms.ModelForm):
     foto_madre = forms.FileField(
         label="Foto de la Madre", 
         required=True, 
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
     firma_digital = forms.FileField(
         label="Firma Digital",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
 
     class Meta:
@@ -187,16 +187,16 @@ class MadreProfileForm(FileSizeValidationMixin, forms.ModelForm):
         exclude = ['usuario', 'fecha_registro']
         widgets = {
              # Aceptar PDFs e imágenes en todos los campos de archivos
-             'foto_madre': forms.FileInput(attrs={'accept': 'image/*,application/pdf'}),
-             'firma_digital': forms.FileInput(attrs={'accept': 'image/*,application/pdf'}),
-             'certificado_laboral': forms.FileInput(attrs={'accept': 'application/pdf,image/*'}),
-             'carta_disponibilidad': forms.FileInput(attrs={'accept': 'application/pdf,image/*'}),
-             'documento_identidad_pdf': forms.FileInput(attrs={'accept': 'application/pdf,image/*'}),
-             'certificado_escolaridad_pdf': forms.FileInput(attrs={'accept': 'application/pdf,image/*'}),
-             'certificado_antecedentes_pdf': forms.FileInput(attrs={'accept': 'application/pdf,image/*'}),
-             'certificado_medico_pdf': forms.FileInput(attrs={'accept': 'application/pdf,image/*'}),
-             'certificado_residencia_pdf': forms.FileInput(attrs={'accept': 'application/pdf,image/*'}),
-             'cartas_recomendacion_pdf': forms.FileInput(attrs={'accept': 'application/pdf,image/*'}),
+             'foto_madre': forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'}),
+             'firma_digital': forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'}),
+             'certificado_laboral': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*'}),
+             'carta_disponibilidad': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*'}),
+             'documento_identidad_pdf': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*'}),
+             'certificado_escolaridad_pdf': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*'}),
+             'certificado_antecedentes_pdf': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*'}),
+             'certificado_medico_pdf': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*'}),
+             'certificado_residencia_pdf': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*'}),
+             'cartas_recomendacion_pdf': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -288,9 +288,9 @@ class HogarForm(FileSizeValidationMixin, forms.ModelForm):
             'capacidad_maxima': 'Capacidad Máxima de Niños',
         }
         widgets = {
-            'fotos_interior': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
-            'fotos_exterior': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
-            'documento_tenencia_pdf': forms.FileInput(attrs={'accept': 'application/pdf', 'class': 'form-control'}),
+            'fotos_interior': forms.ClearableFileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
+            'fotos_exterior': forms.ClearableFileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
+            'documento_tenencia_pdf': forms.ClearableFileInput(attrs={'accept': 'application/pdf', 'class': 'form-control'}),
             'riesgos_cercanos': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Ej: Cerca de vías principales, zona de inundación, etc.', 'class': 'form-control'}),
             'material_construccion': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Ej: Ladrillo, concreto, madera, etc.', 'class': 'form-control'}),
             'geolocalizacion_lat': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': 'Ej: 4.6097100', 'class': 'form-control'}),
@@ -386,7 +386,7 @@ class HogarForm(FileSizeValidationMixin, forms.ModelForm):
 # ----------------------------------------------------
 class AdminForm(FileSizeValidationMixin, forms.ModelForm):
     contraseña = forms.CharField(widget=forms.PasswordInput, required=False, label="Nueva Contraseña")
-    foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))
+    foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.ClearableFileInput(attrs={'accept': 'image/*'}))
 
     class Meta:
         model = Usuario
@@ -447,7 +447,7 @@ class CustomPasswordResetForm(PasswordResetForm):
 class AdminPerfilForm(FileSizeValidationMixin, forms.ModelForm):
     """Formulario para que el Administrador edite su perfil."""
     correo = forms.EmailField(label="Correo electrónico", required=True)
-    foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))
+    foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.ClearableFileInput(attrs={'accept': 'image/*'}))
 
     class Meta:
         model = Usuario
@@ -473,7 +473,7 @@ class PadrePerfilForm(FileSizeValidationMixin, forms.ModelForm):
     """Formulario para que el Padre de Familia edite su perfil."""
     correo = forms.EmailField(label="Correo electrónico", required=True)
     ocupacion = forms.CharField(max_length=50, required=False)
-    foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))
+    foto_admin = forms.ImageField(label="Foto de Perfil", required=False, widget=forms.ClearableFileInput(attrs={'accept': 'image/*'}))
 
     class Meta:
         model = Usuario
@@ -496,22 +496,22 @@ class NinoForm(FileSizeValidationMixin, forms.ModelForm):
     foto = forms.ImageField(
         label="Foto del Niño",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*'})
     )
     carnet_vacunacion = forms.FileField(
         label="Carné de Vacunación",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
     certificado_eps = forms.FileField(
         label="Certificado EPS/Afiliación",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
     registro_civil_img = forms.FileField(
         label="Foto Registro Civil",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
     otro_pais = forms.CharField(
         label="Especifique otro país",
@@ -690,12 +690,12 @@ class PadreForm(FileSizeValidationMixin, forms.ModelForm):
     documento_identidad_img = forms.FileField(
         label="Cédula/Documento de Identidad",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
     clasificacion_sisben = forms.FileField(
         label="Foto Clasificación SISBEN",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
 
     class Meta:
@@ -709,19 +709,28 @@ class PadreForm(FileSizeValidationMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Cargar municipios si hay departamento seleccionado
-        if 'departamento_residencia' in self.data:
+        # 🔧 ARREGLO: Cargar municipios basado en departamento seleccionado
+        # Caso 1: Formulario POST con datos
+        if self.data and 'departamento_residencia' in self.data:
             try:
                 departamento_id = int(self.data.get('departamento_residencia'))
                 self.fields['ciudad_residencia'].queryset = Municipio.objects.filter(
                     departamento_id=departamento_id
                 ).order_by('nombre')
             except (ValueError, TypeError):
-                self.fields['ciudad_residencia'].queryset = Municipio.objects.none()
+                # Si no hay ID válido, cargar todos los municipios para no rechazar POST válidos
+                self.fields['ciudad_residencia'].queryset = Municipio.objects.all().order_by('nombre')
+        
+        # Caso 2: Edición (instance con departamento_residencia)
         elif self.instance.pk and self.instance.departamento_residencia:
             self.fields['ciudad_residencia'].queryset = Municipio.objects.filter(
                 departamento=self.instance.departamento_residencia
             ).order_by('nombre')
+        
+        # Caso 3: Formulario GET inicial o sin departamento seleccionado
+        else:
+            # Cargar TODOS los municipios para permitir cualquier selección válida
+            self.fields['ciudad_residencia'].queryset = Municipio.objects.all().order_by('nombre')
 
     def clean_correo(self):
         """
@@ -769,22 +778,22 @@ class NinoSoloForm(FileSizeValidationMixin, forms.ModelForm):
     foto = forms.ImageField(
         label="Foto del Niño",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*'})
     )
     carnet_vacunacion = forms.FileField(
         label="Carné de Vacunación",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
     certificado_eps = forms.FileField(
         label="Certificado EPS/Afiliación",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
     registro_civil_img = forms.FileField(
         label="Foto Registro Civil",
         required=False,
-        widget=forms.FileInput(attrs={'accept': 'image/*,application/pdf'})
+        widget=forms.ClearableFileInput(attrs={'accept': 'image/*,application/pdf'})
     )
     otro_pais = forms.CharField(
         label="Especifique otro país",
@@ -969,7 +978,7 @@ class ActaVisitaTecnicaForm(forms.ModelForm):
                 'class': 'form-control'
             }),
             'estrato_coincide': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'foto_recibo_servicio': forms.FileInput(attrs={
+            'foto_recibo_servicio': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'class': 'form-control'
             }),
@@ -1011,7 +1020,7 @@ class ActaVisitaTecnicaForm(forms.ModelForm):
                 'placeholder': 'metros',
                 'class': 'form-control'
             }),
-            'foto_area_social_medidas': forms.FileInput(attrs={
+            'foto_area_social_medidas': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'class': 'form-control'
             }),
@@ -1027,7 +1036,7 @@ class ActaVisitaTecnicaForm(forms.ModelForm):
                 'placeholder': 'metros',
                 'class': 'form-control'
             }),
-            'foto_patio_medidas': forms.FileInput(attrs={
+            'foto_patio_medidas': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'class': 'form-control'
             }),
@@ -1038,21 +1047,21 @@ class ActaVisitaTecnicaForm(forms.ModelForm):
                 'class': 'form-control'
             }),
             'estado_higiene_banos': forms.Select(attrs={'class': 'form-control'}),
-            'foto_bano_1': forms.FileInput(attrs={
+            'foto_bano_1': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'class': 'form-control'
             }),
-            'foto_bano_2': forms.FileInput(attrs={
+            'foto_bano_2': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'class': 'form-control'
             }),
             
             # Fachada
-            'foto_fachada': forms.FileInput(attrs={
+            'foto_fachada': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'class': 'form-control'
             }),
-            'foto_fachada_numeracion': forms.FileInput(attrs={
+            'foto_fachada_numeracion': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'class': 'form-control'
             }),
@@ -1072,11 +1081,11 @@ class ActaVisitaTecnicaForm(forms.ModelForm):
             'condiciones_aprobacion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             
             # Firmas
-            'firma_visitador': forms.FileInput(attrs={
+            'firma_visitador': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'class': 'form-control'
             }),
-            'firma_madre': forms.FileInput(attrs={
+            'firma_madre': forms.ClearableFileInput(attrs={
                 'accept': 'image/*',
                 'class': 'form-control'
             }),
@@ -1308,7 +1317,7 @@ class ConvivienteForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Ej: Esposo(a), Hijo(a), Padre/Madre, etc.'
             }),
-            'antecedentes_pdf': forms.FileInput(attrs={
+            'antecedentes_pdf': forms.ClearableFileInput(attrs={
                 'accept': 'application/pdf',
                 'class': 'form-control'
             }),
@@ -1418,7 +1427,7 @@ class HogarFormulario2Form(forms.ModelForm):
                 'class': 'form-control'
             }),
             'tipo_tenencia': forms.Select(attrs={'class': 'form-control'}),
-            'documento_tenencia_pdf': forms.FileInput(attrs={
+            'documento_tenencia_pdf': forms.ClearableFileInput(attrs={
                 'accept': 'application/pdf',
                 'class': 'form-control'
             }),

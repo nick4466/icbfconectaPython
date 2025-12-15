@@ -177,6 +177,8 @@ urlpatterns = [
      # --- URLs AJAX para validaciones en tiempo real ---
      path("ajax/validar-nombre-hogar/", views.validar_nombre_hogar, name="validar_nombre_hogar"),  # Validar nombre hogar duplicado
      path("ajax/validar-documento-madre/", views.validar_documento_madre, name="validar_documento_madre"),  # Validar documento duplicado
+     path("ajax/validar-documento-nino/", views.validar_documento_nino, name="validar_documento_nino"),  # Validar documento niño duplicado
+     path("ajax/validar-correo-padre/", views.validar_correo_padre, name="validar_correo_padre"),  # Validar correo padre duplicado
 
      # --- URL AJAX para programar/reprogramar visitas ---
      path("ajax/programar-visita/<int:hogar_id>/", views.programar_visita_ajax, name="programar_visita_ajax"),

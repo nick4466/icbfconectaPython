@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.db import transaction, models
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Q, Count
-from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional, SolicitudMatriculacion, Discapacidad, VisitaTecnica, ActaVisitaTecnica, SolicitudRetiroMatricula, BarrioBogota
+from .models import Usuario, Rol, Padre, Nino, HogarComunitario, Regional, SolicitudMatriculacion, Discapacidad, VisitaTecnica, ActaVisitaTecnica, SolicitudRetiroMatricula, BarrioBogota, Municipio
 from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
@@ -442,12 +442,79 @@ def matricular_nino(request):
                         nino.registro_civil_img = request.FILES['nino-registro_civil_img']
                     nino.save()
                     
+                    # ✉️ ENVIAR EMAIL AL PADRE CON CREDENCIALES
+                    try:
+                        asunto = f'¡Bienvenido a ICBF Conecta! Tu hijo {nino.nombres} ha sido matriculado'
+                        
+                        mensaje_html = f'''
+                        <html>
+                            <body style="font-family: Arial, sans-serif; color: #333;">
+                                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                                    <h2 style="color: #7a3eb1;">¡Bienvenido a ICBF Conecta!</h2>
+                                    
+                                    <p>Estimado(a) <strong>{usuario_padre.nombres} {usuario_padre.apellidos}</strong>,</p>
+                                    
+                                    <p>Nos complace informarle que su hijo(a) <strong>{nino.nombres} {nino.apellidos}</strong> 
+                                    ha sido exitosamente matriculado en el hogar comunitario <strong>{hogar_madre.nombre_hogar}</strong>.</p>
+                                    
+                                    <h3 style="color: #7a3eb1;">Acceso al Sistema</h3>
+                                    <p>Ya puede ingresar a nuestra plataforma con las siguientes credenciales:</p>
+                                    
+                                    <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #7a3eb1; margin: 15px 0;">
+                                        <p><strong>Usuario (Documento):</strong> {usuario_padre.documento}</p>
+                                        <p><strong>Contraseña:</strong> {usuario_padre.documento}</p>
+                                    </div>
+                                    
+                                    <p><strong>Nota importante:</strong> Por seguridad, le recomendamos cambiar su contraseña al primer ingreso.</p>
+                                    
+                                    <h3 style="color: #7a3eb1;">¿Qué puede hacer en el sistema?</h3>
+                                    <ul>
+                                        <li>Ver el progreso y desarrollo de su hijo(a)</li>
+                                        <li>Consultar el historial de asistencia</li>
+                                        <li>Comunicarse con la madre comunitaria</li>
+                                        <li>Acceder a reportes y documentación</li>
+                                    </ul>
+                                    
+                                    <p>Si tiene alguna pregunta o necesita asistencia, no dude en contactar al hogar comunitario.</p>
+                                    
+                                    <p style="margin-top: 30px; color: #666; font-size: 12px;">
+                                        Este es un mensaje automático. Por favor, no responda a este correo.
+                                    </p>
+                                </div>
+                            </body>
+                        </html>
+                        '''
+                        
+                        email = EmailMessage(
+                            subject=asunto,
+                            body=mensaje_html,
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            to=[usuario_padre.correo]
+                        )
+                        email.content_subtype = 'html'
+                        email.send(fail_silently=True)
+                        
+                        # Registrar en EmailLog si existe el modelo
+                        try:
+                            from correos.models import EmailLog
+                            EmailLog.objects.create(
+                                destinatario=usuario_padre.correo,
+                                asunto=asunto,
+                                contenido=mensaje_html,
+                                tipo='matriculacion_nino',
+                                estado='enviado'
+                            )
+                        except:
+                            pass
+                    except Exception as e:
+                        print(f"Error enviando email a padre: {e}")
+                    
                     # Guardar el nombre del niño en la sesión para mostrarlo en el SweetAlert
                     request.session['matricula_exitosa'] = {
                         'nombre': f'{nino.nombres} {nino.apellidos}',
-                        'mensaje': f'El niño {nino.nombres} {nino.apellidos} ha sido matriculado exitosamente en el hogar {hogar_madre.nombre_hogar}.'
+                        'mensaje': f'El niño {nino.nombres} {nino.apellidos} ha sido matriculado exitosamente en el hogar {hogar_madre.nombre_hogar}. Se ha enviado un email con las credenciales de acceso al padre.'
                     }
-                    messages.success(request, f'Niño {nino.nombres} matriculado correctamente.')
+                    messages.success(request, f'Niño {nino.nombres} matriculado correctamente. Email enviado al padre.')
                     return redirect('listar_ninos')
             except Exception as e:
                 messages.error(request, f"Ocurrió un error inesperado: {e}")
@@ -457,9 +524,8 @@ def matricular_nino(request):
         padre_form = PadreForm(prefix='padre')
         nino_form = NinoForm(prefix='nino')
 
-    # TODO: CAMBIAR TEMPLATE - Para usar el nuevo template mejorado, cambia 'madre/nino_form.html' 
-    # por 'madre/nino_form_nuevo.html' (que tiene mejor organización de campos)
-    return render(request, 'madre/nino_form_nuevo.html', {
+    # Usar el template completo con todos los campos
+    return render(request, 'madre/nino_form.html', {
         'hogar_madre': hogar_madre,
         'nino_form': nino_form,
         'padre_form': padre_form,
@@ -2252,19 +2318,55 @@ def editar_nino(request, id):
 
     else:
         # Se instancian los formularios con los datos existentes para el método GET.
-        nino_form = NinoForm(instance=nino, prefix='nino')
+        # 💡 Pre-cargar datos iniciales del niño
+        initial_data_nino = {}
+        if nino.otro_pais:
+            initial_data_nino['otro_pais'] = nino.otro_pais
+        
+        nino_form = NinoForm(instance=nino, prefix='nino', initial=initial_data_nino)
 
         # 💡 CORRECCIÓN: Pre-llenar el formulario del padre con los datos del usuario y del perfil.
         # Los datos del modelo Usuario se cargan con 'instance'.
-        # Los datos del modelo Padre (como 'ocupacion') se cargan con 'initial'.
-        initial_data_padre = {
-            'documento': usuario_padre.documento if usuario_padre else ''
-        }
+        # Los datos del modelo Padre (como 'ocupacion', 'estrato', etc.) se cargan con 'initial'.
+        initial_data_padre = {}
+        
+        if usuario_padre:
+            # Cargar campos de Usuario (aunque también vengan de instance, inicial los asegura)
+            initial_data_padre['documento'] = usuario_padre.documento
+            initial_data_padre['tipo_documento'] = usuario_padre.tipo_documento
+            initial_data_padre['nombres'] = usuario_padre.nombres
+            initial_data_padre['apellidos'] = usuario_padre.apellidos
+            initial_data_padre['correo'] = usuario_padre.correo
+            initial_data_padre['telefono'] = usuario_padre.telefono
+            
+            # Cargar ubicación geográfica
+            if hasattr(usuario_padre, 'departamento_residencia') and usuario_padre.departamento_residencia:
+                initial_data_padre['departamento_residencia'] = usuario_padre.departamento_residencia.id
+            if hasattr(usuario_padre, 'ciudad_residencia') and usuario_padre.ciudad_residencia:
+                initial_data_padre['ciudad_residencia'] = usuario_padre.ciudad_residencia.id
+            if hasattr(usuario_padre, 'localidad_bogota') and usuario_padre.localidad_bogota:
+                initial_data_padre['localidad_bogota'] = usuario_padre.localidad_bogota.id
+            if hasattr(usuario_padre, 'direccion'):
+                initial_data_padre['direccion'] = usuario_padre.direccion
+            if hasattr(usuario_padre, 'barrio'):
+                initial_data_padre['barrio'] = usuario_padre.barrio
+        
         if perfil_padre:
-            initial_data_padre['ocupacion'] = perfil_padre.ocupacion
-            initial_data_padre['otra_ocupacion'] = perfil_padre.otra_ocupacion
+            # Cargar campos de Padre (perfil específico del padre)
+            initial_data_padre['ocupacion'] = perfil_padre.ocupacion if perfil_padre.ocupacion else ''
+            initial_data_padre['otra_ocupacion'] = perfil_padre.otra_ocupacion if perfil_padre.otra_ocupacion else ''
+            initial_data_padre['estrato'] = perfil_padre.estrato if perfil_padre.estrato else ''
+            initial_data_padre['telefono_contacto_emergencia'] = perfil_padre.telefono_contacto_emergencia if perfil_padre.telefono_contacto_emergencia else ''
+            initial_data_padre['nombre_contacto_emergencia'] = perfil_padre.nombre_contacto_emergencia if perfil_padre.nombre_contacto_emergencia else ''
+            initial_data_padre['situacion_economica_hogar'] = perfil_padre.situacion_economica_hogar if perfil_padre.situacion_economica_hogar else ''
         
         padre_form = PadreForm(instance=usuario_padre, prefix='padre', initial=initial_data_padre)
+        
+        # 🔧 ARREGLO: Asegurar que las ciudades se carguen según el departamento guardado
+        if usuario_padre and usuario_padre.departamento_residencia:
+            padre_form.fields['ciudad_residencia'].queryset = Municipio.objects.filter(
+                departamento=usuario_padre.departamento_residencia
+            ).order_by('nombre')
 
     # Obtener el hogar de la madre para el template
     try:
@@ -2273,7 +2375,7 @@ def editar_nino(request, id):
     except (MadreComunitaria.DoesNotExist, HogarComunitario.DoesNotExist):
         hogar_madre = nino.hogar  # Usar el hogar del niño como fallback
 
-    return render(request, 'madre/nino_form_nuevo.html', {
+    return render(request, 'madre/nino_form.html', {
         'nino_form': nino_form,
         'padre_form': padre_form,
         'nino': nino, # Se pasa el objeto nino para acceder a datos no editables en la plantilla
@@ -8027,5 +8129,68 @@ def api_marcar_todas_leidas(request):
     
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+# ========== VALIDACIONES AJAX PARA MATRICULACIÓN ==========
+
+@require_http_methods(["GET"])
+def validar_documento_nino(request):
+    """
+    Valida que el documento del niño no esté siendo usado en el sistema.
+    GET: /ajax/validar-documento-nino/?documento=X
+    Returns: JSON con {'valido': bool, 'mensaje': str}
+    """
+    documento = request.GET.get('documento', '').strip()
+    
+    if not documento:
+        return JsonResponse({'valido': False, 'mensaje': 'El documento no puede estar vacío'})
+    
+    # Buscar si existe un niño con ese documento
+    existe = Nino.objects.filter(documento=documento).exists()
+    
+    if existe:
+        return JsonResponse({
+            'valido': False,
+            'mensaje': '⚠️ Este documento ya está siendo usado por otro niño en el sistema.'
+        })
+    
+    return JsonResponse({
+        'valido': True,
+        'mensaje': '✓ Documento disponible'
+    })
+
+
+@require_http_methods(["GET"])
+def validar_correo_padre(request):
+    """
+    Valida que el correo del padre no esté siendo usado en el sistema.
+    GET: /ajax/validar-correo-padre/?correo=X
+    Returns: JSON con {'valido': bool, 'mensaje': str}
+    """
+    correo = request.GET.get('correo', '').strip()
+    
+    if not correo:
+        return JsonResponse({'valido': False, 'mensaje': 'El correo no puede estar vacío'})
+    
+    # Validar formato de correo
+    from django.core.validators import validate_email
+    try:
+        validate_email(correo)
+    except:
+        return JsonResponse({'valido': False, 'mensaje': '⚠️ El correo no tiene un formato válido'})
+    
+    # Buscar si existe un usuario con ese correo
+    existe = Usuario.objects.filter(correo=correo).exists()
+    
+    if existe:
+        return JsonResponse({
+            'valido': False,
+            'mensaje': '⚠️ Este correo ya está registrado en el sistema.'
+        })
+    
+    return JsonResponse({
+        'valido': True,
+        'mensaje': '✓ Correo disponible'
+    })
 
 
