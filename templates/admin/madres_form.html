@@ -9,6 +9,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="{% static 'admin/admin_responsive.css' %}" />
   <style>
     :root {
       --primary: #1e3a8a;
@@ -635,6 +636,9 @@
     <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
+        <button class="hamburger-toggle" aria-label="Abrir menú">
+          <i class="fas fa-bars"></i>
+        </button>
         <h1>{% if modo_edicion %}Editar{% else %}Crear{% endif %} Agente Educativo</h1>
       </div>
       <div class="topbar-right">
@@ -3501,5 +3505,8 @@
       // console.log('Usuario saliendo de la página');
     });
   </script>
+
+  <!-- Script para sidebar responsivo -->
+  <script src="{% static 'admin/admin_responsive.js' %}"></script>
 </body>
 </html>

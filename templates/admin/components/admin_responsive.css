@@ -1,0 +1,236 @@
+/* ========== ESTILOS RESPONSIVOS PARA ADMIN ========== */
+
+/* Estilos base para pantallas normales (desktop) */
+@media (min-width: 769px) {
+  .sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 260px !important;
+    height: 100vh !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .main-content,
+  .content-wrapper {
+    margin-left: 260px !important;
+  }
+
+  .hamburger-toggle {
+    display: none !important;
+  }
+
+  .sidebar-overlay {
+    display: none !important;
+  }
+}
+
+/* Estilos para tablets y pantallas pequeñas */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    width: 260px !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s ease !important;
+    z-index: 2000 !important;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .sidebar.active {
+    transform: translateX(0) !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .content-wrapper {
+    margin-left: 0 !important;
+  }
+
+  .hamburger-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: none;
+    color: var(--dark, #1f2937);
+    cursor: pointer;
+    font-size: 20px;
+    z-index: 1500;
+    transition: all 0.3s ease;
+  }
+
+  .hamburger-toggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+  }
+
+  .hamburger-toggle i {
+    width: auto;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 1500;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+  }
+
+  .topbar {
+    flex-direction: row;
+    gap: 8px;
+    padding: 12px 16px !important;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .topbar-left h1 {
+    font-size: 18px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-right {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Ajustar contenedor de formularios */
+  .step-form {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .step-form > h2 {
+    font-size: 18px !important;
+    padding: 20px 16px !important;
+  }
+
+  .step-form > div:not(h2):not(.form-actions) {
+    padding: 16px !important;
+  }
+
+  .two-column-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+    padding: 12px !important;
+  }
+
+  .form-actions button,
+  .form-actions a {
+    width: 100% !important;
+  }
+
+  /* Tablas responsivas */
+  table {
+    font-size: 13px;
+  }
+
+  table th,
+  table td {
+    padding: 8px 4px !important;
+  }
+
+  /* Ocultar acciones menos importantes en móvil */
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-buttons a,
+  .action-buttons button {
+    padding: 6px 10px !important;
+    font-size: 12px;
+  }
+}
+
+/* Ultra pantallas pequeñas (móviles) */
+@media (max-width: 480px) {
+  .sidebar-logo-text h2 {
+    display: none;
+  }
+
+  .sidebar-logo {
+    justify-content: center;
+  }
+
+  .topbar {
+    padding: 8px 12px !important;
+  }
+
+  .topbar-left h1 {
+    font-size: 16px !important;
+  }
+
+  .content-wrapper {
+    padding: 8px !important;
+  }
+
+  .step-form > h2 {
+    font-size: 16px !important;
+    padding: 16px 12px !important;
+  }
+
+  .step-form > div:not(h2):not(.form-actions) {
+    padding: 12px !important;
+  }
+
+  /* Cards más compactas */
+  .column-panel {
+    padding: 15px !important;
+    margin-bottom: 12px;
+  }
+
+  /* Botones full width */
+  button,
+  a.btn,
+  input[type="submit"] {
+    width: 100% !important;
+  }
+
+  /* Reducir espacios */
+  .form-field,
+  .form-group {
+    margin-bottom: 12px !important;
+  }
+
+  /* Iconos más grandes para interacción táctil */
+  .nav-link i {
+    font-size: 20px !important;
+  }
+}
