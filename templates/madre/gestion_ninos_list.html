@@ -180,18 +180,79 @@
         RESPONSIVIDAD
     ------------------------------------------ */
 
-    /* Tablets */
-    @media (max-width: 900px) {
+    @media (max-width: 1024px) {
       .tabla-container {
-        padding: 25px;
+        padding: 24px;
+        max-width: 95%;
+        margin: 20px auto;
       }
 
       h1 {
         font-size: 28px;
+        margin-bottom: 24px;
       }
 
       .item-nino {
-        padding: 20px 22px;
+        padding: 18px 20px;
+        gap: 16px;
+      }
+
+      .avatar-lista {
+        width: 65px;
+        height: 65px;
+        font-size: 28px;
+      }
+
+      .detalles-nino h3 {
+        font-size: 16px;
+      }
+
+      .documento {
+        font-size: 13px;
+      }
+
+      .acciones-lista {
+        gap: 8px;
+      }
+
+      .btn-accion {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .tabla-container {
+        padding: 16px;
+        max-width: 95%;
+        margin: 12px auto;
+        border-radius: 10px;
+      }
+
+      h1 {
+        font-size: 22px;
+        margin-bottom: 16px;
+      }
+
+      .lista-ninos {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .item-nino {
+        flex-direction: column;
+        text-align: center;
+        padding: 14px;
+        gap: 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+
+      .info-nino {
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
       }
 
       .avatar-lista {
@@ -199,53 +260,99 @@
         height: 60px;
         font-size: 26px;
       }
-    }
 
-    /* Móviles grandes */
-    @media (max-width: 600px) {
-      .item-nino {
-        flex-direction: column;
+      .detalles-nino {
         text-align: center;
-        gap: 18px;
-      }
-
-      .info-nino {
-        flex-direction: column;
-      }
-
-      .avatar-lista {
-        width: 60px;
-        height: 60px;
       }
 
       .detalles-nino h3 {
-        font-size: 18px;
+        font-size: 14px;
+        margin-bottom: 4px;
       }
 
       .documento {
-        font-size: 14px;
+        font-size: 12px;
+      }
+
+      .acciones-lista {
+        width: 100%;
+        flex-direction: column;
+        gap: 6px;
       }
 
       .btn-accion {
         width: 100%;
-        padding: 12px;
+        padding: 10px;
+        font-size: 12px;
+        border-radius: 6px;
+        justify-content: center;
+      }
+
+      .btn-accion i {
+        margin-right: 6px;
       }
     }
 
-    /* Móviles muy pequeños */
-    @media (max-width: 400px) {
+    @media (max-width: 480px) {
+      .tabla-container {
+        padding: 12px;
+        max-width: 100%;
+        margin: 8px 0;
+        border-radius: 8px;
+      }
+
+      h1 {
+        font-size: 18px;
+        margin-bottom: 12px;
+      }
+
+      .lista-ninos {
+        gap: 8px;
+      }
+
+      .item-nino {
+        padding: 12px;
+        gap: 10px;
+        margin-bottom: 6px;
+        border-radius: 6px;
+      }
+
+      .info-nino {
+        gap: 10px;
+      }
+
       .avatar-lista {
         width: 55px;
         height: 55px;
         font-size: 24px;
       }
 
-      h1 {
-        font-size: 24px;
+      .detalles-nino {
+        text-align: center;
       }
 
-      .tabla-container {
-        padding: 18px;
+      .detalles-nino h3 {
+        font-size: 13px;
+        margin-bottom: 2px;
+      }
+
+      .documento {
+        font-size: 11px;
+      }
+
+      .acciones-lista {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .btn-accion {
+        padding: 8px;
+        font-size: 11px;
+        border-radius: 4px;
+      }
+
+      .btn-accion i {
+        margin-right: 4px;
       }
     }
 

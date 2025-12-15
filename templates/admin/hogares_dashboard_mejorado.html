@@ -663,9 +663,29 @@
     }
 
     /* ========== RESPONSIVE ========== */
+    @media (max-width: 1366px) {
+      .hogares-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      }
+
+      .ninos-carpetas {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      }
+    }
+
     @media (max-width: 1024px) {
       .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
         transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 2000;
+      }
+
+      .sidebar.active {
+        transform: translateX(0);
       }
       
       .main-content {
@@ -677,17 +697,345 @@
       }
 
       .filter-group {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .breadcrumb {
+        width: 100%;
+      }
+
+      .content-wrapper {
+        padding: 20px;
+      }
+
+      .hogares-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+        padding: 20px;
+      }
+
+      .localidad-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .localidad-stats {
+        width: 100%;
+        gap: 16px;
+      }
+
+      .info-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
       }
     }
 
     @media (max-width: 768px) {
-      .hogares-grid {
-        grid-template-columns: 1fr;
+      .sidebar {
+        width: 100%;
+      }
+
+      .topbar {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .topbar h1 {
+        font-size: 18px;
       }
 
       .content-wrapper {
+        padding: 12px;
+      }
+
+      .hogares-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
         padding: 16px;
+      }
+
+      .hogar-card {
+        padding: 16px;
+      }
+
+      .hogar-header {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .hogar-stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .hogar-actions {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .btn-small {
+        width: 100%;
+      }
+
+      .filter-group {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .filters-bar {
+        margin-bottom: 16px;
+      }
+
+      .filters-title {
+        font-size: 14px;
+        padding: 12px;
+      }
+
+      .form-group label {
+        font-size: 12px;
+      }
+
+      .form-control {
+        font-size: 14px;
+        padding: 8px;
+      }
+
+      .ninos-carpetas {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+      }
+
+      .nino-carpeta {
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      .nino-avatar {
+        width: 70px;
+        height: 70px;
+        margin-bottom: 8px;
+      }
+
+      .nino-nombre {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .nino-edad {
+        font-size: 11px;
+      }
+
+      .modal-content {
+        width: 95%;
+        max-height: 95vh;
+        margin: 10px;
+        border-radius: 12px;
+      }
+
+      .modal-header {
+        padding: 16px;
+      }
+
+      .modal-title {
+        font-size: 18px;
+      }
+
+      .modal-body {
+        padding: 16px;
+      }
+
+      .info-card {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      .info-card h3 {
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+
+      .info-item strong {
+        font-size: 11px;
+      }
+
+      .info-item span {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar {
+        padding: 8px 12px;
+      }
+
+      .topbar h1 {
+        font-size: 16px;
+      }
+
+      .content-wrapper {
+        padding: 8px;
+      }
+
+      .hogares-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 8px;
+      }
+
+      .hogar-card {
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      .hogar-name {
+        font-size: 16px;
+      }
+
+      .hogar-responsable {
+        font-size: 12px;
+      }
+
+      .badge {
+        font-size: 11px;
+        padding: 3px 8px;
+      }
+
+      .info-row {
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+
+      .stat-item {
+        padding: 8px;
+      }
+
+      .stat-number {
+        font-size: 20px;
+      }
+
+      .stat-label {
+        font-size: 11px;
+      }
+
+      .filters-bar {
+        margin-bottom: 12px;
+      }
+
+      .filters-title {
+        font-size: 13px;
+        padding: 8px;
+      }
+
+      .filter-group {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .form-control {
+        font-size: 13px;
+        padding: 6px;
+      }
+
+      .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+
+      .btn-small {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+
+      .ninos-carpetas {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .nino-carpeta {
+        padding: 8px;
+      }
+
+      .nino-avatar {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 6px;
+      }
+
+      .nino-nombre {
+        font-size: 11px;
+      }
+
+      .nino-edad {
+        font-size: 10px;
+      }
+
+      .modal-content {
+        width: 98%;
+        max-height: 98vh;
+      }
+
+      .modal-header {
+        padding: 12px;
+      }
+
+      .modal-title {
+        font-size: 16px;
+      }
+
+      .modal-close {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+
+      .modal-body {
+        padding: 12px;
+      }
+
+      .hogar-detalle-grid {
+        gap: 12px;
+      }
+
+      .info-card {
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .info-card h3 {
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .info-item strong {
+        font-size: 10px;
+      }
+
+      .info-item span {
+        font-size: 13px;
+      }
+
+      .localidad-title {
+        font-size: 16px;
+      }
+
+      .localidad-stats {
+        flex-direction: column;
+        gap: 8px;
+        font-size: 12px;
       }
     }
   </style>

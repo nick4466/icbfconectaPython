@@ -218,6 +218,255 @@
       text-align: center;
       font-weight: bold;
     }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 1024px) {
+      .main-title {
+        width: 85%;
+        padding: 16px;
+        font-size: 26px;
+      }
+
+      .contenedor {
+        max-width: 100%;
+        margin: 20px auto;
+        padding: 24px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      h4 {
+        font-size: 16px;
+        margin-top: 16px;
+      }
+
+      .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+      }
+
+      label {
+        margin-bottom: 6px;
+      }
+
+      input,
+      select,
+      textarea {
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      button[type="submit"] {
+        padding: 12px 24px;
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-title {
+        width: 95%;
+        padding: 12px;
+        font-size: 20px;
+        margin: 16px auto;
+      }
+
+      .contenedor {
+        margin: 16px;
+        padding: 16px;
+        border-radius: 10px;
+      }
+
+      h2 {
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      h4 {
+        font-size: 14px;
+        margin-top: 12px;
+        margin-bottom: 6px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .form-group {
+        margin-bottom: 12px;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+
+      input[type="text"],
+      input[type="date"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        border-radius: 6px;
+      }
+
+      .rating-container {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .rating-group {
+        width: 100%;
+      }
+
+      .stars {
+        justify-content: flex-start;
+        gap: 8px;
+      }
+
+      .stars i {
+        font-size: 28px;
+      }
+
+      .rating-labels {
+        flex-direction: column;
+        gap: 4px;
+        padding: 0;
+      }
+
+      .rating-labels span {
+        text-align: left;
+        font-size: 12px;
+        width: auto;
+      }
+
+      button[type="submit"] {
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+        margin-top: 16px;
+      }
+
+      .error-container {
+        padding: 12px;
+        font-size: 13px;
+        margin-bottom: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .main-title {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        margin: 12px 0;
+        border-radius: 6px;
+      }
+
+      .contenedor {
+        margin: 8px;
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      h2 {
+        font-size: 16px;
+        margin-bottom: 8px;
+      }
+
+      h4 {
+        font-size: 13px;
+        margin-top: 10px;
+        margin-bottom: 6px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .form-group {
+        margin-bottom: 10px;
+      }
+
+      label {
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      input[type="text"],
+      input[type="date"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        font-size: 13px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      textarea {
+        min-height: 80px;
+      }
+
+      .rating-container {
+        gap: 12px;
+      }
+
+      .rating-group {
+        width: 100%;
+      }
+
+      .rating-group label {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .stars {
+        gap: 6px;
+      }
+
+      .stars i {
+        font-size: 24px;
+      }
+
+      .rating-labels {
+        padding: 0;
+        margin-top: 4px;
+      }
+
+      .rating-labels span {
+        font-size: 11px;
+      }
+
+      button[type="submit"] {
+        width: 100%;
+        padding: 10px;
+        font-size: 13px;
+        margin-top: 12px;
+        border-radius: 4px;
+      }
+
+      .error-container {
+        padding: 10px;
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+
+      .error-container ul {
+        margin: 8px 0 0 0;
+        padding-left: 16px;
+      }
+
+      .error-container li {
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 <body>

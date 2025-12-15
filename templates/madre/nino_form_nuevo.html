@@ -268,13 +268,273 @@
       background-color: #f5f5f5 !important;
     }
     
+    @media (max-width: 1024px) {
+      .container {
+        max-width: 95%;
+        padding: 20px;
+        margin: 20px auto;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin-bottom: 12px;
+      }
+
+      .subtitle {
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+      }
+
+      label {
+        font-size: 13px;
+      }
+
+      input,
+      select {
+        padding: 8px;
+        font-size: 14px;
+      }
+
+      .discapacidad-checkboxes {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+    }
+
     @media (max-width: 768px) {
-      .container { padding: 20px; }
-      .form-grid { grid-template-columns: 1fr; }
-      .discapacidad-checkboxes { grid-template-columns: 1fr; }
-      h1 { font-size: 24px; }
-      header { flex-direction: column; align-items: flex-start; }
-      nav ul { flex-direction: column; gap: 10px; }
+      .container {
+        max-width: 95%;
+        padding: 16px;
+        margin: 16px auto;
+        border-radius: 10px;
+      }
+
+      h1 {
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        margin-bottom: 16px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .form-section {
+        margin-bottom: 20px;
+      }
+
+      .form-section h2 {
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+
+      label {
+        font-size: 12px;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      input[type="text"],
+      input[type="date"],
+      input[type="email"],
+      input[type="tel"],
+      select {
+        width: 100%;
+        padding: 8px;
+        font-size: 13px;
+        border-radius: 4px;
+      }
+
+      .discapacidad-checkboxes {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .checkbox-group {
+        margin-bottom: 8px;
+      }
+
+      .checkbox-group label {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0;
+        gap: 6px;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: auto;
+      }
+
+      .form-actions {
+        flex-direction: column-reverse;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      button {
+        width: 100%;
+        padding: 10px;
+        font-size: 13px;
+        border-radius: 4px;
+      }
+
+      .alert {
+        padding: 12px;
+        margin-bottom: 16px;
+        font-size: 12px;
+      }
+
+      header {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      nav ul {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      nav a {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        max-width: 100%;
+        padding: 12px;
+        margin: 8px;
+        border-radius: 8px;
+      }
+
+      h1 {
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+
+      .subtitle {
+        font-size: 11px;
+        margin-bottom: 12px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .form-section {
+        margin-bottom: 16px;
+      }
+
+      .form-section h2 {
+        font-size: 14px;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+      }
+
+      label {
+        font-size: 11px;
+        margin-bottom: 3px;
+      }
+
+      input[type="text"],
+      input[type="date"],
+      input[type="email"],
+      input[type="tel"],
+      select {
+        width: 100%;
+        padding: 6px;
+        font-size: 12px;
+        border-radius: 4px;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #7a3eb1;
+      }
+
+      .discapacidad-checkboxes {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .checkbox-group {
+        margin-bottom: 6px;
+      }
+
+      .checkbox-group label {
+        font-size: 11px;
+        gap: 4px;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+      }
+
+      .form-actions {
+        flex-direction: column-reverse;
+        gap: 6px;
+        margin-top: 12px;
+      }
+
+      button {
+        width: 100%;
+        padding: 10px;
+        font-size: 12px;
+        border-radius: 4px;
+        border: none;
+      }
+
+      button:hover {
+        transform: scale(0.98);
+      }
+
+      .alert {
+        padding: 8px;
+        margin-bottom: 12px;
+        font-size: 11px;
+        border-left-width: 4px;
+      }
+
+      header {
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      nav ul {
+        flex-direction: column;
+        gap: 6px;
+        padding: 0;
+      }
+
+      nav li {
+        margin: 0;
+      }
+
+      nav a {
+        padding: 6px 8px;
+        font-size: 11px;
+        border-radius: 3px;
+      }
     }
   </style>
 </head>

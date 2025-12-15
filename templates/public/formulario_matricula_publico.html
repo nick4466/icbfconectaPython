@@ -142,6 +142,16 @@
       opacity: 0.7;
     }
     
+    /* Selects deshabilitados durante corrección (que aún se envían) */
+    select.disabled-select,
+    input[type="radio"]:disabled,
+    input[type="checkbox"]:disabled {
+      background-color: #f8f9fa;
+      cursor: not-allowed;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
     /* Campos editables en modo corrección */
     input.editable,
     select.editable,
@@ -162,6 +172,35 @@
       margin-top: 5px;
       font-weight: 500;
       display: none;
+    }
+
+    /* Validación en tiempo real de correo electrónico */
+    #id_correo_padre {
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    #id_correo_padre[style*="border-color: #fca5a5"] {
+      background-color: #fef2f2;
+    }
+
+    #id_correo_padre[style*="border-color: #86efac"] {
+      background-color: #f0fdf4;
+    }
+
+    #email_validation_message {
+      font-weight: 500;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
     input.editable:focus,
@@ -530,8 +569,8 @@
                 Nombres <span class="required">*</span>
                 {% if 'nombres_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="text" name="nombres_nino" value="{{ solicitud.nombres_nino }}" 
-                     {% if en_correccion and 'nombres_nino' not in campos_corregir %}disabled{% endif %}
+              <input type="text" name="nombres_nino" value="{{ solicitud.nombres_nino|default:'' }}" 
+                     {% if en_correccion and 'nombres_nino' not in campos_corregir %}readonly{% endif %}
                      {% if 'nombres_nino' in campos_corregir %}class="editable"{% endif %} required>
             </div>
 
@@ -540,18 +579,36 @@
                 Apellidos <span class="required">*</span>
                 {% if 'apellidos_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="text" name="apellidos_nino" value="{{ solicitud.apellidos_nino }}" 
-                     {% if en_correccion and 'apellidos_nino' not in campos_corregir %}disabled{% endif %}
+              <input type="text" name="apellidos_nino" value="{{ solicitud.apellidos_nino|default:'' }}" 
+                     {% if en_correccion and 'apellidos_nino' not in campos_corregir %}readonly{% endif %}
                      {% if 'apellidos_nino' in campos_corregir %}class="editable"{% endif %} required>
             </div>
 
             <div class="form-group">
               <label>
-                Documento <span class="required">*</span>
+                Tipo de Documento <span class="required">*</span>
+                {% if 'tipo_documento_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
+              </label>
+              <select name="tipo_documento_nino" 
+                      {% if en_correccion and 'tipo_documento_nino' not in campos_corregir %}class="disabled-select"{% endif %}
+                      {% if 'tipo_documento_nino' in campos_corregir %}class="editable"{% endif %} required>
+                <option value="">Seleccione...</option>
+                <option value="RC" {% if solicitud.tipo_documento_nino == 'RC' %}selected{% endif %}>Registro Civil</option>
+                <option value="TI" {% if solicitud.tipo_documento_nino == 'TI' %}selected{% endif %}>Tarjeta de Identidad</option>
+                <option value="CV" {% if solicitud.tipo_documento_nino == 'CV' %}selected{% endif %}>Carné de Vacunación</option>
+                <option value="AN" {% if solicitud.tipo_documento_nino == 'AN' %}selected{% endif %}>Acta de Nacimiento</option>
+                <option value="CE" {% if solicitud.tipo_documento_nino == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
+                <option value="PA" {% if solicitud.tipo_documento_nino == 'PA' %}selected{% endif %}>Pasaporte</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                Número de Documento <span class="required">*</span>
                 {% if 'documento_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="text" name="documento_nino" value="{{ solicitud.documento_nino }}" 
-                     {% if en_correccion and 'documento_nino' not in campos_corregir %}disabled{% endif %}
+              <input type="text" name="documento_nino" value="{{ solicitud.documento_nino|default:'' }}" 
+                     {% if en_correccion and 'documento_nino' not in campos_corregir %}readonly{% endif %}
                      {% if 'documento_nino' in campos_corregir %}class="editable"{% endif %} required>
             </div>
 
@@ -562,7 +619,7 @@
               </label>
               <input type="date" name="fecha_nacimiento_nino" id="fecha_nacimiento_nino"
                      value="{% if solicitud.fecha_nacimiento_nino %}{{ solicitud.fecha_nacimiento_nino|date:'Y-m-d' }}{% endif %}" 
-                     {% if en_correccion and 'fecha_nacimiento_nino' not in campos_corregir %}disabled{% endif %}
+                     {% if en_correccion and 'fecha_nacimiento_nino' not in campos_corregir %}readonly{% endif %}
                      {% if 'fecha_nacimiento_nino' in campos_corregir %}class="editable"{% endif %} required>
               <div class="mensaje-error-edad" id="error-edad"></div>
             </div>
@@ -573,7 +630,7 @@
                 {% if 'genero_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <select name="genero_nino" 
-                      {% if en_correccion and 'genero_nino' not in campos_corregir %}disabled{% endif %}
+                      {% if en_correccion and 'genero_nino' not in campos_corregir %}class="disabled-select"{% endif %}
                       {% if 'genero_nino' in campos_corregir %}class="editable"{% endif %} required>
                 <option value="">Seleccione...</option>
                 <option value="M" {% if solicitud.genero_nino == 'M' %}selected{% endif %}>Masculino</option>
@@ -587,7 +644,7 @@
                 {% if 'tipo_sangre_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <select name="tipo_sangre_nino" 
-                      {% if en_correccion and 'tipo_sangre_nino' not in campos_corregir %}disabled{% endif %}
+                      {% if en_correccion and 'tipo_sangre_nino' not in campos_corregir %}class="disabled-select"{% endif %}
                       {% if 'tipo_sangre_nino' in campos_corregir %}class="editable"{% endif %} required>
                 <option value="">Seleccione...</option>
                 <option value="A+" {% if solicitud.tipo_sangre_nino == 'A+' %}selected{% endif %}>A+</option>
@@ -607,7 +664,7 @@
                 {% if 'parentesco' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <select name="parentesco" 
-                      {% if en_correccion and 'parentesco' not in campos_corregir %}disabled{% endif %}
+                      {% if en_correccion and 'parentesco' not in campos_corregir %}class="disabled-select"{% endif %}
                       {% if 'parentesco' in campos_corregir %}class="editable"{% endif %} required>
                 <option value="">Seleccione...</option>
                 <option value="Padre" {% if solicitud.parentesco == 'Padre' %}selected{% endif %}>Padre</option>
@@ -625,7 +682,7 @@
                 {% if 'observaciones_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <textarea name="observaciones_nino" 
-                        {% if en_correccion and 'observaciones_nino' not in campos_corregir %}disabled{% endif %}
+                        {% if en_correccion and 'observaciones_nino' not in campos_corregir %}readonly{% endif %}
                         {% if 'observaciones_nino' in campos_corregir %}class="editable"{% endif %} 
                         placeholder="Alergias, condiciones médicas, medicamentos, etc.">{{ solicitud.observaciones_nino }}</textarea>
             </div>
@@ -640,7 +697,7 @@
                 <label style="display: flex; align-items: center; cursor: pointer;">
                   <input type="radio" name="tiene_discapacidad" value="true" 
                          {% if solicitud.tiene_discapacidad %}checked{% endif %}
-                         {% if en_correccion and 'tiene_discapacidad' not in campos_corregir %}disabled{% endif %}
+                         {% if en_correccion and 'tiene_discapacidad' not in campos_corregir %}disabled onclick="return false;"{% endif %}
                          onchange="toggleDiscapacidades(this.checked)"
                          style="margin-right: 8px;">
                   Sí
@@ -648,7 +705,7 @@
                 <label style="display: flex; align-items: center; cursor: pointer;">
                   <input type="radio" name="tiene_discapacidad" value="false" 
                          {% if not solicitud.tiene_discapacidad %}checked{% endif %}
-                         {% if en_correccion and 'tiene_discapacidad' not in campos_corregir %}disabled{% endif %}
+                         {% if en_correccion and 'tiene_discapacidad' not in campos_corregir %}disabled onclick="return false;"{% endif %}
                          onchange="toggleDiscapacidades(!this.checked)"
                          style="margin-right: 8px;">
                   No
@@ -666,7 +723,7 @@
                 <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; background: #f8f9fa; border-radius: 5px;">
                   <input type="checkbox" name="tipos_discapacidad" value="{{ disc.id }}" 
                          {% if solicitud.tipos_discapacidad and disc.id in solicitud.tipos_discapacidad %}checked{% endif %}
-                         {% if en_correccion and 'tipos_discapacidad' not in campos_corregir %}disabled{% endif %}
+                         {% if en_correccion and 'tipos_discapacidad' not in campos_corregir %}disabled style="cursor: not-allowed;"{% endif %}
                          style="margin-right: 8px;">
                   {{ disc.nombre }}
                 </label>
@@ -677,7 +734,7 @@
                 <label>Otra discapacidad (especificar)</label>
                 <input type="text" name="otra_discapacidad" 
                        value="{{ solicitud.otra_discapacidad|default:'' }}"
-                       {% if en_correccion and 'otra_discapacidad' not in campos_corregir %}disabled{% endif %}
+                       {% if en_correccion and 'otra_discapacidad' not in campos_corregir %}readonly{% endif %}
                        placeholder="Si el niño/a tiene otra discapacidad no listada, descríbala aquí">
               </div>
             </div>
@@ -699,7 +756,7 @@
                 {% if 'tipo_documento_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <select name="tipo_documento_padre" 
-                      {% if en_correccion and 'tipo_documento_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if en_correccion and 'tipo_documento_padre' not in campos_corregir %}class="disabled-select"{% endif %}
                       {% if 'tipo_documento_padre' in campos_corregir %}class="editable"{% endif %} required>
                 <option value="">Seleccione...</option>
                 <option value="CC" {% if solicitud.tipo_documento_padre == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
@@ -714,8 +771,8 @@
                 Número de Documento <span class="required">*</span>
                 {% if 'documento_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="text" name="documento_padre" value="{{ solicitud.documento_padre }}" 
-                     {% if en_correccion and 'documento_padre' not in campos_corregir %}disabled{% endif %}
+              <input type="text" name="documento_padre" value="{{ solicitud.documento_padre|default:'' }}" 
+                     {% if en_correccion and 'documento_padre' not in campos_corregir %}readonly{% endif %}
                      {% if 'documento_padre' in campos_corregir %}class="editable"{% endif %} required>
             </div>
 
@@ -724,8 +781,8 @@
                 Nombres <span class="required">*</span>
                 {% if 'nombres_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="text" name="nombres_padre" value="{{ solicitud.nombres_padre }}" 
-                     {% if en_correccion and 'nombres_padre' not in campos_corregir %}disabled{% endif %}
+              <input type="text" name="nombres_padre" value="{{ solicitud.nombres_padre|default:'' }}" 
+                     {% if en_correccion and 'nombres_padre' not in campos_corregir %}readonly{% endif %}
                      {% if 'nombres_padre' in campos_corregir %}class="editable"{% endif %} required>
             </div>
 
@@ -734,8 +791,8 @@
                 Apellidos <span class="required">*</span>
                 {% if 'apellidos_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="text" name="apellidos_padre" value="{{ solicitud.apellidos_padre }}" 
-                     {% if en_correccion and 'apellidos_padre' not in campos_corregir %}disabled{% endif %}
+              <input type="text" name="apellidos_padre" value="{{ solicitud.apellidos_padre|default:'' }}" 
+                     {% if en_correccion and 'apellidos_padre' not in campos_corregir %}readonly{% endif %}
                      {% if 'apellidos_padre' in campos_corregir %}class="editable"{% endif %} required>
             </div>
 
@@ -744,8 +801,8 @@
                 Teléfono <span class="required">*</span>
                 {% if 'telefono_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="tel" name="telefono_padre" value="{{ solicitud.telefono_padre }}" 
-                     {% if en_correccion and 'telefono_padre' not in campos_corregir %}disabled{% endif %}
+              <input type="tel" name="telefono_padre" value="{{ solicitud.telefono_padre|default:'' }}" 
+                     {% if en_correccion and 'telefono_padre' not in campos_corregir %}readonly{% endif %}
                      {% if 'telefono_padre' in campos_corregir %}class="editable"{% endif %} 
                      placeholder="Ej: 3001234567" required>
             </div>
@@ -755,9 +812,13 @@
                 Correo Electrónico <span class="required">*</span>
                 {% if 'correo_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="email" name="correo_padre" value="{{ solicitud.correo_padre }}" 
-                     {% if en_correccion and 'correo_padre' not in campos_corregir %}disabled{% endif %}
-                     {% if 'correo_padre' in campos_corregir %}class="editable"{% endif %} required>
+              <div style="position: relative;">
+                <input type="email" id="id_correo_padre" name="correo_padre" value="{{ solicitud.correo_padre|default:'' }}" 
+                       {% if en_correccion and 'correo_padre' not in campos_corregir %}readonly{% endif %}
+                       {% if 'correo_padre' in campos_corregir %}class="editable"{% endif %} required>
+                <span id="email_validation_icon" style="position: absolute; right: 12px; top: 38px; font-size: 18px; cursor: default;"></span>
+              </div>
+              <div id="email_validation_message" style="margin-top: 8px; font-size: 13px; display: none;"></div>
             </div>
 
             <!-- 🆕 CAMPOS GEOGRÁFICOS -->
@@ -767,7 +828,7 @@
                 {% if 'departamento_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <select name="departamento_padre" id="id_departamento_padre" 
-                      {% if en_correccion and 'departamento_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if en_correccion and 'departamento_padre' not in campos_corregir %}class="disabled-select"{% endif %}
                       {% if 'departamento_padre' in campos_corregir %}class="editable"{% endif %} 
                       required>
                 <option value="">-- Seleccione un Departamento --</option>
@@ -785,10 +846,15 @@
                 {% if 'ciudad_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <select name="ciudad_padre" id="id_ciudad_padre" 
-                      {% if en_correccion and 'ciudad_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if en_correccion and 'ciudad_padre' not in campos_corregir %}class="disabled-select"{% endif %}
                       {% if 'ciudad_padre' in campos_corregir %}class="editable"{% endif %} 
                       required>
                 <option value="">-- Seleccione una Ciudad --</option>
+                {% for mun in municipios_padre %}
+                <option value="{{ mun.id }}" {% if solicitud.ciudad_padre_id == mun.id %}selected{% endif %}>
+                  {{ mun.nombre }}{% if mun.es_capital %} (Capital){% endif %}
+                </option>
+                {% endfor %}
               </select>
             </div>
 
@@ -798,7 +864,7 @@
                 {% if 'localidad_bogota_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <select name="localidad_bogota_padre" id="id_localidad_bogota_padre" 
-                      {% if en_correccion and 'localidad_bogota_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if en_correccion and 'localidad_bogota_padre' not in campos_corregir %}class="disabled-select"{% endif %}
                       {% if 'localidad_bogota_padre' in campos_corregir %}class="editable"{% endif %}>
                 <option value="">-- Seleccione una Localidad --</option>
               </select>
@@ -810,8 +876,8 @@
                 Dirección Completa <span class="required">*</span>
                 {% if 'direccion_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="text" name="direccion_padre" value="{{ solicitud.direccion_padre }}" 
-                     {% if en_correccion and 'direccion_padre' not in campos_corregir %}disabled{% endif %}
+              <input type="text" name="direccion_padre" value="{{ solicitud.direccion_padre|default:'' }}" 
+                     {% if en_correccion and 'direccion_padre' not in campos_corregir %}readonly{% endif %}
                      {% if 'direccion_padre' in campos_corregir %}class="editable"{% endif %} 
                      placeholder="Ej: Calle 123 #45-67" required>
             </div>
@@ -821,8 +887,8 @@
                 Barrio <span class="required">*</span>
                 {% if 'barrio_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="text" name="barrio_padre" value="{{ solicitud.barrio_padre }}" 
-                     {% if en_correccion and 'barrio_padre' not in campos_corregir %}disabled{% endif %}
+              <input type="text" name="barrio_padre" value="{{ solicitud.barrio_padre|default:'' }}" 
+                     {% if en_correccion and 'barrio_padre' not in campos_corregir %}readonly{% endif %}
                      {% if 'barrio_padre' in campos_corregir %}class="editable"{% endif %} required>
             </div>
 
@@ -831,9 +897,34 @@
                 Ocupación <span class="required">*</span>
                 {% if 'ocupacion_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <input type="text" name="ocupacion_padre" value="{{ solicitud.ocupacion_padre }}" 
-                     {% if en_correccion and 'ocupacion_padre' not in campos_corregir %}disabled{% endif %}
-                     {% if 'ocupacion_padre' in campos_corregir %}class="editable"{% endif %} required>
+              <select name="ocupacion_padre_select" id="id_ocupacion_padre_select"
+                      {% if en_correccion and 'ocupacion_padre' not in campos_corregir %}class="disabled-select"{% endif %}
+                      {% if 'ocupacion_padre' in campos_corregir %}class="editable"{% endif %} required>
+                <option value="">Seleccione una ocupación...</option>
+                <option value="Empleado de empresa privada" {% if solicitud.ocupacion_padre == 'Empleado de empresa privada' %}selected{% endif %}>Empleado de empresa privada</option>
+                <option value="Trabajador independiente" {% if solicitud.ocupacion_padre == 'Trabajador independiente' %}selected{% endif %}>Trabajador independiente</option>
+                <option value="Empleado público" {% if solicitud.ocupacion_padre == 'Empleado público' %}selected{% endif %}>Empleado público</option>
+                <option value="Profesional" {% if solicitud.ocupacion_padre == 'Profesional' %}selected{% endif %}>Profesional</option>
+                <option value="Comerciante" {% if solicitud.ocupacion_padre == 'Comerciante' %}selected{% endif %}>Comerciante</option>
+                <option value="Agricultor/Ganadero" {% if solicitud.ocupacion_padre == 'Agricultor/Ganadero' %}selected{% endif %}>Agricultor/Ganadero</option>
+                <option value="Obrero/Operario" {% if solicitud.ocupacion_padre == 'Obrero/Operario' %}selected{% endif %}>Obrero/Operario</option>
+                <option value="Técnico" {% if solicitud.ocupacion_padre == 'Técnico' %}selected{% endif %}>Técnico</option>
+                <option value="Ama de casa" {% if solicitud.ocupacion_padre == 'Ama de casa' %}selected{% endif %}>Ama de casa</option>
+                <option value="Estudiante" {% if solicitud.ocupacion_padre == 'Estudiante' %}selected{% endif %}>Estudiante</option>
+                <option value="Desempleado" {% if solicitud.ocupacion_padre == 'Desempleado' %}selected{% endif %}>Desempleado</option>
+                <option value="Jubilado" {% if solicitud.ocupacion_padre == 'Jubilado' %}selected{% endif %}>Jubilado</option>
+                <option value="Otros" {% if solicitud.ocupacion_padre and solicitud.ocupacion_padre not in 'Empleado de empresa privada,Trabajador independiente,Empleado público,Profesional,Comerciante,Agricultor/Ganadero,Obrero/Operario,Técnico,Ama de casa,Estudiante,Desempleado,Jubilado' %}selected{% endif %}>Otros (especificar)</option>
+              </select>
+              <!-- Campo oculto para ocupación personalizada -->
+              <input type="text" name="ocupacion_padre" id="id_ocupacion_padre_custom" 
+                     value="{{ solicitud.ocupacion_padre|default:'' }}"
+                     placeholder="Especifique su ocupación"
+                     style="display:none; margin-top:10px;"
+                     {% if en_correccion and 'ocupacion_padre' not in campos_corregir %}readonly{% endif %}
+                     {% if 'ocupacion_padre' in campos_corregir %}class="editable"{% endif %}>
+              <!-- Campo oculto para mantener sincronizado el valor -->
+              <input type="hidden" name="ocupacion_padre_hidden" id="id_ocupacion_padre_hidden" 
+                     value="{{ solicitud.ocupacion_padre|default:'' }}">
             </div>
 
             <div class="form-group">
@@ -842,7 +933,7 @@
                 {% if 'nivel_educativo_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
               <select name="nivel_educativo_padre" 
-                      {% if en_correccion and 'nivel_educativo_padre' not in campos_corregir %}disabled{% endif %}
+                      {% if en_correccion and 'nivel_educativo_padre' not in campos_corregir %}class="disabled-select"{% endif %}
                       {% if 'nivel_educativo_padre' in campos_corregir %}class="editable"{% endif %} required>
                 <option value="">Seleccione...</option>
                 <option value="Primaria" {% if solicitud.nivel_educativo_padre == 'Primaria' %}selected{% endif %}>Primaria</option>
@@ -943,7 +1034,7 @@
               <label>
                 Carnet de Vacunación <span class="required">*</span>
               </label>
-              <div class="file-group {% if not solicitud.carnet_vacunacion_nino %}required-doc{% endif %} {% if 'carnet_vacunacion_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('carnet_vacunacion').click();">
+              <div class="file-group {% if not solicitud.carnet_vacunacion_nino %}required-doc{% endif %} {% if 'carnet_vacunacion_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('carnet_vacunacion_nino').click();">
                 <label class="file-label">
                   <i class="fas fa-syringe"></i>
                   {% if solicitud.carnet_vacunacion_nino %}
@@ -953,7 +1044,7 @@
                   {% endif %}
                   <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
                 </label>
-                <input type="file" id="carnet_vacunacion" name="carnet_vacunacion_nino" accept="image/*,application/pdf" {% if not solicitud.carnet_vacunacion_nino %}required{% endif %}>
+                <input type="file" id="carnet_vacunacion_nino" name="carnet_vacunacion_nino" accept="image/*,application/pdf" {% if not solicitud.carnet_vacunacion_nino %}required{% endif %}>
               </div>
               {% if solicitud.carnet_vacunacion_nino %}
               <div class="file-preview-info" style="display: flex;">
@@ -972,7 +1063,7 @@
                 Certificado EPS <span class="required">*</span>
                 {% if 'certificado_eps_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <div class="file-group {% if not solicitud.certificado_eps_nino %}required-doc{% endif %} {% if 'certificado_eps_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('certificado_eps').click();">
+              <div class="file-group {% if not solicitud.certificado_eps_nino %}required-doc{% endif %} {% if 'certificado_eps_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('certificado_eps_nino').click();">
                 <label class="file-label">
                   <i class="fas fa-hospital"></i>
                   {% if solicitud.certificado_eps_nino %}
@@ -982,7 +1073,7 @@
                   {% endif %}
                   <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
                 </label>
-                <input type="file" id="certificado_eps" name="certificado_eps_nino" accept="image/*,application/pdf" {% if not solicitud.certificado_eps_nino %}required{% endif %}>
+                <input type="file" id="certificado_eps_nino" name="certificado_eps_nino" accept="image/*,application/pdf" {% if not solicitud.certificado_eps_nino %}required{% endif %}>
               </div>
               {% if solicitud.certificado_eps_nino %}
               <div class="file-preview-info" style="display: flex;">
@@ -1001,7 +1092,7 @@
                 Registro Civil <span class="required">*</span>
                 {% if 'registro_civil_nino' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <div class="file-group {% if not solicitud.registro_civil_nino %}required-doc{% endif %} {% if 'registro_civil_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('registro_civil').click();">
+              <div class="file-group {% if not solicitud.registro_civil_nino %}required-doc{% endif %} {% if 'registro_civil_nino' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('registro_civil_nino').click();">
                 <label class="file-label">
                   <i class="fas fa-id-card"></i>
                   {% if solicitud.registro_civil_nino %}
@@ -1011,7 +1102,7 @@
                   {% endif %}
                   <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
                 </label>
-                <input type="file" id="registro_civil" name="registro_civil_nino" accept="image/*,application/pdf" {% if not solicitud.registro_civil_nino %}required{% endif %}>
+                <input type="file" id="registro_civil_nino" name="registro_civil_nino" accept="image/*,application/pdf" {% if not solicitud.registro_civil_nino %}required{% endif %}>
               </div>
               {% if solicitud.registro_civil_nino %}
               <div class="file-preview-info" style="display: flex;">
@@ -1032,7 +1123,7 @@
                 Documento Identidad Acudiente <span class="required">*</span>
                 {% if 'documento_identidad_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <div class="file-group {% if not solicitud.documento_identidad_padre %}required-doc{% endif %} {% if 'documento_identidad_padre' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('doc_padre').click();">
+              <div class="file-group {% if not solicitud.documento_identidad_padre %}required-doc{% endif %} {% if 'documento_identidad_padre' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('documento_identidad_padre').click();">
                 <label class="file-label">
                   <i class="fas fa-address-card"></i>
                   {% if solicitud.documento_identidad_padre %}
@@ -1042,7 +1133,7 @@
                   {% endif %}
                   <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
                 </label>
-                <input type="file" id="doc_padre" name="documento_identidad_padre" accept="image/*,application/pdf" {% if not solicitud.documento_identidad_padre %}required{% endif %}>
+                <input type="file" id="documento_identidad_padre" name="documento_identidad_padre" accept="image/*,application/pdf" {% if not solicitud.documento_identidad_padre %}required{% endif %}>
               </div>
               {% if solicitud.documento_identidad_padre %}
               <div class="file-preview-info" style="display: flex;">
@@ -1061,7 +1152,7 @@
                 Clasificación SISBEN <span class="required">*</span>
                 {% if 'clasificacion_sisben_padre' in campos_corregir %}<span class="correction-badge">CORREGIR</span>{% endif %}
               </label>
-              <div class="file-group {% if not solicitud.clasificacion_sisben_padre %}required-doc{% endif %} {% if 'clasificacion_sisben_padre' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('sisben').click();">
+              <div class="file-group {% if not solicitud.clasificacion_sisben_padre %}required-doc{% endif %} {% if 'clasificacion_sisben_padre' in campos_corregir %}field-correction{% endif %}" onclick="document.getElementById('clasificacion_sisben_padre').click();">
                 <label class="file-label">
                   <i class="fas fa-file-alt"></i>
                   {% if solicitud.clasificacion_sisben_padre %}
@@ -1071,7 +1162,7 @@
                   {% endif %}
                   <span class="file-info">(JPG, PNG, PDF - Máx 5MB)</span>
                 </label>
-                <input type="file" id="sisben" name="clasificacion_sisben_padre" accept="image/*,application/pdf" {% if not solicitud.clasificacion_sisben_padre %}required{% endif %}>
+                <input type="file" id="clasificacion_sisben_padre" name="clasificacion_sisben_padre" accept="image/*,application/pdf" {% if not solicitud.clasificacion_sisben_padre %}required{% endif %}>
               </div>
               {% if solicitud.clasificacion_sisben_padre %}
               <div class="file-preview-info" style="display: flex;">
@@ -1328,22 +1419,21 @@
         const camposCorregir = {{ campos_corregir|safe }};
         const archivosCorregirPendientes = [];
 
+        // Mapeo directo de nombre de campo a ID de input (ahora son idénticos)
+        const nombresLegibles = {
+          'foto_nino': 'Foto del Niño',
+          'carnet_vacunacion_nino': 'Carnet de Vacunación',
+          'certificado_eps_nino': 'Certificado EPS',
+          'registro_civil_nino': 'Registro Civil',
+          'documento_identidad_padre': 'Documento de Identidad del Acudiente',
+          'clasificacion_sisben_padre': 'Clasificación SISBEN'
+        };
+
         camposCorregir.forEach(campo => {
           if (camposArchivos.includes(campo)) {
-            // Verificar si se cargó un archivo nuevo
-            const inputId = campo.replace('_nino', '').replace('_padre', '').replace('documento_identidad', 'doc').replace('clasificacion_sisben', 'sisben').replace('carnet_vacunacion', 'carnet_vacunacion').replace('certificado_eps', 'certificado_eps').replace('registro_civil', 'registro_civil').replace('foto', 'foto_nino');
-            
-            const inputElement = document.getElementById(inputId);
+            // Ahora el ID coincide exactamente con el nombre del campo
+            const inputElement = document.getElementById(campo);
             if (!inputElement || !inputElement.files || inputElement.files.length === 0) {
-              // Obtener nombre legible del campo
-              const nombresLegibles = {
-                'foto_nino': 'Foto del Niño',
-                'carnet_vacunacion_nino': 'Carnet de Vacunación',
-                'certificado_eps_nino': 'Certificado EPS',
-                'registro_civil_nino': 'Registro Civil',
-                'documento_identidad_padre': 'Documento de Identidad del Acudiente',
-                'clasificacion_sisben_padre': 'Clasificación SISBEN'
-              };
               archivosCorregirPendientes.push(nombresLegibles[campo] || campo);
             }
           }
@@ -1375,9 +1465,28 @@
         // Enviar formulario
         const formData = new FormData(this);
 
+        // 🔍 DEBUG: Loguear los valores del formulario
+        console.log('📝 Datos del formulario a enviar:');
+        console.log('  nombres_nino:', formData.get('nombres_nino'));
+        console.log('  apellidos_nino:', formData.get('apellidos_nino'));
+        console.log('  documento_nino:', formData.get('documento_nino'));
+        
+        // Loguear todos los campos
+        for (let [key, value] of formData.entries()) {
+          if (typeof value === 'string' && value.length > 0) {
+            console.log(`  ${key}: ${value.substring(0, 50)}`);
+          }
+        }
+
         try {
+          // Obtener el token CSRF del formulario
+          const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+          
           const response = await fetch(window.location.href, {
             method: 'POST',
+            headers: {
+              'X-CSRFToken': csrfToken,
+            },
             body: formData,
           });
 
@@ -1391,6 +1500,9 @@
 
           // Verificar el estado de la respuesta
           if (response.ok && data.success) {
+            // ✅ Solicitud procesada exitosamente
+            console.log('✅ Servidor confirmó éxito.');
+            
             Swal.fire({
               icon: 'success',
               title: '¡Solicitud Enviada Exitosamente!',
@@ -1402,9 +1514,11 @@
               confirmButtonText: 'Entendido',
               confirmButtonColor: '#667eea',
               allowOutsideClick: false,
-            }).then(() => {
-              // Mostrar mensaje de cierre
-              window.location.reload();
+              didClose: () => {
+                console.log('✅ Modal cerrada, recargando página con fresh cache...');
+                // Usar replace para forzar una recarga fresca sin caché
+                window.location.replace(window.location.href);
+              }
             });
           } else {
             // Error del servidor o validación
@@ -1514,6 +1628,68 @@
   <script>
     // Configuración específica para formulario público (ID de padre)
     document.addEventListener('DOMContentLoaded', function() {
+      // ========================================
+      // 💼 MANEJO DEL CAMPO DE OCUPACIÓN
+      // ========================================
+      const ocupacionSelect = document.getElementById('id_ocupacion_padre_select');
+      const ocupacionCustom = document.getElementById('id_ocupacion_padre_custom');
+      const ocupacionHidden = document.getElementById('id_ocupacion_padre_hidden');
+      
+      if (ocupacionSelect && ocupacionCustom) {
+        // Función para mostrar/ocultar campo personalizado
+        function toggleOcupacionCustom() {
+          const esOtros = ocupacionSelect.value === 'Otros';
+          ocupacionCustom.style.display = esOtros ? 'block' : 'none';
+          ocupacionCustom.required = esOtros;
+          
+          // Si no es "Otros", usar el valor del select
+          if (!esOtros) {
+            ocupacionCustom.value = ocupacionSelect.value || '';
+          }
+          
+          console.log(`💼 Ocupación: ${ocupacionSelect.value}${esOtros ? ' (Campo personalizado visible)' : ''}`);
+        }
+        
+        // Event listener al cambiar la ocupación
+        ocupacionSelect.addEventListener('change', function() {
+          toggleOcupacionCustom();
+        });
+        
+        // Event listener al escribir en el campo personalizado
+        ocupacionCustom.addEventListener('input', function() {
+          // Actualizar el hidden field para el backend
+          if (ocupacionHidden) {
+            ocupacionHidden.value = this.value;
+          }
+        });
+        
+        // Mostrar/ocultar al cargar si es necesario
+        toggleOcupacionCustom();
+        
+        // Antes de enviar el formulario, asegurar que el valor correcto está en el select
+        const form = document.querySelector('form');
+        if (form) {
+          form.addEventListener('submit', function(e) {
+            if (ocupacionSelect.value === 'Otros') {
+              // Usar el valor del campo personalizado
+              if (!ocupacionCustom.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, especifique su ocupación en el campo de "Otros".');
+                ocupacionCustom.focus();
+                return false;
+              }
+              // Copiar el valor personalizado al nombre del campo para que se envíe correctamente
+              ocupacionCustom.name = 'ocupacion_padre';
+              ocupacionSelect.name = 'ocupacion_padre_select_disabled';
+            } else {
+              // Usar el valor del select
+              ocupacionSelect.name = 'ocupacion_padre';
+              ocupacionCustom.name = 'ocupacion_padre_custom_disabled';
+            }
+          });
+        }
+      }
+      
       // Inicializar geografía para campos de padre
       initGeografiaColombia({
         departamentoSelector: '#id_departamento_padre',
@@ -1523,18 +1699,153 @@
       });
       
       // Preseleccionar valores si existen (modo edición/corrección)
-      {% if solicitud.departamento_padre_id %}
-        document.getElementById('id_departamento_padre').value = '{{ solicitud.departamento_padre_id }}';
-        document.getElementById('id_departamento_padre').dataset.selectedId = '{{ solicitud.departamento_padre_id }}';
-      {% endif %}
+      // NOTA: Esto se hace DESPUÉS de initGeografiaColombia para que la cascada funcione
+      setTimeout(() => {
+        {% if solicitud.departamento_padre_id %}
+          document.getElementById('id_departamento_padre').value = '{{ solicitud.departamento_padre_id }}';
+          document.getElementById('id_departamento_padre').dataset.selectedId = '{{ solicitud.departamento_padre_id }}';
+        {% endif %}
+        
+        {% if solicitud.ciudad_padre_id %}
+          document.getElementById('id_ciudad_padre').dataset.selectedId = '{{ solicitud.ciudad_padre_id }}';
+        {% endif %}
+        
+        {% if solicitud.localidad_bogota_padre_id %}
+          document.getElementById('id_localidad_bogota_padre').dataset.selectedId = '{{ solicitud.localidad_bogota_padre_id }}';
+        {% endif %}
+      }, 100);
       
-      {% if solicitud.ciudad_padre_id %}
-        document.getElementById('id_ciudad_padre').dataset.selectedId = '{{ solicitud.ciudad_padre_id }}';
-      {% endif %}
-      
-      {% if solicitud.localidad_bogota_padre_id %}
-        document.getElementById('id_localidad_bogota_padre').dataset.selectedId = '{{ solicitud.localidad_bogota_padre_id }}';
-      {% endif %}
+
+      // ✉️ VALIDACIÓN EN TIEMPO REAL DE CORREO ELECTRÓNICO
+      const emailInput = document.getElementById('id_correo_padre');
+      const emailIcon = document.getElementById('email_validation_icon');
+      const emailMessage = document.getElementById('email_validation_message');
+
+      // Regex para validar formato de email
+      const emailRegex = /^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+      // Dominios comunes válidos (opcional, para verificación básica)
+      const commonDomains = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 'correo.gov.co'];
+
+      function validateEmail(email) {
+        const trimmedEmail = email.trim();
+        
+        if (!trimmedEmail) {
+          // Campo vacío
+          emailIcon.textContent = '';
+          emailMessage.textContent = '';
+          emailMessage.style.display = 'none';
+          emailInput.style.borderColor = '';
+          return null; // null = no validado aún
+        }
+
+        const isValidFormat = emailRegex.test(trimmedEmail);
+        
+        if (!isValidFormat) {
+          // Formato inválido
+          emailIcon.textContent = '❌';
+          emailIcon.style.color = '#ef4444';
+          emailMessage.textContent = 'Por favor, ingrese un correo electrónico válido (ej: usuario@dominio.com)';
+          emailMessage.style.color = '#ef4444';
+          emailMessage.style.display = 'block';
+          emailInput.style.borderColor = '#fca5a5';
+          return false;
+        }
+
+        // Formato válido
+        emailIcon.textContent = '✅';
+        emailIcon.style.color = '#10b981';
+        emailMessage.textContent = 'Correo electrónico válido';
+        emailMessage.style.color = '#10b981';
+        emailMessage.style.display = 'block';
+        emailInput.style.borderColor = '#86efac';
+        return true;
+      }
+
+      // Event listeners para validación en tiempo real
+      if (emailInput) {
+        // Validar mientras escribe
+        emailInput.addEventListener('input', function() {
+          validateEmail(this.value);
+        });
+
+        // Validar al perder el foco
+        emailInput.addEventListener('blur', function() {
+          const email = this.value.trim();
+          if (email) {
+            validateEmail(email);
+          } else {
+            // Si está vacío al perder foco, limpiar indicadores
+            emailIcon.textContent = '';
+            emailMessage.textContent = '';
+            emailMessage.style.display = 'none';
+            this.style.borderColor = '';
+          }
+        });
+
+        // Validar al obtener el foco
+        emailInput.addEventListener('focus', function() {
+          if (this.value.trim()) {
+            validateEmail(this.value);
+          }
+        });
+
+        // Validación al enviar el formulario
+        const form = document.querySelector('form');
+        if (form) {
+          form.addEventListener('submit', function(e) {
+            const email = emailInput.value.trim();
+            if (email) {
+              const isValid = validateEmail(email);
+              if (isValid === false) {
+                e.preventDefault();
+                emailInput.focus();
+                console.error('❌ El correo electrónico no es válido');
+                return false;
+              }
+            }
+          });
+        }
+
+        // Validar email inicial si existe
+        if (emailInput.value.trim()) {
+          validateEmail(emailInput.value);
+        }
+
+        // ============================================
+        // Manejo de selects deshabilitados en corrección
+        // ============================================
+        // Guardar valores originales de los selects deshabilitados
+        const disabledSelects = document.querySelectorAll('select.disabled-select');
+        const originalValues = {};
+        
+        disabledSelects.forEach(select => {
+          originalValues[select.name] = select.value;
+          
+          // Prevenir cambios en estos selects (sin usar pointer-events que bloquea eventos)
+          select.addEventListener('change', function(e) {
+            // Permitir que el cambio ocurra si es causado por JavaScript (cascada)
+            if (e.isTrusted === false) {
+              // Es un evento programático, permitir
+              console.log('✓ Evento programático en: ' + this.name);
+              return;
+            }
+            
+            // Es un cambio del usuario, revertir
+            console.warn('⚠️ Campo bloqueado: ' + this.name + '. Restaurando valor original: ' + originalValues[this.name]);
+            this.value = originalValues[this.name];
+            e.preventDefault();
+            return false;
+          });
+          
+          // Estilo visual (SIN pointer-events para no bloquear eventos)
+          select.style.opacity = '0.6';
+          select.style.backgroundColor = '#f8f9fa';
+          select.style.cursor = 'not-allowed';
+          
+          console.log('✓ Select deshabilitado en corrección: ' + select.name + ' = ' + originalValues[select.name]);
+        });
+      }
     });
   </script>
 </body>

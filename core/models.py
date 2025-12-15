@@ -654,6 +654,16 @@ class SolicitudMatriculacion(models.Model):
     fecha_expiracion = models.DateTimeField()
     estado = models.CharField(max_length=30, choices=ESTADO_CHOICES, default='pendiente')
     
+    # Tipos de documento válidos para el niño (consistente con modelo Nino)
+    TIPO_DOCUMENTO_NINO_CHOICES = [
+        ('RC', 'Registro Civil'),
+        ('TI', 'Tarjeta de Identidad'),
+        ('CV', 'Carné de Vacunación'),
+        ('AN', 'Acta de Nacimiento'),
+        ('CE', 'Cédula de Extranjería'),
+        ('PA', 'Pasaporte'),
+    ]
+    
     # 🆕 NUEVOS CAMPOS PARA SOLICITUD INICIADA POR PADRE
     tipo_solicitud = models.CharField(
         max_length=30, 
@@ -681,6 +691,7 @@ class SolicitudMatriculacion(models.Model):
     # Datos del niño
     nombres_nino = models.CharField(max_length=100, null=True, blank=True)
     apellidos_nino = models.CharField(max_length=100, null=True, blank=True)
+    tipo_documento_nino = models.CharField(max_length=2, choices=TIPO_DOCUMENTO_NINO_CHOICES, null=True, blank=True, help_text='Tipo de documento del niño')
     documento_nino = models.CharField(max_length=50, null=True, blank=True)
     fecha_nacimiento_nino = models.DateField(null=True, blank=True)
     genero_nino = models.CharField(max_length=20, null=True, blank=True)

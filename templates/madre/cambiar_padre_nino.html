@@ -330,39 +330,306 @@
       100% { transform: rotate(360deg); }
     }
 
+    @media (max-width: 1024px) {
+      .container {
+        max-width: 90%;
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .options-container {
+        gap: 16px;
+      }
+
+      .option-button {
+        padding: 20px;
+        font-size: 16px;
+      }
+
+      .option-button i {
+        font-size: 32px;
+      }
+
+      .form-row {
+        gap: 16px;
+      }
+
+      .form-group input,
+      .form-group select {
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      .buscar-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+
+      .info-datos {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .dato {
+        padding: 12px;
+        font-size: 13px;
+      }
+
+      .form-actions {
+        gap: 8px;
+      }
+
+      .form-actions button {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+    }
+
     @media (max-width: 768px) {
+      .container {
+        max-width: 95%;
+        padding: 16px;
+        margin: 16px auto;
+        border-radius: 10px;
+      }
+
+      h1 {
+        font-size: 20px;
+        margin-bottom: 12px;
+        gap: 8px;
+      }
+
+      h1 i {
+        font-size: 22px;
+      }
+
       .options-container {
         flex-direction: column;
+        gap: 10px;
       }
-      
+
+      .option-button {
+        padding: 16px;
+        font-size: 14px;
+        border-radius: 8px;
+      }
+
+      .option-button i {
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+
       .form-row {
         flex-direction: column;
+        gap: 12px;
       }
-      
+
+      .form-group {
+        width: 100%;
+      }
+
+      .form-group label {
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 8px;
+        font-size: 12px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
       .buscar-container {
         flex-direction: column;
+        gap: 8px;
       }
-      
+
+      .buscar-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 12px;
+        border-radius: 4px;
+      }
+
       .info-datos {
         grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 16px;
       }
-      
+
+      .dato {
+        padding: 10px;
+        font-size: 12px;
+        border-radius: 6px;
+      }
+
+      .dato strong {
+        display: block;
+        font-size: 11px;
+        color: #666;
+        margin-bottom: 2px;
+      }
+
+      .dato p {
+        margin: 0;
+        font-size: 12px;
+      }
+
       .form-actions {
         flex-direction: column;
+        gap: 8px;
+        margin-top: 16px;
       }
-      
-      h1 {
-        font-size: 24px;
+
+      .form-actions button {
+        width: 100%;
+        padding: 10px;
+        font-size: 12px;
+        border-radius: 4px;
       }
-      
+
       header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+        gap: 8px;
       }
-      
+
       nav ul {
         flex-direction: column;
-        gap: 10px;
+        gap: 6px;
+      }
+
+      nav a {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .tab-content {
+        padding: 12px;
+      }
+
+      .selector-padre {
+        padding: 10px;
+        margin: 8px 0;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        max-width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        border-radius: 8px;
+      }
+
+      h1 {
+        font-size: 16px;
+        margin-bottom: 8px;
+      }
+
+      h1 i {
+        font-size: 18px;
+      }
+
+      .options-container {
+        gap: 8px;
+      }
+
+      .option-button {
+        padding: 12px;
+        font-size: 12px;
+        border-radius: 6px;
+      }
+
+      .option-button i {
+        font-size: 24px;
+        margin-bottom: 6px;
+      }
+
+      .form-row {
+        gap: 8px;
+      }
+
+      .form-group label {
+        font-size: 11px;
+      }
+
+      .form-group input,
+      .form-group select {
+        padding: 6px;
+        font-size: 11px;
+      }
+
+      .buscar-btn {
+        padding: 8px;
+        font-size: 11px;
+      }
+
+      .info-datos {
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .dato {
+        padding: 8px;
+        font-size: 11px;
+      }
+
+      .dato strong {
+        font-size: 10px;
+      }
+
+      .dato p {
+        font-size: 11px;
+      }
+
+      .form-actions {
+        gap: 6px;
+        margin-top: 12px;
+      }
+
+      .form-actions button {
+        padding: 8px;
+        font-size: 11px;
+      }
+
+      header {
+        gap: 6px;
+      }
+
+      nav ul {
+        gap: 4px;
+      }
+
+      nav a {
+        padding: 6px 8px;
+        font-size: 10px;
+        border-radius: 3px;
+      }
+
+      .tab-content {
+        padding: 8px;
+      }
+
+      .selector-padre {
+        padding: 8px;
+        margin: 6px 0;
+        font-size: 11px;
+      }
+
+      .selector-padre label {
+        font-size: 10px;
+      }
+
+      .selector-padre input {
+        width: 14px;
+        height: 14px;
       }
     }
   </style>

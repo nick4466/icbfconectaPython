@@ -436,27 +436,372 @@
     }
 
     /* ========== RESPONSIVE ========== */
-    @media (max-width: 992px) {
+    @media (max-width: 1024px) {
       .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 260px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 2000;
+      }
+
+      .sidebar.active {
+        transform: translateX(0);
       }
 
       .main-content {
         margin-left: 0;
       }
 
+      .topbar {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 16px;
+      }
+
+      .topbar-left h1 {
+        font-size: 20px;
+      }
+
       .top-bar {
         flex-direction: column;
+        gap: 12px;
       }
 
       .filtros-form {
         flex-direction: column;
+        gap: 12px;
+      }
+
+      .filtros-form .actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .btn-filtro {
+        width: 100%;
+      }
+
+      .page-actions {
+        width: 100%;
+      }
+
+      .btn-crear {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .content-wrapper {
+        padding: 16px;
+      }
+
+      .content-container {
+        padding: 16px;
+        border-radius: 8px;
+      }
+
+      table {
+        font-size: 13px;
+      }
+
+      th, td {
+        padding: 10px;
+      }
+
+      .acciones {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .acciones a {
+        padding: 4px 8px;
+        font-size: 11px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .pagination {
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+
+      .pagination a, .pagination span {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+      }
+
+      .topbar {
+        padding: 12px;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .topbar-left h1 {
+        font-size: 18px;
+      }
+
+      .topbar-right {
+        width: 100%;
+        flex-direction: column;
+      }
+
+      .search-box {
+        width: 100%;
+      }
+
+      .search-box input {
+        width: 100%;
+      }
+
+      .user-menu {
+        width: 100%;
+      }
+
+      .content-wrapper {
+        padding: 12px;
+      }
+
+      .content-container {
+        padding: 12px;
+      }
+
+      .top-bar {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .filtros-form {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .form-group {
+        margin-bottom: 0;
+      }
+
+      .form-group label {
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      .form-group input {
+        padding: 8px;
+        font-size: 13px;
+      }
+
+      .filtros-form .actions {
+        width: 100%;
+      }
+
+      .btn-filtro {
+        flex: 1;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+
+      .page-actions {
+        width: 100%;
+      }
+
+      .btn-crear {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 13px;
       }
 
       .tabla-wrapper {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      table {
+        font-size: 12px;
+        min-width: 100%;
+      }
+
+      th, td {
+        padding: 8px 6px;
+      }
+
+      th {
+        font-size: 11px;
+        white-space: nowrap;
+      }
+
+      td {
+        word-break: break-word;
+      }
+
+      img {
+        width: 40px;
+        height: 40px;
+      }
+
+      .acciones {
+        flex-direction: row;
+        gap: 2px;
+        flex-wrap: wrap;
+      }
+
+      .acciones a {
+        padding: 4px 6px;
+        font-size: 10px;
+        flex: 0 1 auto;
+        white-space: nowrap;
+      }
+
+      .pagination {
+        gap: 2px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+
+      .pagination a, .pagination span {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+
+      .messages {
+        margin-bottom: 12px;
+      }
+
+      .messages li {
+        padding: 12px;
+        font-size: 13px;
+        flex-wrap: wrap;
+      }
+
+      .close-message {
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar {
+        padding: 8px 12px;
+      }
+
+      .topbar-left h1 {
+        font-size: 16px;
+      }
+
+      .topbar-right {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .search-box {
+        width: 100%;
+      }
+
+      .search-box input {
+        width: 100%;
+        font-size: 13px;
+        padding: 6px 12px;
+      }
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+      }
+
+      .content-wrapper {
+        padding: 8px;
+      }
+
+      .content-container {
+        padding: 8px;
+        margin-bottom: 12px;
+      }
+
+      .top-bar {
+        gap: 8px;
+      }
+
+      .filtros-form {
+        gap: 8px;
+        padding: 8px;
+      }
+
+      .form-group label {
+        font-size: 11px;
+      }
+
+      .form-group input {
+        padding: 6px;
+        font-size: 12px;
+      }
+
+      .btn-filtro {
+        padding: 6px 10px;
+        font-size: 11px;
+        gap: 4px;
+      }
+
+      .btn-crear {
+        padding: 8px;
+        font-size: 12px;
+        gap: 4px;
+      }
+
+      .tabla-wrapper {
+        margin-bottom: 12px;
+      }
+
+      table {
+        font-size: 11px;
+      }
+
+      th, td {
+        padding: 6px 4px;
+      }
+
+      th {
+        font-size: 10px;
+      }
+
+      td {
+        font-size: 11px;
+      }
+
+      img {
+        width: 36px;
+        height: 36px;
+      }
+
+      .acciones {
+        gap: 2px;
+      }
+
+      .acciones a {
+        padding: 2px 4px;
+        font-size: 9px;
+      }
+
+      .pagination {
+        gap: 2px;
+        margin-top: 12px;
+      }
+
+      .pagination a, .pagination span {
+        padding: 4px 6px;
+        font-size: 10px;
+      }
+
+      .messages li {
+        padding: 8px;
+        font-size: 12px;
       }
     }
   </style>

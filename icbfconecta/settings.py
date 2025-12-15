@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-4+5-$@(pm((98+wh48-#4%rcye^!ug3_(84qtt%p*ubaoua_(o
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [*]
 
 
 # Application definition
@@ -130,7 +130,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = '/home/NIC000/icbfconectaPython/static'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Default primary key field type
@@ -155,4 +156,4 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Configuración para subir imagenes en las planeacion
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = '/home/NIC000/icbfconectaPython/media'

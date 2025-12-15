@@ -319,16 +319,221 @@
     }
     
     /* Responsive para modal */
-    @media (max-width: 768px) {
-      .modal-contenido {
-        width: 95%;
+    @media (max-width: 1024px) {
+      .container {
+        max-width: 100%;
         padding: 20px;
       }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .tabla-registros {
+        padding: 16px;
+      }
+
+      th, td {
+        padding: 10px;
+        font-size: 13px;
+      }
+
+      .btn-agregar,
+      .btn-reporte,
+      .btn-editar {
+        font-size: 12px;
+        padding: 8px 12px;
+      }
+
+      .modal-contenido {
+        width: 90%;
+        max-height: 90vh;
+      }
+
       .info-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
       }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 12px;
+      }
+
+      h1 {
+        font-size: 20px;
+        margin-bottom: 16px;
+      }
+
+      .tabla-registros {
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      th, td {
+        padding: 8px;
+        font-size: 11px;
+      }
+
+      th {
+        background-color: #f0e6f5;
+        font-weight: 600;
+      }
+
+      tbody tr:hover {
+        background-color: #fafafa;
+      }
+
+      .btn-agregar,
+      .btn-reporte,
+      .btn-editar,
+      .btn-eliminar {
+        font-size: 10px;
+        padding: 6px 10px;
+        border-radius: 4px;
+      }
+
+      .btn-group {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .modal-contenido {
+        width: 95%;
+        padding: 16px;
+        border-radius: 8px;
+      }
+
+      .modal-header {
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .modal-body {
+        padding: 12px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .info-item {
+        padding: 10px;
+        background: #f9f9f9;
+      }
+
       .documentos-grid {
         grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .documento-item {
+        padding: 8px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 8px;
+        max-width: 100%;
+      }
+
+      h1 {
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+
+      .tabla-registros {
+        padding: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      table {
+        font-size: 10px;
+        min-width: 500px;
+      }
+
+      th, td {
+        padding: 6px 4px;
+        font-size: 10px;
+      }
+
+      th {
+        font-size: 9px;
+      }
+
+      .btn-agregar,
+      .btn-reporte,
+      .btn-editar,
+      .btn-eliminar {
+        font-size: 9px;
+        padding: 4px 6px;
+        border-radius: 3px;
+      }
+
+      .btn-group {
+        gap: 2px;
+      }
+
+      .modal-contenido {
+        width: 98%;
+        padding: 10px;
+        margin: 10px;
+      }
+
+      .modal-header {
+        padding: 8px;
+        margin-bottom: 8px;
+      }
+
+      .modal-body {
+        padding: 8px;
+      }
+
+      .modal-close {
+        font-size: 20px;
+        width: 24px;
+        height: 24px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .info-item {
+        padding: 6px;
+        font-size: 11px;
+      }
+
+      .info-item label {
+        font-size: 10px;
+      }
+
+      .info-item span {
+        font-size: 11px;
+      }
+
+      .documentos-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .documento-item {
+        padding: 6px;
+        font-size: 11px;
+      }
+
+      .documento-item a {
+        font-size: 10px;
+        padding: 4px 8px;
       }
     }
 

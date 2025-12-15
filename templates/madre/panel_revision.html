@@ -355,9 +355,19 @@
     }
 
     .btn-action:disabled {
-      background: #6c757d;
+      background: #6c757d !important;
+      color: #ccc !important;
       cursor: not-allowed;
-      opacity: 0.6;
+      opacity: 0.5;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .btn-action:disabled:hover {
+      background: #6c757d !important;
+      transform: none !important;
+      box-shadow: none !important;
+    }
     }
 
     .btn-action:disabled:hover {
@@ -538,6 +548,299 @@
     @keyframes spin {
       100% { transform: rotate(360deg); }
     }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 1024px) {
+      .container {
+        padding: 20px 16px;
+      }
+
+      .page-header {
+        padding: 24px 20px;
+        margin-bottom: 24px;
+      }
+
+      .page-header h1 {
+        font-size: 26px;
+        gap: 10px;
+      }
+
+      .page-header p {
+        font-size: 14px;
+      }
+
+      .stats-row {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        padding: 20px;
+        gap: 16px;
+      }
+
+      .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+      }
+
+      .stat-content h3 {
+        font-size: 12px;
+      }
+
+      .stat-content .number {
+        font-size: 28px;
+      }
+
+      .filters-bar {
+        padding: 16px;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .filter-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+      }
+
+      .solicitud-card {
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+
+      .solicitud-header {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .solicitud-info h3 {
+        font-size: 18px;
+      }
+
+      .estado-badge {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 12px;
+      }
+
+      .page-header {
+        padding: 16px;
+        margin-bottom: 16px;
+        border-radius: 8px;
+      }
+
+      .page-header h1 {
+        font-size: 20px;
+        gap: 8px;
+      }
+
+      .page-header h1 i {
+        font-size: 24px;
+      }
+
+      .page-header p {
+        font-size: 12px;
+      }
+
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .stat-card {
+        padding: 16px;
+        gap: 12px;
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .stat-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+        margin: 0 auto;
+      }
+
+      .stat-content h3 {
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+
+      .stat-content .number {
+        font-size: 24px;
+      }
+
+      .filters-bar {
+        padding: 12px;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .filter-btn {
+        padding: 10px 12px;
+        font-size: 12px;
+        justify-content: center;
+        border-radius: 6px;
+      }
+
+      .solicitud-card {
+        padding: 16px;
+        margin-bottom: 12px;
+        border-radius: 10px;
+      }
+
+      .solicitud-header {
+        gap: 10px;
+      }
+
+      .solicitud-info h3 {
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+
+      .solicitud-info p {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .estado-badge {
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+
+      .btn-modal-primary,
+      .btn-modal-danger {
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+
+      .solicitud-actions {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .btn-solicitud {
+        width: 100%;
+        padding: 12px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 8px;
+      }
+
+      .page-header {
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .page-header h1 {
+        font-size: 18px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .page-header h1 i {
+        font-size: 20px;
+      }
+
+      .page-header p {
+        font-size: 11px;
+      }
+
+      .stats-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .stat-card {
+        padding: 12px;
+        gap: 10px;
+      }
+
+      .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
+
+      .stat-content h3 {
+        font-size: 10px;
+        margin-bottom: 3px;
+      }
+
+      .stat-content .number {
+        font-size: 20px;
+      }
+
+      .filters-bar {
+        padding: 10px;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .filter-btn {
+        padding: 8px 10px;
+        font-size: 11px;
+        border-radius: 4px;
+      }
+
+      .solicitud-card {
+        padding: 12px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+      }
+
+      .solicitud-info h3 {
+        font-size: 14px;
+        margin-bottom: 6px;
+      }
+
+      .solicitud-info p {
+        font-size: 12px;
+        margin-bottom: 3px;
+      }
+
+      .solicitud-info p i {
+        width: 14px;
+        font-size: 12px;
+      }
+
+      .estado-badge {
+        padding: 4px 8px;
+        font-size: 10px;
+      }
+
+      .btn-modal-primary,
+      .btn-modal-danger {
+        padding: 8px 12px;
+        font-size: 12px;
+        border-radius: 4px;
+      }
+
+      .solicitud-actions {
+        gap: 6px;
+      }
+
+      .btn-solicitud {
+        padding: 10px;
+        font-size: 12px;
+        border-radius: 4px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -635,7 +938,15 @@
     async function cargarSolicitudes() {
       try {
         console.log('Cargando solicitudes...');
-        const response = await fetch('{% url "listar_solicitudes_matricula" %}');
+        const response = await fetch('{% url "listar_solicitudes_matricula" %}', {
+          method: 'GET',
+          cache: 'no-store',  // No usar caché
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
         console.log('Response status:', response.status);
         const data = await response.json();
         console.log('Data recibida:', data);
@@ -644,6 +955,15 @@
           solicitudesPendientes = data.solicitudes || [];
           console.log('Solicitudes cargadas:', solicitudesPendientes.length);
           actualizarEstadisticas();
+          
+          // 🆕 Si estamos en filtro "En Corrección" y no hay solicitudes, cambiar a "Todas"
+          if (filtroActual === 'correccion' && solicitudesPendientes.filter(s => s.estado === 'correccion').length === 0) {
+            console.log('⚠️ No hay solicitudes en corrección. Cambiando a filtro "Todas"');
+            filtroActual = 'todas';
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('[data-filter="todas"]').classList.add('active');
+          }
+          
           renderizarSolicitudes();
           
           document.getElementById('loading').style.display = 'none';
@@ -780,13 +1100,16 @@
                 <button class="btn-action btn-historial" onclick="verHistorial(${solicitud.id})" title="Ver historial de cambios">
                   <i class="fas fa-history"></i> Historial
                 </button>
-                <button class="btn-action btn-aprobar" onclick="aprobarSolicitud(${solicitud.id})">
+                <button class="btn-action btn-aprobar" onclick="aprobarSolicitud(${solicitud.id})" 
+                        ${solicitud.estado === 'correccion' ? 'disabled title="No se puede aprobar mientras está en corrección"' : ''}>
                   <i class="fas fa-check"></i> Aprobar
                 </button>
-                <button class="btn-action btn-rechazar" onclick="toggleMotivo(${solicitud.id})">
+                <button class="btn-action btn-rechazar" onclick="toggleMotivo(${solicitud.id})" 
+                        ${solicitud.estado === 'correccion' ? 'disabled title="No se puede rechazar mientras está en corrección"' : ''}>
                   <i class="fas fa-times"></i> Rechazar
                 </button>
-                <button class="btn-action btn-corregir" onclick="toggleCorreccion(${solicitud.id})">
+                <button class="btn-action btn-corregir" onclick="toggleCorreccion(${solicitud.id})" 
+                        ${solicitud.estado === 'correccion' ? 'disabled title="Ya está en corrección. Espera a que el acudiente reenvíe los datos."' : ''}>
                   <i class="fas fa-edit"></i> Solicitar Corrección
                 </button>
                 <button class="btn-action btn-eliminar" onclick="eliminarSolicitud(${solicitud.id})">
@@ -878,7 +1201,13 @@
     }
 
     async function cargarCamposCorreccion(solicitudId) {
+      console.log(`📋 Cargando campos para corrección de solicitud ${solicitudId}`);
       const container = document.getElementById(`campos-${solicitudId}`);
+      
+      if (!container) {
+        console.error(`❌ Container no encontrado: campos-${solicitudId}`);
+        return;
+      }
       
       const campos = [
         { id: 'nombres_nino', label: 'Nombres del niño' },
@@ -916,6 +1245,7 @@
       });
 
       container.innerHTML = html;
+      console.log(`✅ ${campos.length} campos cargados para solicitud ${solicitudId}`);
     }
 
     async function verFormulario(solicitudId) {
@@ -957,17 +1287,22 @@
               </div>
             `;
           } else if (extension === 'pdf') {
-            // Es un PDF - mostrar botón de descarga y preview
+            // Es un PDF - mostrar botón de descarga y preview con iframe
+            // Usar Google Docs Viewer como fallback si el PDF no se puede mostrar directamente
+            const googleDocsUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
             return `
               <div style="margin: 10px 0;">
                 <strong>${nombre}:</strong>
-                <div style="margin-top: 5px;">
-                  <a href="${url}" target="_blank" class="btn-ver-documento">
-                    <i class="fas fa-file-pdf"></i> Ver PDF
+                <div style="margin-top: 5px; display: flex; gap: 10px; flex-wrap: wrap;">
+                  <a href="${url}" download class="btn-ver-documento" title="Descargar PDF">
+                    <i class="fas fa-download"></i> Descargar
                   </a>
-                  <div style="margin-top: 10px;">
-                    <embed src="${url}" type="application/pdf" width="100%" height="300px" style="border-radius: 8px; border: 1px solid #ddd;" />
-                  </div>
+                  <a href="${url}" target="_blank" class="btn-ver-documento" title="Abrir en nueva ventana">
+                    <i class="fas fa-external-link-alt"></i> Abrir en nueva ventana
+                  </a>
+                </div>
+                <div style="margin-top: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
+                  <iframe src="${googleDocsUrl}" width="100%" height="500px" style="border: none; border-radius: 8px;"></iframe>
                 </div>
               </div>
             `;
@@ -1147,19 +1482,29 @@
     }
 
     async function confirmarCorreccion(solicitudId) {
+      console.log(`🔍 Confirmando corrección para solicitud ${solicitudId}`);
       const checkboxes = document.querySelectorAll(`#campos-${solicitudId} input[type="checkbox"]:checked`);
       
+      console.log(`📊 Checkboxes encontrados: ${checkboxes.length}`);
+      
       if (checkboxes.length === 0) {
+        console.warn('⚠️ No hay campos seleccionados');
         Swal.fire('Error', 'Debe seleccionar al menos un campo a corregir', 'warning');
         return;
       }
 
       const campos = Array.from(checkboxes).map(cb => cb.value);
+      console.log('📋 Campos seleccionados:', campos);
 
       try {
         const formData = new FormData();
         formData.append('solicitud_id', solicitudId);
         formData.append('campos_corregir', JSON.stringify(campos));
+
+        console.log('📤 Enviando corrección con datos:', {
+          solicitud_id: solicitudId,
+          campos_corregir: campos
+        });
 
         const response = await fetch('{% url "devolver_correccion_matricula" %}', {
           method: 'POST',
@@ -1169,9 +1514,21 @@
           body: formData
         });
 
-        const data = await response.json();
+        console.log('📥 Response status:', response.status);
+
+        let data;
+        try {
+          data = await response.json();
+          console.log('📊 Response data:', data);
+        } catch (jsonError) {
+          console.error('❌ Error al parsear JSON:', jsonError);
+          const responseText = await response.text();
+          console.error('Response text:', responseText);
+          throw new Error(`JSON inválido: ${responseText}`);
+        }
 
         if (data.status === 'ok') {
+          console.log('✅ Corrección enviada exitosamente');
           Swal.fire({
             icon: 'success',
             title: 'Solicitud Devuelta',
@@ -1181,11 +1538,12 @@
             cargarSolicitudes();
           });
         } else {
-          Swal.fire('Error', data.mensaje, 'error');
+          console.error('❌ Respuesta con error:', data.mensaje);
+          Swal.fire('Error', data.mensaje || 'Error desconocido', 'error');
         }
       } catch (error) {
-        console.error('Error:', error);
-        Swal.fire('Error', 'No se pudo enviar para corrección', 'error');
+        console.error('❌ Error completo:', error);
+        Swal.fire('Error', `No se pudo enviar para corrección: ${error.message}`, 'error');
       }
     }
 

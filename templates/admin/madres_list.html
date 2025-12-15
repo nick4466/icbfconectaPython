@@ -795,9 +795,26 @@
       }
 
       /* ========== RESPONSIVE ========== */
+      @media (max-width: 1366px) {
+        .grid-tarjetas {
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+      }
+
       @media (max-width: 1024px) {
         .sidebar {
+          position: fixed;
+          left: 0;
+          top: 0;
+          height: 100vh;
+          width: 260px;
           transform: translateX(-100%);
+          transition: transform 0.3s ease;
+          z-index: 2000;
+        }
+
+        .sidebar.active {
+          transform: translateX(0);
         }
 
         .main-content {
@@ -805,35 +822,352 @@
         }
 
         .filtros-form {
-          grid-template-columns: 1fr;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
         }
-      }
 
-      @media (max-width: 768px) {
+        .filtros-form .actions {
+          grid-column: 1 / -1;
+          display: flex;
+          gap: 8px;
+        }
+
+        .topbar {
+          flex-direction: column;
+          gap: 12px;
+          padding: 12px 16px;
+        }
+
+        .topbar-left h1 {
+          font-size: 20px;
+        }
+
         .content-wrapper {
           padding: 16px;
         }
 
+        .grid-tarjetas {
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: 16px;
+        }
+
         .page-header {
           flex-direction: column;
-          align-items: flex-start;
-          gap: 16px;
+          gap: 12px;
+        }
+
+        .btn-crear {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          width: 100%;
+        }
+
+        .content-wrapper {
+          padding: 12px;
+        }
+
+        .topbar {
+          padding: 12px;
+        }
+
+        .topbar-left h1 {
+          font-size: 18px;
+        }
+
+        .topbar-right {
+          width: 100%;
+          flex-direction: column;
+        }
+
+        .search-box {
+          width: 100%;
+        }
+
+        .search-box input {
+          width: 100%;
+        }
+
+        .page-header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+        }
+
+        .filtros-form {
+          grid-template-columns: 1fr;
+          gap: 10px;
+          padding: 12px;
+        }
+
+        .filtros-form .actions {
+          grid-column: auto;
+          gap: 6px;
+        }
+
+        .btn-filtro {
+          flex: 1;
+          padding: 8px;
+          font-size: 12px;
+        }
+
+        .btn-crear {
+          width: 100%;
+          padding: 8px;
+          font-size: 12px;
+        }
+
+        .grid-tarjetas {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+
+        .tarjeta-madre {
+          padding: 12px;
+        }
+
+        .tarjeta-header {
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .foto-madre {
+          width: 60px;
+          height: 60px;
+        }
+
+        .tarjeta-info {
+          font-size: 13px;
+        }
+
+        .tarjeta-acciones {
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .tarjeta-acciones a {
+          width: 100%;
+          padding: 6px;
+          font-size: 11px;
         }
 
         .tabla-container {
           overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         table {
-          font-size: 13px;
+          font-size: 12px;
+          min-width: 100%;
         }
 
         th, td {
-          padding: 10px 12px;
+          padding: 8px 6px;
+        }
+
+        th {
+          font-size: 11px;
+        }
+
+        .estado {
+          font-size: 10px;
+          padding: 2px 4px;
+        }
+
+        .acciones {
+          flex-direction: row;
+          gap: 2px;
+          flex-wrap: wrap;
+        }
+
+        .acciones a {
+          padding: 4px 6px;
+          font-size: 10px;
         }
 
         .pagination {
+          gap: 4px;
           flex-wrap: wrap;
+          margin-top: 16px;
+        }
+
+        .pagination a, .pagination span {
+          padding: 4px 8px;
+          font-size: 11px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .sidebar {
+          width: 100%;
+        }
+
+        .topbar {
+          padding: 8px 12px;
+        }
+
+        .topbar-left h1 {
+          font-size: 16px;
+        }
+
+        .topbar-right {
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .search-box {
+          width: 100%;
+        }
+
+        .search-box input {
+          font-size: 12px;
+          padding: 6px 10px;
+        }
+
+        .user-avatar {
+          width: 32px;
+          height: 32px;
+        }
+
+        .content-wrapper {
+          padding: 8px;
+        }
+
+        .page-header {
+          gap: 8px;
+        }
+
+        .filtros-form {
+          gap: 8px;
+          padding: 8px;
+        }
+
+        .form-group label {
+          font-size: 11px;
+        }
+
+        .form-group input,
+        .form-group select {
+          font-size: 12px;
+          padding: 6px;
+        }
+
+        .btn-filtro {
+          padding: 6px;
+          font-size: 11px;
+          gap: 4px;
+        }
+
+        .btn-crear {
+          padding: 8px;
+          font-size: 12px;
+          gap: 4px;
+        }
+
+        .vista-toggle {
+          gap: 4px;
+          padding: 4px;
+        }
+
+        .vista-toggle .btn {
+          padding: 4px 8px;
+          font-size: 11px;
+        }
+
+        .grid-tarjetas {
+          gap: 8px;
+        }
+
+        .tarjeta-madre {
+          padding: 8px;
+          border-radius: 8px;
+        }
+
+        .tarjeta-header {
+          gap: 6px;
+        }
+
+        .foto-madre {
+          width: 50px;
+          height: 50px;
+        }
+
+        .nombre-madre {
+          font-size: 13px;
+        }
+
+        .documento-madre {
+          font-size: 10px;
+        }
+
+        .tarjeta-info {
+          font-size: 12px;
+          gap: 4px;
+        }
+
+        .tarjeta-info i {
+          width: 14px;
+        }
+
+        .tarjeta-acciones {
+          gap: 4px;
+        }
+
+        .tarjeta-acciones a {
+          padding: 4px 6px;
+          font-size: 10px;
+        }
+
+        .tabla-container {
+          margin-bottom: 12px;
+        }
+
+        table {
+          font-size: 10px;
+        }
+
+        th, td {
+          padding: 4px 3px;
+        }
+
+        th {
+          font-size: 9px;
+        }
+
+        td {
+          font-size: 10px;
+        }
+
+        .estado {
+          font-size: 9px;
+          padding: 2px 3px;
+        }
+
+        .acciones {
+          gap: 1px;
+        }
+
+        .acciones a {
+          padding: 2px 4px;
+          font-size: 8px;
+        }
+
+        .pagination {
+          gap: 2px;
+          margin-top: 12px;
+        }
+
+        .pagination a, .pagination span {
+          padding: 3px 6px;
+          font-size: 9px;
+        }
+
+        .messages li {
+          padding: 8px;
+          font-size: 12px;
         }
       }
     </style>

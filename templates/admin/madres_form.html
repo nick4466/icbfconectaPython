@@ -53,22 +53,138 @@
     .content-wrapper { flex: 1; padding: 2rem; }
     
     /* Contenedor de formulario centrado - más ancho para dos columnas */
-    .step-form{max-width:1400px;margin:0 auto;background:white;padding:30px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08)}
-    
+    .step-form {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      padding: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    }
+
+    /* Header del formulario */
+    .step-form > h2 {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      color: white;
+      margin: 0;
+      padding: 40px 30px;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    /* Contenedor interno del formulario */
+    .step-form > div:not(h2):not(.form-actions) {
+      padding: 30px;
+    }
+
     /* Sistema de grid de dos columnas */
-    .two-column-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:30px}
-    .full-width{grid-column:1 / -1}
+    .two-column-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    /* Paneles con borde - MEJORADOS CON CARDS */
+    .column-panel {
+      background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%);
+      padding: 25px;
+      border-radius: 12px;
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      position: relative;
+    }
+
+    .column-panel:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .column-panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      border-radius: 12px 12px 0 0;
+    }
+
+    .column-panel h4 {
+      color: var(--primary);
+      margin: 0 0 20px 0;
+      font-size: 17px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .column-panel h4 i {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 20px;
+    }
     
-    /* Paneles con borde */
-    .column-panel{background:#f8f9fa;padding:20px;border-radius:8px;border:1px solid #e0e0e0}
-    .column-panel h4{color:var(--primary);margin:0 0 15px 0;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px}
-    
-    .form-group{margin-bottom:24px}
-    form label{font-weight:600;color:#555;margin-bottom:8px;font-size:14px;display:block}
-    form input, form select, form textarea{width:100%;padding:12px;border-radius:8px;border:1px solid #ddd;font-family:"Inter",sans-serif;font-size:15px;transition:all 0.3s ease}
-    form input:focus, form select:focus, form textarea:focus{border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(0,123,255,.15);outline:none}
-    form input[type="file"]{padding:8px;background:#f8f9fa;border:2px dashed #ccc;cursor:pointer}
-    form input[type="file"]:hover{border-color:var(--primary-light);background:#f0f7ff}
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    /* Estilos mejorados de labels */
+    form label {
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 10px;
+      font-size: 15px;
+      display: block;
+      letter-spacing: 0.3px;
+    }
+
+    /* Inputs mejorados */
+    form input, form select, form textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      font-family: "Inter", sans-serif;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    form input:hover, form select:hover, form textarea:hover {
+      border-color: #cbd5e1;
+    }
+
+    form input:focus, form select:focus, form textarea:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+      outline: none;
+    }
+
+    form input[type="file"] {
+      padding: 12px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%);
+      border: 2px dashed #cbd5e1;
+      cursor: pointer;
+      color: #475569;
+    }
+
+    form input[type="file"]:hover {
+      border-color: var(--primary-light);
+      background: linear-gradient(135deg, #f0f7ff 0%, #e0f2fe 100%);
+    }
     
     /* Vista previa de archivos */
     .file-preview-container{
@@ -126,17 +242,168 @@
       margin-right:auto
     }
     .remove-file-btn:hover{background:#c82333}
-    .form-actions{margin-top:30px;display:flex;gap:15px;justify-content:flex-end}
-    .btn-guardar,.btn-volver{padding:10px 28px;border:none;border-radius:6px;color:white;font-weight:600;font-size:16px;cursor:pointer;transition:background .2s}
-    .btn-guardar{background:linear-gradient(90deg,var(--success),#218838)}
-    .btn-volver{background:#6c757d}
-    .btn-volver:hover{background:#495057}
-    .btn-guardar:hover{background:#218838}
-    .messages{list-style:none;padding:0;margin:0 0 20px 0}
-    .messages li{padding:15px 20px;border-radius:8px;margin-bottom:10px;color:white;font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
-    .messages li.success{background:var(--success)}
-    .messages li.error{background:var(--danger);color:white;line-height:1.6}
-    .close-message{background:none;border:none;color:white;font-size:20px;cursor:pointer;align-self:flex-start;margin-left:15px}
+    .form-actions {
+      margin-top: 40px;
+      padding-top: 30px;
+      padding: 30px;
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+      background: linear-gradient(135deg, #f8f9fa 0%, #f1f5f9 100%);
+      border-radius: 12px;
+      border: 2px solid #e2e8f0;
+    }
+
+    .btn-guardar, .btn-volver {
+      padding: 12px 32px;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    .btn-guardar {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-guardar:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn-volver {
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+      box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
+    }
+
+    .btn-volver:hover {
+      background: linear-gradient(135deg, #475569 0%, #334155 100%);
+      box-shadow: 0 6px 20px rgba(100, 116, 139, 0.4);
+      transform: translateY(-2px);
+    }
+    .messages {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px 0;
+    }
+
+    .messages li {
+      padding: 16px 20px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      animation: slideInDown 0.3s ease;
+    }
+
+    @keyframes slideInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .messages li.success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .messages li.error {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      line-height: 1.6;
+    }
+
+    .close-message {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+    }
+
+    .close-message:hover {
+      transform: scale(1.2);
+    }
+
+    /* Estilos para títulos de sección h3 */
+    h3 {
+      color: var(--primary);
+      margin: 35px 0 20px 0 !important;
+      font-size: 20px !important;
+      font-weight: 700 !important;
+      padding-bottom: 15px !important;
+      border-bottom: 3px solid transparent !important;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h3::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      border-radius: 2px;
+      margin-left: 0;
+    }
+
+    h3 i {
+      font-size: 24px;
+      opacity: 0.8;
+    }
+
+    /* Información boxes mejoradas */
+    .info-box {
+      margin: 10px 0 20px 0;
+      padding: 16px;
+      background: linear-gradient(135deg, #e0f2fe 0%, #eff6ff 100%);
+      color: #0369a1;
+      border-radius: 10px;
+      border-left: 4px solid #0369a1;
+      font-size: 15px;
+      line-height: 1.6;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .info-box i {
+      font-size: 18px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
     .required-star{color:var(--danger);margin-left:4px;font-weight:bold}
     
     /* Estilos para campos con error */
@@ -158,42 +425,203 @@
     @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 
     /* --- ESTILOS RESPONSIVOS --- */
-    @media (max-width: 992px) {
-      body {
-        flex-direction: column;
-      }
-      .sidebar {
-        width: 100%;
-        height: auto;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-      .sidebar h2, .sidebar img {
-        display: none; /* Ocultar elementos no esenciales */
-      }
-      .sidebar a {
-        border-left: none;
-        border-bottom: 4px solid transparent;
-      }
-      .sidebar a:hover, .sidebar a.active {
-        border-left: none;
-        border-bottom: 4px solid #ffffff;
-      }
-      .main {
-        padding: 20px;
-      }
-      .form-actions {
-        flex-direction: column;
-      }
-      /* Responsive para dos columnas */
+    @media (max-width: 1200px) {
       .two-column-grid {
         grid-template-columns: 1fr;
         gap: 20px;
       }
-      .step-form {
-        max-width: 100%;
+
+      .step-form > h2 {
+        font-size: 24px;
+        padding: 30px 20px;
+      }
+
+      .step-form > div:not(h2):not(.form-actions) {
         padding: 20px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 260px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 2000;
+        flex-direction: column;
+      }
+
+      .sidebar.active {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .topbar {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 16px;
+      }
+
+      .topbar-left h1 {
+        font-size: 18px;
+      }
+
+      .topbar-right {
+        width: 100%;
+      }
+
+      .content-wrapper {
+        padding: 12px;
+      }
+
+      .step-form {
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .step-form > h2 {
+        font-size: 18px;
+        padding: 20px 16px;
+      }
+
+      .step-form > div:not(h2):not(.form-actions) {
+        padding: 16px;
+      }
+
+      .form-actions {
+        flex-direction: column-reverse;
+        gap: 8px;
+        padding: 12px;
+      }
+
+      .btn-guardar, .btn-volver {
+        width: 100%;
+        justify-content: center;
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      .column-panel {
+        padding: 12px;
+      }
+
+      h3 {
+        font-size: 16px !important;
+        margin-bottom: 12px;
+      }
+
+      .two-column-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .form-group {
+        margin-bottom: 12px;
+      }
+
+      .form-group label {
+        font-size: 12px;
+      }
+
+      .form-control {
+        font-size: 13px;
+        padding: 8px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar {
+        padding: 8px 12px;
+      }
+
+      .topbar-left h1 {
+        font-size: 16px;
+      }
+
+      .topbar-right {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+      }
+
+      .content-wrapper {
+        padding: 8px;
+      }
+
+      .step-form {
+        border-radius: 6px;
+      }
+
+      .step-form > h2 {
+        font-size: 16px;
+        padding: 16px 12px;
+      }
+
+      .step-form > div:not(h2):not(.form-actions) {
+        padding: 12px;
+      }
+
+      .form-actions {
+        padding: 8px;
+        gap: 6px;
+      }
+
+      .btn-guardar, .btn-volver {
+        padding: 8px;
+        font-size: 12px;
+        gap: 4px;
+      }
+
+      .column-panel {
+        padding: 8px;
+      }
+
+      h3 {
+        font-size: 14px !important;
+      }
+
+      .form-group {
+        margin-bottom: 8px;
+      }
+
+      .form-group label {
+        font-size: 11px;
+        margin-bottom: 3px;
+      }
+
+      .form-control {
+        font-size: 12px;
+        padding: 6px;
+      }
+
+      .two-column-grid {
+        gap: 8px;
+      }
+
+      .alert {
+        padding: 8px;
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      .step-indicator {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+      }
+
+      .step-indicator i {
+        font-size: 14px;
       }
     }
   </style>
@@ -244,16 +672,24 @@
 
       <!-- ==================== FORMULARIO ÚNICO - TODOS LOS CAMPOS ==================== -->
       <div class="step-form" style="display:block">
-        <h2>{% if modo_edicion %}Editar{% else %}Crear{% endif %} Agente Educativo - Formulario Completo</h2>
-        <div style="margin: 10px 0 20px 0; padding: 12px; background: #e7f3ff; color: #004085; border-radius: 8px; border: 1px solid #bee5eb; font-size: 15px;">
-          <i class="fas fa-info-circle"></i> Los campos marcados con <span class="required-star">*</span> son obligatorios.
-        </div>
-        <hr style="margin-bottom:20px" />
+        <h2>
+          <i class="fas fa-user-tie" style="margin-right: 10px;"></i>
+          {% if modo_edicion %}Editar{% else %}Crear{% endif %} Agente Educativo
+        </h2>
+
+        <div style="padding: 30px;">
+          <div class="info-box">
+            <i class="fas fa-circle-info"></i>
+            <div>
+              <strong>Formulario de Registro Completo</strong><br>
+              Los campos marcados con <span class="required-star">*</span> son obligatorios. Asegúrate de proporcionar información veraz y precisa.
+            </div>
+          </div>
         
-        <!-- ==================== SECCIÓN 1: INFORMACIÓN PERSONAL ==================== -->
-        <h3 class="full-width" style="color:var(--primary);margin:25px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
-          <i class="fas fa-user"></i> 1. Información Personal del Agente Educativo
-        </h3>
+          <!-- ==================== SECCIÓN 1: INFORMACIÓN PERSONAL ==================== -->
+          <h3 style="position: relative; margin-top: 35px;">
+            <i class="fas fa-user"></i> Información Personal
+          </h3>
         
         <!-- GRID DE DOS COLUMNAS -->
         <div class="two-column-grid">
@@ -353,9 +789,10 @@
               <small style="color:#666;display:block;margin-top:5px;">Se cargará dinámicamente según la localidad seleccionada</small>
             </div>
           </div>
-        </div>        <!-- ==================== SECCIÓN 2: INFORMACIÓN ACADÉMICA Y DOCUMENTOS ==================== -->
-        <h3 class="full-width" style="color:var(--primary);margin:40px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
-          <i class="fas fa-graduation-cap"></i> 2. Información Académica y Documentos del Agente Educativo
+        </div>        
+        <!-- ==================== SECCIÓN 2: INFORMACIÓN ACADÉMICA Y DOCUMENTOS ==================== -->
+        <h3 style="position: relative; margin-top: 35px;">
+          <i class="fas fa-graduation-cap"></i> Información Académica y Documentos
         </h3>
 
         <!-- GRID DE DOS COLUMNAS -->
@@ -560,7 +997,7 @@
         </div>
 
         <!-- Subsección: Documentos Personales -->
-        <h4 style="color:var(--primary);margin:20px 0 10px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
+        <h4 style="color:var(--primary);margin:30px 0 15px;font-size:16px;border-left:4px solid var(--primary-light);padding-left:10px">
           <i class="fas fa-file-upload"></i> Documentos Personales
         </h4>
         
@@ -685,7 +1122,7 @@
         </div>
 
         <!-- Sección: Documentos de Soporte -->
-        <h3 style="color:var(--primary);margin:25px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
+        <h3 style="position: relative; margin-top: 35px;">
           <i class="fas fa-folder-open"></i> Documentos de Soporte
         </h3>
         
@@ -1032,12 +1469,15 @@
         </div>
 
         <!-- ==================== SECCIÓN 3: INFORMACIÓN DEL HOGAR COMUNITARIO ==================== -->
-        <h3 class="full-width" style="color:var(--primary);margin:40px 0 15px;font-size:18px;border-bottom:2px solid var(--primary-light);padding-bottom:8px">
-          <i class="fas fa-home"></i> 3. Información del Hogar Comunitario
+        <h3 style="position: relative; margin-top: 35px;">
+          <i class="fas fa-home"></i> Información del Hogar Comunitario
         </h3>
         
-        <div style="margin:10px 0 20px 0;padding:12px;background:#e7f3ff;color:#004085;border-radius:8px;border:1px solid #bee5eb;font-size:14px;">
-          <i class="fas fa-info-circle"></i> Registre los datos del hogar comunitario separados de la residencia de la madre educativa.
+        <div class="info-box">
+          <i class="fas fa-circle-info"></i>
+          <div>
+            Registre los datos del hogar comunitario separados de la residencia de la madre educativa. Esta información es fundamental para la validación de condiciones.
+          </div>
         </div>
 
         <!-- GRID GEOGRAFÍA: REGIONAL → CIUDAD → LOCALIDAD (BOGOTÁ) → BARRIO -->
@@ -1679,19 +2119,20 @@
         {% endif %}
 
         <!-- Botones de Acción Final -->
-        <div class="form-actions" style="margin-top:40px;padding-top:20px;border-top:2px solid #dee2e6;">
+        <div class="form-actions">
           <a href="{% url 'listar_madres' %}" class="btn-volver">
-            <i class="fas fa-times"></i> Cancelar
+            <i class="fas fa-arrow-left"></i> Cancelar
           </a>
           {% if not modo_edicion %}
             <button type="submit" class="btn-guardar">
-              <i class="fas fa-check"></i> Crear Agente Educativo y Hogar
+              <i class="fas fa-plus-circle"></i> Crear Agente Educativo
             </button>
           {% else %}
             <button type="submit" class="btn-guardar">
-              <i class="fas fa-save"></i> Guardar Cambios
+              <i class="fas fa-check-circle"></i> Guardar Cambios
             </button>
           {% endif %}
+        </div>
         </div>
       </div>
 
@@ -1953,7 +2394,7 @@
         regionalSelect.addEventListener('change', cargarCiudades);
         console.log('✓ Listener agregado a Regional');
         
-        // Auto-seleccionar BogotaDC
+        // ✅ RESTAURAR VALORES DE CASCADA SI EXISTEN (cuando hay error en el form)
         let bogotaId = null;
         for (let i = 0; i < regionalSelect.options.length; i++) {
           if (regionalSelect.options[i].text.toUpperCase().includes('BOGOTA')) {
@@ -1961,7 +2402,75 @@
             break;
           }
         }
-        if (bogotaId) {
+        
+        // Verificar si hay un regional_id precargado (del error anterior)
+        const precargarRegionalId = '{{ hogar_regional_id|default:"" }}';
+        const precargarCiudadId = '{{ hogar_ciudad_id|default:"" }}';
+        const precargarLocalidadId = '{{ hogar_localidad_id|default:"" }}';
+        const precargarBarrio = '{{ hogar_barrio|default:"" }}';
+        
+        console.log('🔄 Valores precargados:', {
+          regional: precargarRegionalId,
+          ciudad: precargarCiudadId,
+          localidad: precargarLocalidadId,
+          barrio: precargarBarrio
+        });
+        
+        // Si hay valores precargados, restaurar la cascada
+        if (precargarRegionalId) {
+          regionalSelect.value = precargarRegionalId;
+          console.log('📍 Regional restaurada:', precargarRegionalId);
+          
+          // Cargar ciudades y luego seleccionar la ciudad guardada
+          fetch(`/ajax/cargar-ciudades/?regional_id=${precargarRegionalId}`)
+            .then(r => r.json())
+            .then(data => {
+              console.log('✅ Ciudades cargadas para restauración:', data.length);
+              ciudadSelect.innerHTML = '<option value="">-- Seleccione una Ciudad --</option>';
+              
+              data.forEach(ciudad => {
+                const opt = document.createElement('option');
+                opt.value = ciudad.id;
+                opt.textContent = ciudad.nombre;
+                ciudadSelect.appendChild(opt);
+              });
+              
+              // Seleccionar la ciudad precargada si existe
+              if (precargarCiudadId) {
+                console.log('🏙️ Seleccionando ciudad:', precargarCiudadId);
+                ciudadSelect.value = precargarCiudadId;
+                ciudadSelect.disabled = false;
+                
+                // Disparar el evento change para cargar localidades/barrios
+                setTimeout(() => {
+                  procesarCiudad();
+                  
+                  // Si es Bogotá y hay localidad precargada, seleccionarla
+                  if (precargarLocalidadId) {
+                    setTimeout(() => {
+                      console.log('📌 Seleccionando localidad:', precargarLocalidadId);
+                      localidadSelect.value = precargarLocalidadId;
+                      
+                      // Cargar barrios para esa localidad
+                      setTimeout(() => {
+                        cargarBarrios();
+                        
+                        // Seleccionar barrio si existe
+                        if (precargarBarrio) {
+                          setTimeout(() => {
+                            console.log('🏘️ Seleccionando barrio:', precargarBarrio);
+                            barrioSelect.value = precargarBarrio;
+                          }, 300);
+                        }
+                      }, 300);
+                    }, 300);
+                  }
+                }, 300);
+              }
+            })
+            .catch(err => console.error('Error restaurando ciudades:', err));
+        } else if (bogotaId) {
+          // Si no hay precargado, auto-seleccionar BogotaDC (comportamiento normal)
           regionalSelect.value = bogotaId;
           cargarCiudades();
         }
@@ -2199,6 +2708,7 @@
       
       const deptSelect = document.getElementById('id_departamento_residencia');
       if (deptSelect && deptSelect.value) {
+        console.log('📍 Departamento precargado, disparando evento change...');
         deptSelect.dispatchEvent(new Event('change'));
       }
 
@@ -2212,6 +2722,7 @@
       if (localidadMadreSelect && barrioMadreSelect) {
         localidadMadreSelect.addEventListener('change', function() {
           const localidadId = this.value;
+          const precargarBarrio = '{{ madre_barrio|default:"" }}';
           
           if (!localidadId) {
             barrioMadreSelect.innerHTML = '<option value="">-- Seleccione un Barrio --</option>';
@@ -2234,6 +2745,12 @@
                   barrioMadreSelect.appendChild(option);
                 });
                 barrioMadreSelect.disabled = false;
+                
+                // ✅ Si hay un barrio precargado, seleccionarlo
+                if (precargarBarrio) {
+                  console.log('🏘️ Seleccionando barrio madre precargado:', precargarBarrio);
+                  barrioMadreSelect.value = precargarBarrio;
+                }
               }
             })
             .catch(error => {
@@ -2242,7 +2759,10 @@
             });
         });
         
-        if (localidadMadreSelect.value) {
+        // Disparar evento si hay localidad precargada
+        const precargarLocalidadId = '{{ madre_localidad_id|default:"" }}';
+        if (localidadMadreSelect.value || precargarLocalidadId) {
+          console.log('📍 Localidad madre precargada, disparando evento change...');
           localidadMadreSelect.dispatchEvent(new Event('change'));
         }
       }

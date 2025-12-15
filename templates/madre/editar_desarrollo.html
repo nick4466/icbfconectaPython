@@ -47,6 +47,180 @@
     input[disabled], textarea[readonly] { background: #f3f3f3; color: #555; }
     h4 { font-size: 18px; margin-top: 20px; margin-bottom: 8px; color: #5e3370; }
     hr { margin: 20px 0; }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .main-title {
+        width: 90%;
+        font-size: 26px;
+        padding: 16px;
+        margin: 16px auto;
+      }
+
+      .contenedor {
+        max-width: 95%;
+        margin: 20px auto;
+        padding: 20px;
+      }
+
+      .card {
+        padding: 20px;
+        border-left-width: 6px;
+      }
+
+      h4 {
+        font-size: 16px;
+        margin-top: 16px;
+      }
+
+      textarea {
+        font-size: 14px;
+        padding: 8px;
+      }
+
+      input {
+        font-size: 14px;
+        padding: 8px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-title {
+        width: 95%;
+        font-size: 20px;
+        padding: 12px;
+        margin: 12px auto;
+        border-radius: 8px;
+      }
+
+      .contenedor {
+        max-width: 95%;
+        margin: 12px auto;
+        padding: 16px;
+        border-radius: 10px;
+      }
+
+      .card {
+        padding: 16px;
+        border-radius: 10px;
+        border-left-width: 4px;
+      }
+
+      .form-group {
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+
+      label {
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      textarea {
+        font-size: 12px;
+        padding: 8px;
+        min-height: 80px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      input[type="text"] {
+        font-size: 12px;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      h4 {
+        font-size: 14px;
+        margin-top: 12px;
+        margin-bottom: 6px;
+      }
+
+      .botones {
+        padding: 12px 16px;
+        font-size: 14px;
+        border-radius: 6px;
+        margin-top: 16px;
+      }
+
+      hr {
+        margin: 12px 0;
+        border: none;
+        border-top: 1px solid #ddd;
+      }
+
+      a {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .main-title {
+        width: 100%;
+        font-size: 16px;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 6px;
+      }
+
+      .contenedor {
+        max-width: 100%;
+        margin: 8px 0;
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      .card {
+        padding: 12px;
+        border-left-width: 4px;
+        border-radius: 8px;
+      }
+
+      .form-group {
+        gap: 4px;
+        margin-bottom: 8px;
+      }
+
+      label {
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      textarea {
+        font-size: 11px;
+        padding: 6px;
+        min-height: 70px;
+        border-radius: 3px;
+      }
+
+      input[type="text"] {
+        font-size: 11px;
+        padding: 6px;
+        border-radius: 3px;
+      }
+
+      h4 {
+        font-size: 12px;
+        margin-top: 10px;
+        margin-bottom: 4px;
+      }
+
+      .botones {
+        padding: 10px;
+        font-size: 12px;
+        border-radius: 4px;
+        margin-top: 12px;
+      }
+
+      hr {
+        margin: 10px 0;
+      }
+
+      a {
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 <body>

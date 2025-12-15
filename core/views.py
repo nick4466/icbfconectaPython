@@ -660,9 +660,9 @@ def crear_madre(request):
             # ✅ VALIDACIÓN CRÍTICA: Si la ciudad es Bogotá, la regional DEBE ser Bogotá
             if ciudad_hogar and ciudad_hogar.nombre.lower() == 'bogotá':
                 try:
-                    regional_bogota = Regional.objects.get(nombre__iexact='Bogotá')
+                    regional_bogota = Regional.objects.get(nombre__iexact='BogotaDC')
                     if regional_hogar.id != regional_bogota.id:
-                        messages.error(request, 'Para Bogotá D.C., la Regional debe ser "Bogotá". Por favor, corrija esta selección.')
+                        messages.error(request, 'Para Bogotá D.C., la Regional debe ser "BogotaDC". Por favor, corrija esta selección.')
                         from .models import LocalidadBogota
                         localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
                         return render(request, 'admin/madres_form.html', {
@@ -670,7 +670,7 @@ def crear_madre(request):
                             'initial_step': 3, 'regionales': regionales, 'localidades_bogota': localidades_bogota
                         })
                 except Regional.DoesNotExist:
-                    messages.error(request, 'No se encontró la Regional "Bogotá" en el sistema.')
+                    messages.error(request, 'No se encontró la Regional "BogotaDC" en el sistema.')
                     from .models import LocalidadBogota
                     localidades_bogota = LocalidadBogota.objects.all().order_by('numero')
                     return render(request, 'admin/madres_form.html', {
@@ -931,7 +931,9 @@ def crear_madre(request):
         # Si hay errores, mantener los archivos y datos cargados en los formularios
         # Django ya mantiene los archivos en los campos FileField si se pasan request.FILES
         # Pero para mostrar previews, asegurarse de que el template renderice los valores actuales
-        return render(request, 'admin/madres_form.html', {
+        
+        # ✅ PRESERVAR VALORES DE CASCADA GEOGRÁFICA PARA QUE NO SE PIERDAN AL RE-RENDERIZAR CON ERROR
+        context = {
             'usuario_form': usuario_form,
             'madre_profile_form': madre_profile_form,
             'hogar_form': hogar_form,
@@ -939,7 +941,21 @@ def crear_madre(request):
             'regionales': regionales,
             'localidades_bogota': localidades_bogota,
             'modo_edicion': False, # Asegura que el template sepa que es modo creación y no limpie campos
-        })
+        }
+        
+        # Agregar IDs de cascada HOGAR para restaurar valores en el frontend
+        if hogar_form.data:
+            context['hogar_regional_id'] = hogar_form.data.get('regional', '')
+            context['hogar_ciudad_id'] = hogar_form.data.get('ciudad', '')
+            context['hogar_localidad_id'] = hogar_form.data.get('localidad_bogota', '')
+            context['hogar_barrio'] = hogar_form.data.get('barrio', '')
+        
+        # Agregar IDs de cascada MADRE para restaurar valores en el frontend
+        if madre_profile_form.data:
+            context['madre_localidad_id'] = madre_profile_form.data.get('localidad_bogota_madre', '')
+            context['madre_barrio'] = madre_profile_form.data.get('barrio_madre', '')
+        
+        return render(request, 'admin/madres_form.html', context)
 
     # GET
     # 💡 MEJORA: Si el admin tiene una regional, la pre-seleccionamos en el formulario del hogar.
@@ -3497,16 +3513,30 @@ def listar_solicitudes_matricula(request):
             estado__in=['pendiente', 'correccion']
         ).order_by('-fecha_creacion')
         
+        print(f"\n{'='*80}")
+        print(f"📋 LISTAR SOLICITUDES PARA PANEL DE MADRE")
+        print(f"   Hogar: {hogar_madre.nombre_hogar}")
+        print(f"   Total solicitudes encontradas: {solicitudes.count()}")
+        
         # Serializar datos
         datos = []
         for s in solicitudes:
+            # 🔍 Debug: Loguear tiene_datos para cada solicitud
+            tiene_datos_calc = bool(s.nombres_nino and s.nombres_nino.strip())
+            print(f"\n   📊 Solicitud ID {s.id}:")
+            print(f"      - Estado: '{s.estado}'")
+            print(f"      - nombres_nino: '{s.nombres_nino}'")
+            print(f"      - tiene_datos: {tiene_datos_calc}")
+            print(f"      - campos_corregir: {s.campos_corregir}")
+            print(f"      - intentos_correccion: {s.intentos_correccion}")
+            
             datos.append({
                 'id': s.id,
                 'nombre_nino': s.nombres_nino or 'Sin completar',
                 'email_acudiente': s.email_acudiente,
                 'fecha_envio': s.fecha_creacion.strftime('%d/%m/%Y %H:%M') if s.fecha_creacion else '',
                 'estado': s.estado,
-                'tiene_datos': bool(s.nombres_nino),  # True si ya llenó el formulario
+                'tiene_datos': tiene_datos_calc,  # True si tiene nombres_nino no vacío
                 # 🆕 Nuevos campos para solicitudes de padre
                 'tipo_solicitud': s.tipo_solicitud,
                 'cupos_validados': s.cupos_validados,
@@ -3514,7 +3544,15 @@ def listar_solicitudes_matricula(request):
                 'padre_solicitante': s.padre_solicitante.usuario.get_full_name() if s.padre_solicitante else None,
             })
         
-        return JsonResponse({'success': True, 'solicitudes': datos})
+        print(f"\n   ✅ Total datos serializados: {len(datos)}")
+        print(f"{'='*80}\n")
+        
+        response = JsonResponse({'success': True, 'solicitudes': datos})
+        # 🚫 Evitar caché en navegador
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
         
     except Exception as e:
         import traceback
@@ -3978,6 +4016,8 @@ def devolver_correccion_matricula(request):
             solicitud_id = request.POST.get('solicitud_id')
             campos_json = request.POST.get('campos_corregir', '[]')
             
+            print(f"🔍 DEBUG devolver_correccion: solicitud_id={solicitud_id}, campos_json={campos_json}")
+            
             # Validaciones
             if not solicitud_id:
                 return JsonResponse({'status': 'error', 'mensaje': 'ID de solicitud no proporcionado.'}, status=400)
@@ -3985,14 +4025,16 @@ def devolver_correccion_matricula(request):
             # Parsear campos a corregir
             try:
                 campos_corregir = json.loads(campos_json)
-            except json.JSONDecodeError:
-                return JsonResponse({'status': 'error', 'mensaje': 'Formato de campos inválido.'}, status=400)
+            except json.JSONDecodeError as e:
+                print(f"❌ Error parsing JSON: {e}")
+                return JsonResponse({'status': 'error', 'mensaje': f'Formato de campos inválido: {str(e)}'}, status=400)
             
             if not campos_corregir:
                 return JsonResponse({'status': 'error', 'mensaje': 'Debe seleccionar al menos un campo para corregir.'}, status=400)
             
             # Obtener la solicitud
             solicitud = get_object_or_404(SolicitudMatriculacion, id=solicitud_id, hogar=hogar_madre)
+            print(f"📋 Solicitud encontrada: id={solicitud.id}, tipo={solicitud.tipo_solicitud}, padre_solicitante={solicitud.padre_solicitante}")
             
             # Validar que no haya excedido los intentos
             if solicitud.intentos_correccion >= 3:
@@ -4009,10 +4051,12 @@ def devolver_correccion_matricula(request):
             solicitud.estado = 'correccion'
             solicitud.campos_corregir = campos_corregir
             solicitud.save()
+            print(f"✅ Solicitud actualizada: intentos={solicitud.intentos_correccion}, estado={solicitud.estado}")
             
             # 🆕 LÓGICA DIFERENCIADA SEGÚN TIPO DE SOLICITUD
             if solicitud.tipo_solicitud == 'solicitud_padre':
                 # SOLICITUD DE PADRE: Solo notificación in-app + email informativo (sin formulario)
+                print(f"📤 Tipo: SOLICITUD PADRE")
                 try:
                     from notifications.models import Notification
                     from django.contrib.contenttypes.models import ContentType
@@ -4029,6 +4073,7 @@ def devolver_correccion_matricula(request):
                         content_type=content_type,
                         object_id=solicitud.id
                     )
+                    print(f"✅ Notificación creada para padre {solicitud.padre_solicitante.usuario.documento}")
                     
                     # Enviar email INFORMATIVO (sin link a formulario, solo aviso)
                     campos_nombres = {
@@ -4096,10 +4141,28 @@ def devolver_correccion_matricula(request):
                 
             else:
                 # INVITACIÓN DE MADRE: Email con link al formulario público (flujo original)
+                print(f"📤 Tipo: INVITACIÓN MADRE")
                 try:
                     from django.template.loader import render_to_string
                     from django.core.mail import send_mail
                     from django.conf import settings
+                    
+                    # Verificar configuración SMTP
+                    print(f"🔍 Verificando configuración SMTP:")
+                    print(f"   - EMAIL_BACKEND: {settings.EMAIL_BACKEND}")
+                    print(f"   - EMAIL_HOST: {settings.EMAIL_HOST}")
+                    print(f"   - EMAIL_PORT: {settings.EMAIL_PORT}")
+                    print(f"   - EMAIL_USE_TLS: {settings.EMAIL_USE_TLS}")
+                    print(f"   - EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
+                    print(f"   - DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
+                    
+                    # Validar que EMAIL_HOST_USER esté configurado
+                    if not settings.EMAIL_HOST_USER:
+                        print(f"❌ EMAIL_HOST_USER no está configurado en variables de entorno")
+                        return JsonResponse({
+                            'status': 'error',
+                            'mensaje': 'Error: Servidor no configurado para enviar emails. Contacte al administrador.'
+                        }, status=500)
                     
                     asunto = f'Solicitud de Matriculación - Correcciones Requeridas - {hogar_madre.nombre_hogar}'
                     
@@ -4107,25 +4170,61 @@ def devolver_correccion_matricula(request):
                     protocolo = 'https' if request.is_secure() else 'http'
                     dominio = request.get_host()
                     link_formulario = f"{protocolo}://{dominio}/matricula/publico/{solicitud.token}/"
+                    print(f"📧 Link generado: {link_formulario}")
                     
-                    mensaje_html = render_to_string('emails/solicitud_correccion.html', {
-                        'hogar': hogar_madre,
-                        'campos': campos_corregir,
-                        'link': link_formulario,
-                        'intentos_usados': solicitud.intentos_correccion,
-                        'intentos_restantes': intentos_restantes,
-                    })
+                    # Verificar que email_acudiente existe
+                    email_destino = solicitud.email_acudiente or solicitud.correo_padre
+                    if not email_destino:
+                        print(f"❌ No hay email para enviar. email_acudiente={solicitud.email_acudiente}, correo_padre={solicitud.correo_padre}")
+                        return JsonResponse({
+                            'status': 'error',
+                            'mensaje': 'No hay correo de acudiente registrado.'
+                        }, status=400)
                     
-                    send_mail(
-                        asunto,
-                        '',
-                        settings.DEFAULT_FROM_EMAIL,
-                        [solicitud.email_acudiente],
-                        fail_silently=True,
-                        html_message=mensaje_html
-                    )
+                    print(f"🔍 Renderizando template con contexto:")
+                    print(f"   - hogar: {hogar_madre.nombre_hogar}")
+                    print(f"   - campos: {campos_corregir}")
+                    print(f"   - link: {link_formulario}")
+                    print(f"   - email_destino: {email_destino}")
+                    
+                    try:
+                        mensaje_html = render_to_string('emails/solicitud_correccion.html', {
+                            'hogar': hogar_madre,
+                            'campos': campos_corregir,
+                            'link': link_formulario,
+                            'intentos_usados': solicitud.intentos_correccion,
+                            'intentos_restantes': intentos_restantes,
+                        })
+                        print(f"✅ Template renderizado exitosamente")
+                    except Exception as e:
+                        print(f"❌ Error renderizando template: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        raise
+                    
+                    # Intentar enviar el email con mejor manejo de errores
+                    try:
+                        print(f"📧 Intentando enviar email desde {settings.DEFAULT_FROM_EMAIL} a {email_destino}...")
+                        resultado = send_mail(
+                            asunto,
+                            '',
+                            settings.DEFAULT_FROM_EMAIL,
+                            [email_destino],
+                            fail_silently=False,  # No silenciar errores para debuggear
+                            html_message=mensaje_html
+                        )
+                        print(f"✅ Email enviado exitosamente a {email_destino} (resultado: {resultado})")
+                    except Exception as e:
+                        print(f"❌ Error enviando email: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        raise
+                        
                 except Exception as e:
-                    print(f"Error al enviar email de corrección: {e}")
+                    print(f"❌ Error al enviar email de corrección: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    # No retornar error aquí, permitir que continúe
             
             return JsonResponse({
                 'status': 'ok',
@@ -4133,6 +4232,7 @@ def devolver_correccion_matricula(request):
             })
             
         except Exception as e:
+            print(f"❌ ERROR GENERAL en devolver_correccion: {e}")
             import traceback
             traceback.print_exc()
             return JsonResponse({
@@ -4426,32 +4526,74 @@ def formulario_matricula_publico(request, token):
     
     # GET: Mostrar formulario
     if request.method == 'GET':
+        # 🔄 Refrescar desde la BD para obtener estado actualizado
+        solicitud.refresh_from_db()
+        print(f"📄 GET: Mostrando formulario para solicitud id={solicitud.id}")
+        print(f"   Estado actual en BD: {solicitud.estado}")
+        print(f"   Campos a corregir: {solicitud.campos_corregir}")
+        
         # Obtener todas las discapacidades disponibles
         discapacidades = Discapacidad.objects.all().order_by('nombre')
         
         # 🆕 Obtener departamentos para el select
-        from core.models import Departamento
+        from core.models import Departamento, Municipio
         departamentos = Departamento.objects.all().order_by('nombre')
+        
+        # 🆕 Si está en corrección, precargar municipios del departamento actual
+        municipios_padre = []
+        if solicitud.departamento_padre_id:
+            municipios_padre = list(Municipio.objects.filter(
+                departamento_id=solicitud.departamento_padre_id
+            ).order_by('nombre').values('id', 'nombre', 'es_capital'))
         
         # 🆕 Detectar si es solicitud iniciada por padre
         es_solicitud_padre = solicitud.tipo_solicitud == 'solicitud_padre'
         
-        return render(request, 'public/formulario_matricula_publico.html', {
+        en_correccion = solicitud.estado == 'correccion'
+        print(f"   ✓ en_correccion={en_correccion} (estado={solicitud.estado})")
+        print(f"   Municipios precargados: {len(municipios_padre)} para departamento {solicitud.departamento_padre_id}")
+        
+        response = render(request, 'public/formulario_matricula_publico.html', {
             'token_valido': True,
             'solicitud': solicitud,
-            'en_correccion': solicitud.estado == 'correccion',
+            'en_correccion': en_correccion,
             'campos_corregir': solicitud.campos_corregir or [],
             'intentos_restantes': 3 - solicitud.intentos_correccion if solicitud.estado == 'correccion' else 3,
             'discapacidades': discapacidades,
             'departamentos': departamentos,
+            'municipios_padre': municipios_padre,  # 🆕 Municipios precargados
             # 🆕 Nuevos contextos
             'es_solicitud_padre': es_solicitud_padre,
             'mostrar_solo_nino': es_solicitud_padre,  # Si es solicitud de padre, solo mostrar campos del niño
         })
+        
+        # 🚫 Evitar caché en el navegador - Headers para no-cache
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        
+        return response
     
     # POST: Procesar formulario
     if request.method == 'POST':
         try:
+            # 🔄 Refrescar solicitud desde BD para obtener estado actual
+            print(f"\n{'='*80}")
+            print(f"🔍 INICIO POST - PROCESANDO FORMULARIO DE MATRICULACIÓN")
+            print(f"   Token: {token}")
+            print(f"   Solicitud ID ANTES de refresh: {solicitud.id}")
+            
+            solicitud.refresh_from_db()
+            
+            print(f"\n   ✓ refresh_from_db() completado")
+            print(f"   Solicitud ID DESPUÉS de refresh: {solicitud.id}")
+            print(f"   Email acudiente: {solicitud.email_acudiente}")
+            print(f"   Hogar: {solicitud.hogar.nombre_hogar if solicitud.hogar else 'SIN HOGAR'}")
+            print(f"   Estado actual en BD: '{solicitud.estado}'")
+            print(f"   campos_corregir: {solicitud.campos_corregir}")
+            print(f"   intentos_correccion: {solicitud.intentos_correccion}")
+            print(f"{'='*80}\n")
+            
             # Validar token nuevamente
             if not solicitud.is_valido():
                 return JsonResponse({
@@ -4460,26 +4602,59 @@ def formulario_matricula_publico(request, token):
                 }, status=400)
             
             # Datos del niño
+            print(f"🔍 POST recibido para solicitud {solicitud.id}")
+            print(f"🔍 POST data: {dict(request.POST.items())}")
+            
             solicitud.nombres_nino = request.POST.get('nombres_nino', '').strip()
             solicitud.apellidos_nino = request.POST.get('apellidos_nino', '').strip()
+            
+            # 🔍 Procesar tipo_documento_nino con mejor logging
+            tipo_doc = request.POST.get('tipo_documento_nino', '').strip()
+            print(f"🔍 tipo_documento_nino recibido: '{tipo_doc}'")
+            
+            # Validar que sea una opción válida
+            valid_tipos = ['RC', 'TI', 'CV', 'AN', 'CE', 'PA']
+            if tipo_doc and tipo_doc not in valid_tipos:
+                print(f"❌ tipo_documento_nino inválido: '{tipo_doc}'. Opciones válidas: {valid_tipos}")
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Tipo de documento inválido: {tipo_doc}. Opciones válidas: {", ".join(valid_tipos)}'
+                }, status=400)
+            
+            solicitud.tipo_documento_nino = tipo_doc
             solicitud.documento_nino = request.POST.get('documento_nino', '').strip()
             
-            # VALIDACIÓN 4: Verificar que no exista un niño ya matriculado con ese documento en el hogar
-            if solicitud.documento_nino:
-                nino_ya_existe = Nino.objects.filter(
-                    documento=solicitud.documento_nino,
-                    hogar=solicitud.hogar
-                ).exists()
-                
-                if nino_ya_existe:
-                    return JsonResponse({
-                        'success': False,
-                        'error': f'Ya existe un niño matriculado con el documento {solicitud.documento_nino} en este hogar.'
-                    }, status=400)
+            print(f"🔍 Valores asignados:")
+            print(f"    nombres_nino: '{solicitud.nombres_nino}'")
+            print(f"    apellidos_nino: '{solicitud.apellidos_nino}'")
+            print(f"    tipo_documento_nino: '{solicitud.tipo_documento_nino}'")
+            print(f"    documento_nino: '{solicitud.documento_nino}'")
             
-            fecha_nac = request.POST.get('fecha_nacimiento_nino')
-            if fecha_nac:
-                solicitud.fecha_nacimiento_nino = datetime.strptime(fecha_nac, '%Y-%m-%d').date()
+            # VALIDACIÓN 4: Verificar que no exista un niño ya matriculado con ese documento en el hogar
+            try:
+                if solicitud.documento_nino:
+                    nino_ya_existe = Nino.objects.filter(
+                        documento=solicitud.documento_nino,
+                        hogar=solicitud.hogar
+                    ).exists()
+                    
+                    if nino_ya_existe:
+                        return JsonResponse({
+                            'success': False,
+                            'error': f'Ya existe un niño matriculado con el documento {solicitud.documento_nino} en este hogar.'
+                        }, status=400)
+            except Exception as e:
+                print(f"❌ Error en validación de documento duplicado: {e}")
+                raise
+            
+            try:
+                fecha_nac = request.POST.get('fecha_nacimiento_nino')
+                if fecha_nac:
+                    solicitud.fecha_nacimiento_nino = datetime.strptime(fecha_nac, '%Y-%m-%d').date()
+            except Exception as e:
+                print(f"❌ Error procesando fecha de nacimiento: {e}")
+                raise
+            
             solicitud.genero_nino = request.POST.get('genero_nino', '')
             solicitud.tipo_sangre_nino = request.POST.get('tipo_sangre_nino', '')
             solicitud.parentesco = request.POST.get('parentesco', '')
@@ -4510,6 +4685,7 @@ def formulario_matricula_publico(request, token):
                 solicitud.apellidos_padre = request.POST.get('apellidos_padre', '').strip()
                 solicitud.telefono_padre = request.POST.get('telefono_padre', '')
                 solicitud.correo_padre = request.POST.get('correo_padre', '').strip()
+                solicitud.email_acudiente = solicitud.correo_padre  # Asignar también al email_acudiente
             
                 # VALIDACIÓN 5: Verificar que el correo del padre no esté ya registrado con otro documento
                 if solicitud.correo_padre:
@@ -4570,35 +4746,51 @@ def formulario_matricula_publico(request, token):
                 pass
             
             # Documentos (archivos)
-            if 'foto_nino' in request.FILES:
-                solicitud.foto_nino = request.FILES['foto_nino']
-            
-            if 'carnet_vacunacion_nino' in request.FILES:
-                solicitud.carnet_vacunacion_nino = request.FILES['carnet_vacunacion_nino']
-            
-            if 'certificado_eps_nino' in request.FILES:
-                solicitud.certificado_eps_nino = request.FILES['certificado_eps_nino']
-            
-            if 'registro_civil_nino' in request.FILES:
-                solicitud.registro_civil_nino = request.FILES['registro_civil_nino']
-            
-            if 'documento_identidad_padre' in request.FILES:
-                solicitud.documento_identidad_padre = request.FILES['documento_identidad_padre']
-            
-            if 'clasificacion_sisben_padre' in request.FILES:
-                solicitud.clasificacion_sisben_padre = request.FILES['clasificacion_sisben_padre']
-            
-            # Validar que se cargaron archivos nuevos para campos marcados en corrección
-            if solicitud.estado == 'correccion' and solicitud.campos_corregir:
-                campos_archivos = [
-                    'foto_nino', 'carnet_vacunacion_nino', 'certificado_eps_nino',
-                    'registro_civil_nino', 'documento_identidad_padre', 'clasificacion_sisben_padre'
-                ]
+            try:
+                print(f"🔍 Archivos recibidos en request.FILES: {list(request.FILES.keys())}")
                 
-                for campo in solicitud.campos_corregir:
-                    if campo in campos_archivos:
-                        # Verificar que se cargó un archivo nuevo
-                        if campo not in request.FILES:
+                # 🆕 VALIDACIÓN CRÍTICA: Verificar documentos obligatorios
+                # Para solicitudes de padre, solo validar documentos del niño
+                if es_solicitud_padre:
+                    campos_requeridos = ['foto_nino', 'carnet_vacunacion_nino', 'certificado_eps_nino', 'registro_civil_nino']
+                else:
+                    campos_requeridos = [
+                        'foto_nino', 'carnet_vacunacion_nino', 'certificado_eps_nino', 'registro_civil_nino',
+                        'documento_identidad_padre', 'clasificacion_sisben_padre'
+                    ]
+                
+                # Validar documentos según el estado de la solicitud
+                if solicitud.estado == 'correccion' and solicitud.campos_corregir:
+                    # En corrección: solo validar campos que necesitan corrección
+                    campos_a_validar = solicitud.campos_corregir
+                    print(f"📋 Modo corrección. Campos a validar: {campos_a_validar}")
+                    
+                    for campo in campos_a_validar:
+                        if campo in ['foto_nino', 'carnet_vacunacion_nino', 'certificado_eps_nino', 'registro_civil_nino', 'documento_identidad_padre', 'clasificacion_sisben_padre']:
+                            # Para archivos en corrección, DEBE tener archivo nuevo
+                            if campo not in request.FILES or not request.FILES[campo]:
+                                nombres_legibles = {
+                                    'foto_nino': 'Foto del Niño',
+                                    'carnet_vacunacion_nino': 'Carnet de Vacunación',
+                                    'certificado_eps_nino': 'Certificado EPS',
+                                    'registro_civil_nino': 'Registro Civil',
+                                    'documento_identidad_padre': 'Documento de Identidad del Acudiente',
+                                    'clasificacion_sisben_padre': 'Clasificación SISBEN'
+                                }
+                                print(f"❌ Campo '{campo}' requiere archivo nuevo en corrección")
+                                return JsonResponse({
+                                    'success': False,
+                                    'error': f'Debe cargar el documento: {nombres_legibles.get(campo, campo)}'
+                                }, status=400)
+                else:
+                    # Nueva solicitud: validar que todos los archivos obligatorios estén presentes
+                    print(f"📝 Nueva solicitud. Validando campos requeridos: {campos_requeridos}")
+                    
+                    for campo in campos_requeridos:
+                        tiene_archivo_nuevo = campo in request.FILES and request.FILES[campo]
+                        tiene_archivo_anterior = bool(getattr(solicitud, campo, None))
+                        
+                        if not tiene_archivo_nuevo and not tiene_archivo_anterior:
                             nombres_legibles = {
                                 'foto_nino': 'Foto del Niño',
                                 'carnet_vacunacion_nino': 'Carnet de Vacunación',
@@ -4607,45 +4799,108 @@ def formulario_matricula_publico(request, token):
                                 'documento_identidad_padre': 'Documento de Identidad del Acudiente',
                                 'clasificacion_sisben_padre': 'Clasificación SISBEN'
                             }
+                            print(f"❌ Campo obligatorio faltante: {campo}")
                             return JsonResponse({
                                 'success': False,
-                                'error': f'Debe cargar un archivo nuevo para: {nombres_legibles.get(campo, campo)}'
+                                'error': f'El documento "{nombres_legibles.get(campo, campo)}" es obligatorio.'
                             }, status=400)
+                
+                print(f"✅ Validación de documentos exitosa")
+            except Exception as e:
+                print(f"❌ Error en validación de documentos: {e}")
+                import traceback
+                traceback.print_exc()
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Error al validar documentos: {str(e)}'
+                }, status=400)
             
-            # Validar documentos obligatorios (solo si no es corrección o si es un documento a corregir)
-            # 🆕 Para solicitudes de padre, solo validar documentos del niño
-            if es_solicitud_padre:
-                documentos_obligatorios = [
-                    ('foto_nino', 'Foto del niño'),
-                    ('carnet_vacunacion_nino', 'Carnet de vacunación'),
-                    ('certificado_eps_nino', 'Certificado EPS'),
-                    ('registro_civil_nino', 'Registro civil'),
-                ]
-            else:
-                documentos_obligatorios = [
-                    ('foto_nino', 'Foto del niño'),
-                    ('carnet_vacunacion_nino', 'Carnet de vacunación'),
-                    ('certificado_eps_nino', 'Certificado EPS'),
-                    ('registro_civil_nino', 'Registro civil'),
-                    ('documento_identidad_padre', 'Documento de identidad del acudiente'),
-                    ('clasificacion_sisben_padre', 'Clasificación SISBEN'),
-                ]
+            if 'foto_nino' in request.FILES:
+                solicitud.foto_nino = request.FILES['foto_nino']
+                print(f"   ✓ foto_nino cargada: {request.FILES['foto_nino'].name}")
             
-            for campo, nombre in documentos_obligatorios:
-                if not getattr(solicitud, campo):
-                    return JsonResponse({
-                        'success': False,
-                        'error': f'El documento "{nombre}" es obligatorio.'
-                    }, status=400)
+            if 'carnet_vacunacion_nino' in request.FILES:
+                solicitud.carnet_vacunacion_nino = request.FILES['carnet_vacunacion_nino']
+                print(f"   ✓ carnet_vacunacion_nino cargada: {request.FILES['carnet_vacunacion_nino'].name}")
+            
+            if 'certificado_eps_nino' in request.FILES:
+                solicitud.certificado_eps_nino = request.FILES['certificado_eps_nino']
+                print(f"   ✓ certificado_eps_nino cargada: {request.FILES['certificado_eps_nino'].name}")
+            
+            if 'registro_civil_nino' in request.FILES:
+                solicitud.registro_civil_nino = request.FILES['registro_civil_nino']
+                print(f"   ✓ registro_civil_nino cargada: {request.FILES['registro_civil_nino'].name}")
+            
+            if 'documento_identidad_padre' in request.FILES:
+                solicitud.documento_identidad_padre = request.FILES['documento_identidad_padre']
+                print(f"   ✓ documento_identidad_padre cargada: {request.FILES['documento_identidad_padre'].name}")
+            
+            if 'clasificacion_sisben_padre' in request.FILES:
+                solicitud.clasificacion_sisben_padre = request.FILES['clasificacion_sisben_padre']
+                print(f"   ✓ clasificacion_sisben_padre cargada: {request.FILES['clasificacion_sisben_padre'].name}")
             
             # Cambiar estado a pendiente (si estaba en corrección)
+            print(f"\n{'='*80}")
+            print(f"🔍 ANTES DE CAMBIAR ESTADO (línea ~4840):")
+            print(f"   Solicitud ID: {solicitud.id}")
+            print(f"   solicitud.estado ACTUAL EN MEMORIA: '{solicitud.estado}'")
+            print(f"   Evaluando condición: ({solicitud.estado!r} == 'correccion')?")
+            
             es_actualizacion = solicitud.estado == 'correccion'
+            print(f"   ➜ Resultado: es_actualizacion = {es_actualizacion}")
+            
             if es_actualizacion:
+                print(f"\n   ✅ CONDICIÓN VERDADERA - Entrando en bloque de actualización")
+                print(f"   ANTES:")
+                print(f"      - estado: '{solicitud.estado}'")
+                print(f"      - campos_corregir: {solicitud.campos_corregir}")
+                
                 solicitud.estado = 'pendiente'
                 solicitud.campos_corregir = None
+                
+                print(f"   DESPUÉS (EN MEMORIA):")
+                print(f"      - estado: '{solicitud.estado}'")
+                print(f"      - campos_corregir: {solicitud.campos_corregir}")
+                print(f"🔄 Actualizando solicitud id={solicitud.id} de estado 'correccion' a 'pendiente'")
+            else:
+                print(f"\n   ❌ CONDICIÓN FALSA - NO entra en bloque de actualización")
+                print(f"   Estado permanecerá como: '{solicitud.estado}'")
+            
+            print(f"{'='*80}\n")
+            
+            print(f"📊 ANTES DE GUARDAR (línea ~4860):")
+            print(f"   Estado en memoria: '{solicitud.estado}'")
+            print(f"   nombres_nino: '{solicitud.nombres_nino}'")
+            print(f"   apellidos_nino: '{solicitud.apellidos_nino}'")
             
             # Guardar
+            print(f"💾 Ejecutando solicitud.save()...")
             solicitud.save()
+            print(f"✅ save() completado - Se escribió en BD")
+            
+            # 🔄 Verificación de guardado: Refrescar desde BD
+            print(f"\n{'='*80}")
+            print(f"🔍 VERIFICACIÓN POST-GUARDADO:")
+            solicitud.refresh_from_db()
+            print(f"   ✓ refresh_from_db() ejecutado")
+            print(f"   Solicitud ID: {solicitud.id}")
+            print(f"   Estado EN BD (después de refresh): '{solicitud.estado}'")
+            print(f"   Email: {solicitud.email_acudiente}")
+            print(f"   campos_corregir EN BD: {solicitud.campos_corregir}")
+            
+            # Validar que el cambio se realizó
+            if es_actualizacion:
+                if solicitud.estado != 'pendiente':
+                    print(f"\n   ❌ ERROR CRÍTICO - Estado no cambió correctamente!")
+                    print(f"      Esperado: 'pendiente'")
+                    print(f"      Actual en BD: '{solicitud.estado}'")
+                    print(f"      → El save() NO guardó el cambio")
+                else:
+                    print(f"\n   ✅ ÉXITO - Estado cambió correctamente de 'correccion' a 'pendiente'")
+                    print(f"      Estado en BD confirmado: '{solicitud.estado}'")
+            else:
+                print(f"\n   ℹ️  No era actualización, estado permanece en '{solicitud.estado}' (era 'pendiente')")
+            print(f"{'='*80}\n")
             
             # Crear notificación para la madre comunitaria
             try:
@@ -4714,10 +4969,19 @@ def formulario_matricula_publico(request, token):
             
         except Exception as e:
             import traceback
-            traceback.print_exc()
+            # Loguear el error completo con traceback
+            error_message = str(e)
+            error_traceback = traceback.format_exc()
+            print("\n❌ ERROR CRÍTICO en formulario_matricula_publico:")
+            print(f"   Tipo: {type(e).__name__}")
+            print(f"   Mensaje: {error_message}")
+            print("   Traceback completo:")
+            print(error_traceback)
+            
+            # Devolver JSON con el error
             return JsonResponse({
                 'success': False,
-                'error': f'Error al procesar el formulario: {str(e)}'
+                'error': 'Error al procesar el formulario: ' + error_message
             }, status=500)
     
     return JsonResponse({'success': False, 'error': 'Método no permitido.'}, status=405)

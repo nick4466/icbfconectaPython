@@ -181,6 +181,7 @@ function initGeografiaColombia(config = {}) {
     // INICIALIZACIÓN: Si hay departamento seleccionado, cargar municipios
     // ========================================
     if (departamentoSelect.value) {
+        console.log('🔄 Inicializando cascada: Departamento=' + departamentoSelect.value);
         departamentoSelect.dispatchEvent(new Event('change'));
     }
 }
@@ -206,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
             departamentoSelector: '#id_departamento_padre',
             municipioSelector: '#id_ciudad_padre',
             localidadSelector: '#id_localidad_bogota_padre',
-            localidadContainer: '.localidad-padre-container',
+            localidadContainer: '#localidad-padre-group',
         });
     }
 });
